@@ -33,8 +33,9 @@ class SettingsService {
   Future<List<Account>> getAccounts() async {
     final accountsJson = _prefs.getString(_accountsKey);
     if (accountsJson != null) {
-      final List<dynamic> decoded = jsonDecode(accountsJson);
-      return decoded.map((e) => Account.fromJson(e)).toList();
+      final decoded = jsonDecode(accountsJson) as List<dynamic>;
+      return decoded.map((e) => Account.fromJson(e)).toList()
+        ..sort((a, b) => a.index.compareTo(b.index));
     }
 
     // Migration for existing single-account users
