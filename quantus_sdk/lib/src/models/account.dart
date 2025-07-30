@@ -5,8 +5,6 @@ class Account {
   final int index; // derivation index
   final String name;
   final String accountId; // address
-  // balance will be fetched from the chain and not stored here.
-
   const Account({
     required this.index,
     required this.name,
@@ -25,7 +23,12 @@ class Account {
     return {'index': index, 'name': name, 'accountId': accountId};
   }
 
-  Account copyWith({int? index, String? name, String? accountId}) {
+  Account copyWith({
+    int? index,
+    String? name,
+    String? accountId,
+    int? uiPosition,
+  }) {
     return Account(
       index: index ?? this.index,
       name: name ?? this.name,
