@@ -154,10 +154,7 @@ class TransactionListItemState extends State<TransactionListItem> {
   @override
   Widget build(BuildContext context) {
     final isSent = widget.transaction.from == widget.currentWalletAddress;
-    final isFailed =
-        widget.transaction is PendingTransactionEvent &&
-        (widget.transaction as PendingTransactionEvent).transactionState ==
-            TransactionState.failed;
+    final isFailed = widget.transaction.isFailed;
 
     const textStyle = TextStyle(fontFamily: 'Fira Code', color: Colors.white);
 
