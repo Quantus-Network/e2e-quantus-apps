@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
-import 'package:resonance_network_wallet/models/wallet_state_manager.dart'; // Ensure import
+import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart'; // Ensure import
 
 class TransactionsScreen extends StatefulWidget {
   final WalletStateManager manager;
@@ -93,15 +94,17 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return Scaffold(
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Color(0xFFE6E6E6)),
         centerTitle: false,
-        title: const Text(
+        title: Text(
           'Transaction History',
           style: TextStyle(
-            color: Color(0xFFE6E6E6),
-            fontSize: 16,
+            color: const Color(0xFFE6E6E6),
+            fontSize: isTablet ? 24 : 16,
             fontFamily: 'Fira Code',
             fontWeight: FontWeight.w400,
           ),
