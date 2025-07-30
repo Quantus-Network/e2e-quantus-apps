@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/mnemonic_grid.dart';
 import 'package:resonance_network_wallet/features/components/reveal_overlay.dart';
-import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
+import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class ShowRecoveryPhraseScreen extends StatefulWidget {
   const ShowRecoveryPhraseScreen({super.key});
@@ -36,6 +36,8 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0E0E0E),
       body: Container(
@@ -54,13 +56,13 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      _buildDescription(),
+                      _buildDescription(isTablet),
                       const SizedBox(height: 18),
-                      _buildMnemonicContainer(),
+                      _buildMnemonicContainer(isTablet),
                       const SizedBox(height: 18),
-                      if (_isRevealed) _buildCopyToClipboard(),
+                      if (_isRevealed) _buildCopyToClipboard(isTablet),
                       const SizedBox(height: 30),
-                      if (!_isRevealed) _buildWarning(),
+                      if (!_isRevealed) _buildWarning(isTablet),
                     ],
                   ),
                 ),
@@ -74,9 +76,9 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
     );
   }
 
-  Widget _buildDescription() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 25.0),
+  Widget _buildDescription(bool isTablet) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -84,20 +86,18 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
             'Keep your Recovery Phrase Safe',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 18,
+              fontSize: isTablet ? 24 : 18,
               fontFamily: 'Fira Code',
               fontWeight: FontWeight.w500,
             ),
           ),
-          SizedBox(height: 13),
+          const SizedBox(height: 13),
           Text(
             // ignore: lines_longer_than_80_chars
             'This is the only way to recover your wallet. Anyone who has this phrase will have full access to this wallet, your funds may be lost.',
-            // Anyone who has this phrase will have full access to this wallet,
-            // your funds may be lost.',
             style: TextStyle(
               color: Colors.white60,
-              fontSize: 14,
+              fontSize: isTablet ? 18 : 14,
               fontFamily: 'Fira Code',
               fontWeight: FontWeight.w400,
             ),
@@ -107,7 +107,7 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
     );
   }
 
-  Widget _buildMnemonicContainer() {
+  Widget _buildMnemonicContainer(bool isTablet) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
@@ -148,36 +148,25 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
     );
   }
 
-  Widget _buildCopyToClipboard() {
+  Widget _buildCopyToClipboard(bool isTablet) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: InkWell(
-        onTap: () async {
-          await Clipboard.setData(
-            ClipboardData(text: _recoveryPhrase.join(' ')),
-          );
-          if (!context.mounted) return;
-          showTopSnackBar(
-            // ignore: use_build_context_synchronously
-            context,
-            title: 'Copied',
-            message: 'Recovery phrase copied to clipboard.',
-            icon: buildCheckmarkIcon(),
-          );
-        },
-        child: const Opacity(
+        onTap: () =>
+            ClipboardExtensions.copyText(context, _recoveryPhrase.join(' ')),
+        child: Opacity(
           opacity: 0.80,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(Icons.copy, color: Colors.white, size: 24),
-              SizedBox(width: 8),
+              Icon(Icons.copy, color: Colors.white, size: isTablet ? 28 : 24),
+              const SizedBox(width: 8),
               Text(
                 'Copy to Clipboard',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: isTablet ? 20 : 16,
                   fontFamily: 'Fira Code',
                   fontWeight: FontWeight.w400,
                 ),
@@ -189,15 +178,15 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
     );
   }
 
-  Widget _buildWarning() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 25),
+  Widget _buildWarning(bool isTablet) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 25),
       child: Text(
         // ignore: lines_longer_than_80_chars
         'Do not share your Recovery Phrase with any 3rd party, person, website or application',
         style: TextStyle(
           color: Colors.white60,
-          fontSize: 14,
+          fontSize: isTablet ? 18 : 14,
           fontFamily: 'Fira Code',
           fontWeight: FontWeight.w400,
         ),
@@ -206,6 +195,8 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
   }
 
   Widget _buildDoneButton(BuildContext context) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 20.0),
       child: SizedBox(
@@ -214,16 +205,19 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
           onPressed: () => Navigator.of(context).pop(),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.white,
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.symmetric(
+              vertical: isTablet ? 18 : 16,
+              horizontal: 16,
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(5),
             ),
           ),
-          child: const Text(
+          child: Text(
             'Done',
             style: TextStyle(
-              color: Color(0xFF0E0E0E),
-              fontSize: 18,
+              color: const Color(0xFF0E0E0E),
+              fontSize: isTablet ? 24 : 18,
               fontFamily: 'Fira Code',
               fontWeight: FontWeight.w500,
             ),
@@ -232,18 +226,4 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
       ),
     );
   }
-}
-
-Widget buildCheckmarkIcon() {
-  return Container(
-    width: 24,
-    height: 24,
-    decoration: const ShapeDecoration(
-      color: Color(0xFF0CE6ED),
-      shape: OvalBorder(),
-    ),
-    child: const Center(
-      child: Icon(Icons.check, color: Colors.black, size: 16),
-    ),
-  );
 }
