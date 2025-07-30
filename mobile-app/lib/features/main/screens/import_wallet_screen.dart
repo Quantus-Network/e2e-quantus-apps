@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/gradient_action_button.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class ImportWalletScreen extends StatefulWidget {
   const ImportWalletScreen({super.key});
@@ -98,6 +100,8 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0E0E0E),
       body: Container(
@@ -114,28 +118,16 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.stretch, // Stretch children horizontally
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Back button row remains at the top
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ),
+                const WalletAppBar(title: 'Import Wallet'),
                 const SizedBox(height: 40),
-                // Content previously inside Center/nested Column
-                const Text(
+                Text(
                   'Import Wallet',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 18,
+                    fontSize: isTablet ? 24 : 18,
                     fontFamily: 'Fira Code',
                     fontWeight: FontWeight.w500,
                   ),
@@ -147,7 +139,7 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white.useOpacity(0.6),
-                    fontSize: 14,
+                    fontSize: isTablet ? 18 : 14,
                     fontFamily: 'Fira Code',
                     fontWeight: FontWeight.w500,
                     height: 1.21,
@@ -160,9 +152,9 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
                     Expanded(
                       child: TextField(
                         controller: _mnemonicController,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 13,
+                          fontSize: isTablet ? 18 : 13,
                           fontFamily: 'Fira Code',
                           fontWeight: FontWeight.w400,
                         ),
@@ -196,7 +188,7 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
                               ' words with spaces',
                           hintStyle: TextStyle(
                             color: Colors.white.useOpacity(0.5),
-                            fontSize: 13,
+                            fontSize: isTablet ? 18 : 13,
                             fontFamily: 'Fira Code',
                             fontWeight: FontWeight.w400,
                           ),
