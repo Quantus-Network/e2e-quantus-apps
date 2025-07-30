@@ -11,6 +11,7 @@ import 'package:resonance_network_wallet/features/main/screens/receive_screen.da
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
 import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class WalletMain extends StatefulWidget {
   const WalletMain({super.key});
@@ -48,6 +49,7 @@ class _WalletMainState extends State<WalletMain> {
     required String label,
     required Color borderColor,
     required VoidCallback onPressed,
+    required bool isTablet,
     bool disabled = false,
   }) {
     final color = disabled ? Colors.white.useOpacity(0.5) : Colors.white;
@@ -60,13 +62,21 @@ class _WalletMainState extends State<WalletMain> {
     if (iconWidget is SvgPicture) {
       finalIconWidget = SvgPicture.asset(
         (iconWidget.bytesLoader as SvgAssetLoader).assetName,
-        width: 20,
-        height: 20,
+        width: isTablet ? 30 : 20,
+        height: isTablet ? 30 : 20,
       );
     } else if (iconWidget is Icon) {
-      finalIconWidget = Icon(iconWidget.icon, color: color, size: 20);
+      finalIconWidget = Icon(
+        iconWidget.icon,
+        color: color,
+        size: isTablet ? 30 : 20,
+      );
     } else if (iconWidget is Image) {
-      finalIconWidget = SizedBox(width: 20, height: 20, child: iconWidget);
+      finalIconWidget = SizedBox(
+        width: isTablet ? 30 : 20,
+        height: isTablet ? 30 : 20,
+        child: iconWidget,
+      );
     }
 
     return Opacity(
@@ -75,8 +85,8 @@ class _WalletMainState extends State<WalletMain> {
         onTap: disabled ? null : onPressed,
         borderRadius: BorderRadius.circular(4),
         child: Container(
-          width: 65,
-          height: 56,
+          width: isTablet ? 105 : 65,
+          height: isTablet ? 96 : 56,
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: ShapeDecoration(
             color: bgColor,
@@ -96,7 +106,7 @@ class _WalletMainState extends State<WalletMain> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: color,
-                  fontSize: 10,
+                  fontSize: isTablet ? 16 : 10,
                   fontFamily: 'Inter',
                   fontWeight: FontWeight.w300,
                 ),
@@ -108,10 +118,13 @@ class _WalletMainState extends State<WalletMain> {
     );
   }
 
-  Widget _buildHistorySection(WalletStateManager walletStateManager) {
+  Widget _buildHistorySection(
+    WalletStateManager walletStateManager,
+    bool isTablet,
+  ) {
     if (walletStateManager.isTxHistoryLoading) {
       return Container(
-        width: 321,
+        width: double.infinity,
         padding: const EdgeInsets.all(10),
         decoration: ShapeDecoration(
           color: Colors.black.withAlpha(64),
@@ -130,7 +143,7 @@ class _WalletMainState extends State<WalletMain> {
 
     if (walletStateManager.txHistoryError != null) {
       return Container(
-        width: 321,
+        width: double.infinity,
         padding: const EdgeInsets.all(20),
         decoration: ShapeDecoration(
           color: Colors.black.withAlpha(64),
@@ -141,20 +154,27 @@ class _WalletMainState extends State<WalletMain> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                walletStateManager.txHistoryError!,
-                style: const TextStyle(color: Colors.white70),
+                walletStateManager.txHistoryError ?? 'Error',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: isTablet ? 18 : 14,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
               TextButton(
                 onPressed: walletStateManager.load,
-                child: const Text('Retry'),
+                child: Text(
+                  'Retry',
+                  style: TextStyle(fontSize: isTablet ? 18 : 14),
+                ),
               ),
             ],
           ),
         ),
       );
     }
+
     final activeAccount = walletStateManager.walletData?.account;
     if (activeAccount == null) {
       return const SizedBox.shrink(); // or a placeholder
@@ -163,13 +183,13 @@ class _WalletMainState extends State<WalletMain> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.only(left: 10.0, bottom: 10.0),
+        Padding(
+          padding: const EdgeInsets.only(left: 10.0, bottom: 10.0),
           child: Text(
             'Recent Transactions',
             style: TextStyle(
-              color: Color(0xFFE6E6E6),
-              fontSize: 14,
+              color: const Color(0xFFE6E6E6),
+              fontSize: isTablet ? 20 : 14,
               fontFamily: 'Fira Code',
               fontWeight: FontWeight.w500,
             ),
@@ -183,7 +203,7 @@ class _WalletMainState extends State<WalletMain> {
         ),
         if (walletStateManager.combinedTransactions.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(top: 12.0, right: 12.0),
+            padding: EdgeInsets.only(top: isTablet ? 18 : 12.0, right: 12.0),
             child: Align(
               alignment: Alignment.centerRight,
               child: InkWell(
@@ -200,7 +220,7 @@ class _WalletMainState extends State<WalletMain> {
                   'Transaction History →',
                   style: TextStyle(
                     color: Colors.white.useOpacity(0.80),
-                    fontSize: 12,
+                    fontSize: isTablet ? 16 : 12,
                     fontFamily: 'Fira Code',
                     fontWeight: FontWeight.w500,
                   ),
@@ -237,6 +257,7 @@ class _WalletMainState extends State<WalletMain> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).isTablet;
     final walletStateManager = Provider.of<WalletStateManager>(context);
 
     if (walletStateManager.isWalletLoading) {
@@ -350,15 +371,14 @@ class _WalletMainState extends State<WalletMain> {
                           children: [
                             SvgPicture.asset(
                               'assets/quantus_logo_hz.svg',
-                              height: 40,
+                              height: isTablet ? 60 : 40,
                             ),
                             Row(
                               children: [
                                 IconButton(
                                   icon: SvgPicture.asset(
                                     'assets/wallet_icon.svg',
-                                    width: 24,
-                                    height: 24,
+                                    width: isTablet ? 32 : 24,
                                   ),
                                   onPressed: () {
                                     Navigator.push(
@@ -399,24 +419,23 @@ class _WalletMainState extends State<WalletMain> {
                                   children: [
                                     Image.asset(
                                       'assets/active_dot.png',
-                                      width: 20,
-                                      height: 20,
+                                      width: isTablet ? 28 : 20,
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
                                       activeAccount.name,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         color: Colors.white,
-                                        fontSize: 16,
+                                        fontSize: isTablet ? 24 : 16,
                                         fontFamily: 'Fira Code',
                                         fontWeight: FontWeight.w400,
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    const Icon(
+                                    Icon(
                                       Icons.arrow_forward_ios,
                                       color: Colors.white70,
-                                      size: 12,
+                                      size: isTablet ? 18 : 12,
                                     ),
                                   ],
                                 ),
@@ -430,18 +449,18 @@ class _WalletMainState extends State<WalletMain> {
                                     text: _formattingService.formatBalance(
                                       walletStateManager.estimatedBalance,
                                     ),
-                                    style: const TextStyle(
-                                      color: Color(0xFFE6E6E6),
-                                      fontSize: 40,
+                                    style: TextStyle(
+                                      color: const Color(0xFFE6E6E6),
+                                      fontSize: isTablet ? 52 : 40,
                                       fontFamily: 'Fira Code',
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  const TextSpan(
+                                  TextSpan(
                                     text: ' ${AppConstants.tokenSymbol}',
                                     style: TextStyle(
-                                      color: Color(0xFFE6E6E6),
-                                      fontSize: 20,
+                                      color: const Color(0xFFE6E6E6),
+                                      fontSize: isTablet ? 28 : 20,
                                       fontFamily: 'Fira Code',
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -454,7 +473,10 @@ class _WalletMainState extends State<WalletMain> {
                         ),
                         const SizedBox(height: 30),
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          spacing: isTablet ? 28 : 0,
+                          mainAxisAlignment: isTablet
+                              ? MainAxisAlignment.center
+                              : MainAxisAlignment.spaceBetween,
                           children: [
                             _buildActionButton(
                               iconWidget: SvgPicture.asset(
@@ -465,6 +487,7 @@ class _WalletMainState extends State<WalletMain> {
                               onPressed: () {
                                 Navigator.pushNamed(context, '/send');
                               },
+                              isTablet: isTablet,
                             ),
                             _buildActionButton(
                               iconWidget: SvgPicture.asset(
@@ -475,6 +498,7 @@ class _WalletMainState extends State<WalletMain> {
                               onPressed: () {
                                 showReceiveSheet(context);
                               },
+                              isTablet: isTablet,
                             ),
                             _buildActionButton(
                               iconWidget: SvgPicture.asset(
@@ -483,6 +507,7 @@ class _WalletMainState extends State<WalletMain> {
                               label: 'SWAP',
                               borderColor: const Color(0xFF0AD4F6),
                               onPressed: () {},
+                              isTablet: isTablet,
                               disabled: true,
                             ),
                             _buildActionButton(
@@ -492,6 +517,7 @@ class _WalletMainState extends State<WalletMain> {
                               label: 'BRIDGE',
                               borderColor: const Color(0xFF0AD4F6),
                               onPressed: () {},
+                              isTablet: isTablet,
                               disabled: true,
                             ),
                           ],
@@ -503,7 +529,10 @@ class _WalletMainState extends State<WalletMain> {
                   SliverToBoxAdapter(
                     child: Consumer<WalletStateManager>(
                       builder: (context, walletStateManager, child) {
-                        return _buildHistorySection(walletStateManager);
+                        return _buildHistorySection(
+                          walletStateManager,
+                          isTablet,
+                        );
                       },
                     ),
                   ),
