@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:video_player/video_player.dart';
 import 'package:resonance_network_wallet/features/main/screens/import_wallet_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_wallet_and_backup_screen.dart';
@@ -44,6 +45,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0E0E0E),
       body: Stack(
@@ -85,7 +88,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     children: [
                       SvgPicture.asset(
                         'assets/quantus_logo.svg', // Changed from res_logo_main.svg
-                        height: 130.0, // Adjust height for the icon
+                        height: isTablet
+                            ? 180
+                            : 130.0, // Adjust height for the icon
                         fit: BoxFit.contain,
                       ),
                       // const SizedBox(height: 15), // Space between icon and text
@@ -103,14 +108,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 80),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Text(
                     'Quantum safe\n from the ground up',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Color(0xFFE6E6E6),
-                      fontSize: 21,
+                      color: const Color(0xFFE6E6E6),
+                      fontSize: isTablet ? 28 : 21,
                       fontFamily: 'Fira Code',
                       fontWeight: FontWeight.w400,
                     ),
@@ -151,10 +156,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         ),
                       );
                     },
-                    child: const Text(
+                    child: Text(
                       'Create New Wallet',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: isTablet ? 24 : 18,
                         fontFamily: 'Fira Code',
                         fontWeight: FontWeight.w500,
                       ),
@@ -185,10 +190,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         ),
                       );
                     },
-                    child: const Text(
+                    child: Text(
                       'Import Existing Wallet',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: isTablet ? 24 : 18,
                         fontFamily: 'Fira Code',
                         fontWeight: FontWeight.w500,
                       ),
