@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class AuthenticationSettingsScreen extends StatefulWidget {
   const AuthenticationSettingsScreen({super.key});
@@ -136,6 +137,8 @@ class _AuthenticationSettingsScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0E0E0E),
       body: Container(
@@ -154,7 +157,10 @@ class _AuthenticationSettingsScreenState
               Padding(
                 padding: const EdgeInsets.fromLTRB(25.0, 12.0, 25.0, 0),
                 child: Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: isTablet ? 18 : 12,
+                  ),
                   decoration: ShapeDecoration(
                     color: const Color(0xFF313131),
                     shape: RoundedRectangleBorder(
@@ -171,11 +177,11 @@ class _AuthenticationSettingsScreenState
                           mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Authentication',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 16,
+                                fontSize: isTablet ? 24 : 16,
                                 fontFamily: 'Fira Code',
                                 fontWeight: FontWeight.w400,
                               ),
@@ -183,9 +189,9 @@ class _AuthenticationSettingsScreenState
                             const SizedBox(height: 4),
                             Text(
                               _isLoading ? 'Loading...' : _biometricDescription,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.white54,
-                                fontSize: 12,
+                                fontSize: isTablet ? 18 : 12,
                                 fontFamily: 'Fira Code',
                                 fontWeight: FontWeight.w400,
                               ),
@@ -194,10 +200,10 @@ class _AuthenticationSettingsScreenState
                         ),
                       ),
                       _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
+                          ? SizedBox(
+                              width: isTablet ? 28 : 20,
+                              height: isTablet ? 28 : 20,
+                              child: const CircularProgressIndicator(
                                 strokeWidth: 2,
                                 valueColor: AlwaysStoppedAnimation<Color>(
                                   Color(0xFF16CECE),
