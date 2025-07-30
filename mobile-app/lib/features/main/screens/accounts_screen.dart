@@ -3,10 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/account_settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
 import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 
 class AccountDetails {
   final Account account;
@@ -118,6 +120,8 @@ class _AccountsScreenState extends State<AccountsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0E0E0E),
       body: Stack(
@@ -134,13 +138,13 @@ class _AccountsScreenState extends State<AccountsScreen> {
           SafeArea(
             child: Column(
               children: [
-                _buildAppBar(),
+                const WalletAppBar(title: 'Your Accounts'),
 
-                Expanded(child: _buildAccountsList()),
+                Expanded(child: _buildAccountsList(isTablet)),
 
                 Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: _buildCreateNewAccountButton(),
+                  child: _buildCreateNewAccountButton(isTablet),
                 ),
               ],
             ),
@@ -150,40 +154,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
     );
   }
 
-  Widget _buildAppBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(
-                  Icons.arrow_back_ios,
-                  color: Colors.white,
-                  size: 20,
-                ),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-              const Text(
-                'Your Accounts',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 48), // to balance the back button
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAccountsList() {
+  Widget _buildAccountsList(bool isTablet) {
     if (_isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: Colors.white),
@@ -191,10 +162,10 @@ class _AccountsScreenState extends State<AccountsScreen> {
     }
 
     if (_accountDetails.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           'No accounts found.',
-          style: TextStyle(color: Colors.white70),
+          style: TextStyle(color: Colors.white70, fontSize: isTablet ? 18 : 14),
         ),
       );
     }
@@ -207,17 +178,20 @@ class _AccountsScreenState extends State<AccountsScreen> {
         final details = _accountDetails[index];
         final bool isActive =
             details.account.accountId == _activeAccount?.accountId;
-        return _buildAccountListItem(details, isActive, index);
+        return _buildAccountListItem(details, isActive, index, isTablet);
       },
     );
   }
 
-  Widget _buildCreateNewAccountButton() {
+  Widget _buildCreateNewAccountButton(bool isTablet) {
     return InkWell(
       onTap: _isCreatingAccount ? null : _createNewAccount,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.symmetric(
+          vertical: isTablet ? 18 : 16,
+          horizontal: 16,
+        ),
         decoration: ShapeDecoration(
           color: Colors.black.useOpacity(0.50),
           shape: RoundedRectangleBorder(
@@ -232,11 +206,11 @@ class _AccountsScreenState extends State<AccountsScreen> {
             if (_isCreatingAccount)
               const CircularProgressIndicator(color: Colors.white)
             else
-              const Text(
+              Text(
                 'Create New Account',
                 style: TextStyle(
-                  color: Color(0xFFE6E6E6),
-                  fontSize: 18,
+                  color: const Color(0xFFE6E6E6),
+                  fontSize: isTablet ? 24 : 18,
                   fontFamily: 'Fira Code',
                   fontWeight: FontWeight.w500,
                 ),
@@ -251,6 +225,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
     AccountDetails details,
     bool isActive,
     int index,
+    bool isTablet,
   ) {
     final account = details.account;
 
@@ -270,7 +245,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
           Expanded(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              height: 105,
+              height: isTablet ? 130 : 105,
               decoration: ShapeDecoration(
                 color: isActive ? Colors.white : Colors.black.useOpacity(0.65),
                 shape: RoundedRectangleBorder(
@@ -286,8 +261,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                   const SizedBox(width: 8),
                   SvgPicture.asset(
                     'assets/res_icon.svg',
-                    width: 32,
-                    height: 32,
+                    width: isTablet ? 44 : 32,
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -320,7 +294,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                               account.name,
                               style: TextStyle(
                                 color: isActive ? Colors.black : Colors.white,
-                                fontSize: 14,
+                                fontSize: isTablet ? 20 : 14,
                                 fontFamily: 'Fira Code',
                                 fontWeight: FontWeight.w400,
                               ),
@@ -331,7 +305,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                                 color: isActive
                                     ? const Color(0xFF06A8A8)
                                     : const Color(0xFF16CECE),
-                                fontSize: 12,
+                                fontSize: isTablet ? 18 : 12,
                                 fontFamily: 'Fira Code',
                                 fontWeight: FontWeight.w400,
                               ),
@@ -339,50 +313,29 @@ class _AccountsScreenState extends State<AccountsScreen> {
                             Row(
                               children: [
                                 Text(
-                                  AddressFormattingService.formatAddress(
-                                    account.accountId,
-                                  ),
+                                  isTablet
+                                      ? account.accountId
+                                      : AddressFormattingService.formatAddress(
+                                          account.accountId,
+                                        ),
                                   style: TextStyle(
                                     color: isActive
                                         ? const Color(0xFF313131)
                                         : Colors.white.useOpacity(0.99),
-                                    fontSize: 10,
+                                    fontSize: isTablet ? 16 : 10,
                                     fontFamily: 'Fira Code',
                                     fontWeight: FontWeight.w300,
                                   ),
                                 ),
                                 const SizedBox(width: 5),
                                 InkWell(
-                                  onTap: () {
-                                    Clipboard.setData(
-                                      ClipboardData(text: account.accountId),
-                                    );
-
-                                    showTopSnackBar(
-                                      context,
-                                      icon: Container(
-                                        width: 36,
-                                        height: 36,
-                                        decoration: const ShapeDecoration(
-                                          color: Color(0xFF494949),
-                                          shape: OvalBorder(),
-                                        ),
-                                        alignment: Alignment.center,
-                                        child: SvgPicture.asset(
-                                          'assets/copy_icon.svg',
-                                          width: 16,
-                                          height: 16,
-                                        ),
-                                      ),
-                                      title: 'Copied!',
-                                      message:
-                                          'Address '
-                                          'copied to clipboard',
-                                    );
-                                  },
+                                  onTap: () => ClipboardExtensions.copyAddress(
+                                    context,
+                                    account.accountId,
+                                  ),
                                   child: Icon(
                                     Icons.copy,
-                                    size: 14,
+                                    size: isTablet ? 20 : 14,
                                     color: isActive
                                         ? const Color(0xFF313131)
                                         : Colors.white.useOpacity(0.6),
@@ -400,7 +353,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                                       color: isActive
                                           ? const Color(0xFF313131)
                                           : const Color(0xFFE6E6E6),
-                                      fontSize: 12,
+                                      fontSize: isTablet ? 16 : 12,
                                       fontFamily: 'Fira Code',
                                       fontWeight: FontWeight.w400,
                                     ),
@@ -411,7 +364,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                                       color: isActive
                                           ? const Color(0xFF313131)
                                           : const Color(0xFFE6E6E6),
-                                      fontSize: 10,
+                                      fontSize: isTablet ? 14 : 10,
                                       fontFamily: 'Fira Code',
                                       fontWeight: FontWeight.w400,
                                     ),
@@ -434,8 +387,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
             constraints: const BoxConstraints(),
             icon: SvgPicture.asset(
               'assets/settings_icon_off.svg',
-              width: 21,
-              height: 21,
+              width: isTablet ? 28 : 21,
               colorFilter: const ColorFilter.mode(
                 Colors.white,
                 BlendMode.srcIn,
