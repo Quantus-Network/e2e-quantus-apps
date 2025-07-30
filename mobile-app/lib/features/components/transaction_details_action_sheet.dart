@@ -313,19 +313,21 @@ class _TransactionDetailsActionSheetState
         ? 'reversible-transactions'
         : 'immediate-transactions';
 
+    final hasExtrinsicHash = widget.transaction.extrinsicHash != null;
+
     return Column(
       children: [
         const SizedBox(height: 20),
         GestureDetector(
           onTap: () async {
-            if (widget.transaction.extrinsicHash != null) {
+            if (hasExtrinsicHash) {
               final Uri url = Uri.parse(
                 '${AppConstants.explorerEndpoint}/$transactionType/${widget.transaction.extrinsicHash}',
               );
               await launchUrl(url);
             }
           },
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -335,7 +337,9 @@ class _TransactionDetailsActionSheetState
                 'View in Explorer',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Color(0xFF16CECE) /* other-blue */,
+                  color: hasExtrinsicHash
+                      ? const Color(0xFF16CECE)
+                      : Colors.grey,
                   fontSize: 12,
                   fontFamily: 'Fira Code',
                   fontWeight: FontWeight.w500,
@@ -344,7 +348,7 @@ class _TransactionDetailsActionSheetState
               Icon(
                 Icons.open_in_new,
                 size: 12,
-                color: Color(0xFF16CECE) /* other-blue */,
+                color: hasExtrinsicHash ? const Color(0xFF16CECE) : Colors.grey,
               ),
             ],
           ),
