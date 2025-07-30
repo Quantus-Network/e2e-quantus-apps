@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/gradient_action_button.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class CreateAccountScreen extends StatefulWidget {
   final Account? accountToEdit;
@@ -136,6 +138,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0E0E0E),
       body: Stack(
@@ -154,7 +158,11 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : Column(
                     children: [
-                      _buildAppBar(),
+                      WalletAppBar(
+                        title: _isEditMode
+                            ? 'Edit Account'
+                            : 'Create New Account',
+                      ),
                       Expanded(
                         child: SingleChildScrollView(
                           padding: const EdgeInsets.symmetric(horizontal: 25),
@@ -162,14 +170,14 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const SizedBox(height: 40),
-                              _buildNameField(),
+                              _buildNameField(isTablet),
                               const SizedBox(height: 39),
-                              _buildCheckphraseSection(),
+                              _buildCheckphraseSection(isTablet),
                             ],
                           ),
                         ),
                       ),
-                      _buildCreateButton(),
+                      _buildCreateButton(isTablet),
                       const SizedBox(height: 40),
                     ],
                   ),
@@ -179,43 +187,15 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     );
   }
 
-  Widget _buildAppBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          IconButton(
-            icon: const Icon(
-              Icons.arrow_back_ios,
-              color: Colors.white,
-              size: 20,
-            ),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          Text(
-            _isEditMode ? 'Edit Account' : 'Create New Account',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNameField() {
+  Widget _buildNameField(bool isTablet) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Name your Account',
           style: TextStyle(
-            color: Color(0xFFE6E6E6),
-            fontSize: 18,
+            color: const Color(0xFFE6E6E6),
+            fontSize: isTablet ? 22 : 18,
             fontFamily: 'Fira Code',
             fontWeight: FontWeight.w500,
           ),
@@ -223,9 +203,9 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         const SizedBox(height: 10),
         TextField(
           controller: _nameController,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
-            fontSize: 20,
+            fontSize: isTablet ? 24 : 20,
             fontFamily: 'Fira Code',
           ),
           decoration: InputDecoration(
@@ -245,28 +225,28 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     );
   }
 
-  Widget _buildCheckphraseSection() {
+  Widget _buildCheckphraseSection(bool isTablet) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Your Account Checkphrase',
           style: TextStyle(
-            color: Color(0xFFE6E6E6),
-            fontSize: 18,
+            color: const Color(0xFFE6E6E6),
+            fontSize: isTablet ? 22 : 18,
             fontFamily: 'Fira Code',
             fontWeight: FontWeight.w500,
           ),
         ),
         const SizedBox(height: 3),
         SizedBox(
-          width: 325,
+          width: isTablet ? 600 : 325,
           child: Text(
             'A unique phrase which allows you to easily recognise and '
             'verify your wallet.',
             style: TextStyle(
               color: Colors.white.useOpacity(0.60),
-              fontSize: 14,
+              fontSize: isTablet ? 18 : 14,
               fontFamily: 'Fira Code',
               fontWeight: FontWeight.w400,
             ),
@@ -274,7 +254,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         ),
         const SizedBox(height: 16),
         SizedBox(
-          width: 311,
+          width: isTablet ? 600 : 311,
           height: 50, // Set a fixed height to avoid layout jump
           child: FutureBuilder<String>(
             future: _checksumFuture,
@@ -297,9 +277,9 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
               if (snapshot.hasData) {
                 return Text(
                   snapshot.data!,
-                  style: const TextStyle(
-                    color: Color(0xFF16CECE),
-                    fontSize: 16,
+                  style: TextStyle(
+                    color: const Color(0xFF16CECE),
+                    fontSize: isTablet ? 20 : 16,
                     fontFamily: 'Fira Code',
                     fontWeight: FontWeight.w400,
                   ),
@@ -313,7 +293,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     );
   }
 
-  Widget _buildCreateButton() {
+  Widget _buildCreateButton(bool isTablet) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: _isCreating
@@ -321,6 +301,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
           : GradientActionButton(
               onPressed: _saveAccount,
               label: _isEditMode ? 'Save' : 'Create Account',
+              fontSize: isTablet ? 24 : 18,
             ),
     );
   }
