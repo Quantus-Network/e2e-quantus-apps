@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
+import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class AccountSettingsScreen extends StatefulWidget {
   final Account account;
@@ -21,10 +23,6 @@ class AccountSettingsScreen extends StatefulWidget {
 }
 
 class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
-  void _showReceiveModal() {
-    showReceiveSheet(context);
-  }
-
   void _editAccountName() {
     Navigator.push<bool?>(
       context,
@@ -42,6 +40,8 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0E0E0E),
       body: Container(
@@ -55,13 +55,13 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              _buildAppBar(),
+              const WalletAppBar(title: 'Account Settings'),
               const SizedBox(height: 20),
-              _buildAccountHeader(),
+              _buildAccountHeader(isTablet),
               const SizedBox(height: 40),
-              _buildAddressSection(),
+              _buildAddressSection(isTablet),
               const SizedBox(height: 20),
-              _buildSecuritySection(),
+              _buildSecuritySection(isTablet),
             ],
           ),
         ),
@@ -69,35 +69,11 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     );
   }
 
-  Widget _buildAppBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          const Text(
-            'Account Settings',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontFamily: 'Fira Code',
-            ),
-          ),
-          const SizedBox(width: 48), // To balance the back button
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAccountHeader() {
+  Widget _buildAccountHeader(bool isTablet) {
     return Column(
       children: [
         // Placeholder for account icon
-        SvgPicture.asset('assets/res_icon.svg', width: 60, height: 60),
+        SvgPicture.asset('assets/res_icon.svg', width: isTablet ? 80 : 60),
         const SizedBox(height: 10),
         InkWell(
           onTap: _editAccountName,
@@ -106,9 +82,9 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
             children: [
               Text(
                 widget.account.name,
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: isTablet ? 24 : 16,
                   fontFamily: 'Fira Code',
                 ),
               ),
@@ -120,18 +96,18 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         const SizedBox(height: 5),
         Text(
           widget.checksumName,
-          style: const TextStyle(
-            color: Color(0xFF16CECE),
-            fontSize: 14,
+          style: TextStyle(
+            color: const Color(0xFF16CECE),
+            fontSize: isTablet ? 20 : 14,
             fontFamily: 'Fira Code',
           ),
         ),
         const SizedBox(height: 5),
         Text(
           widget.balance,
-          style: const TextStyle(
-            color: Color(0xFFE6E6E6),
-            fontSize: 14,
+          style: TextStyle(
+            color: const Color(0xFFE6E6E6),
+            fontSize: isTablet ? 18 : 14,
             fontFamily: 'Fira Code',
           ),
         ),
@@ -139,11 +115,14 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     );
   }
 
-  Widget _buildAddressSection() {
+  Widget _buildAddressSection(bool isTablet) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        padding: EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: isTablet ? 12 : 8,
+        ),
         decoration: BoxDecoration(
           color: const Color(0xFF313131),
           borderRadius: BorderRadius.circular(4),
@@ -151,25 +130,34 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Expanded(child: SizedBox()),
+            if (!isTablet) const Expanded(child: SizedBox()),
             SizedBox(
-              width: 170,
+              width: isTablet ? 550 : 180,
               child: Text(
-                AddressFormattingService.splitIntoChunks(
-                  widget.account.accountId,
-                ).join(' '),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
+                isTablet
+                    ? widget.account.accountId
+                    : AddressFormattingService.splitIntoChunks(
+                        widget.account.accountId,
+                      ).join(' '),
+                textAlign: isTablet ? TextAlign.start : TextAlign.center,
+                style: TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: isTablet ? 18 : 16,
                   fontFamily: 'Fira Code',
                 ),
               ),
             ),
-            const Expanded(child: SizedBox()),
+            if (!isTablet) const Expanded(child: SizedBox()),
             IconButton(
-              icon: const Icon(Icons.copy, color: Colors.white, size: 22),
-              onPressed: _showReceiveModal,
+              icon: Icon(
+                Icons.copy,
+                color: Colors.white,
+                size: isTablet ? 26 : 22,
+              ),
+              onPressed: () => ClipboardExtensions.copyAddress(
+                context,
+                widget.account.accountId,
+              ),
             ),
           ],
         ),
@@ -177,7 +165,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     );
   }
 
-  Widget _buildSecuritySection() {
+  Widget _buildSecuritySection(bool isTablet) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: Container(
@@ -191,24 +179,27 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           children: [
             Row(
               children: [
-                SvgPicture.asset('assets/lock_icon.svg'),
+                SvgPicture.asset(
+                  'assets/lock_icon.svg',
+                  width: isTablet ? 28 : 20,
+                ),
                 const SizedBox(width: 12),
-                const Column(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'High Security Features',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 16,
+                        fontSize: isTablet ? 22 : 16,
                         fontFamily: 'Fira Code',
                       ),
                     ),
                     Text(
                       'COMING SOON',
                       style: TextStyle(
-                        color: Color(0xFFFADC34),
-                        fontSize: 12,
+                        color: const Color(0xFFFADC34),
+                        fontSize: isTablet ? 18 : 12,
                         fontFamily: 'Fira Code',
                         fontWeight: FontWeight.w500,
                       ),
