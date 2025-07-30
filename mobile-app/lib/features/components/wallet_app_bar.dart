@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class WalletAppBar extends StatelessWidget {
   final String title;
@@ -7,32 +8,34 @@ class WalletAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          IconButton(
-            icon: const Icon(
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).pop();
+        },
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(
               Icons.arrow_back_ios,
               color: Colors.white,
-              size: 18,
+              size: isTablet ? 20 : 18,
             ),
-            onPressed: () => Navigator.of(context).pop(),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w400,
+            const SizedBox(width: 4),
+            Text(
+              title,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: isTablet ? 16 : 12,
+                fontFamily: 'Fira Code',
+                fontWeight: FontWeight.w400,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
