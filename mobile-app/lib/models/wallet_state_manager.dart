@@ -58,6 +58,8 @@ class WalletStateManager with ChangeNotifier {
     if (!quiet) {
       _isTxHistoryLoading = true;
       _txHistoryError = null;
+
+      notifyListeners();
     }
 
     try {
@@ -84,6 +86,8 @@ class WalletStateManager with ChangeNotifier {
     if (!quiet) {
       _isWalletLoading = true;
       _walletError = null;
+
+      notifyListeners();
     }
 
     try {

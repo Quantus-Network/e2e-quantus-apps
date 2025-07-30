@@ -134,11 +134,10 @@ class _AccountsScreenState extends State<AccountsScreen> {
           SafeArea(
             child: Column(
               children: [
-                // Row 1: App Bar (takes needed space)
                 _buildAppBar(),
-                // Row 2: Accounts List (takes remaining space, scrollable)
+
                 Expanded(child: _buildAccountsList()),
-                // Row 3: Create Button (takes needed space)
+
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: _buildCreateNewAccountButton(),
@@ -256,13 +255,13 @@ class _AccountsScreenState extends State<AccountsScreen> {
     final account = details.account;
 
     return InkWell(
-      onTap: () async {
+      onTap: () {
         if (!isActive) {
           final walletStateManager = Provider.of<WalletStateManager>(
             context,
             listen: false,
           );
-          await walletStateManager.switchAccount(account);
+          walletStateManager.switchAccount(account);
           if (mounted) Navigator.pop(context);
         }
       },
