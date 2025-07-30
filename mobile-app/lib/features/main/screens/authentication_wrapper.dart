@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_initializer.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class AuthenticationWrapper extends StatefulWidget {
   const AuthenticationWrapper({super.key});
@@ -92,10 +93,14 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper>
 
   @override
   Widget build(BuildContext context) {
-    return _isAuthenticated ? const WalletInitializer() : _buildLockScreen();
+    final isTablet = MediaQuery.of(context).isTablet;
+
+    return _isAuthenticated
+        ? const WalletInitializer()
+        : _buildLockScreen(isTablet);
   }
 
-  Widget _buildLockScreen() {
+  Widget _buildLockScreen(bool isTablet) {
     return Scaffold(
       backgroundColor: const Color(0xFF0E0E0E),
       body: Container(
@@ -110,11 +115,11 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
+              Text(
                 'Authentication Required',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 24,
+                  fontSize: isTablet ? 28 : 24,
                   fontFamily: 'Fira Code',
                 ),
               ),
@@ -133,12 +138,12 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper>
                       vertical: 15,
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Authenticate',
                     style: TextStyle(
                       color: Colors.white,
                       fontFamily: 'Fira Code',
-                      fontSize: 16,
+                      fontSize: isTablet ? 20 : 16,
                     ),
                   ),
                 ),
