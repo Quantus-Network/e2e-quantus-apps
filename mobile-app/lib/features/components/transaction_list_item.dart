@@ -7,6 +7,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/transaction_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/transaction_details_action_sheet.dart';
 import 'package:resonance_network_wallet/models/pending_transfer_event.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 
 class TransactionListItem extends StatefulWidget {
@@ -153,6 +154,7 @@ class TransactionListItemState extends State<TransactionListItem> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).isTablet;
     final isSent = widget.transaction.from == widget.currentWalletAddress;
     final isFailed = widget.transaction.isFailed;
 
@@ -171,15 +173,21 @@ class TransactionListItemState extends State<TransactionListItem> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 if (widget.transaction.isReversibleCancelled)
-                  SvgPicture.asset('assets/stop_icon.svg', width: 21)
+                  SvgPicture.asset(
+                    'assets/stop_icon.svg',
+                    width: isTablet ? 32 : 21,
+                  )
                 else if (isFailed)
-                  SvgPicture.asset('assets/send_failed_icon.svg', width: 21)
+                  SvgPicture.asset(
+                    'assets/send_failed_icon.svg',
+                    width: isTablet ? 32 : 21,
+                  )
                 else
                   Image.asset(
                     isSent
                         ? 'assets/send_icon.png'
                         : 'assets/receive_icon_sm.png',
-                    width: 21,
+                    width: isTablet ? 32 : 21,
                   ),
                 const SizedBox(width: 11),
                 Expanded(
@@ -194,7 +202,7 @@ class TransactionListItemState extends State<TransactionListItem> {
                               text: title,
                               style: textStyle.copyWith(
                                 color: titleColor,
-                                fontSize: 14,
+                                fontSize: isTablet ? 18 : 14,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
@@ -203,7 +211,7 @@ class TransactionListItemState extends State<TransactionListItem> {
                                   // ignore: lines_longer_than_80_chars
                                   ' ${_formatAmount(widget.transaction.amount)}',
                               style: textStyle.copyWith(
-                                fontSize: 14,
+                                fontSize: isTablet ? 18 : 14,
                                 fontWeight: FontWeight.w400,
                                 color: widget.transaction.isReversibleCancelled
                                     ? const Color(0xFFD9D9D9)
@@ -217,7 +225,7 @@ class TransactionListItemState extends State<TransactionListItem> {
                       Text(
                         _getSubtitle(widget.transaction),
                         style: textStyle.copyWith(
-                          fontSize: 11,
+                          fontSize: isTablet ? 16 : 11,
                           fontWeight: FontWeight.w300,
                         ),
                       ),
@@ -272,6 +280,8 @@ class _TimerDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
       decoration: ShapeDecoration(
@@ -289,16 +299,16 @@ class _TimerDisplay extends StatelessWidget {
           Text(
             duration,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
-              fontSize: 12,
+              fontSize: isTablet ? 18 : 12,
               fontFamily: 'Fira Code',
               fontWeight: FontWeight.w400,
             ),
           ),
           if (isSending) const SizedBox(width: 10),
           if (isSending)
-            SvgPicture.asset('assets/stop_icon.svg', width: 13, height: 13),
+            SvgPicture.asset('assets/stop_icon.svg', width: isTablet ? 16 : 13),
         ],
       ),
     );
@@ -311,11 +321,13 @@ class _StatusDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return Text(
       status,
-      style: const TextStyle(
+      style: TextStyle(
         color: Colors.white,
-        fontSize: 12,
+        fontSize: isTablet ? 16 : 12,
         fontFamily: 'Fira Code',
       ),
     );
@@ -328,11 +340,13 @@ class _PendingStatusDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return Row(
       children: [
         Container(
-          width: 8,
-          height: 8,
+          width: isTablet ? 12 : 8,
+          height: isTablet ? 12 : 8,
           decoration: const ShapeDecoration(
             color: Colors.yellow,
             shape: OvalBorder(),
@@ -341,9 +355,9 @@ class _PendingStatusDisplay extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           transaction.transactionState.name,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
-            fontSize: 12,
+            fontSize: isTablet ? 18 : 12,
             fontFamily: 'Fira Code',
           ),
         ),
