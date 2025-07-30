@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/features/main/screens/accounts_screen.d
 import 'package:resonance_network_wallet/features/main/screens/authentication_settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/show_recovery_phrase_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -92,14 +93,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, bool isTablet) {
     return Padding(
       padding: const EdgeInsets.only(left: 4.0, bottom: 22.0),
       child: Text(
         title,
-        style: const TextStyle(
-          color: Color(0xFFE6E6E6),
-          fontSize: 16,
+        style: TextStyle(
+          color: const Color(0xFFE6E6E6),
+          fontSize: isTablet ? 24 : 16,
           fontFamily: 'Fira Code',
           fontWeight: FontWeight.w400,
         ),
@@ -108,10 +109,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildSettingsList(BuildContext context) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Wallet Settings'),
+        _buildSectionTitle('Wallet Settings', isTablet),
         _buildSettingsItem(context, 'Manage Accounts', () {
           Navigator.push(
             context,
@@ -143,10 +146,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildInformationList(BuildContext context) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Information'),
+        _buildSectionTitle('Information', isTablet),
         _buildSettingsItem(context, 'Help & Support', () {
           final Uri url = Uri.parse(AppConstants.helpAndSupportUrl);
           launchUrl(url);
@@ -156,7 +161,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           context,
           'Invite & Share',
           () {},
-          trailing: const Icon(Icons.share, color: Colors.white, size: 16),
+          trailing: Icon(
+            Icons.share,
+            color: Colors.white,
+            size: isTablet ? 24 : 16,
+          ),
         ),
         const SizedBox(height: 22),
         _buildSettingsItem(context, 'Term of Service', () {
@@ -174,15 +183,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Widget? trailing,
     bool showArrow = true,
   }) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.only(
-          top: 12,
-          left: 18,
-          right: 18,
-          bottom: 12,
+        padding: EdgeInsets.symmetric(
+          vertical: isTablet ? 16 : 12,
+          horizontal: 18,
         ),
         decoration: ShapeDecoration(
           color: const Color(0xFF313131),
@@ -194,18 +203,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 14,
+                fontSize: isTablet ? 18 : 14,
                 fontFamily: 'Fira Code',
                 fontWeight: FontWeight.w400,
               ),
             ),
             trailing ??
                 (showArrow
-                    ? const Icon(
+                    ? Icon(
                         Icons.arrow_forward_ios,
-                        size: 11,
+                        size: isTablet ? 16 : 11,
                         color: Colors.white70,
                       )
                     : const SizedBox()),
@@ -216,15 +225,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildResetButton(BuildContext context) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return GestureDetector(
       onTap: _showResetConfirmationSheet,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.only(
-          top: 12,
-          left: 18,
-          right: 18,
-          bottom: 12,
+        padding: EdgeInsets.symmetric(
+          vertical: isTablet ? 16 : 12,
+          horizontal: 18,
         ),
         decoration: ShapeDecoration(
           color: Colors.black,
@@ -233,20 +242,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
             borderRadius: BorderRadius.circular(4),
           ),
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
               'Reset & Clear Data',
               style: TextStyle(
-                color: Color(0xFFFF2D53),
-                fontSize: 14,
+                color: const Color(0xFFFF2D53),
+                fontSize: isTablet ? 18 : 14,
                 fontFamily: 'Fira Code',
                 fontWeight: FontWeight.w400,
               ),
             ),
-            Icon(Icons.arrow_forward_ios, size: 11, color: Color(0xFFFF2D53)),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: isTablet ? 16 : 11,
+              color: const Color(0xFFFF2D53),
+            ),
           ],
         ),
       ),
