@@ -140,9 +140,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     style: ElevatedButton.styleFrom(
                       foregroundColor: const Color(0xFF0E0E0E),
                       backgroundColor: const Color(0xFFE6E6E6), // Use const
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 16,
-                      ), // Use const
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(5.0),
                       ),
