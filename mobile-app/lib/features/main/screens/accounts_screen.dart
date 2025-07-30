@@ -329,7 +329,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                                 ),
                                 const SizedBox(width: 5),
                                 InkWell(
-                                  onTap: () => ClipboardExtensions.copyAddress(
+                                  onTap: () => ClipboardExtensions.copyText(
                                     context,
                                     account.accountId,
                                   ),
