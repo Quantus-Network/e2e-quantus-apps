@@ -1,7 +1,9 @@
 import 'package:flash/flash.dart';
 import 'package:flash/flash_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:resonance_network_wallet/features/components/top_snackbar_content.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 // Helper function to show a custom top snackbar
 Future<void> showTopSnackBar(
@@ -38,6 +40,31 @@ Future<void> showTopSnackBar(
         ),
       );
     },
+  );
+}
+
+Future<void> showCopyAddressSnackbar(BuildContext context) async {
+  final isTablet = MediaQuery.of(context).isTablet;
+
+  await showTopSnackBar(
+    context,
+    icon: Container(
+      width: isTablet ? 44 : 36,
+      height: isTablet ? 44 : 36,
+      decoration: const ShapeDecoration(
+        color: Color(0xFF494949),
+        shape: OvalBorder(),
+      ),
+      alignment: Alignment.center,
+      child: SvgPicture.asset(
+        'assets/copy_icon.svg',
+        width: isTablet ? 24 : 16,
+      ),
+    ),
+    title: 'Copied!',
+    message:
+        'Address '
+        'copied to clipboard',
   );
 }
 
