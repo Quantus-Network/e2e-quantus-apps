@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class ResetConfirmationBottomSheet extends StatefulWidget {
   final VoidCallback onReset;
@@ -17,6 +18,8 @@ class _ResetConfirmationBottomSheetState
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: Container(
@@ -37,58 +40,52 @@ class _ResetConfirmationBottomSheetState
               ),
             ),
             const SizedBox(height: 10),
-            const Text(
+            Text(
               'Confirm Reset',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 28,
+                fontSize: isTablet ? 32 : 28,
                 fontFamily: 'Fira Code',
                 fontWeight: FontWeight.w300,
               ),
             ),
             const SizedBox(height: 13),
-            const SizedBox(
-              width: 309,
+            SizedBox(
+              width: isTablet ? null : 309,
               child: Text(
                 'Are you sure you want to proceed? This will delete all local '
                 'wallet data. Make sure you have backed up your recovery '
                 'phrase.',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 14,
+                  fontSize: isTablet ? 18 : 14,
                   fontFamily: 'Fira Code',
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ),
             const SizedBox(height: 28),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Checkbox(
-                  value: _isCheckboxChecked,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      _isCheckboxChecked = value ?? false;
-                    });
-                  },
-                  activeColor: const Color(0xFF8AF9A8),
-                  checkColor: Colors.black,
-                  side: const BorderSide(color: Colors.white),
+            CheckboxListTile(
+              contentPadding: const EdgeInsets.all(0),
+              controlAffinity: ListTileControlAffinity.leading,
+              value: _isCheckboxChecked,
+              onChanged: (bool? value) {
+                setState(() {
+                  _isCheckboxChecked = value ?? false;
+                });
+              },
+              activeColor: const Color(0xFF8AF9A8),
+              checkColor: Colors.black,
+              side: const BorderSide(color: Colors.white),
+              title: Text(
+                'I have backed up my recovery phrase',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: isTablet ? 18 : 13,
+                  fontFamily: 'Fira Code',
+                  fontWeight: FontWeight.w400,
                 ),
-                const SizedBox(width: 8),
-                const Expanded(
-                  child: Text(
-                    'I have backed up my recovery phrase',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontFamily: 'Fira Code',
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
             const SizedBox(height: 28),
             ElevatedButton(
@@ -103,11 +100,11 @@ class _ResetConfirmationBottomSheetState
                   0xFFFF2D53,
                 ).useOpacity(0.5),
               ),
-              child: const Text(
+              child: Text(
                 'Reset & Clear Data',
                 style: TextStyle(
-                  color: Color(0xFF0E0E0E),
-                  fontSize: 18,
+                  color: const Color(0xFF0E0E0E),
+                  fontSize: isTablet ? 24 : 18,
                   fontFamily: 'Fira Code',
                   fontWeight: FontWeight.w500,
                 ),
@@ -117,11 +114,11 @@ class _ResetConfirmationBottomSheetState
             Center(
               child: TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text(
+                child: Text(
                   'Cancel',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 14,
+                    fontSize: isTablet ? 18 : 14,
                     fontFamily: 'Fira Code',
                     fontWeight: FontWeight.w500,
                     decoration: TextDecoration.underline,
