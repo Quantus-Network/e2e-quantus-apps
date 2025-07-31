@@ -127,6 +127,7 @@ class TransactionListItemState extends State<TransactionListItem> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
       barrierColor: Colors.transparent,
       backgroundColor: Colors.transparent,
       builder: (context) => Stack(

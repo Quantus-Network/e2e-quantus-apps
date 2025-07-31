@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hex/hex.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/reversible_timer.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class TransactionActionSheet extends StatefulWidget {
   final ReversibleTransferEvent transaction;
@@ -77,6 +78,8 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return SafeArea(
       child: Stack(
         alignment: Alignment.center,
@@ -117,7 +120,11 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
+                      icon: Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: isTablet ? 28 : 24,
+                      ),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
@@ -146,13 +153,15 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
   // basic view with different buttons at the bottom - for initial and confirm
   // cancel views
   Widget _buildBaseBlockView(Widget buttons, double verticalPadding) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildHeader(
           'assets/hourglass.svg',
-          'Reversible\nTransaction',
+          isTablet ? 'Reversible Transaction' : 'Reversible\nTransaction',
           'Cancel or keep your send',
           true,
         ),
@@ -186,13 +195,15 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
   }
 
   Widget _buildCancelledView() {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildHeader(
           'assets/stop_icon.svg',
-          'Transaction\nCancelled',
+          isTablet ? 'Transaction Cancelled' : 'Transaction\nCancelled',
           '',
           false,
         ),
@@ -237,10 +248,16 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
     String subtitle,
     bool titleIsGreen,
   ) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SvgPicture.asset(iconName, width: 34, height: 34),
+        SvgPicture.asset(
+          iconName,
+          width: isTablet ? 54 : 34,
+          height: isTablet ? 54 : 34,
+        ),
         const SizedBox(width: 16),
         Expanded(
           child: Column(
@@ -250,7 +267,7 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
                 title,
                 style: TextStyle(
                   color: Color(titleIsGreen ? 0xFF16CECE : 0xFFD9D9D9),
-                  fontSize: 18,
+                  fontSize: isTablet ? 26 : 18,
                   fontFamily: 'Fira Code',
                   fontWeight: FontWeight.w500,
                 ),
@@ -258,9 +275,9 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
               if (subtitle.isNotEmpty)
                 Text(
                   subtitle,
-                  style: const TextStyle(
-                    color: Color(0xFFD9D9D9),
-                    fontSize: 12,
+                  style: TextStyle(
+                    color: const Color(0xFFD9D9D9),
+                    fontSize: isTablet ? 20 : 12,
                     fontFamily: 'Fira Code',
                     fontWeight: FontWeight.w400,
                   ),
@@ -285,14 +302,16 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
   }
 
   Widget _buildDetailRow(String title, String value) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           title,
-          style: const TextStyle(
-            color: Color(0xFFD9D9D9),
-            fontSize: 16,
+          style: TextStyle(
+            color: const Color(0xFFD9D9D9),
+            fontSize: isTablet ? 24 : 16,
             fontFamily: 'Fira Code',
             fontWeight: FontWeight.w600,
           ),
@@ -301,7 +320,7 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
           value,
           style: TextStyle(
             color: const Color(0xFFD9D9D9),
-            fontSize: title == 'Recipient' ? 10 : 16,
+            fontSize: isTablet ? 24 : 16,
             fontFamily: 'Fira Code',
             fontWeight: FontWeight.w400,
           ),
@@ -311,6 +330,7 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
   }
 
   Widget _buildRecipientRow(String address) {
+    final isTablet = MediaQuery.of(context).isTablet;
     final formattedAddress = AddressFormattingService.formatAddress(address);
 
     return Column(
@@ -319,13 +339,13 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: 5,
       children: [
-        const SizedBox(
+        SizedBox(
           width: 269,
           child: Text(
             'Recipient',
             style: TextStyle(
-              color: Color(0xFFD9D9D9),
-              fontSize: 16,
+              color: const Color(0xFFD9D9D9),
+              fontSize: isTablet ? 24 : 16,
               fontFamily: 'Fira Code',
               fontWeight: FontWeight.w600,
             ),
@@ -339,9 +359,9 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
 
             return Text(
               checkPhrase,
-              style: const TextStyle(
-                color: Color(0xFF16CECE),
-                fontSize: 14,
+              style: TextStyle(
+                color: const Color(0xFF16CECE),
+                fontSize: isTablet ? 22 : 14,
                 fontFamily: 'Fira Code',
                 fontWeight: FontWeight.w400,
               ),
@@ -349,10 +369,10 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
           },
         ),
         Text(
-          formattedAddress,
-          style: const TextStyle(
-            color: Color(0xFFD9D9D9),
-            fontSize: 12,
+          isTablet ? address : formattedAddress,
+          style: TextStyle(
+            color: const Color(0xFFD9D9D9),
+            fontSize: isTablet ? 20 : 12,
             fontFamily: 'Fira Code',
             fontWeight: FontWeight.w400,
           ),
@@ -394,11 +414,16 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
     Color textColor,
     VoidCallback onPressed,
   ) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return GestureDetector(
       onTap: onPressed,
       child: Container(
-        width: 260,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        width: isTablet ? 520 : 260,
+        padding: EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: isTablet ? 16 : 12,
+        ),
         decoration: ShapeDecoration(
           color: bgColor,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
@@ -408,7 +433,7 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
           textAlign: TextAlign.center,
           style: TextStyle(
             color: textColor,
-            fontSize: 14,
+            fontSize: isTablet ? 22 : 14,
             fontFamily: 'Fira Code',
             fontWeight: FontWeight.w500,
           ),
@@ -418,14 +443,16 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
   }
 
   Widget _buildConfirmCancelButtons() {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     Widget buttons = Column(
       children: [
-        const Text(
+        Text(
           'Are you sure you want to cancel this tx?',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: Color(0xFFD9D9D9),
-            fontSize: 16,
+            color: const Color(0xFFD9D9D9),
+            fontSize: isTablet ? 24 : 16,
             fontFamily: 'Fira Code',
             fontWeight: FontWeight.w600,
           ),
@@ -444,8 +471,11 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
           GestureDetector(
             onTap: () => setState(() => _sheetState = _SheetState.initial),
             child: Container(
-              width: 260,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              width: isTablet ? 520 : 260,
+              padding: EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: isTablet ? 16 : 12,
+              ),
               decoration: ShapeDecoration(
                 shape: RoundedRectangleBorder(
                   side: BorderSide(
@@ -455,12 +485,12 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
-              child: const Text(
-                'Keep transaction',
+              child: Text(
+                'Keep Transaction',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Color(0xFFD9D9D9),
-                  fontSize: 14,
+                  color: const Color(0xFFD9D9D9),
+                  fontSize: isTablet ? 22 : 14,
                   fontFamily: 'Fira Code',
                   fontWeight: FontWeight.w500,
                 ),
