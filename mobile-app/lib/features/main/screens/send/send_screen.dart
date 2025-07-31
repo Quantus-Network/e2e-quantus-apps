@@ -257,6 +257,7 @@ class SendScreenState extends State<SendScreen> {
       barrierColor: Colors.transparent,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
+      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
       builder: (context) => Stack(
         children: [
           Positioned.fill(

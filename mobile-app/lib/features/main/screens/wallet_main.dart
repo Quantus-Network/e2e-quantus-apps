@@ -286,11 +286,11 @@ class _WalletMainState extends State<WalletMain> {
                         size: 50,
                       ),
                       const SizedBox(height: 20),
-                      const Text(
+                      Text(
                         'Failed to Connect',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 18,
+                          fontSize: isTablet ? 24 : 18,
                           fontWeight: FontWeight.bold,
                         ),
                         textAlign: TextAlign.center,
@@ -301,7 +301,7 @@ class _WalletMainState extends State<WalletMain> {
                         'connection and try again.',
                         style: TextStyle(
                           color: Colors.white.useOpacity(0.7),
-                          fontSize: 14,
+                          fontSize: isTablet ? 20 : 14,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -318,6 +318,7 @@ class _WalletMainState extends State<WalletMain> {
                   _buildFullWidthActionButton(
                     label: 'Retry',
                     onTap: () => walletStateManager.load(),
+                    isTablet: isTablet,
                     gradient: const LinearGradient(
                       begin: Alignment(0.50, 0.00),
                       end: Alignment(0.50, 1.00),
@@ -328,6 +329,7 @@ class _WalletMainState extends State<WalletMain> {
                   _buildFullWidthActionButton(
                     label: 'Logout',
                     onTap: _logout,
+                    isTablet: isTablet,
                     backgroundColor: Colors.white.useOpacity(0.2),
                     textColor: Colors.white.useOpacity(0.8),
                   ),
@@ -548,6 +550,7 @@ class _WalletMainState extends State<WalletMain> {
   Widget _buildFullWidthActionButton({
     required String label,
     required VoidCallback onTap,
+    required bool isTablet,
     Gradient? gradient,
     Color? backgroundColor,
     Color? textColor,
@@ -567,7 +570,7 @@ class _WalletMainState extends State<WalletMain> {
             label,
             style: TextStyle(
               color: textColor ?? const Color(0xFF0E0E0E),
-              fontSize: 18,
+              fontSize: isTablet ? 24 : 18,
               fontFamily: 'Fira Code',
               fontWeight: FontWeight.w500,
             ),
