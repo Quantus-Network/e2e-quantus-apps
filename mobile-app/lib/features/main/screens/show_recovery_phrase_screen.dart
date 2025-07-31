@@ -152,8 +152,11 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: InkWell(
-        onTap: () =>
-            ClipboardExtensions.copyText(context, _recoveryPhrase.join(' ')),
+        onTap: () => ClipboardExtensions.copyText(
+          context,
+          _recoveryPhrase.join(' '),
+          message: 'Checkphrase copied to clipboard',
+        ),
         child: Opacity(
           opacity: 0.80,
           child: Row(
