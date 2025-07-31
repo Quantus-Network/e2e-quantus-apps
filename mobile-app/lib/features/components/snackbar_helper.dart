@@ -43,7 +43,11 @@ Future<void> showTopSnackBar(
   );
 }
 
-Future<void> showCopyAddressSnackbar(BuildContext context) async {
+Future<void> showCopySnackbar(
+  BuildContext context, {
+  required String title,
+  required String message,
+}) async {
   final isTablet = MediaQuery.of(context).isTablet;
 
   await showTopSnackBar(
@@ -61,10 +65,8 @@ Future<void> showCopyAddressSnackbar(BuildContext context) async {
         width: isTablet ? 24 : 16,
       ),
     ),
-    title: 'Copied!',
-    message:
-        'Address '
-        'copied to clipboard',
+    title: title,
+    message: message,
   );
 }
 
