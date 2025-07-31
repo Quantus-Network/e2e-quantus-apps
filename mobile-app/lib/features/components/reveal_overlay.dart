@@ -26,8 +26,8 @@ class RevealOverlay extends StatelessWidget {
           SizedBox(
             width: isTablet ? 400 : null,
             child: Text(
-              'This Recovery Phrase provides access to this wallet, only reveal '
-              'if you are in a secure location',
+              'This Recovery Phrase provides access to this wallet, '
+              'only reveal if you are in a secure location',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.white60,
