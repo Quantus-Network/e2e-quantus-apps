@@ -10,6 +10,7 @@ Future<T?> showAppModalBottomSheet<T>({
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
+    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
     useSafeArea: true,
     builder: (context) => BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/recent_address_list_item.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class RecentAddressList extends StatefulWidget {
   final Function(String) onAddressSelected;
@@ -22,15 +23,27 @@ class _RecentAddressListState extends State<RecentAddressList> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return FutureBuilder<List<String>>(
       future: _addressesFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
+          return Center(
+            child: Text(
+              'Error: ${snapshot.error}',
+              style: TextStyle(fontSize: isTablet ? 18 : null),
+            ),
+          );
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text('No recent addresses.'));
+          return Center(
+            child: Text(
+              'No recent addresses.',
+              style: TextStyle(fontSize: isTablet ? 18 : null),
+            ),
+          );
         }
 
         final addresses = snapshot.data!;

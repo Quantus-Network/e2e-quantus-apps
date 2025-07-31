@@ -9,8 +9,10 @@ import 'package:resonance_network_wallet/features/components/app_modal_bottom_sh
 import 'package:resonance_network_wallet/features/components/base_with_background.dart';
 import 'package:resonance_network_wallet/features/components/recent_address_list.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner/qr_scanner_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/send_progress/send_progress_overlay.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class SendScreen extends StatefulWidget {
   const SendScreen({super.key});
@@ -615,6 +617,8 @@ class SendScreenState extends State<SendScreen> {
 
   // NEW: Method to show the recent addresses modal bottom sheet
   void _showRecentAddresses() {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     showAppModalBottomSheet(
       context: context,
       builder: (context) => Container(
@@ -650,13 +654,13 @@ class SendScreenState extends State<SendScreen> {
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(
+                  SizedBox(
                     width: 226,
                     child: Text(
                       'Recently Used',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 16,
+                        fontSize: isTablet ? 24 : 16,
                         fontFamily: 'Fira Code',
                         fontWeight: FontWeight.w400,
                       ),
@@ -683,6 +687,8 @@ class SendScreenState extends State<SendScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return BaseWithBackground(
       child: FutureBuilder<BigInt>(
         future: _balanceFuture,
@@ -699,7 +705,10 @@ class SendScreenState extends State<SendScreen> {
                 padding: const EdgeInsets.all(20.0),
                 child: Text(
                   'Error loading balance: ${snapshot.error}',
-                  style: const TextStyle(color: Colors.redAccent, fontSize: 16),
+                  style: TextStyle(
+                    color: Colors.redAccent,
+                    fontSize: isTablet ? 20 : 16,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -711,34 +720,7 @@ class SendScreenState extends State<SendScreen> {
 
             return Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  child: GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: const Row(
-                      children: [
-                        Icon(
-                          Icons.arrow_back_ios,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                        SizedBox(width: 4),
-                        Text(
-                          'Send',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                const WalletAppBar(title: 'Send'),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
@@ -774,18 +756,18 @@ class SendScreenState extends State<SendScreen> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'To:',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 14,
+                              fontSize: isTablet ? 20 : 14,
                               fontFamily: 'Fira Code',
                               fontWeight: FontWeight.w400,
                             ),
                           ),
                           Container(
                             width: 1,
-                            height: 17,
+                            height: isTablet ? 31 : 17,
                             color: Colors.white,
                             margin: const EdgeInsets.symmetric(horizontal: 2),
                           ),
@@ -795,9 +777,9 @@ class SendScreenState extends State<SendScreen> {
                               children: [
                                 TextField(
                                   controller: _recipientController,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: 14,
+                                    fontSize: isTablet ? 20 : 14,
                                     fontFamily: 'Fira Code',
                                     fontWeight: FontWeight.w400,
                                   ),
@@ -824,7 +806,7 @@ class SendScreenState extends State<SendScreen> {
                                         'address',
                                     hintStyle: TextStyle(
                                       color: Colors.white.useOpacity(0.3),
-                                      fontSize: 14,
+                                      fontSize: isTablet ? 20 : 14,
                                       fontFamily: 'Fira Code',
                                       fontWeight: FontWeight.w300,
                                       letterSpacing: 0.5,
@@ -856,9 +838,9 @@ class SendScreenState extends State<SendScreen> {
                                     padding: const EdgeInsets.only(top: 4.0),
                                     child: Text(
                                       _savedAddressesLabel,
-                                      style: const TextStyle(
-                                        color: Color(0xFF16CECE),
-                                        fontSize: 12,
+                                      style: TextStyle(
+                                        color: const Color(0xFF16CECE),
+                                        fontSize: isTablet ? 16 : 12,
                                         fontFamily: 'Fira Code',
                                         fontWeight: FontWeight.w400,
                                       ),
@@ -884,9 +866,9 @@ class SendScreenState extends State<SendScreen> {
                             child: TextField(
                               controller: _amountController,
                               textAlign: TextAlign.end,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 40,
+                                fontSize: isTablet ? 64 : 40,
                                 fontFamily: 'Fira Code',
                                 fontWeight: FontWeight.w600,
                               ),
@@ -913,7 +895,7 @@ class SendScreenState extends State<SendScreen> {
                                 hintText: '0',
                                 hintStyle: TextStyle(
                                   color: Colors.white.useOpacity(0.5),
-                                  fontSize: 40,
+                                  fontSize: isTablet ? 64 : 40,
                                   fontFamily: 'Fira Code',
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -931,11 +913,11 @@ class SendScreenState extends State<SendScreen> {
                             ),
                           ),
                         ),
-                        const Text(
+                        Text(
                           ' ${AppConstants.tokenSymbol}',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 19,
+                            fontSize: isTablet ? 23 : 19,
                             fontFamily: 'Fira Code',
                             fontWeight: FontWeight.w600,
                           ),
@@ -953,9 +935,9 @@ class SendScreenState extends State<SendScreen> {
                         'Available: '
                         // ignore: lines_longer_than_80_chars
                         '${_formattingService.formatBalance(_maxBalance)}',
-                        style: const TextStyle(
-                          color: Color(0xFF16CECE),
-                          fontSize: 14,
+                        style: TextStyle(
+                          color: const Color(0xFF16CECE),
+                          fontSize: isTablet ? 20 : 14,
                           fontFamily: 'Fira Code',
                           fontWeight: FontWeight.w500,
                         ),
@@ -973,11 +955,11 @@ class SendScreenState extends State<SendScreen> {
                         ),
                         child: GestureDetector(
                           onTap: _setMaxAmount,
-                          child: const Text(
+                          child: Text(
                             'Max',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 12,
+                              fontSize: isTablet ? 18 : 12,
                               fontFamily: 'Fira Code',
                               fontWeight: FontWeight.w500,
                             ),
@@ -1010,17 +992,17 @@ class SendScreenState extends State<SendScreen> {
                         children: [
                           Text(
                             'Reversible for: ${_formatReversibleTime()}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
-                              fontSize: 14,
+                              fontSize: isTablet ? 20 : 14,
                               fontFamily: 'Fira Code',
                               fontWeight: FontWeight.w400,
                             ),
                           ),
-                          const Icon(
+                          Icon(
                             Icons.edit,
                             color: Colors.white70,
-                            size: 14,
+                            size: isTablet ? 22 : 14,
                           ),
                         ],
                       ),
@@ -1040,7 +1022,7 @@ class SendScreenState extends State<SendScreen> {
                             'Network fee',
                             style: TextStyle(
                               color: Colors.white.useOpacity(0.6),
-                              fontSize: 12,
+                              fontSize: isTablet ? 20 : 12,
                               fontFamily: 'Fira Code',
                               fontWeight: FontWeight.w500,
                             ),
@@ -1050,9 +1032,9 @@ class SendScreenState extends State<SendScreen> {
                               Text(
                                 // ignore: lines_longer_than_80_chars
                                 '${_formattingService.formatBalance(_networkFee)} ${AppConstants.tokenSymbol}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 12,
+                                  fontSize: isTablet ? 20 : 12,
                                   fontFamily: 'Fira Code',
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -1118,9 +1100,9 @@ class SendScreenState extends State<SendScreen> {
                               // ignore: lines_longer_than_80_chars
                               : 'Send ${_formattingService.formatBalance(_amount)} ${AppConstants.tokenSymbol}',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Color(0xFF0E0E0E),
-                            fontSize: 18,
+                          style: TextStyle(
+                            color: const Color(0xFF0E0E0E),
+                            fontSize: isTablet ? 24 : 18,
                             fontFamily: 'Fira Code',
                             fontWeight: FontWeight.w500,
                           ),
@@ -1142,24 +1124,36 @@ class SendScreenState extends State<SendScreen> {
 
   static const iconSize = 21.0; // + 4 inset = 25 size
   Widget _buildIconButton(String assetPath) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: ShapeDecoration(
         color: Colors.white.useOpacity(0.15),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       ),
-      child: SvgPicture.asset(assetPath, width: iconSize, height: iconSize),
+      child: SvgPicture.asset(
+        assetPath,
+        width: isTablet ? iconSize + 8 : iconSize,
+        height: isTablet ? iconSize + 8 : iconSize,
+      ),
     );
   }
 
   Widget _buildHistoryIconButton() {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: ShapeDecoration(
         color: Colors.white.useOpacity(0.15),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       ),
-      child: const Icon(Icons.history, color: Colors.white, size: iconSize),
+      child: Icon(
+        Icons.history,
+        color: Colors.white,
+        size: isTablet ? iconSize + 8 : iconSize,
+      ),
     );
   }
 }

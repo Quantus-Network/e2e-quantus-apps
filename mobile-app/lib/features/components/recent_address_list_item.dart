@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class RecentAddressListItem extends StatefulWidget {
   final String address;
@@ -27,6 +28,8 @@ class _RecentAddressListItemState extends State<RecentAddressListItem> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).isTablet;
+
     return GestureDetector(
       onTap: widget.onTap,
       child: Column(
@@ -38,11 +41,11 @@ class _RecentAddressListItemState extends State<RecentAddressListItem> {
             future: _humanReadableNameFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Text(
+                return Text(
                   'Loading name...',
                   style: TextStyle(
-                    color: Color(0xFF16CECE),
-                    fontSize: 14,
+                    color: const Color(0xFF16CECE),
+                    fontSize: isTablet ? 18 : 14,
                     fontFamily: 'Fira Code',
                     fontWeight: FontWeight.w400,
                   ),
@@ -50,11 +53,11 @@ class _RecentAddressListItemState extends State<RecentAddressListItem> {
               } else if (snapshot.hasError ||
                   !snapshot.hasData ||
                   snapshot.data!.isEmpty) {
-                return const Text(
+                return Text(
                   'Unknown Name',
                   style: TextStyle(
-                    color: Color(0xFF16CECE),
-                    fontSize: 14,
+                    color: const Color(0xFF16CECE),
+                    fontSize: isTablet ? 18 : 14,
                     fontFamily: 'Fira Code',
                     fontWeight: FontWeight.w400,
                   ),
@@ -62,9 +65,9 @@ class _RecentAddressListItemState extends State<RecentAddressListItem> {
               }
               return Text(
                 snapshot.data!,
-                style: const TextStyle(
-                  color: Color(0xFF16CECE),
-                  fontSize: 14,
+                style: TextStyle(
+                  color: const Color(0xFF16CECE),
+                  fontSize: isTablet ? 18 : 14,
                   fontFamily: 'Fira Code',
                   fontWeight: FontWeight.w400,
                 ),
@@ -76,7 +79,7 @@ class _RecentAddressListItemState extends State<RecentAddressListItem> {
             widget.address,
             style: TextStyle(
               color: Colors.white.useOpacity(0.60),
-              fontSize: 11,
+              fontSize: isTablet ? 16 : 11,
               fontFamily: 'Fira Code',
               fontWeight: FontWeight.w300,
             ),
