@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:video_player/video_player.dart';
 import 'package:resonance_network_wallet/features/main/screens/import_wallet_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_wallet_and_backup_screen.dart';
@@ -45,10 +47,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
-
     return Scaffold(
-      backgroundColor: const Color(0xFF0E0E0E),
+      backgroundColor: context.themeColors.background,
       body: Stack(
         children: <Widget>[
           // Video Player Background
@@ -63,47 +63,28 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     )
                   : Container(
                       // Placeholder while video loads
-                      color: const Color(0xFF0E0E0E),
-                      // Optionally, show the static image as placeholder:
-                      // child: Image.asset('assets/light_leak_effect_background.jpg', fit: BoxFit.cover),
+                      color: context.themeColors.background,
                     ),
             ),
           ),
 
-          // --- Keep Existing UI Elements ---
           Positioned(
             left: 0,
             right: 0,
-            top:
-                MediaQuery.of(context).size.height *
-                0.15, // Adjust positioning as needed
+            top: MediaQuery.of(context).size.height * 0.15,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(height: 60), // Spacing from Figma
+                const SizedBox(height: 60),
                 Center(
                   child: Column(
-                    // Wrap in Column to add text below
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       SvgPicture.asset(
                         'assets/quantus_logo.svg', // Changed from res_logo_main.svg
-                        height: isTablet
-                            ? 180
-                            : 130.0, // Adjust height for the icon
+                        height: context.themeSize.logoHeight,
                         fit: BoxFit.contain,
                       ),
-                      // const SizedBox(height: 15), // Space between icon and text
-                      // const Text(
-                      //   'QUANTUS',
-                      //   style: TextStyle(
-                      //     color: Color(0xFFE6E6E6),
-                      //     fontSize: 48, // Adjust font size as needed
-                      //     fontFamily: 'Fira Code',
-                      //     fontWeight: FontWeight.w100, // Match button weight
-                      //     letterSpacing: 3.0, // Added letter spacing
-                      //   ),
-                      // ),
                     ],
                   ),
                 ),
@@ -113,12 +94,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   child: Text(
                     'Quantum safe\n from the ground up',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: const Color(0xFFE6E6E6),
-                      fontSize: isTablet ? 28 : 21,
-                      fontFamily: 'Fira Code',
-                      fontWeight: FontWeight.w400,
-                    ),
+                    style: context.themeText.mediumTitle,
                   ),
                 ),
                 const SizedBox(height: 27), // Spacing from Figma
@@ -138,8 +114,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      foregroundColor: const Color(0xFF0E0E0E),
-                      backgroundColor: const Color(0xFFE6E6E6), // Use const
+                      foregroundColor: context.themeColors.textSecondary,
+                      backgroundColor: context.themeColors.light,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(5.0),
@@ -156,26 +132,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     },
                     child: Text(
                       'Create New Wallet',
-                      style: TextStyle(
-                        fontSize: isTablet ? 24 : 18,
-                        fontFamily: 'Fira Code',
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: context.themeText.smallTitle,
                     ),
                   ),
                 ),
-                const SizedBox(height: 16), // Use const
+                const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFE6E6E6),
-                      side: const BorderSide(
-                        color: Color(0xFFE6E6E6),
-                      ), // Use const
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 16,
-                      ), // Use const
+                      foregroundColor: context.themeColors.light,
+                      side: BorderSide(color: context.themeColors.light),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(5.0),
                       ),
@@ -190,11 +158,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     },
                     child: Text(
                       'Import Existing Wallet',
-                      style: TextStyle(
-                        fontSize: isTablet ? 24 : 18,
-                        fontFamily: 'Fira Code',
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: context.themeText.smallTitle,
                     ),
                   ),
                 ),
