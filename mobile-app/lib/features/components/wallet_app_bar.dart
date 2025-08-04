@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
 class WalletAppBar extends StatelessWidget {
   final String title;
@@ -8,8 +9,6 @@ class WalletAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
       child: InkWell(
@@ -22,18 +21,10 @@ class WalletAppBar extends StatelessWidget {
             Icon(
               Icons.arrow_back_ios,
               color: Colors.white,
-              size: isTablet ? 20 : 18,
+              size: context.themeSize.appbarIconSize,
             ),
             const SizedBox(width: 4),
-            Text(
-              title,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: isTablet ? 16 : 12,
-                fontFamily: 'Fira Code',
-                fontWeight: FontWeight.w400,
-              ),
-            ),
+            Text(title, style: context.themeText.detail),
           ],
         ),
       ),
