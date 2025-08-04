@@ -5,6 +5,8 @@ import 'package:resonance_network_wallet/features/main/screens/notifications_scr
 import 'package:resonance_network_wallet/features/main/screens/settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
@@ -19,15 +21,20 @@ class NavItem {
 // Custom painter for the custom bottom navigation bar
 class BottomNavPainter extends CustomPainter {
   final bool isTablet;
+  final Color background;
 
-  BottomNavPainter({super.repaint, required this.isTablet});
+  BottomNavPainter({
+    super.repaint,
+    required this.background,
+    required this.isTablet,
+  });
 
   double get offset => isTablet ? 130 : 80;
 
   @override
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint()
-      ..color = Colors.black
+      ..color = background
       ..style = PaintingStyle.fill;
 
     Path path = Path();
@@ -134,7 +141,7 @@ class _NavbarState extends State<Navbar> {
     });
   }
 
-  Widget _buildNavItem(int index, NavItem item, bool isTablet) {
+  Widget _buildNavItem(int index, NavItem item) {
     bool isSelected = index > 2
         ? _selectedIndex == index - 1
         : _selectedIndex == index;
@@ -142,8 +149,8 @@ class _NavbarState extends State<Navbar> {
     // Floating action button item
     if (index == 2) {
       return SizedBox(
-        height: isTablet ? 100 : 75,
-        width: isTablet ? 95 : 70,
+        height: context.themeSize.floatingBtnHeight,
+        width: context.themeSize.floatingBtnWidth,
         child: GestureDetector(
           onTap: () {
             Navigator.pushNamed(context, '/send');
@@ -156,8 +163,8 @@ class _NavbarState extends State<Navbar> {
     // Notification item with test flag
     if (index == 4 && _notificationTestDisabled) {
       return SizedBox(
-        height: isTablet ? 40 : 32,
-        width: isTablet ? 78 : 70,
+        height: context.themeSize.navbarItemHeight,
+        width: context.themeSize.navbarItemWidth,
         child: InkWell(
           onTap: null,
           child: Column(
@@ -165,7 +172,7 @@ class _NavbarState extends State<Navbar> {
             children: [
               SvgPicture.asset(
                 'assets/navbar/notifications_icon_off.svg',
-                width: isTablet ? 32 : 20,
+                width: context.themeSize.navbarIconWidth,
                 colorFilter: const ColorFilter.mode(
                   Colors.blueGrey,
                   BlendMode.srcIn,
@@ -182,14 +189,20 @@ class _NavbarState extends State<Navbar> {
         _onItemTapped(index);
       },
       child: SizedBox(
-        height: isTablet ? 40 : 32,
-        width: isTablet ? 78 : 70,
+        height: context.themeSize.navbarItemHeight,
+        width: context.themeSize.navbarItemWidth,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             isSelected
-                ? SvgPicture.asset(item.onIcon, width: isTablet ? 32 : 20)
-                : SvgPicture.asset(item.offIcon, width: isTablet ? 32 : 20),
+                ? SvgPicture.asset(
+                    item.onIcon,
+                    width: context.themeSize.navbarIconWidth,
+                  )
+                : SvgPicture.asset(
+                    item.offIcon,
+                    width: context.themeSize.navbarIconWidth,
+                  ),
           ],
         ),
       ),
@@ -210,17 +223,21 @@ class _NavbarState extends State<Navbar> {
     );
   }
 
-  Widget _buildBottomNavigationBar(bool isTablet) {
-    final height = isTablet ? 110.0 : 90.0;
-
+  Widget _buildBottomNavigationBar() {
     return Container(
       color: Colors.transparent,
-      height: height,
+      height: context.themeSize.navbarHeight,
       child: Stack(
         children: [
           CustomPaint(
-            size: Size(MediaQuery.of(context).size.width, height),
-            painter: BottomNavPainter(isTablet: isTablet),
+            size: Size(
+              MediaQuery.of(context).size.width,
+              context.themeSize.navbarHeight,
+            ),
+            painter: BottomNavPainter(
+              background: context.themeColors.navbarBg,
+              isTablet: context.isTablet,
+            ),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -228,7 +245,7 @@ class _NavbarState extends State<Navbar> {
               int index = entry.key;
               NavItem item = entry.value;
 
-              return _buildNavItem(index, item, isTablet);
+              return _buildNavItem(index, item);
             }).toList(),
           ),
         ],
@@ -238,12 +255,10 @@ class _NavbarState extends State<Navbar> {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
-
     return Scaffold(
       extendBody: true,
       body: _buildBody(),
-      bottomNavigationBar: _buildBottomNavigationBar(isTablet),
+      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 }
