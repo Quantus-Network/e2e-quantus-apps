@@ -6,7 +6,8 @@ import 'package:resonance_network_wallet/features/components/mnemonic_grid.dart'
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
-import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
 class CreateWalletAndBackupScreen extends StatefulWidget {
   const CreateWalletAndBackupScreen({super.key});
@@ -109,13 +110,12 @@ class CreateWalletAndBackupScreenState
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
     final List<String> words = _mnemonic.isNotEmpty ? _mnemonic.split(' ') : [];
 
     final bool canContinue = _hasSavedMnemonic && !_isLoading && _error == null;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0E0E0E),
+      backgroundColor: context.themeColors.background,
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
@@ -141,12 +141,7 @@ class CreateWalletAndBackupScreenState
                         Text(
                           'Your Secret Recovery Phrase',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: isTablet ? 24 : 18,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: context.themeText.smallTitle,
                         ),
                         const SizedBox(height: 13),
                         Text(
@@ -154,23 +149,21 @@ class CreateWalletAndBackupScreenState
                           'location. This is the only way to recover your '
                           'wallet',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white.useOpacity(153 / 255.0),
-                            fontSize: isTablet ? 18 : 14,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w500,
-                            height: 1.21,
+                          style: context.themeText.smallParagraph?.copyWith(
+                            color: context.themeColors.textMuted,
                           ),
                         ),
                         const SizedBox(height: 21),
                         if (_isLoading)
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 50.0),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 50.0),
                             child: Column(
                               children: [
-                                CircularProgressIndicator(color: Colors.white),
-                                SizedBox(height: 16),
-                                Text(
+                                CircularProgressIndicator(
+                                  color: context.themeColors.circularLoader,
+                                ),
+                                const SizedBox(height: 16),
+                                const Text(
                                   'Generating secure phrase...',
                                   style: TextStyle(color: Colors.white70),
                                 ),
@@ -185,9 +178,8 @@ class CreateWalletAndBackupScreenState
                             ),
                             child: Text(
                               _error!,
-                              style: const TextStyle(
-                                color: Colors.redAccent,
-                                fontSize: 16,
+                              style: context.themeText.paragraph?.copyWith(
+                                color: context.themeColors.textError,
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -218,12 +210,7 @@ class CreateWalletAndBackupScreenState
                                   const SizedBox(width: 8),
                                   Text(
                                     'Copy to Clipboard',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: isTablet ? 18 : 14,
-                                      fontFamily: 'Fira Code',
-                                      fontWeight: FontWeight.w400,
-                                    ),
+                                    style: context.themeText.smallParagraph,
                                   ),
                                 ],
                               ),
@@ -243,12 +230,7 @@ class CreateWalletAndBackupScreenState
                         controlAffinity: ListTileControlAffinity.leading,
                         title: Text(
                           'I have copied and stored my seed phrase',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: isTablet ? 18 : 14,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w400,
-                          ),
+                          style: context.themeText.smallParagraph,
                         ),
                         value: _hasSavedMnemonic,
                         onChanged: _isLoading
@@ -275,7 +257,7 @@ class CreateWalletAndBackupScreenState
                       if (canContinue)
                         GradientActionButton(
                           label: 'Continue',
-                          fontSize: isTablet ? 24 : 18,
+                          textStyle: context.themeText.smallTitle,
                           onPressed: _saveWalletAndContinue,
                           isLoading: _isLoading,
                         )
@@ -295,11 +277,8 @@ class CreateWalletAndBackupScreenState
                             onPressed: null,
                             child: Text(
                               'Continue',
-                              style: TextStyle(
-                                color: const Color(0xFF0E0E0E),
-                                fontSize: isTablet ? 24 : 18,
-                                fontFamily: 'Fira Code',
-                                fontWeight: FontWeight.w500,
+                              style: context.themeText.smallTitle?.copyWith(
+                                color: context.themeColors.textSecondary,
                               ),
                             ),
                           ),
