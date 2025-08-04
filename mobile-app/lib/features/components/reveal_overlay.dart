@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class RevealOverlay extends StatelessWidget {
@@ -9,8 +11,6 @@ class RevealOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 21, vertical: 20),
       child: Column(
@@ -20,20 +20,17 @@ class RevealOverlay extends StatelessWidget {
           Icon(
             Icons.visibility_off,
             color: Colors.white,
-            size: isTablet ? 60 : 40,
+            size: context.isTablet ? 60 : 40,
           ),
           const SizedBox(height: 17),
           SizedBox(
-            width: isTablet ? 400 : null,
+            width: context.isTablet ? 400 : null,
             child: Text(
               'This Recovery Phrase provides access to this wallet, '
               'only reveal if you are in a secure location',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white60,
-                fontSize: isTablet ? 18 : 14,
-                fontFamily: 'Fira Code',
-                fontWeight: FontWeight.w400,
+              style: context.themeText.smallParagraph?.copyWith(
+                color: context.themeColors.textMuted,
               ),
             ),
           ),
@@ -54,12 +51,7 @@ class RevealOverlay extends StatelessWidget {
             child: Text(
               'Reveal',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: isTablet ? 18 : 14,
-                fontFamily: 'Fira Code',
-                fontWeight: FontWeight.w400,
-              ),
+              style: context.themeText.smallParagraph,
             ),
           ),
         ],
