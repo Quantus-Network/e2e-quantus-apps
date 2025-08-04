@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 
 class BaseWithBackground extends StatelessWidget {
   final Widget child;
@@ -10,7 +11,7 @@ class BaseWithBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: appBar,
-      backgroundColor: const Color(0xFF0E0E0E),
+      backgroundColor: context.themeColors.background,
       body: Stack(
         children: [
           Positioned.fill(
