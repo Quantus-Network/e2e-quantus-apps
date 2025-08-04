@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:share_plus/share_plus.dart';
@@ -84,8 +86,6 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
-
     return SafeArea(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 16),
@@ -112,7 +112,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                 children: [
                   InkWell(
                     onTap: _closeSheet,
-                    child: Icon(Icons.close, size: isTablet ? 28 : 24),
+                    child: Icon(Icons.close, size: context.isTablet ? 28 : 24),
                   ),
                 ],
               ),
@@ -123,29 +123,21 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
               children: [
                 SvgPicture.asset(
                   'assets/receive_icon_1.svg',
-                  width: isTablet ? 67 : 37,
+                  width: context.isTablet ? 67 : 37,
                 ),
                 const SizedBox(width: 7),
-                Text(
-                  'RECEIVE',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: isTablet ? 36 : 28,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w300,
-                  ),
-                ),
+                Text('RECEIVE', style: context.themeText.largeTitle),
               ],
             ),
-            SizedBox(height: isTablet ? 36 : 28),
+            SizedBox(height: context.isTablet ? 36 : 28),
             if (_accountId == null)
               const Center(
                 child: CircularProgressIndicator(color: Colors.white),
               )
             else ...[
               Container(
-                width: isTablet ? 277 : 227,
-                height: isTablet ? 277 : 227,
+                width: context.isTablet ? 277 : 227,
+                height: context.isTablet ? 277 : 227,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -167,24 +159,19 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                   ),
                 ),
               ),
-              SizedBox(height: isTablet ? 23 : 15),
+              SizedBox(height: context.isTablet ? 23 : 15),
               Row(
                 spacing: 15,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   SvgPicture.asset(
                     'assets/account_list_icon.svg',
-                    width: isTablet ? 29 : 21,
+                    width: context.isTablet ? 29 : 21,
                   ),
                   Text(
                     _accountName ?? '',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: isTablet ? 22 : 18,
-                      fontFamily: 'Fira Code',
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: context.themeText.smallTitle,
                   ),
                 ],
               ),
@@ -212,9 +199,8 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                               const SizedBox(width: 8),
                               Text(
                                 'Loading checkphrase...',
-                                style: TextStyle(
+                                style: context.themeText.paragraph?.copyWith(
                                   color: Colors.white54,
-                                  fontSize: isTablet ? 18 : 12,
                                 ),
                               ),
                             ],
@@ -239,12 +225,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
 
                         return Text(
                           'Name not found',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: isTablet ? 20 : 14,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w400,
-                          ),
+                          style: context.themeText.paragraph,
                           textAlign: TextAlign.center,
                         );
                       } else {
@@ -264,12 +245,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                             Flexible(
                               child: Text(
                                 snapshot.data!,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: isTablet ? 20 : 14,
-                                  fontFamily: 'Fira Code',
-                                  fontWeight: FontWeight.w400,
-                                ),
+                                style: context.themeText.paragraph,
                                 textAlign: TextAlign.center,
                               ),
                             ),
@@ -277,7 +253,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                               onTap: _copyChecksum,
                               child: SvgPicture.asset(
                                 'assets/copy_icon.svg',
-                                width: isTablet ? 24 : 16,
+                                width: context.isTablet ? 24 : 16,
                               ),
                             ),
                           ],
@@ -291,7 +267,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                     spacing: 8,
                     children: [
                       Container(
-                        width: isTablet ? 300 : 214,
+                        width: context.isTablet ? 300 : 214,
                         padding: const EdgeInsets.all(10),
                         decoration: ShapeDecoration(
                           color: Colors.white.withValues(alpha: 0.15),
@@ -302,19 +278,14 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                         child: Text(
                           '${_splittedAddress?.join(" ")}',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: isTablet ? 20 : 14,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w400,
-                          ),
+                          style: context.themeText.smallParagraph,
                         ),
                       ),
                       InkWell(
                         onTap: _copyAddress,
                         child: SvgPicture.asset(
                           'assets/copy_icon.svg',
-                          width: isTablet ? 24 : 16,
+                          width: context.isTablet ? 24 : 16,
                         ),
                       ),
                     ],
@@ -323,8 +294,8 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
               ),
               const SizedBox(height: 28),
               SizedBox(
-                width: isTablet ? 465 : 305,
-                height: isTablet ? 54 : 44,
+                width: context.isTablet ? 465 : 305,
+                height: context.isTablet ? 54 : 44,
                 child: ElevatedButton(
                   onPressed: _share,
                   style: ElevatedButton.styleFrom(
@@ -335,11 +306,8 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                   ),
                   child: Text(
                     'Share',
-                    style: TextStyle(
-                      color: const Color(0xFF0E0E0E),
-                      fontSize: isTablet ? 24 : 18,
-                      fontFamily: 'Fira Code',
-                      fontWeight: FontWeight.w500,
+                    style: context.themeText.smallTitle?.copyWith(
+                      color: context.themeColors.textSecondary,
                     ),
                   ),
                 ),
