@@ -3,6 +3,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
@@ -40,10 +42,8 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
-
     return Scaffold(
-      backgroundColor: const Color(0xFF0E0E0E),
+      backgroundColor: context.themeColors.background,
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
@@ -57,11 +57,11 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
             children: [
               const WalletAppBar(title: 'Account Settings'),
               const SizedBox(height: 20),
-              _buildAccountHeader(isTablet),
+              _buildAccountHeader(),
               const SizedBox(height: 40),
-              _buildAddressSection(isTablet),
+              _buildAddressSection(),
               const SizedBox(height: 20),
-              _buildSecuritySection(isTablet),
+              _buildSecuritySection(),
             ],
           ),
         ),
@@ -69,25 +69,21 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     );
   }
 
-  Widget _buildAccountHeader(bool isTablet) {
+  Widget _buildAccountHeader() {
     return Column(
       children: [
         // Placeholder for account icon
-        SvgPicture.asset('assets/res_icon.svg', width: isTablet ? 80 : 60),
+        SvgPicture.asset(
+          'assets/res_icon.svg',
+          width: context.isTablet ? 80 : 60,
+        ),
         const SizedBox(height: 10),
         InkWell(
           onTap: _editAccountName,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                widget.account.name,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: isTablet ? 24 : 16,
-                  fontFamily: 'Fira Code',
-                ),
-              ),
+              Text(widget.account.name, style: context.themeText.largeTag),
               const SizedBox(width: 8),
               const Icon(Icons.edit, color: Colors.white70, size: 16),
             ],
@@ -96,32 +92,28 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         const SizedBox(height: 5),
         Text(
           widget.checksumName,
-          style: TextStyle(
-            color: const Color(0xFF16CECE),
-            fontSize: isTablet ? 20 : 14,
-            fontFamily: 'Fira Code',
+          style: context.themeText.smallParagraph?.copyWith(
+            color: context.themeColors.checksum,
           ),
         ),
         const SizedBox(height: 5),
         Text(
           widget.balance,
-          style: TextStyle(
-            color: const Color(0xFFE6E6E6),
-            fontSize: isTablet ? 18 : 14,
-            fontFamily: 'Fira Code',
+          style: context.themeText.smallParagraph?.copyWith(
+            color: context.themeColors.light,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildAddressSection(bool isTablet) {
+  Widget _buildAddressSection() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: 18,
-          vertical: isTablet ? 12 : 8,
+          vertical: context.isTablet ? 12 : 8,
         ),
         decoration: BoxDecoration(
           color: const Color(0xFF313131),
@@ -130,29 +122,27 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            if (!isTablet) const Expanded(child: SizedBox()),
+            if (!context.isTablet) const Expanded(child: SizedBox()),
             SizedBox(
-              width: isTablet ? 550 : 180,
+              width: context.isTablet ? 550 : 180,
               child: Text(
-                isTablet
+                context.isTablet
                     ? widget.account.accountId
                     : AddressFormattingService.splitIntoChunks(
                         widget.account.accountId,
                       ).join(' '),
-                textAlign: isTablet ? TextAlign.start : TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: isTablet ? 18 : 16,
-                  fontFamily: 'Fira Code',
-                ),
+                textAlign: context.isTablet
+                    ? TextAlign.start
+                    : TextAlign.center,
+                style: context.themeText.smallParagraph,
               ),
             ),
-            if (!isTablet) const Expanded(child: SizedBox()),
+            if (!context.isTablet) const Expanded(child: SizedBox()),
             IconButton(
               icon: Icon(
                 Icons.copy,
                 color: Colors.white,
-                size: isTablet ? 26 : 22,
+                size: context.isTablet ? 26 : 22,
               ),
               onPressed: () => ClipboardExtensions.copyText(
                 context,
@@ -165,7 +155,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     );
   }
 
-  Widget _buildSecuritySection(bool isTablet) {
+  Widget _buildSecuritySection() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: Container(
@@ -181,7 +171,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
               children: [
                 SvgPicture.asset(
                   'assets/lock_icon.svg',
-                  width: isTablet ? 28 : 20,
+                  width: context.isTablet ? 28 : 20,
                 ),
                 const SizedBox(width: 12),
                 Column(
@@ -189,19 +179,13 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                   children: [
                     Text(
                       'High Security Features',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: isTablet ? 22 : 16,
-                        fontFamily: 'Fira Code',
-                      ),
+                      style: context.themeText.largeTag,
                     ),
                     Text(
                       'COMING SOON',
-                      style: TextStyle(
+                      style: context.themeText.detail?.copyWith(
                         color: const Color(0xFFFADC34),
-                        fontSize: isTablet ? 18 : 12,
-                        fontFamily: 'Fira Code',
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],

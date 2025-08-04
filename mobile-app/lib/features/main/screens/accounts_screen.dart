@@ -5,6 +5,9 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/account_settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
@@ -122,7 +125,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
     final isTablet = MediaQuery.of(context).isTablet;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0E0E0E),
+      backgroundColor: context.themeColors.background,
       body: Stack(
         children: [
           Container(
@@ -139,7 +142,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
               children: [
                 const WalletAppBar(title: 'Your Accounts'),
 
-                Expanded(child: _buildAccountsList(isTablet)),
+                Expanded(child: _buildAccountsList()),
 
                 Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -153,10 +156,12 @@ class _AccountsScreenState extends State<AccountsScreen> {
     );
   }
 
-  Widget _buildAccountsList(bool isTablet) {
+  Widget _buildAccountsList() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: Colors.white),
+      return Center(
+        child: CircularProgressIndicator(
+          color: context.themeColors.circularLoader,
+        ),
       );
     }
 
@@ -164,7 +169,9 @@ class _AccountsScreenState extends State<AccountsScreen> {
       return Center(
         child: Text(
           'No accounts found.',
-          style: TextStyle(color: Colors.white70, fontSize: isTablet ? 18 : 14),
+          style: context.themeText.smallParagraph?.copyWith(
+            color: Colors.white70,
+          ),
         ),
       );
     }
@@ -177,7 +184,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
         final details = _accountDetails[index];
         final bool isActive =
             details.account.accountId == _activeAccount?.accountId;
-        return _buildAccountListItem(details, isActive, index, isTablet);
+        return _buildAccountListItem(details, isActive, index);
       },
     );
   }
@@ -224,7 +231,6 @@ class _AccountsScreenState extends State<AccountsScreen> {
     AccountDetails details,
     bool isActive,
     int index,
-    bool isTablet,
   ) {
     final account = details.account;
 
@@ -244,13 +250,15 @@ class _AccountsScreenState extends State<AccountsScreen> {
           Expanded(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              height: isTablet ? 130 : 105,
+              height: context.themeSize.accountListItemHeight,
               decoration: ShapeDecoration(
-                color: isActive ? Colors.white : Colors.black.useOpacity(0.65),
+                color: isActive
+                    ? context.themeColors.surfaceActive
+                    : context.themeColors.surface,
                 shape: RoundedRectangleBorder(
                   side: BorderSide(
                     width: 1,
-                    color: Colors.white.useOpacity(0.15),
+                    color: context.themeColors.borderLight,
                   ),
                   borderRadius: BorderRadius.circular(5),
                 ),
@@ -260,7 +268,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                   const SizedBox(width: 8),
                   SvgPicture.asset(
                     'assets/res_icon.svg',
-                    width: isTablet ? 44 : 32,
+                    width: context.themeSize.accountListItemLogoWidth,
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -291,39 +299,30 @@ class _AccountsScreenState extends State<AccountsScreen> {
                           children: [
                             Text(
                               account.name,
-                              style: TextStyle(
+                              style: context.themeText.smallParagraph?.copyWith(
                                 color: isActive ? Colors.black : Colors.white,
-                                fontSize: isTablet ? 20 : 14,
-                                fontFamily: 'Fira Code',
-                                fontWeight: FontWeight.w400,
                               ),
                             ),
                             Text(
                               humanChecksum,
-                              style: TextStyle(
+                              style: context.themeText.detail?.copyWith(
                                 color: isActive
-                                    ? const Color(0xFF06A8A8)
-                                    : const Color(0xFF16CECE),
-                                fontSize: isTablet ? 18 : 12,
-                                fontFamily: 'Fira Code',
-                                fontWeight: FontWeight.w400,
+                                    ? context.themeColors.checksumDarker
+                                    : context.themeColors.checksum,
                               ),
                             ),
                             Row(
                               children: [
                                 Text(
-                                  isTablet
+                                  context.isTablet
                                       ? account.accountId
                                       : AddressFormattingService.formatAddress(
                                           account.accountId,
                                         ),
-                                  style: TextStyle(
+                                  style: context.themeText.tiny?.copyWith(
                                     color: isActive
-                                        ? const Color(0xFF313131)
-                                        : Colors.white.useOpacity(0.99),
-                                    fontSize: isTablet ? 16 : 10,
-                                    fontFamily: 'Fira Code',
-                                    fontWeight: FontWeight.w300,
+                                        ? context.themeColors.darkGray
+                                        : context.themeColors.textMuted,
                                   ),
                                 ),
                                 const SizedBox(width: 5),
@@ -334,10 +333,10 @@ class _AccountsScreenState extends State<AccountsScreen> {
                                   ),
                                   child: Icon(
                                     Icons.copy,
-                                    size: isTablet ? 20 : 14,
+                                    size: context.isTablet ? 20 : 14,
                                     color: isActive
-                                        ? const Color(0xFF313131)
-                                        : Colors.white.useOpacity(0.6),
+                                        ? context.themeColors.darkGray
+                                        : context.themeColors.textMuted,
                                   ),
                                 ),
                               ],
@@ -348,24 +347,18 @@ class _AccountsScreenState extends State<AccountsScreen> {
                                 children: [
                                   TextSpan(
                                     text: formattedBalance,
-                                    style: TextStyle(
+                                    style: context.themeText.tiny?.copyWith(
                                       color: isActive
-                                          ? const Color(0xFF313131)
-                                          : const Color(0xFFE6E6E6),
-                                      fontSize: isTablet ? 16 : 12,
-                                      fontFamily: 'Fira Code',
-                                      fontWeight: FontWeight.w400,
+                                          ? context.themeColors.darkGray
+                                          : context.themeColors.light,
                                     ),
                                   ),
                                   TextSpan(
                                     text: ' ${AppConstants.tokenSymbol}',
-                                    style: TextStyle(
+                                    style: context.themeText.tiny?.copyWith(
                                       color: isActive
-                                          ? const Color(0xFF313131)
-                                          : const Color(0xFFE6E6E6),
-                                      fontSize: isTablet ? 14 : 10,
-                                      fontFamily: 'Fira Code',
-                                      fontWeight: FontWeight.w400,
+                                          ? context.themeColors.darkGray
+                                          : context.themeColors.light,
                                     ),
                                   ),
                                 ],
@@ -386,7 +379,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
             constraints: const BoxConstraints(),
             icon: SvgPicture.asset(
               'assets/settings_icon_off.svg',
-              width: isTablet ? 28 : 21,
+              width: context.isTablet ? 28 : 21,
               colorFilter: const ColorFilter.mode(
                 Colors.white,
                 BlendMode.srcIn,
