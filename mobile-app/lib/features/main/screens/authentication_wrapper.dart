@@ -3,8 +3,9 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_initializer.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
-import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class AuthenticationWrapper extends StatefulWidget {
   const AuthenticationWrapper({super.key});
@@ -93,16 +94,12 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper>
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
-
-    return _isAuthenticated
-        ? const WalletInitializer()
-        : _buildLockScreen(isTablet);
+    return _isAuthenticated ? const WalletInitializer() : _buildLockScreen();
   }
 
-  Widget _buildLockScreen(bool isTablet) {
+  Widget _buildLockScreen() {
     return Scaffold(
-      backgroundColor: const Color(0xFF0E0E0E),
+      backgroundColor: context.themeColors.background,
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
@@ -117,22 +114,20 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper>
             children: [
               Text(
                 'Authentication Required',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: isTablet ? 28 : 24,
-                  fontFamily: 'Fira Code',
-                ),
+                style: context.themeText.lockTitle,
               ),
               const SizedBox(height: 30),
               if (_isAuthenticating)
-                const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    context.themeColors.circularLoader,
+                  ),
                 )
               else
                 ElevatedButton(
                   onPressed: _authenticate,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF16CECE),
+                    backgroundColor: context.themeColors.authButtonBg,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 40,
                       vertical: 15,
@@ -140,11 +135,7 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper>
                   ),
                   child: Text(
                     'Authenticate',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontFamily: 'Fira Code',
-                      fontSize: isTablet ? 20 : 16,
-                    ),
+                    style: context.themeText.paragraph,
                   ),
                 ),
             ],
