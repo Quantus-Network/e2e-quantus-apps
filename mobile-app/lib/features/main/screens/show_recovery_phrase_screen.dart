@@ -3,6 +3,8 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/mnemonic_grid.dart';
 import 'package:resonance_network_wallet/features/components/reveal_overlay.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
@@ -36,10 +38,8 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
-
     return Scaffold(
-      backgroundColor: const Color(0xFF0E0E0E),
+      backgroundColor: context.themeColors.background,
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
@@ -56,13 +56,13 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      _buildDescription(isTablet),
+                      _buildDescription(),
                       const SizedBox(height: 18),
-                      _buildMnemonicContainer(isTablet),
+                      _buildMnemonicContainer(),
                       const SizedBox(height: 18),
-                      if (_isRevealed) _buildCopyToClipboard(isTablet),
+                      if (_isRevealed) _buildCopyToClipboard(),
                       const SizedBox(height: 30),
-                      if (!_isRevealed) _buildWarning(isTablet),
+                      if (!_isRevealed) _buildWarning(),
                     ],
                   ),
                 ),
@@ -72,11 +72,11 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: _buildDoneButton(context),
+      floatingActionButton: _buildDoneButton(),
     );
   }
 
-  Widget _buildDescription(bool isTablet) {
+  Widget _buildDescription() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: Column(
@@ -84,22 +84,14 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
         children: [
           Text(
             'Keep your Recovery Phrase Safe',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: isTablet ? 24 : 18,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w500,
-            ),
+            style: context.themeText.smallTitle,
           ),
           const SizedBox(height: 13),
           Text(
             // ignore: lines_longer_than_80_chars
             'This is the only way to recover your wallet. Anyone who has this phrase will have full access to this wallet, your funds may be lost.',
-            style: TextStyle(
-              color: Colors.white60,
-              fontSize: isTablet ? 18 : 14,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w400,
+            style: context.themeText.smallParagraph?.copyWith(
+              color: context.themeColors.textMuted,
             ),
           ),
         ],
@@ -107,7 +99,7 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
     );
   }
 
-  Widget _buildMnemonicContainer(bool isTablet) {
+  Widget _buildMnemonicContainer() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
@@ -148,7 +140,7 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
     );
   }
 
-  Widget _buildCopyToClipboard(bool isTablet) {
+  Widget _buildCopyToClipboard() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: InkWell(
@@ -163,16 +155,15 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(Icons.copy, color: Colors.white, size: isTablet ? 28 : 24),
+              Icon(
+                Icons.copy,
+                color: Colors.white,
+                size: context.isTablet ? 28 : 24,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Copy to Clipboard',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: isTablet ? 20 : 16,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w400,
-                ),
+                style: context.themeText.smallParagraph,
               ),
             ],
           ),
@@ -181,25 +172,20 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
     );
   }
 
-  Widget _buildWarning(bool isTablet) {
+  Widget _buildWarning() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25),
       child: Text(
         // ignore: lines_longer_than_80_chars
         'Do not share your Recovery Phrase with any 3rd party, person, website or application',
-        style: TextStyle(
-          color: Colors.white60,
-          fontSize: isTablet ? 18 : 14,
-          fontFamily: 'Fira Code',
-          fontWeight: FontWeight.w400,
+        style: context.themeText.smallParagraph?.copyWith(
+          color: context.themeColors.textMuted,
         ),
       ),
     );
   }
 
-  Widget _buildDoneButton(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
-
+  Widget _buildDoneButton() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 20.0),
       child: SizedBox(
@@ -209,7 +195,7 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.white,
             padding: EdgeInsets.symmetric(
-              vertical: isTablet ? 18 : 16,
+              vertical: context.isTablet ? 18 : 16,
               horizontal: 16,
             ),
             shape: RoundedRectangleBorder(
@@ -218,11 +204,8 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
           ),
           child: Text(
             'Done',
-            style: TextStyle(
-              color: const Color(0xFF0E0E0E),
-              fontSize: isTablet ? 24 : 18,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w500,
+            style: context.themeText.smallTitle?.copyWith(
+              color: context.themeColors.textSecondary,
             ),
           ),
         ),

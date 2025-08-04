@@ -7,6 +7,9 @@ import 'package:resonance_network_wallet/features/main/screens/accounts_screen.d
 import 'package:resonance_network_wallet/features/main/screens/authentication_settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/show_recovery_phrase_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -60,7 +63,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0E0E0E),
+      backgroundColor: context.themeColors.background,
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
@@ -93,28 +96,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title, bool isTablet) {
+  Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(left: 4.0, bottom: 22.0),
       child: Text(
         title,
-        style: TextStyle(
-          color: const Color(0xFFE6E6E6),
-          fontSize: isTablet ? 24 : 16,
-          fontFamily: 'Fira Code',
-          fontWeight: FontWeight.w400,
+        style: context.themeText.largeTag?.copyWith(
+          color: context.themeColors.light,
         ),
       ),
     );
   }
 
   Widget _buildSettingsList(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Wallet Settings', isTablet),
+        _buildSectionTitle('Wallet Settings'),
         _buildSettingsItem(context, 'Manage Accounts', () {
           Navigator.push(
             context,
@@ -146,12 +144,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildInformationList(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Information', isTablet),
+        _buildSectionTitle('Information'),
         _buildSettingsItem(context, 'Help & Support', () {
           final Uri url = Uri.parse(AppConstants.helpAndSupportUrl);
           launchUrl(url);
@@ -163,8 +159,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           () {},
           trailing: Icon(
             Icons.share,
-            color: Colors.white,
-            size: isTablet ? 24 : 16,
+            size: context.themeSize.settingMenuShareIconSize,
           ),
         ),
         const SizedBox(height: 22),
@@ -183,14 +178,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Widget? trailing,
     bool showArrow = true,
   }) {
-    final isTablet = MediaQuery.of(context).isTablet;
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: double.infinity,
         padding: EdgeInsets.symmetric(
-          vertical: isTablet ? 16 : 12,
+          vertical: context.isTablet ? 16 : 12,
           horizontal: 18,
         ),
         decoration: ShapeDecoration(
@@ -201,21 +194,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              title,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: isTablet ? 18 : 14,
-                fontFamily: 'Fira Code',
-                fontWeight: FontWeight.w400,
-              ),
-            ),
+            Text(title, style: context.themeText.smallParagraph),
             trailing ??
                 (showArrow
                     ? Icon(
                         Icons.arrow_forward_ios,
-                        size: isTablet ? 16 : 11,
-                        color: Colors.white70,
+                        size: context.themeSize.settingMenuIconSize,
                       )
                     : const SizedBox()),
           ],
@@ -225,20 +209,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildResetButton(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
-
     return GestureDetector(
       onTap: _showResetConfirmationSheet,
       child: Container(
         width: double.infinity,
         padding: EdgeInsets.symmetric(
-          vertical: isTablet ? 16 : 12,
+          vertical: context.isTablet ? 16 : 12,
           horizontal: 18,
         ),
         decoration: ShapeDecoration(
           color: Colors.black,
           shape: RoundedRectangleBorder(
-            side: const BorderSide(width: 1, color: Color(0xFFFF2D53)),
+            side: BorderSide(width: 1, color: context.themeColors.error),
             borderRadius: BorderRadius.circular(4),
           ),
         ),
@@ -248,17 +230,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Text(
               'Reset & Clear Data',
-              style: TextStyle(
-                color: const Color(0xFFFF2D53),
-                fontSize: isTablet ? 18 : 14,
-                fontFamily: 'Fira Code',
-                fontWeight: FontWeight.w400,
+              style: context.themeText.smallParagraph?.copyWith(
+                color: context.themeColors.error,
               ),
             ),
             Icon(
               Icons.arrow_forward_ios,
-              size: isTablet ? 16 : 11,
-              color: const Color(0xFFFF2D53),
+              size: context.themeSize.settingMenuIconSize,
+              color: context.themeColors.error,
             ),
           ],
         ),
