@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
 class RecentAddressListItem extends StatefulWidget {
   final String address;
@@ -28,8 +29,6 @@ class _RecentAddressListItemState extends State<RecentAddressListItem> {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
-
     return GestureDetector(
       onTap: widget.onTap,
       child: Column(
@@ -43,11 +42,8 @@ class _RecentAddressListItemState extends State<RecentAddressListItem> {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return Text(
                   'Loading name...',
-                  style: TextStyle(
-                    color: const Color(0xFF16CECE),
-                    fontSize: isTablet ? 18 : 14,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w400,
+                  style: context.themeText.smallParagraph?.copyWith(
+                    color: context.themeColors.checksum,
                   ),
                 );
               } else if (snapshot.hasError ||
@@ -55,21 +51,15 @@ class _RecentAddressListItemState extends State<RecentAddressListItem> {
                   snapshot.data!.isEmpty) {
                 return Text(
                   'Unknown Name',
-                  style: TextStyle(
-                    color: const Color(0xFF16CECE),
-                    fontSize: isTablet ? 18 : 14,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w400,
+                  style: context.themeText.smallParagraph?.copyWith(
+                    color: context.themeColors.checksum,
                   ),
                 );
               }
               return Text(
                 snapshot.data!,
-                style: TextStyle(
-                  color: const Color(0xFF16CECE),
-                  fontSize: isTablet ? 18 : 14,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w400,
+                style: context.themeText.smallParagraph?.copyWith(
+                  color: context.themeColors.checksum,
                 ),
               );
             },
@@ -77,11 +67,8 @@ class _RecentAddressListItemState extends State<RecentAddressListItem> {
           const SizedBox(height: 4),
           Text(
             widget.address,
-            style: TextStyle(
-              color: Colors.white.useOpacity(0.60),
-              fontSize: isTablet ? 16 : 11,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w300,
+            style: context.themeText.detail?.copyWith(
+              color: context.themeColors.textMuted,
             ),
           ),
         ],
