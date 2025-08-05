@@ -12,6 +12,9 @@ import 'package:resonance_network_wallet/features/components/snackbar_helper.dar
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner/qr_scanner_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/send_progress/send_progress_overlay.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class SendScreen extends StatefulWidget {
@@ -668,8 +671,6 @@ class SendScreenState extends State<SendScreen> {
 
   // NEW: Method to show the recent addresses modal bottom sheet
   void _showRecentAddresses() {
-    final isTablet = MediaQuery.of(context).isTablet;
-
     showAppModalBottomSheet(
       context: context,
       builder: (context) => Container(
@@ -709,12 +710,7 @@ class SendScreenState extends State<SendScreen> {
                     width: 226,
                     child: Text(
                       'Recently Used',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: isTablet ? 24 : 16,
-                        fontFamily: 'Fira Code',
-                        fontWeight: FontWeight.w400,
-                      ),
+                      style: context.themeText.largeTag,
                     ),
                   ),
                   const SizedBox(height: 20), // Spacing from Figma
@@ -738,15 +734,15 @@ class SendScreenState extends State<SendScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
-
     return BaseWithBackground(
       child: FutureBuilder<BigInt>(
         future: _balanceFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: Colors.white),
+            return Center(
+              child: CircularProgressIndicator(
+                color: context.themeColors.circularLoader,
+              ),
             );
           }
 
@@ -756,9 +752,8 @@ class SendScreenState extends State<SendScreen> {
                 padding: const EdgeInsets.all(20.0),
                 child: Text(
                   'Error loading balance: ${snapshot.error}',
-                  style: TextStyle(
-                    color: Colors.redAccent,
-                    fontSize: isTablet ? 20 : 16,
+                  style: context.themeText.paragraph?.copyWith(
+                    color: context.themeColors.textError,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -807,18 +802,10 @@ class SendScreenState extends State<SendScreen> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'To:',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: isTablet ? 20 : 14,
-                              fontFamily: 'Fira Code',
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
+                          Text('To:', style: context.themeText.smallParagraph),
                           Container(
                             width: 1,
-                            height: isTablet ? 31 : 17,
+                            height: context.isTablet ? 31 : 17,
                             color: Colors.white,
                             margin: const EdgeInsets.symmetric(horizontal: 2),
                           ),
@@ -828,12 +815,7 @@ class SendScreenState extends State<SendScreen> {
                               children: [
                                 TextField(
                                   controller: _recipientController,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: isTablet ? 20 : 14,
-                                    fontFamily: 'Fira Code',
-                                    fontWeight: FontWeight.w400,
-                                  ),
+                                  style: context.themeText.detail,
                                   decoration: InputDecoration(
                                     border: InputBorder.none,
                                     enabledBorder: _hasAddressError
@@ -855,13 +837,10 @@ class SendScreenState extends State<SendScreen> {
                                     hintText:
                                         '${AppConstants.tokenSymbol} '
                                         'address',
-                                    hintStyle: TextStyle(
-                                      color: Colors.white.useOpacity(0.3),
-                                      fontSize: isTablet ? 20 : 14,
-                                      fontFamily: 'Fira Code',
-                                      fontWeight: FontWeight.w300,
-                                      letterSpacing: 0.5,
-                                    ),
+                                    hintStyle: context.themeText.detail
+                                        ?.copyWith(
+                                          color: context.themeColors.textMuted,
+                                        ),
                                     isDense: true,
                                     contentPadding: EdgeInsets.zero,
                                     filled: true,
@@ -889,11 +868,8 @@ class SendScreenState extends State<SendScreen> {
                                     padding: const EdgeInsets.only(top: 4.0),
                                     child: Text(
                                       _savedAddressesLabel,
-                                      style: TextStyle(
-                                        color: const Color(0xFF16CECE),
-                                        fontSize: isTablet ? 16 : 12,
-                                        fontFamily: 'Fira Code',
-                                        fontWeight: FontWeight.w400,
+                                      style: context.themeText.detail?.copyWith(
+                                        color: context.themeColors.checksum,
                                       ),
                                     ),
                                   ),
@@ -917,18 +893,13 @@ class SendScreenState extends State<SendScreen> {
                             child: TextField(
                               controller: _amountController,
                               textAlign: TextAlign.end,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: isTablet ? 64 : 40,
-                                fontFamily: 'Fira Code',
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: context.themeText.extraLargeTitle,
                               decoration: InputDecoration(
                                 border: InputBorder.none,
                                 enabledBorder: _hasAmountError
                                     ? OutlineInputBorder(
-                                        borderSide: const BorderSide(
-                                          color: Colors.red,
+                                        borderSide: BorderSide(
+                                          color: context.themeColors.error,
                                           width: 1,
                                         ),
                                         borderRadius: BorderRadius.circular(5),
@@ -936,20 +907,18 @@ class SendScreenState extends State<SendScreen> {
                                     : InputBorder.none,
                                 focusedBorder: _hasAmountError
                                     ? OutlineInputBorder(
-                                        borderSide: const BorderSide(
-                                          color: Colors.red,
+                                        borderSide: BorderSide(
+                                          color: context.themeColors.error,
                                           width: 1.5,
                                         ),
                                         borderRadius: BorderRadius.circular(5),
                                       )
                                     : InputBorder.none,
                                 hintText: '0',
-                                hintStyle: TextStyle(
-                                  color: Colors.white.useOpacity(0.5),
-                                  fontSize: isTablet ? 64 : 40,
-                                  fontFamily: 'Fira Code',
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                hintStyle: context.themeText.extraLargeTitle
+                                    ?.copyWith(
+                                      color: context.themeColors.textMuted,
+                                    ),
                                 isDense: true,
                                 contentPadding: EdgeInsets.zero,
                                 filled: true,
@@ -966,12 +935,7 @@ class SendScreenState extends State<SendScreen> {
                         ),
                         Text(
                           ' ${AppConstants.tokenSymbol}',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: isTablet ? 23 : 19,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: context.themeText.smallTitle,
                         ),
                       ],
                     ),
@@ -986,11 +950,8 @@ class SendScreenState extends State<SendScreen> {
                         'Available: '
                         // ignore: lines_longer_than_80_chars
                         '${_formattingService.formatBalance(_maxBalance)}',
-                        style: TextStyle(
-                          color: const Color(0xFF16CECE),
-                          fontSize: isTablet ? 20 : 14,
-                          fontFamily: 'Fira Code',
-                          fontWeight: FontWeight.w500,
+                        style: context.themeText.smallParagraph?.copyWith(
+                          color: context.themeColors.checksum,
                         ),
                       ),
                       Container(
@@ -1006,15 +967,7 @@ class SendScreenState extends State<SendScreen> {
                         ),
                         child: GestureDetector(
                           onTap: _setMaxAmount,
-                          child: Text(
-                            'Max',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: isTablet ? 18 : 12,
-                              fontFamily: 'Fira Code',
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
+                          child: Text('Max', style: context.themeText.detail),
                         ),
                       ),
                     ],
@@ -1043,17 +996,12 @@ class SendScreenState extends State<SendScreen> {
                         children: [
                           Text(
                             'Reversible for: ${_formatReversibleTime()}',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: isTablet ? 20 : 14,
-                              fontFamily: 'Fira Code',
-                              fontWeight: FontWeight.w400,
-                            ),
+                            style: context.themeText.smallParagraph,
                           ),
                           Icon(
                             Icons.edit,
                             color: Colors.white70,
-                            size: isTablet ? 22 : 14,
+                            size: context.isTablet ? 22 : 14,
                           ),
                         ],
                       ),
@@ -1071,11 +1019,9 @@ class SendScreenState extends State<SendScreen> {
                         children: [
                           Text(
                             'Network fee',
-                            style: TextStyle(
-                              color: Colors.white.useOpacity(0.6),
-                              fontSize: isTablet ? 20 : 12,
-                              fontFamily: 'Fira Code',
-                              fontWeight: FontWeight.w500,
+                            style: context.themeText.detail?.copyWith(
+                              color: context.themeColors.textMuted,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                           Row(
@@ -1083,22 +1029,20 @@ class SendScreenState extends State<SendScreen> {
                               Text(
                                 // ignore: lines_longer_than_80_chars
                                 '${_formattingService.formatBalance(_networkFee)} ${AppConstants.tokenSymbol}',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: isTablet ? 20 : 12,
-                                  fontFamily: 'Fira Code',
-                                  fontWeight: FontWeight.w500,
+                                style: context.themeText.detail?.copyWith(
+                                  color: context.themeColors.textMuted,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                               if (_isFetchingFee)
-                                const Padding(
-                                  padding: EdgeInsets.only(left: 8.0),
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 8.0),
                                   child: SizedBox(
                                     width: 12,
                                     height: 12,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      color: Colors.white70,
+                                      color: context.themeColors.circularLoader,
                                     ),
                                   ),
                                 ),
@@ -1151,11 +1095,8 @@ class SendScreenState extends State<SendScreen> {
                               // ignore: lines_longer_than_80_chars
                               : 'Send ${_formattingService.formatBalance(_amount)} ${AppConstants.tokenSymbol}',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: const Color(0xFF0E0E0E),
-                            fontSize: isTablet ? 24 : 18,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w500,
+                          style: context.themeText.smallTitle?.copyWith(
+                            color: context.themeColors.textSecondary,
                           ),
                         ),
                       ),
@@ -1173,10 +1114,7 @@ class SendScreenState extends State<SendScreen> {
     );
   }
 
-  static const iconSize = 21.0; // + 4 inset = 25 size
   Widget _buildIconButton(String assetPath) {
-    final isTablet = MediaQuery.of(context).isTablet;
-
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: ShapeDecoration(
@@ -1185,15 +1123,13 @@ class SendScreenState extends State<SendScreen> {
       ),
       child: SvgPicture.asset(
         assetPath,
-        width: isTablet ? iconSize + 8 : iconSize,
-        height: isTablet ? iconSize + 8 : iconSize,
+        width: context.themeSize.mainMenuIconSize,
+        height: context.themeSize.mainMenuIconSize,
       ),
     );
   }
 
   Widget _buildHistoryIconButton() {
-    final isTablet = MediaQuery.of(context).isTablet;
-
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: ShapeDecoration(
@@ -1203,7 +1139,7 @@ class SendScreenState extends State<SendScreen> {
       child: Icon(
         Icons.history,
         color: Colors.white,
-        size: isTablet ? iconSize + 8 : iconSize,
+        size: context.themeSize.mainMenuIconSize,
       ),
     );
   }

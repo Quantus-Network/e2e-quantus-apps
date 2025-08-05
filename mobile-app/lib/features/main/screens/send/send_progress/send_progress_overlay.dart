@@ -5,6 +5,9 @@ import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
@@ -149,9 +152,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
     }
   }
 
-  Widget _buildConfirmState(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
-
+  Widget _buildConfirmState() {
     final formattedAmount = _formattingService.formatBalance(widget.amount);
     final formattedFee = _formattingService.formatBalance(widget.fee);
 
@@ -170,12 +171,12 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                 GestureDetector(
                   onTap: widget.onClose,
                   child: SizedBox(
-                    width: 24,
-                    height: 24,
+                    width: context.themeSize.overlayCloseIconSize,
+                    height: context.themeSize.overlayCloseIconSize,
                     child: Icon(
                       Icons.close,
                       color: Colors.white,
-                      size: isTablet ? 28 : 24,
+                      size: context.themeSize.overlayCloseIconSize,
                     ),
                   ),
                 ),
@@ -190,20 +191,15 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
               Center(
                 child: SvgPicture.asset(
                   'assets/send_icon_1.svg',
-                  width: isTablet ? 91 : 51,
-                  height: isTablet ? 82 : 42,
+                  width: context.isTablet ? 91 : 51,
+                  height: context.isTablet ? 82 : 42,
                 ),
               ),
               const SizedBox(height: 17),
               Text(
                 'SEND',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: isTablet ? 50 : 30,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w300,
-                ),
+                style: context.themeText.largeTitle,
               ),
             ],
           ),
@@ -218,17 +214,17 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: isTablet ? 40 : 25,
-                    height: isTablet ? 40 : 25,
-                    decoration: const ShapeDecoration(
-                      color: Color(0xFFE6E6E6),
-                      shape: OvalBorder(),
+                    width: context.isTablet ? 40 : 25,
+                    height: context.isTablet ? 40 : 25,
+                    decoration: ShapeDecoration(
+                      color: context.themeColors.light,
+                      shape: const OvalBorder(),
                     ),
                     child: Center(
                       child: SvgPicture.asset(
                         'assets/res_icon.svg',
-                        width: isTablet ? 26 : 11,
-                        height: isTablet ? 34 : 19,
+                        width: context.isTablet ? 26 : 11,
+                        height: context.isTablet ? 34 : 19,
                       ),
                     ),
                   ),
@@ -238,21 +234,11 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                       children: [
                         TextSpan(
                           text: formattedAmount,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: isTablet ? 40 : 24,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: context.themeText.mediumTitle,
                         ),
                         TextSpan(
                           text: ' ${AppConstants.tokenSymbol}',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: isTablet ? 20 : 12,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: context.themeText.paragraph,
                         ),
                       ],
                     ),
@@ -267,40 +253,29 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                 children: [
                   Text(
                     'To:',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: isTablet ? 22 : 14,
-                      fontFamily: 'Fira Code',
-                      fontWeight: FontWeight.w400,
+                    style: context.themeText.smallParagraph?.copyWith(
+                      color: context.themeColors.textMuted,
                     ),
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: context.isTablet ? null : 274,
+                    child: Text(
+                      widget.recipientName,
+                      textAlign: TextAlign.center,
+                      style: context.themeText.paragraph?.copyWith(
+                        color: context.themeColors.checksum,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   Text(
-                    isTablet
+                    context.isTablet
                         ? widget.recipientAddress
                         : AddressFormattingService.formatAddress(
                             widget.recipientAddress,
                           ),
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: isTablet ? 20 : 12,
-                      fontFamily: 'Fira Code',
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  SizedBox(
-                    width: isTablet ? null : 274,
-                    child: Text(
-                      widget.recipientName,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: const Color(0xFF16CECE),
-                        fontSize: isTablet ? 22 : 14,
-                        fontFamily: 'Fira Code',
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
+                    style: context.themeText.tiny,
                   ),
                 ],
               ),
@@ -309,7 +284,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
               // Reversible time information
               if (_isReversible)
                 Container(
-                  width: isTablet ? 510 : 305,
+                  width: context.themeSize.sendOverlayContainerWidth,
                   padding: const EdgeInsets.symmetric(vertical: 5),
                   decoration: ShapeDecoration(
                     color: const Color(0xFF313131),
@@ -324,27 +299,17 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                     spacing: 10,
                     children: [
                       SizedBox(
-                        width: isTablet ? null : 299,
+                        width: context.isTablet ? null : 299,
                         child: Text.rich(
                           TextSpan(
                             children: [
                               TextSpan(
                                 text: 'Reversible for: ',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: isTablet ? 22 : 14,
-                                  fontFamily: 'Fira Code',
-                                  fontWeight: FontWeight.w400,
-                                ),
+                                style: context.themeText.smallParagraph,
                               ),
                               TextSpan(
                                 text: _formatReversibleTime(),
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: isTablet ? 20 : 12,
-                                  fontFamily: 'Fira Code',
-                                  fontWeight: FontWeight.w400,
-                                ),
+                                style: context.themeText.detail,
                               ),
                             ],
                           ),
@@ -367,10 +332,8 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                 child: SingleChildScrollView(
                   child: Text(
                     _errorMessage!,
-                    style: TextStyle(
-                      color: Colors.red,
-                      fontSize: isTablet ? 20 : 12,
-                      fontFamily: 'Fira Code',
+                    style: context.themeText.detail?.copyWith(
+                      color: context.themeColors.textError,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -380,7 +343,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
 
           // Network fee and confirm button
           SizedBox(
-            width: isTablet ? 510 : 305,
+            width: context.themeSize.sendOverlayContainerWidth,
             child: Column(
               children: [
                 Row(
@@ -388,10 +351,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                   children: [
                     Text(
                       'Network fee',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: isTablet ? 20 : 12,
-                        fontFamily: 'Fira Code',
+                      style: context.themeText.detail?.copyWith(
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -401,16 +361,13 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                       children: [
                         Text(
                           '$formattedFee ${AppConstants.tokenSymbol}',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: isTablet ? 20 : 12,
-                            fontFamily: 'Fira Code',
+                          style: context.themeText.detail?.copyWith(
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         SvgPicture.asset(
                           'assets/settings_icon.svg',
-                          width: isTablet ? 20 : 14,
+                          width: context.isTablet ? 20 : 14,
                         ),
                       ],
                     ),
@@ -433,11 +390,8 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                       child: Text(
                         'Confirm',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: const Color(0xFF0E0E0E),
-                          fontSize: isTablet ? 26 : 18,
-                          fontFamily: 'Fira Code',
-                          fontWeight: FontWeight.w500,
+                        style: context.themeText.smallTitle?.copyWith(
+                          color: context.themeColors.textSecondary,
                         ),
                       ),
                     ),
@@ -451,9 +405,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
     );
   }
 
-  Widget _buildProgressState(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
-
+  Widget _buildProgressState() {
     return SizedBox(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -469,12 +421,12 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                 GestureDetector(
                   onTap: goHome,
                   child: SizedBox(
-                    width: 24,
-                    height: 24,
+                    width: context.themeSize.overlayCloseIconSize,
+                    height: context.themeSize.overlayCloseIconSize,
                     child: Icon(
                       Icons.close,
                       color: Colors.white,
-                      size: isTablet ? 28 : 24,
+                      size: context.themeSize.overlayCloseIconSize,
                     ),
                   ),
                 ),
@@ -486,19 +438,14 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
             spacing: 18,
             children: [
               SizedBox(
-                width: isTablet ? 105 : 85,
-                height: isTablet ? 105 : 85,
+                width: context.isTablet ? 105 : 85,
+                height: context.isTablet ? 105 : 85,
                 child: SvgPicture.asset('assets/res_icon.svg'),
               ),
               Text(
                 'TRANSACTION \nIN PROGRESS',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: isTablet ? 42 : 30,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w300,
-                ),
+                style: context.themeText.largeTitle,
               ),
             ],
           ),
@@ -507,9 +454,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
     );
   }
 
-  Widget _buildCompleteState(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
-
+  Widget _buildCompleteState() {
     final formattedAmount = _formattingService.formatBalance(widget.amount);
 
     return SizedBox(
@@ -532,7 +477,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                     child: Icon(
                       Icons.close,
                       color: Colors.white,
-                      size: isTablet ? 28 : 24,
+                      size: context.themeSize.overlayCloseIconSize,
                     ),
                   ),
                 ),
@@ -547,20 +492,15 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
               Center(
                 child: SvgPicture.asset(
                   'assets/send_icon_1.svg',
-                  width: isTablet ? 91 : 51,
-                  height: isTablet ? 82 : 42,
+                  width: context.isTablet ? 91 : 51,
+                  height: context.isTablet ? 82 : 42,
                 ),
               ),
               const SizedBox(height: 17),
               Text(
                 'SENDING',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: isTablet ? 50 : 30,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w300,
-                ),
+                style: context.themeText.largeTitle,
               ),
             ],
           ),
@@ -575,8 +515,8 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: isTablet ? 40 : 25,
-                    height: isTablet ? 40 : 25,
+                    width: context.isTablet ? 40 : 25,
+                    height: context.isTablet ? 40 : 25,
                     decoration: const ShapeDecoration(
                       color: Color(0xFFE6E6E6),
                       shape: OvalBorder(),
@@ -584,8 +524,8 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                     child: Center(
                       child: SvgPicture.asset(
                         'assets/res_icon.svg',
-                        width: isTablet ? 26 : 11,
-                        height: isTablet ? 34 : 19,
+                        width: context.isTablet ? 26 : 11,
+                        height: context.isTablet ? 34 : 19,
                       ),
                     ),
                   ),
@@ -595,21 +535,11 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                       children: [
                         TextSpan(
                           text: formattedAmount,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: isTablet ? 40 : 24,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: context.themeText.mediumTitle,
                         ),
                         TextSpan(
                           text: ' ${AppConstants.tokenSymbol}',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: isTablet ? 20 : 12,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: context.themeText.paragraph,
                         ),
                       ],
                     ),
@@ -622,43 +552,32 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
               Text(
                 'will be sent to',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white.useOpacity(0.5),
-                  fontSize: isTablet ? 20 : 12,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w400,
+                style: context.themeText.smallParagraph?.copyWith(
+                  color: context.themeColors.textMuted,
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  SizedBox(
+                    width: context.isTablet ? null : 274,
+                    child: Text(
+                      widget.recipientName,
+                      textAlign: TextAlign.center,
+                      style: context.themeText.paragraph?.copyWith(
+                        color: context.themeColors.checksum,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   Text(
-                    isTablet
+                    context.isTablet
                         ? widget.recipientAddress
                         : AddressFormattingService.formatAddress(
                             widget.recipientAddress,
                           ),
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: isTablet ? 20 : 12,
-                      fontFamily: 'Fira Code',
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  SizedBox(
-                    width: isTablet ? null : 274,
-                    child: Text(
-                      widget.recipientName,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: const Color(0xFF16CECE),
-                        fontSize: isTablet ? 22 : 14,
-                        fontFamily: 'Fira Code',
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
+                    style: context.themeText.tiny,
                   ),
                 ],
               ),
@@ -667,7 +586,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
               // Reversible time information
               if (_isReversible)
                 Container(
-                  width: isTablet ? 510 : 305,
+                  width: context.themeSize.sendOverlayContainerWidth,
                   padding: const EdgeInsets.symmetric(vertical: 5),
                   decoration: ShapeDecoration(
                     color: const Color(0xFF313131),
@@ -682,27 +601,17 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                     spacing: 10,
                     children: [
                       SizedBox(
-                        width: isTablet ? null : 299,
+                        width: context.isTablet ? null : 299,
                         child: Text.rich(
                           TextSpan(
                             children: [
                               TextSpan(
                                 text: 'Reversible for: ',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: isTablet ? 22 : 14,
-                                  fontFamily: 'Fira Code',
-                                  fontWeight: FontWeight.w400,
-                                ),
+                                style: context.themeText.smallParagraph,
                               ),
                               TextSpan(
                                 text: _formatReversibleTime(),
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: isTablet ? 20 : 12,
-                                  fontFamily: 'Fira Code',
-                                  fontWeight: FontWeight.w400,
-                                ),
+                                style: context.themeText.detail,
                               ),
                             ],
                           ),
@@ -720,7 +629,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
           GestureDetector(
             onTap: goHome,
             child: Container(
-              width: isTablet ? 510 : 305,
+              width: context.themeSize.sendOverlayContainerWidth,
               padding: const EdgeInsets.all(16),
               decoration: ShapeDecoration(
                 color: Colors.white,
@@ -731,11 +640,8 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
               child: Text(
                 'Done',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: const Color(0xFF0E0E0E),
-                  fontSize: isTablet ? 26 : 18,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w500,
+                style: context.themeText.smallTitle?.copyWith(
+                  color: context.themeColors.textSecondary,
                 ),
               ),
             ),
@@ -750,13 +656,13 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
     Widget content;
     switch (currentState) {
       case SendOverlayState.confirm:
-        content = _buildConfirmState(context);
+        content = _buildConfirmState();
         break;
       case SendOverlayState.progress:
-        content = _buildProgressState(context);
+        content = _buildProgressState();
         break;
       case SendOverlayState.complete:
-        content = _buildCompleteState(context);
+        content = _buildCompleteState();
         break;
     }
 
