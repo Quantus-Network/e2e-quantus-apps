@@ -122,8 +122,6 @@ class _AccountsScreenState extends State<AccountsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
-
     return Scaffold(
       backgroundColor: context.themeColors.background,
       body: Stack(
@@ -146,7 +144,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
 
                 Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: _buildCreateNewAccountButton(isTablet),
+                  child: _buildCreateNewAccountButton(),
                 ),
               ],
             ),
@@ -189,13 +187,13 @@ class _AccountsScreenState extends State<AccountsScreen> {
     );
   }
 
-  Widget _buildCreateNewAccountButton(bool isTablet) {
+  Widget _buildCreateNewAccountButton() {
     return InkWell(
       onTap: _isCreatingAccount ? null : _createNewAccount,
       child: Container(
         width: double.infinity,
         padding: EdgeInsets.symmetric(
-          vertical: isTablet ? 18 : 16,
+          vertical: context.isTablet ? 18 : 16,
           horizontal: 16,
         ),
         decoration: ShapeDecoration(
@@ -212,15 +210,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
             if (_isCreatingAccount)
               const CircularProgressIndicator(color: Colors.white)
             else
-              Text(
-                'Create New Account',
-                style: TextStyle(
-                  color: const Color(0xFFE6E6E6),
-                  fontSize: isTablet ? 24 : 18,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              Text('Create New Account', style: context.themeText.smallTitle),
           ],
         ),
       ),
