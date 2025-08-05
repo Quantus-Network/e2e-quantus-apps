@@ -260,6 +260,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                     const SizedBox(width: 5),
                                     InkWell(
                                       onTap: () =>
+                                          // ignore: lines_longer_than_80_chars
                                           ClipboardExtensions.copyTextWithSnackbar(
                                             context,
                                             account.accountId,
