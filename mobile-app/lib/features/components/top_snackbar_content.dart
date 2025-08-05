@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class TopSnackBarContent extends StatelessWidget {
@@ -16,14 +17,12 @@ class TopSnackBarContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
-
     // Default Icon if none provided
     final Widget displayIcon =
         icon ??
         Container(
-          width: isTablet ? 44 : 36,
-          height: isTablet ? 44 : 36,
+          width: context.isTablet ? 44 : 36,
+          height: context.isTablet ? 44 : 36,
           decoration: const ShapeDecoration(
             color: Color(0xFF494949), // Default grey background
             shape: OvalBorder(), // Use OvalBorder for circle
@@ -32,7 +31,7 @@ class TopSnackBarContent extends StatelessWidget {
           child: Icon(
             Icons.check,
             color: Colors.white,
-            size: isTablet ? 24 : 20,
+            size: context.isTablet ? 24 : 20,
           ), // Default check icon
         );
 
@@ -60,25 +59,12 @@ class TopSnackBarContent extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: isTablet ? 18 : 14,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w500, // Slightly bolder title
-                  ),
-                ),
+                Text(title, style: context.themeText.smallParagraph),
                 const SizedBox(height: 2), // Spacing
                 Text(
                   message,
-                  style: TextStyle(
-                    color: Colors.black.useOpacity(
-                      153 / 255.0,
-                    ), // Black with alpha
-                    fontSize: isTablet ? 16 : 12,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w400, // Regular weight for message
+                  style: context.themeText.detail?.copyWith(
+                    color: Colors.black.useOpacity(0.6),
                   ),
                   // softWrap: true, // Ensure message wraps
                 ),

@@ -48,13 +48,11 @@ Future<void> showCopySnackbar(
   required String title,
   required String message,
 }) async {
-  final isTablet = MediaQuery.of(context).isTablet;
-
   await showTopSnackBar(
     context,
     icon: Container(
-      width: isTablet ? 44 : 36,
-      height: isTablet ? 44 : 36,
+      width: context.isTablet ? 44 : 36,
+      height: context.isTablet ? 44 : 36,
       decoration: const ShapeDecoration(
         color: Color(0xFF494949),
         shape: OvalBorder(),
@@ -62,7 +60,7 @@ Future<void> showCopySnackbar(
       alignment: Alignment.center,
       child: SvgPicture.asset(
         'assets/copy_icon.svg',
-        width: isTablet ? 24 : 16,
+        width: context.isTablet ? 24 : 16,
       ),
     ),
     title: title,
