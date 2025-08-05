@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
 class ReversibleTimer extends StatelessWidget {
   final Duration remainingTime;
@@ -9,7 +9,6 @@ class ReversibleTimer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
     final time = DatetimeFormattingService.formatDuration(remainingTime);
 
     return SizedBox(
@@ -23,57 +22,27 @@ class ReversibleTimer extends StatelessWidget {
           Text(
             time.hours,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: isTablet ? 36 : 22,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.44,
-            ),
+            style: context.themeText.timer,
           ),
           Text(
             ':',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: isTablet ? 36 : 22,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.44,
-            ),
+            style: context.themeText.timer,
           ),
           Text(
             time.minutes,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: isTablet ? 36 : 22,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.44,
-            ),
+            style: context.themeText.timer,
           ),
           Text(
             ':',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: isTablet ? 36 : 22,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.44,
-            ),
+            style: context.themeText.timer,
           ),
           Text(
             time.seconds,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: isTablet ? 36 : 22,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.44,
-            ),
+            style: context.themeText.timer,
           ),
         ],
       ),
