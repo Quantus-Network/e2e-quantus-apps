@@ -167,7 +167,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                 loading: () => const CircularProgressIndicator(),
                 error: (e, st) => Text(
                   'Error loading accounts.',
-                  style: context.themeText.smallParagraph,
+                  style: TextStyle(color: context.themeColors.textError),
                 ),
               ),
               const SizedBox(height: 13),

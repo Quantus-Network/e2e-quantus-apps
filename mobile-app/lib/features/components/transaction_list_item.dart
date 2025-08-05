@@ -8,8 +8,8 @@ import 'package:resonance_network_wallet/features/components/transaction_details
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
-import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/models/transaction_role.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 
 class TransactionListItem extends StatefulWidget {
@@ -60,16 +60,18 @@ class TransactionListItemState extends State<TransactionListItem> {
     if (widget.transaction.isReversibleCancelled) {
       return context.themeColors.error;
     }
-
     if (role == TransactionRole.sender && isPendingOrScheduled) {
       return context.themeColors.checksum;
     }
     if (role == TransactionRole.receiver && isPendingOrScheduled) {
       return context.themeColors.purple;
     }
-
-    if (role == TransactionRole.sender) return const Color(0xFF16CECE);
-    return context.themeColors.purple;
+    if (role == TransactionRole.sender) {
+      return context.themeColors.checksum;
+    } else {
+      // default - receiver
+      return context.themeColors.purple;
+    }
   }
 
   @override
