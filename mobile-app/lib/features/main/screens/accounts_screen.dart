@@ -259,10 +259,11 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                     ),
                                     const SizedBox(width: 5),
                                     InkWell(
-                                      onTap: () => ClipboardExtensions.copyText(
-                                        context,
-                                        account.accountId,
-                                      ),
+                                      onTap: () =>
+                                          ClipboardExtensions.copyTextWithSnackbar(
+                                            context,
+                                            account.accountId,
+                                          ),
                                       child: Icon(
                                         Icons.copy,
                                         size: context.isTablet ? 20 : 14,

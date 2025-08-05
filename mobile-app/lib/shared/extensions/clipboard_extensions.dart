@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 
 extension ClipboardExtensions on Clipboard {
-  static Future<void> copyText(
+  static Future<void> copyTextWithSnackbar(
     BuildContext context,
     String text, {
     String title = 'Copied!',

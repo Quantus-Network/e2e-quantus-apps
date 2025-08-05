@@ -145,7 +145,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                 color: Colors.white,
                 size: context.isTablet ? 26 : 22,
               ),
-              onPressed: () => ClipboardExtensions.copyText(
+              onPressed: () => ClipboardExtensions.copyTextWithSnackbar(
                 context,
                 widget.account.accountId,
               ),

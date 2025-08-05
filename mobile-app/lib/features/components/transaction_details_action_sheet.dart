@@ -202,8 +202,10 @@ class _TransactionDetailsActionSheetState
                       gapLength: 3,
                       borderRadius: const Radius.circular(4),
                       child: InkWell(
-                        onTap: () =>
-                            ClipboardExtensions.copyText(context, accountId),
+                        onTap: () => ClipboardExtensions.copyTextWithSnackbar(
+                          context,
+                          accountId,
+                        ),
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Row(
