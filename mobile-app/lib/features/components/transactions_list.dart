@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
-import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
 class RecentTransactionsList extends StatelessWidget {
   final List<TransactionEvent> transactions;
@@ -17,8 +17,6 @@ class RecentTransactionsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
-
     final transactionsToShow = filter == null
         ? transactions
         : transactions.where(filter!).toList();
@@ -53,11 +51,7 @@ class RecentTransactionsList extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'No transactions yet.',
-                  style: TextStyle(
-                    fontSize: isTablet ? 16 : 14,
-                    color: Colors.white,
-                    fontFamily: 'Fira Code',
-                  ),
+                  style: context.themeText.smallParagraph,
                 ),
               ),
             )

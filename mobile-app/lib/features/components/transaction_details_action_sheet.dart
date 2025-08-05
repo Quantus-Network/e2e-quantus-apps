@@ -6,6 +6,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
 import 'package:resonance_network_wallet/features/components/reversible_timer.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
@@ -95,7 +98,6 @@ class _TransactionDetailsActionSheetState
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
     final String accountId = isSender
         ? widget.transaction.to
         : widget.transaction.from;
@@ -144,8 +146,7 @@ class _TransactionDetailsActionSheetState
                       IconButton(
                         icon: Icon(
                           Icons.close,
-                          color: Colors.white,
-                          size: isTablet ? 28 : 24,
+                          size: context.themeSize.overlayCloseIconSize,
                         ),
                         onPressed: () => Navigator.of(context).pop(),
                       ),
@@ -157,36 +158,29 @@ class _TransactionDetailsActionSheetState
                   if (widget.transaction.isFailed)
                     SvgPicture.asset(
                       'assets/send_failed_icon.svg',
-                      width: isTablet ? 91 : 51,
-                      height: isTablet ? 82 : 42,
+                      width: context.themeSize.txDetailsIconWidth,
+                      height: context.themeSize.txDetailsIconHeight,
                     )
                   else if (widget.transaction.isReversibleCancelled)
                     SvgPicture.asset(
                       'assets/stop_icon.svg',
-                      width: isTablet ? 91 : 51,
-                      height: isTablet ? 82 : 42,
+                      width: context.themeSize.txDetailsIconWidth,
                     )
                   else
                     Image.asset(
                       isSender
                           ? 'assets/send_icon.png'
                           : 'assets/receive_icon_sm.png',
-                      width: isTablet ? 91 : 51,
-                      height: isTablet ? 82 : 42,
+                      height: context.themeSize.txDetailsIconHeight,
                     ),
                   const SizedBox(height: 17),
                   Text(
                     title,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: isTablet ? 50 : 30,
-                      fontFamily: 'Fira Code',
-                      fontWeight: FontWeight.w300,
-                    ),
+                    style: context.themeText.largeTitle,
                   ),
                   const SizedBox(height: 26),
-                  _buildDetails(isTablet),
+                  _buildDetails(),
 
                   const SizedBox(height: 12),
                   // Copy address button
@@ -211,16 +205,11 @@ class _TransactionDetailsActionSheetState
                             children: [
                               SvgPicture.asset(
                                 'assets/copy_icon.svg',
-                                width: isTablet ? 28 : 20,
+                                width: context.isTablet ? 28 : 20,
                               ),
                               Text(
                                 'Copy Address',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: isTablet ? 22 : 14,
-                                  fontFamily: 'Fira Code',
-                                  fontWeight: FontWeight.w400,
-                                ),
+                                style: context.themeText.smallParagraph,
                               ),
                             ],
                           ),
@@ -229,9 +218,8 @@ class _TransactionDetailsActionSheetState
                     ),
                   ),
 
-                  if (widget.transaction.isFailed) _buildRetryButton(isTablet),
-                  if (!widget.transaction.isFailed)
-                    _buildViewExplorer(isTablet),
+                  if (widget.transaction.isFailed) _buildRetryButton(),
+                  if (!widget.transaction.isFailed) _buildViewExplorer(),
                 ],
               ),
             ),
@@ -241,7 +229,7 @@ class _TransactionDetailsActionSheetState
     );
   }
 
-  Widget _buildRetryButton(bool isTablet) {
+  Widget _buildRetryButton() {
     return Column(
       children: [
         const SizedBox(height: 26),
@@ -267,11 +255,9 @@ class _TransactionDetailsActionSheetState
                 Text(
                   'Retry',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: isTablet ? 22 : 14,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w500,
+                  style: context.themeText.smallParagraph?.copyWith(
+                    color: context.themeColors.textSecondary,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -282,7 +268,7 @@ class _TransactionDetailsActionSheetState
     );
   }
 
-  Widget _buildViewExplorer(bool isTablet) {
+  Widget _buildViewExplorer() {
     String transactionType =
         (widget.transaction.isReversibleScheduled ||
             widget.transaction.isReversibleExecuted ||
@@ -313,19 +299,19 @@ class _TransactionDetailsActionSheetState
               Text(
                 'View in Explorer',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: context.themeText.detail?.copyWith(
                   color: hasExtrinsicHash
-                      ? const Color(0xFF16CECE)
+                      ? context.themeColors.checksum
                       : Colors.grey,
-                  fontSize: isTablet ? 20 : 12,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               Icon(
                 Icons.open_in_new,
-                size: isTablet ? 20 : 12,
-                color: hasExtrinsicHash ? const Color(0xFF16CECE) : Colors.grey,
+                size: context.isTablet ? 20 : 12,
+                color: hasExtrinsicHash
+                    ? context.themeColors.checksum
+                    : Colors.grey,
               ),
             ],
           ),
@@ -334,7 +320,7 @@ class _TransactionDetailsActionSheetState
     );
   }
 
-  Widget _buildDetails(bool isTablet) {
+  Widget _buildDetails() {
     final NumberFormattingService formattingService = NumberFormattingService();
     final String formattedAmount = formattingService.formatBalance(
       widget.transaction.amount,
@@ -349,21 +335,11 @@ class _TransactionDetailsActionSheetState
             children: [
               TextSpan(
                 text: formattedAmount,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: isTablet ? 40 : 24,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w500,
-                ),
+                style: context.themeText.mediumTitle,
               ),
               TextSpan(
                 text: ' ${AppConstants.tokenSymbol}',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: isTablet ? 40 : 24,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w500,
-                ),
+                style: context.themeText.paragraph,
               ),
             ],
           ),
@@ -371,11 +347,8 @@ class _TransactionDetailsActionSheetState
         Text(
           detailText,
           textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.50),
-            fontSize: isTablet ? 20 : 12,
-            fontFamily: 'Fira Code',
-            fontWeight: FontWeight.w400,
+          style: context.themeText.smallParagraph?.copyWith(
+            color: context.themeColors.textMuted,
           ),
         ),
         if (!isSender && widget.transaction.isReversibleScheduled)
@@ -389,24 +362,14 @@ class _TransactionDetailsActionSheetState
             return Text(
               checkPhrase,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: isTablet ? 24 : 16,
-                fontFamily: 'Fira Code',
-                fontWeight: FontWeight.w400,
-              ),
+              style: context.themeText.paragraph,
             );
           },
         ),
         Text(
           isSender ? widget.transaction.to : widget.transaction.from,
           textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: isTablet ? 18 : 10,
-            fontFamily: 'Fira Code',
-            fontWeight: FontWeight.w400,
-          ),
+          style: context.themeText.tiny,
         ),
       ],
     );
