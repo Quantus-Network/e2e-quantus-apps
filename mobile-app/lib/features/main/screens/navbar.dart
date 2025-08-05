@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:provider/provider.dart';
 import 'package:resonance_network_wallet/features/main/screens/notifications_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
-import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class NavItem {
@@ -96,14 +95,14 @@ class NavbarItem extends StatelessWidget {
   }
 }
 
-class Navbar extends StatefulWidget {
+class Navbar extends ConsumerStatefulWidget {
   const Navbar({super.key});
 
   @override
-  State<Navbar> createState() => _NavbarState();
+  ConsumerState<Navbar> createState() => _NavbarState();
 }
 
-class _NavbarState extends State<Navbar> {
+class _NavbarState extends ConsumerState<Navbar> {
   int _selectedIndex = 0;
   final bool _notificationTestDisabled = true; // Flag for notifications
 
@@ -210,15 +209,13 @@ class _NavbarState extends State<Navbar> {
   }
 
   Widget _buildBody() {
-    final walletStateManager = Provider.of<WalletStateManager>(context);
-
     return IndexedStack(
       index: _selectedIndex,
-      children: [
-        const WalletMain(),
-        TransactionsScreen(manager: walletStateManager),
-        const SettingsScreen(),
-        NotificationsScreen(manager: walletStateManager),
+      children: const [
+        WalletMain(),
+        TransactionsScreen(),
+        SettingsScreen(),
+        NotificationsScreen(),
       ],
     );
   }

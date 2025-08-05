@@ -37,16 +37,18 @@ class ChainHistoryService {
   ChainHistoryService();
 
   final String _scheduledTransfersQuery = r'''
-query ScheduledTransfersByAccount($account: String!) {
+query ScheduledTransfersByAccounts($accounts: [String!]!, $limit: Int!, $offset: Int!) {
   events(
+    limit: $limit
+    offset: $offset
     where: {
       reversibleTransfer: {
-        AND:[
+        AND: [
           { status_eq: SCHEDULED },
           {
             OR: [
-              { from: { id_eq: $account } },
-              { to: { id_eq: $account } }
+              { from: { id_in: $accounts } },
+              { to: { id_in: $accounts } }
             ]
           }
         ]
@@ -76,12 +78,65 @@ query ScheduledTransfersByAccount($account: String!) {
       timestamp
     }
   }
-}
-''';
+}''';
+
+  // GraphQL query to fetch transactions by their hash
+  final String _transactionsByHashQuery = r'''
+query TransactionsByHash($transactionHashes: [String!]!, $limit: Int!, $offset: Int!) {
+  events(
+    limit: $limit
+    offset: $offset
+    where: {
+      extrinsicHash_in: $transactionHashes
+    }
+    orderBy: timestamp_DESC
+  ) {
+    id
+    transfer {
+      id
+      amount
+      timestamp
+      from {
+        id
+      }
+      to {
+        id
+      }
+      block {
+        height
+        hash
+      }
+      extrinsicHash
+      timestamp
+      fee
+    }
+    reversibleTransfer {
+      id
+      amount
+      timestamp
+      from {
+        id
+      }
+      to {
+        id
+      }
+      txId
+      scheduledAt
+      status
+      block {
+        height
+        hash
+      }
+      extrinsicHash
+      timestamp
+    }
+    extrinsicHash
+  }
+}''';
 
   // GraphQL query to fetch transfers for a specific account
-  final String _eventsQuery = r'''
-query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
+  final String _eventsByAccountsQuery = r'''
+query EventsByAccounts($accounts: [String!]!, $limit: Int!, $offset: Int!) {
   events(
     limit: $limit
     offset: $offset
@@ -91,8 +146,8 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
         { OR: [
             { transfer: {
                 OR: [
-                  { from: { id_eq: $account } }
-                  { to:   { id_eq: $account } }
+                  { from: { id_in: $accounts } }
+                  { to:   { id_in: $accounts } }
                 ]}
             }
             { reversibleTransfer: {
@@ -100,8 +155,8 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
                 { status_not_eq: SCHEDULED },
                 {
                   OR: [
-                    { from: { id_eq: $account } },
-                    { to: { id_eq: $account } }
+                    { from: { id_in: $accounts } },
+                    { to: { id_in: $accounts } }
                   ]
                 }
               ]
@@ -155,16 +210,16 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
     extrinsicHash
   }
 }
-  ''';
+''';
 
   Future<SortedTransactionsList> fetchAllTransactionTypes({
-    required String accountId,
-    int limit = 10,
+    required List<String> accountIds,
+    int limit = 20,
     int offset = 0,
   }) async {
-    final scheduled = await fetchScheduledTransfers(accountId: accountId);
+    final scheduled = await fetchScheduledTransfers(accountIds: accountIds);
     final other = await _fetchOtherTransfers(
-      accountId: accountId,
+      accountIds: accountIds,
       limit: limit,
       offset: offset,
     );
@@ -175,13 +230,107 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
     );
   }
 
+  // Make a graphQL query for specific transaction hashes, get the results back
+  // Mostly to check if reversibles have been executed or failed.
+  Future<List<TransactionEvent>> fetchTransactionsByTransactionHash({
+    required List<String> transactionHashes,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    if (transactionHashes.isEmpty) {
+      return [];
+    }
+
+    final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
+
+    print(
+      'Fetching transactions by hash: $transactionHashes (limit: $limit, offset: $offset)',
+    );
+
+    final Map<String, dynamic> requestBody = {
+      'query': _transactionsByHashQuery,
+      'variables': {
+        'transactionHashes': transactionHashes,
+        'limit': limit,
+        'offset': offset,
+      },
+    };
+
+    try {
+      final http.Response response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}',
+        );
+      }
+
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+
+      if (responseBody['errors'] != null) {
+        print('GraphQL errors in response: ${responseBody['errors']}');
+        throw Exception('GraphQL errors: ${responseBody['errors'].toString()}');
+      }
+
+      final Map<String, dynamic>? data = responseBody['data'];
+      if (data == null) {
+        throw Exception('GraphQL response data is null.');
+      }
+
+      final List<dynamic>? events = data['events'];
+
+      if (events == null || events.isEmpty) {
+        print('No transactions found for hashes: $transactionHashes');
+        return [];
+      }
+
+      final List<TransactionEvent> transactions = [];
+      for (var eventJson in events) {
+        final event = eventJson as Map<String, dynamic>;
+
+        if (event['transfer'] != null) {
+          final transferData = event['transfer'] as Map<String, dynamic>;
+          transferData['extrinsicHash'] ??= event['extrinsicHash'];
+          transactions.add(TransferEvent.fromJson(transferData));
+        } else if (event['reversibleTransfer'] != null) {
+          final reversibleTransferData =
+              event['reversibleTransfer'] as Map<String, dynamic>;
+          reversibleTransferData['extrinsicHash'] ??= event['extrinsicHash'];
+          transactions.add(
+            ReversibleTransferEvent.fromJson(reversibleTransferData),
+          );
+        }
+      }
+
+      print(
+        'Found ${transactions.length} transactions for ${transactionHashes.length} hashes',
+      );
+      for (final t in transactions) {
+        print(
+          '${t.id} ${t.extrinsicHash} ${(t as ReversibleTransferEvent).status}',
+        );
+      }
+      return transactions;
+    } catch (e, stackTrace) {
+      print('Error fetching transactions by hash: $e');
+      print(stackTrace);
+      rethrow;
+    }
+  }
+
   Future<List<ReversibleTransferEvent>> fetchScheduledTransfers({
-    required String accountId,
+    required List<String> accountIds,
+    int limit = 10,
+    int offset = 0,
   }) async {
     final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
     final Map<String, dynamic> requestBody = {
       'query': _scheduledTransfersQuery,
-      'variables': {'account': accountId},
+      'variables': {'accounts': accountIds, 'limit': limit, 'offset': offset},
     };
 
     try {
@@ -222,22 +371,21 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
     }
   }
 
-  // Method to fetch transfers using http
   Future<TransferList> _fetchOtherTransfers({
-    required String accountId,
+    required List<String> accountIds,
     int limit = 10,
     int offset = 0,
   }) async {
     final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
     print(
-      'fetchTransfers for account: $accountId from $uri (limit: $limit, offset: $offset)',
+      'fetchTransfers for account: $accountIds from $uri (limit: $limit, offset: $offset)',
     );
 
     // Construct the GraphQL request body
     final Map<String, dynamic> requestBody = {
-      'query': _eventsQuery,
+      'query': _eventsByAccountsQuery,
       'variables': <String, dynamic>{
-        'account': accountId,
+        'accounts': accountIds,
         'limit': limit,
         'offset': offset,
       },

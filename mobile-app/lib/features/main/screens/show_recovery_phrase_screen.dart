@@ -40,6 +40,7 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.themeColors.background,
+      appBar: const WalletAppBar(title: 'Your Recovery Phrase'),
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
@@ -51,7 +52,6 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              const WalletAppBar(title: 'Your Recovery Phrase'),
               Expanded(
                 child: SingleChildScrollView(
                   child: Column(

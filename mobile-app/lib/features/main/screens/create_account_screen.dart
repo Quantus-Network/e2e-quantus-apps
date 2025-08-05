@@ -142,6 +142,9 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.themeColors.background,
+      appBar: WalletAppBar(
+        title: _isEditMode ? 'Edit Account' : 'Create New Account',
+      ),
       body: Stack(
         children: [
           Container(
@@ -158,11 +161,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : Column(
                     children: [
-                      WalletAppBar(
-                        title: _isEditMode
-                            ? 'Edit Account'
-                            : 'Create New Account',
-                      ),
                       Expanded(
                         child: SingleChildScrollView(
                           padding: const EdgeInsets.symmetric(horizontal: 25),

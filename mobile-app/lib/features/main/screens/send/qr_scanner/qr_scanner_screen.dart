@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
 class QRScannerScreen extends StatefulWidget {
   const QRScannerScreen({super.key});
@@ -23,22 +26,8 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Scan QR Code',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontFamily: 'Fira Code',
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+      appBar: WalletAppBar(
+        title: 'Scan QR Code',
         actions: [
           ValueListenableBuilder<MobileScannerState>(
             valueListenable: controller,
@@ -108,11 +97,8 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
             child: Text(
               'Position the QR code within the frame',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white.useOpacity(0.8),
-                fontSize: 16,
-                fontFamily: 'Fira Code',
-                fontWeight: FontWeight.w400,
+              style: context.themeText.paragraph?.copyWith(
+                color: context.themeColors.textPrimary.useOpacity(0.8),
               ),
             ),
           ),

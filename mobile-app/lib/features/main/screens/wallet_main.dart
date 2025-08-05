@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:provider/provider.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
@@ -13,33 +13,22 @@ import 'package:resonance_network_wallet/features/main/screens/welcome_screen.da
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
-import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
-class WalletMain extends StatefulWidget {
+class WalletMain extends ConsumerStatefulWidget {
   const WalletMain({super.key});
 
   @override
-  State<WalletMain> createState() => _WalletMainState();
+  ConsumerState<WalletMain> createState() => _WalletMainState();
 }
 
-class _WalletMainState extends State<WalletMain> {
+class _WalletMainState extends ConsumerState<WalletMain> {
   final NumberFormattingService _formattingService = NumberFormattingService();
   final SubstrateService _substrateService = SubstrateService();
   final ScrollController _scrollController = ScrollController();
-
-  @override
-  void initState() {
-    super.initState();
-    // Access the WalletStateManager from the provider without listening to
-    // changes
-    final walletStateManager = Provider.of<WalletStateManager>(
-      context,
-      listen: false,
-    );
-    // Initial data load
-    walletStateManager.load();
-  }
 
   @override
   void dispose() {
@@ -115,9 +104,68 @@ class _WalletMainState extends State<WalletMain> {
     );
   }
 
-  Widget _buildHistorySection(WalletStateManager walletStateManager) {
-    if (walletStateManager.isTxHistoryLoading) {
-      return Container(
+  Widget _buildHistorySection(
+    AsyncValue<CombinedTransactionsList> allTransactionsAsync,
+    Account activeAccount,
+  ) {
+    return allTransactionsAsync.when(
+      data: (combinedData) {
+        // Combine all transaction types into a single list
+        // Pending transactions first, then reversible, then others
+        final allTransactions = <TransactionEvent>[
+          ...combinedData.pendingTransactions.cast<TransactionEvent>(),
+          ...combinedData.reversibleTransfers.cast<TransactionEvent>(),
+          ...combinedData.otherTransfers,
+        ];
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 10.0, bottom: 10.0),
+              child: Text(
+                'Recent Transactions',
+                style: context.themeText.smallParagraph?.copyWith(
+                  color: context.themeColors.light,
+                ),
+              ),
+            ),
+            if (allTransactionsAsync.isRefreshing)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16.0),
+                child: Center(child: LinearProgressIndicator()),
+              ),
+            RecentTransactionsList(
+              transactions: allTransactions.take(5).toList(),
+              currentWalletAddress: activeAccount.accountId,
+            ),
+            if (allTransactions.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 12.0, right: 12.0),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TransactionsScreen(),
+                        ),
+                      );
+                    },
+                    child: Text(
+                      'Transaction History →',
+                      style: context.themeText.detail?.copyWith(
+                        color: context.themeColors.textPrimary.useOpacity(0.80),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+      loading: () => Container(
         width: double.infinity,
         padding: const EdgeInsets.all(10),
         decoration: ShapeDecoration(
@@ -132,11 +180,8 @@ class _WalletMainState extends State<WalletMain> {
             ),
           ),
         ),
-      );
-    }
-
-    if (walletStateManager.txHistoryError != null) {
-      return Container(
+      ),
+      error: (error, stack) => Container(
         width: double.infinity,
         padding: const EdgeInsets.all(20),
         decoration: ShapeDecoration(
@@ -148,7 +193,7 @@ class _WalletMainState extends State<WalletMain> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                walletStateManager.txHistoryError ?? 'Error',
+                error.toString(),
                 style: context.themeText.smallParagraph?.copyWith(
                   color: Colors.white70,
                 ),
@@ -156,66 +201,13 @@ class _WalletMainState extends State<WalletMain> {
               ),
               const SizedBox(height: 10),
               TextButton(
-                onPressed: walletStateManager.load,
+                onPressed: () => ref.invalidate(activeAccountHistoryProvider),
                 child: Text('Retry', style: context.themeText.smallParagraph),
               ),
             ],
           ),
         ),
-      );
-    }
-
-    final activeAccount = walletStateManager.walletData?.account;
-    if (activeAccount == null) {
-      return const SizedBox.shrink(); // or a placeholder
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 10.0, bottom: 10.0),
-          child: Text(
-            'Recent Transactions',
-            style: context.themeText.smallParagraph?.copyWith(
-              color: context.themeColors.light,
-            ),
-          ),
-        ),
-        RecentTransactionsList(
-          transactions: walletStateManager.combinedTransactions
-              .take(5)
-              .toList(),
-          currentWalletAddress: activeAccount.accountId,
-        ),
-        if (walletStateManager.combinedTransactions.isNotEmpty)
-          Padding(
-            padding: EdgeInsets.only(
-              top: context.isTablet ? 18 : 12.0,
-              right: 12.0,
-            ),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          TransactionsScreen(manager: walletStateManager),
-                    ),
-                  );
-                },
-                child: Text(
-                  'Transaction History →',
-                  style: context.themeText.detail?.copyWith(
-                    color: context.themeColors.textPrimary.useOpacity(0.80),
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
+      ),
     );
   }
 
@@ -244,9 +236,11 @@ class _WalletMainState extends State<WalletMain> {
 
   @override
   Widget build(BuildContext context) {
-    final walletStateManager = Provider.of<WalletStateManager>(context);
+    final activeAccountAsync = ref.watch(activeAccountProvider);
+    final balanceAsync = ref.watch(balanceProvider);
+    final allTransactionsAsync = ref.watch(allTransactionsProvider);
 
-    if (walletStateManager.isWalletLoading) {
+    if (activeAccountAsync.isLoading) {
       return Scaffold(
         backgroundColor: context.themeColors.background,
         body: Center(
@@ -257,8 +251,12 @@ class _WalletMainState extends State<WalletMain> {
       );
     }
 
-    final hasWalletData = walletStateManager.walletData != null;
-    if (walletStateManager.walletError != null || !hasWalletData) {
+    final hasError =
+        activeAccountAsync.hasError && !activeAccountAsync.hasValue;
+    final noAccount =
+        activeAccountAsync.hasValue && activeAccountAsync.value == null;
+
+    if (hasError || noAccount) {
       return Scaffold(
         backgroundColor: context.themeColors.background,
         body: Column(
@@ -270,9 +268,9 @@ class _WalletMainState extends State<WalletMain> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.error_outline,
-                        color: Colors.red,
+                        color: context.themeColors.error,
                         size: 50,
                       ),
                       const SizedBox(height: 20),
@@ -283,8 +281,9 @@ class _WalletMainState extends State<WalletMain> {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        'Could not load wallet data. Please check your network '
-                        'connection and try again.',
+                        activeAccountAsync.error?.toString() ??
+                            'Could not load wallet data. Please check your '
+                                'network connection and try again.',
                         style: context.themeText.smallParagraph?.copyWith(
                           color: context.themeColors.textPrimary.useOpacity(
                             0.7,
@@ -304,7 +303,11 @@ class _WalletMainState extends State<WalletMain> {
                 children: [
                   _buildFullWidthActionButton(
                     label: 'Retry',
-                    onTap: () => walletStateManager.load(),
+                    onTap: () {
+                      ref.invalidate(activeAccountProvider);
+                      ref.invalidate(balanceProvider);
+                      ref.invalidate(activeAccountHistoryProvider);
+                    },
                     gradient: const LinearGradient(
                       begin: Alignment(0.50, 0.00),
                       end: Alignment(0.50, 1.00),
@@ -326,8 +329,7 @@ class _WalletMainState extends State<WalletMain> {
       );
     }
 
-    final walletData = walletStateManager.walletData!;
-    final activeAccount = walletData.account;
+    final activeAccount = activeAccountAsync.value!;
 
     return Scaffold(
       backgroundColor: context.themeColors.background,
@@ -343,7 +345,23 @@ class _WalletMainState extends State<WalletMain> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: RefreshIndicator(
-              onRefresh: () => walletStateManager.load(),
+              onRefresh: () async {
+                // Force refresh balance by invalidating the family provider
+                // first
+                final activeAccount = ref.read(activeAccountProvider).value;
+                if (activeAccount != null) {
+                  // Try invalidating the entire family provider to clear all
+                  // cache
+                  ref.invalidate(balanceProviderFamily);
+                }
+                ref.invalidate(
+                  balanceProviderRaw,
+                ); // Invalidate raw balance for loading
+                // balanceProvider (effective) will auto-update
+                await ref
+                    .read(paginationControllerProvider.notifier)
+                    .loadingRefresh();
+              },
               color: const Color(0xFF0CE6ED),
               backgroundColor: Colors.black,
               child: CustomScrollView(
@@ -424,28 +442,39 @@ class _WalletMainState extends State<WalletMain> {
                               ),
                             ),
                             const SizedBox(height: 7),
-                            Text.rich(
-                              TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: _formattingService.formatBalance(
-                                      walletStateManager.estimatedBalance,
+                            balanceAsync.when(
+                              data: (balance) => Text.rich(
+                                TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: _formattingService.formatBalance(
+                                        balance,
+                                      ),
+                                      style: context.themeText.extraLargeTitle
+                                          ?.copyWith(
+                                            color: context.themeColors.light,
+                                          ),
                                     ),
-                                    style: context.themeText.extraLargeTitle
-                                        ?.copyWith(
-                                          color: context.themeColors.light,
-                                        ),
-                                  ),
-                                  TextSpan(
-                                    text: ' ${AppConstants.tokenSymbol}',
-                                    style: context.themeText.smallTitle
-                                        ?.copyWith(
-                                          color: context.themeColors.light,
-                                        ),
-                                  ),
-                                ],
+                                    TextSpan(
+                                      text: ' ${AppConstants.tokenSymbol}',
+                                      style: context.themeText.smallTitle
+                                          ?.copyWith(
+                                            color: context.themeColors.light,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                                textAlign: TextAlign.center,
                               ),
-                              textAlign: TextAlign.center,
+                              loading: () => CircularProgressIndicator(
+                                color: context.themeColors.circularLoader,
+                              ),
+                              error: (err, stack) => Text(
+                                'Error',
+                                style: TextStyle(
+                                  color: context.themeColors.textError,
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -505,10 +534,9 @@ class _WalletMainState extends State<WalletMain> {
                     ),
                   ),
                   SliverToBoxAdapter(
-                    child: Consumer<WalletStateManager>(
-                      builder: (context, walletStateManager, child) {
-                        return _buildHistorySection(walletStateManager);
-                      },
+                    child: _buildHistorySection(
+                      allTransactionsAsync,
+                      activeAccount,
                     ),
                   ),
                 ],

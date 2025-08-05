@@ -44,6 +44,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.themeColors.background,
+      appBar: const WalletAppBar(title: 'Account Settings'),
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
@@ -55,7 +56,6 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              const WalletAppBar(title: 'Account Settings'),
               const SizedBox(height: 20),
               _buildAccountHeader(),
               const SizedBox(height: 40),
