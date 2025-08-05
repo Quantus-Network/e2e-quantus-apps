@@ -11,6 +11,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
   final TextStyle? smallParagraph;
   final TextStyle? largeTag;
   final TextStyle? tag;
+  final TextStyle? timer;
   final TextStyle? detail;
   final TextStyle? tiny;
 
@@ -24,6 +25,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
     this.smallParagraph,
     this.largeTag,
     this.tag,
+    this.timer,
     this.detail,
     this.tiny,
   });
@@ -77,6 +79,11 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
         tag: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w300,
+          fontFamily: 'Fira Code',
+        ),
+        timer: const TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.w600,
           fontFamily: 'Fira Code',
         ),
         detail: const TextStyle(
@@ -148,6 +155,11 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
         tag: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w300,
+          fontFamily: 'Fira Code',
+        ),
+        timer: const TextStyle(
+          fontSize: 36,
+          fontWeight: FontWeight.w600,
           fontFamily: 'Fira Code',
         ),
         detail: const TextStyle(

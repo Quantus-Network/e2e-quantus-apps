@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 
 @immutable
 class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
+  // I don't know about this two colors, it's already there since the beginning
+  // Keep it for now since I'm no sure if it will break something if I remove it
   final Color primary;
   final Color secondary;
+
+  // What we use
+  final Color purple;
   final Color background;
   final Color surface;
   final Color surfaceActive;
@@ -26,6 +31,8 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
   const AppColorsTheme({
     required this.primary,
     required this.secondary,
+
+    required this.purple,
     required this.background,
     required this.surface,
     required this.surfaceActive,
@@ -50,6 +57,8 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     : this(
         primary: const Color(0xFF6B46C1),
         secondary: const Color(0xFF9F7AEA),
+
+        purple: const Color(0xFFB259F2),
         background: const Color(0xFF0E0E0E),
         surface: const Color(0xA6000000),
         surfaceActive: Colors.white,
@@ -74,6 +83,8 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     : this(
         primary: const Color(0xFF6B46C1),
         secondary: const Color(0xFF9F7AEA),
+
+        purple: const Color(0xFFB259F2),
         background: const Color(0xFF0E0E0E),
         surface: const Color(0xA6000000),
         surfaceActive: Colors.white,

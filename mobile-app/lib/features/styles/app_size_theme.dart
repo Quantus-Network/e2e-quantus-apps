@@ -5,6 +5,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
   final double logoHeight;
   final double mainMenuHeight;
   final double mainMenuWidth;
+  final double mainMenuIconSize;
   final double navbarHeight;
   final double navbarItemHeight;
   final double navbarItemWidth;
@@ -16,11 +17,18 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
   final double accountListItemHeight;
   final double accountListItemLogoWidth;
   final double appbarIconSize;
+  final double sendOverlayContainerWidth;
+  final double overlayCloseIconSize;
+  final double mnemonicCellDesiredHeight;
+  final double txListItemIconWidth;
+  final double txDetailsIconHeight;
+  final double txDetailsIconWidth;
 
   const AppSizeTheme({
     required this.logoHeight,
     required this.mainMenuHeight,
     required this.mainMenuWidth,
+    required this.mainMenuIconSize,
     required this.navbarHeight,
     required this.navbarItemHeight,
     required this.navbarItemWidth,
@@ -32,6 +40,12 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
     required this.accountListItemHeight,
     required this.accountListItemLogoWidth,
     required this.appbarIconSize,
+    required this.sendOverlayContainerWidth,
+    required this.overlayCloseIconSize,
+    required this.mnemonicCellDesiredHeight,
+    required this.txListItemIconWidth,
+    required this.txDetailsIconHeight,
+    required this.txDetailsIconWidth,
   });
 
   const AppSizeTheme.fallback()
@@ -39,6 +53,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
         logoHeight: 130.0,
         mainMenuHeight: 20,
         mainMenuWidth: 20,
+        mainMenuIconSize: 21.0,
         navbarHeight: 90.0,
         navbarItemHeight: 32,
         navbarItemWidth: 70,
@@ -50,6 +65,12 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
         accountListItemHeight: 110.0,
         accountListItemLogoWidth: 32.0,
         appbarIconSize: 18.0,
+        sendOverlayContainerWidth: 305.0,
+        overlayCloseIconSize: 24.0,
+        mnemonicCellDesiredHeight: 31.0,
+        txListItemIconWidth: 21.0,
+        txDetailsIconHeight: 42.0,
+        txDetailsIconWidth: 51.0,
       );
 
   const AppSizeTheme.iPad()
@@ -57,6 +78,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
         logoHeight: 180.0,
         mainMenuHeight: 30,
         mainMenuWidth: 30,
+        mainMenuIconSize: 29.0,
         navbarHeight: 110.0,
         navbarItemHeight: 40,
         navbarItemWidth: 78,
@@ -68,6 +90,12 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
         accountListItemHeight: 130.0,
         accountListItemLogoWidth: 44.0,
         appbarIconSize: 20.0,
+        sendOverlayContainerWidth: 510.0,
+        overlayCloseIconSize: 28.0,
+        mnemonicCellDesiredHeight: 80.0,
+        txListItemIconWidth: 32.0,
+        txDetailsIconHeight: 82.0,
+        txDetailsIconWidth: 91.0,
       );
 
   @override
