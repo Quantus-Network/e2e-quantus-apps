@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/gradient_action_button.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
 class ImportWalletScreen extends StatefulWidget {
   const ImportWalletScreen({super.key});
@@ -99,13 +101,13 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0E0E0E),
+      extendBodyBehindAppBar: true,
+      appBar: const WalletAppBar(title: 'Import Wallet'),
+      backgroundColor: context.themeColors.background,
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage(
-              'assets/light_leak_effect_background.jpg',
-            ), // Assuming this is the correct background
+            image: AssetImage('assets/light_leak_effect_background.jpg'),
             fit: BoxFit.cover,
             opacity: 0.54,
           ),
@@ -114,147 +116,62 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.stretch, // Stretch children horizontally
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Back button row remains at the top
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 40),
-                // Content previously inside Center/nested Column
-                const Text(
-                  'Import Wallet',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                Text('Import Wallet', style: context.themeText.smallTitle),
                 const SizedBox(height: 13),
                 Text(
                   'Restore an existing wallet with your 12 or 24 word '
                   'recovery phrase',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white.useOpacity(0.6),
-                    fontSize: 14,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w500,
-                    height: 1.21,
+                  style: context.themeText.smallParagraph?.copyWith(
+                    color: context.themeColors.textMuted,
                   ),
                 ),
                 const SizedBox(height: 21),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _mnemonicController,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontFamily: 'Fira Code',
-                          fontWeight: FontWeight.w400,
+                Expanded(
+                  child: TextField(
+                    controller: _mnemonicController,
+                    style: context.themeText.smallParagraph,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: context.themeColors.surface,
+                      contentPadding: const EdgeInsets.all(13),
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: context.themeColors.border,
+                          width: 1,
                         ),
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.black.useOpacity(0.5),
-                          contentPadding: const EdgeInsets.all(13),
-                          border: OutlineInputBorder(
-                            borderSide: const BorderSide(
-                              color: Color(0xFF9F7AEA),
-                              width: 1,
-                            ),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              width: 1,
-                              color: const Color(0xFF9F7AEA).useOpacity(0.8),
-                            ),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(
-                              color: Color(0xFF9F7AEA),
-                              width: 1.5,
-                            ),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          hintText:
-                              'Type in or paste your recovery phrase. Separate'
-                              ' words with spaces',
-                          hintStyle: TextStyle(
-                            color: Colors.white.useOpacity(0.5),
-                            fontSize: 13,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w400,
-                          ),
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(
+                          width: 1,
+                          color: context.themeColors.border,
                         ),
-                        maxLines: null,
-                        minLines: 6,
-                        keyboardType: TextInputType.multiline,
-                        textInputAction: TextInputAction.done,
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: context.themeColors.border,
+                          width: 1.5,
+                        ),
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      hintText:
+                          'Type in or paste your recovery phrase. Separate'
+                          ' words with spaces',
+                      hintStyle: context.themeText.smallParagraph?.copyWith(
+                        color: context.themeColors.textMuted,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.paste, color: Colors.white70),
-                      onPressed: () async {
-                        final data = await Clipboard.getData('text/plain');
-                        if (data != null && data.text != null) {
-                          _mnemonicController.text = data.text!;
-                        }
-                      },
-                      tooltip: 'Paste',
-                    ),
-                  ],
+                    maxLines: null,
+                    minLines: 8,
+                    keyboardType: TextInputType.multiline,
+                    textInputAction: TextInputAction.done,
+                  ),
                 ),
-                // Padding(
-                //   padding: const EdgeInsets.only(top: 12.0, bottom: 8.0),
-                //   child: Theme(
-                //     data: Theme.of(context).copyWith(
-                //       unselectedWidgetColor: Colors.white70,
-                //     ),
-                //     // child: CheckboxListTile(
-                //     //   title: const Text(
-                //     //     'Import Crystal Alice test account',
-                //     //     style: TextStyle(
-                //     //       color: Colors.white70,
-                //     //       fontSize: 13,
-                //     //       fontFamily: 'Fira Code',
-                //     //     ),
-                //     //   ),
-                //     //   value: _mnemonicController.text == crystalAlice,
-                //     //   onChanged: (bool? value) {
-                //     //     setState(() {
-                //     //       if (value == true) {
-                //     //         _mnemonicController.text = crystalAlice;
-                //     //         _errorMessage = '';
-                //     //       } else {
-                //     //         if (_mnemonicController.text == crystalAlice) {
-                //     //           _mnemonicController.clear();
-                //     //         }
-                //     //       }
-                //     //     });
-                //     //   },
-                //     //   activeColor: const Color(0xFF9F7AEA),
-                //     //   controlAffinity: ListTileControlAffinity.leading,
-                //     //   contentPadding: EdgeInsets.zero,
-                //     //   dense: true,
-                //     // ),
-                //   ),
-                // ),
+
                 if (_errorMessage.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(

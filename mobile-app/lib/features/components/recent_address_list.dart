@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/recent_address_list_item.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
 class RecentAddressList extends StatefulWidget {
   final Function(String) onAddressSelected;
@@ -28,9 +29,19 @@ class _RecentAddressListState extends State<RecentAddressList> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
+          return Center(
+            child: Text(
+              'Error: ${snapshot.error}',
+              style: context.themeText.smallParagraph,
+            ),
+          );
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text('No recent addresses.'));
+          return Center(
+            child: Text(
+              'No recent addresses.',
+              style: context.themeText.smallParagraph,
+            ),
+          );
         }
 
         final addresses = snapshot.data!;

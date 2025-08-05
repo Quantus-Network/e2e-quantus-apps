@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/gradient_action_button.dart';
+import 'package:resonance_network_wallet/features/components/mnemonic_grid.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
 class CreateWalletAndBackupScreen extends StatefulWidget {
   const CreateWalletAndBackupScreen({super.key});
@@ -106,12 +110,14 @@ class CreateWalletAndBackupScreenState
 
   @override
   Widget build(BuildContext context) {
-    final words = _mnemonic.isNotEmpty ? _mnemonic.split(' ') : [];
+    final List<String> words = _mnemonic.isNotEmpty ? _mnemonic.split(' ') : [];
 
     final bool canContinue = _hasSavedMnemonic && !_isLoading && _error == null;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0E0E0E),
+      extendBodyBehindAppBar: true,
+      appBar: const WalletAppBar(title: 'Create Wallet'),
+      backgroundColor: context.themeColors.background,
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
@@ -126,23 +132,6 @@ class CreateWalletAndBackupScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    const Text(
-                      'Create Wallet',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontFamily: 'Fira Code',
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 24),
                 Expanded(
                   child: SingleChildScrollView(
@@ -150,15 +139,10 @@ class CreateWalletAndBackupScreenState
                       mainAxisAlignment: MainAxisAlignment.start,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Text(
+                        Text(
                           'Your Secret Recovery Phrase',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: context.themeText.smallTitle,
                         ),
                         const SizedBox(height: 13),
                         Text(
@@ -166,23 +150,21 @@ class CreateWalletAndBackupScreenState
                           'location. This is the only way to recover your '
                           'wallet',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white.useOpacity(153 / 255.0),
-                            fontSize: 14,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w500,
-                            height: 1.21,
+                          style: context.themeText.smallParagraph?.copyWith(
+                            color: context.themeColors.textMuted,
                           ),
                         ),
                         const SizedBox(height: 21),
                         if (_isLoading)
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 50.0),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 50.0),
                             child: Column(
                               children: [
-                                CircularProgressIndicator(color: Colors.white),
-                                SizedBox(height: 16),
-                                Text(
+                                CircularProgressIndicator(
+                                  color: context.themeColors.circularLoader,
+                                ),
+                                const SizedBox(height: 16),
+                                const Text(
                                   'Generating secure phrase...',
                                   style: TextStyle(color: Colors.white70),
                                 ),
@@ -197,41 +179,14 @@ class CreateWalletAndBackupScreenState
                             ),
                             child: Text(
                               _error!,
-                              style: const TextStyle(
-                                color: Colors.redAccent,
-                                fontSize: 16,
+                              style: context.themeText.paragraph?.copyWith(
+                                color: context.themeColors.textError,
                               ),
                               textAlign: TextAlign.center,
                             ),
                           )
                         else
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 13,
-                              horizontal: 9,
-                            ),
-                            decoration: ShapeDecoration(
-                              color: Colors.black.useOpacity(0.7),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(5),
-                              ),
-                            ),
-                            child: GridView.count(
-                              crossAxisCount: 3,
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              mainAxisSpacing: 10.0,
-                              crossAxisSpacing: 9.0,
-                              childAspectRatio: (105 / 38),
-                              children: List.generate(words.length, (index) {
-                                return _buildMnemonicWord(
-                                  index + 1,
-                                  words[index],
-                                );
-                              }),
-                            ),
-                          ),
+                          MnemonicGrid(words: words),
                         const SizedBox(height: 21),
                         if (!_isLoading && _error == null)
                           GestureDetector(
@@ -243,25 +198,20 @@ class CreateWalletAndBackupScreenState
                                 message: 'Recovery phrase copied to clipboard',
                               );
                             },
-                            child: const Opacity(
+                            child: Opacity(
                               opacity: 0.8,
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(
+                                  const Icon(
                                     Icons.copy,
                                     color: Colors.white,
                                     size: 24,
                                   ),
-                                  SizedBox(width: 8),
+                                  const SizedBox(width: 8),
                                   Text(
                                     'Copy to Clipboard',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontFamily: 'Fira Code',
-                                      fontWeight: FontWeight.w400,
-                                    ),
+                                    style: context.themeText.smallParagraph,
                                   ),
                                 ],
                               ),
@@ -276,54 +226,39 @@ class CreateWalletAndBackupScreenState
                   padding: const EdgeInsets.only(bottom: 16.0),
                   child: Column(
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: Checkbox(
-                              value: _hasSavedMnemonic,
-                              onChanged: _isLoading
-                                  ? null
-                                  : (value) {
-                                      setState(() {
-                                        _hasSavedMnemonic = value ?? false;
-                                      });
-                                    },
-                              activeColor: const Color(0xFF8AF9A8),
-                              checkColor: const Color(0xFF8AF9A8),
-                              side: WidgetStateBorderSide.resolveWith((states) {
-                                return const BorderSide(
-                                  width: 1,
-                                  color: Colors.white,
-                                );
-                              }),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                              materialTapTargetSize:
-                                  MaterialTapTargetSize.shrinkWrap,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Expanded(
-                            child: Text(
-                              'I have copied and stored my seed phrase',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontFamily: 'Fira Code',
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ),
-                        ],
+                      CheckboxListTile(
+                        contentPadding: const EdgeInsets.all(0),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        title: Text(
+                          'I have copied and stored my seed phrase',
+                          style: context.themeText.smallParagraph,
+                        ),
+                        value: _hasSavedMnemonic,
+                        onChanged: _isLoading
+                            ? null
+                            : (value) {
+                                setState(() {
+                                  _hasSavedMnemonic = value ?? false;
+                                });
+                              },
+                        activeColor: const Color(0xFF8AF9A8),
+                        checkColor: const Color(0xFF8AF9A8),
+                        side: WidgetStateBorderSide.resolveWith((states) {
+                          return const BorderSide(
+                            width: 1,
+                            color: Colors.white,
+                          );
+                        }),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                       const SizedBox(height: 17),
                       if (canContinue)
                         GradientActionButton(
                           label: 'Continue',
+                          textStyle: context.themeText.smallTitle,
                           onPressed: _saveWalletAndContinue,
                           isLoading: _isLoading,
                         )
@@ -341,13 +276,10 @@ class CreateWalletAndBackupScreenState
                               ),
                             ),
                             onPressed: null,
-                            child: const Text(
+                            child: Text(
                               'Continue',
-                              style: TextStyle(
-                                color: Color(0xFF0E0E0E),
-                                fontSize: 18,
-                                fontFamily: 'Fira Code',
-                                fontWeight: FontWeight.w500,
+                              style: context.themeText.smallTitle?.copyWith(
+                                color: context.themeColors.textSecondary,
                               ),
                             ),
                           ),
@@ -358,28 +290,6 @@ class CreateWalletAndBackupScreenState
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMnemonicWord(int index, String word) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-      decoration: ShapeDecoration(
-        shape: RoundedRectangleBorder(
-          side: BorderSide(width: 1, color: Colors.white.useOpacity(0.15)),
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-      child: Text(
-        '$index.$word',
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          fontFamily: 'Fira Code',
-          fontWeight: FontWeight.w400,
         ),
       ),
     );

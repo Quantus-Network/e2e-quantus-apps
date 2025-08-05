@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
 class ReversibleTimer extends StatelessWidget {
   final Duration remainingTime;
@@ -21,57 +22,27 @@ class ReversibleTimer extends StatelessWidget {
           Text(
             time.hours,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.44,
-            ),
+            style: context.themeText.timer,
           ),
-          const Text(
+          Text(
             ':',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.44,
-            ),
+            style: context.themeText.timer,
           ),
           Text(
             time.minutes,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.44,
-            ),
+            style: context.themeText.timer,
           ),
-          const Text(
+          Text(
             ':',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.44,
-            ),
+            style: context.themeText.timer,
           ),
           Text(
             time.seconds,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.44,
-            ),
+            style: context.themeText.timer,
           ),
         ],
       ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class MnemonicGrid extends StatelessWidget {
   final List<String> words;
@@ -26,8 +28,8 @@ class MnemonicGrid extends StatelessWidget {
           final double itemWidth = (availableWidth / 3); // 3 items per row
 
           // You might need to adjust this value slightly based on padding/margins
-          // and font rendering, but 31 is your target height.
-          const double desiredCellHeight = 31.0;
+          // and font rendering.
+          final double desiredCellHeight = context.isTablet ? 80 : 31.0;
 
           // Calculate the aspect ratio
           final double childAspectRatio = itemWidth / desiredCellHeight;
@@ -40,7 +42,7 @@ class MnemonicGrid extends StatelessWidget {
             crossAxisSpacing: 9.0,
             childAspectRatio: childAspectRatio,
             children: List.generate(words.length, (index) {
-              return _buildMnemonicWord(index + 1, words[index]);
+              return _buildMnemonicWord(index + 1, words[index], context);
             }),
           );
         },
@@ -48,7 +50,7 @@ class MnemonicGrid extends StatelessWidget {
     );
   }
 
-  Widget _buildMnemonicWord(int index, String word) {
+  Widget _buildMnemonicWord(int index, String word, BuildContext context) {
     return Container(
       decoration: ShapeDecoration(
         shape: RoundedRectangleBorder(
@@ -60,12 +62,7 @@ class MnemonicGrid extends StatelessWidget {
       child: Text(
         '$index.$word',
         textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 13,
-          fontFamily: 'Fira Code',
-          fontWeight: FontWeight.w400,
-        ),
+        style: context.themeText.detail,
       ),
     );
   }

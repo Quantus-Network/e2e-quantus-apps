@@ -6,6 +6,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hex/hex.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/reversible_timer.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class TransactionActionSheet extends StatefulWidget {
   final ReversibleTransferEvent transaction;
@@ -112,7 +116,10 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
+                      icon: Icon(
+                        Icons.close,
+                        size: context.themeSize.overlayCloseIconSize,
+                      ),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
@@ -147,7 +154,9 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
       children: [
         _buildHeader(
           'assets/hourglass.svg',
-          'Reversible\nTransaction',
+          context.isTablet
+              ? 'Reversible Transaction'
+              : 'Reversible\nTransaction',
           'Cancel or keep your send',
           true,
         ),
@@ -187,7 +196,7 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
       children: [
         _buildHeader(
           'assets/stop_icon.svg',
-          'Transaction\nCancelled',
+          context.isTablet ? 'Transaction Cancelled' : 'Transaction\nCancelled',
           '',
           false,
         ),
@@ -235,7 +244,11 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SvgPicture.asset(iconName, width: 34, height: 34),
+        SvgPicture.asset(
+          iconName,
+          width: context.isTablet ? 54 : 34,
+          height: context.isTablet ? 54 : 34,
+        ),
         const SizedBox(width: 16),
         Expanded(
           child: Column(
@@ -243,21 +256,17 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
             children: [
               Text(
                 title,
-                style: TextStyle(
-                  color: Color(titleIsGreen ? 0xFF16CECE : 0xFFD9D9D9),
-                  fontSize: 18,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w500,
+                style: context.themeText.smallTitle?.copyWith(
+                  color: titleIsGreen
+                      ? context.themeColors.checksum
+                      : const Color(0xFFD9D9D9),
                 ),
               ),
               if (subtitle.isNotEmpty)
                 Text(
                   subtitle,
-                  style: const TextStyle(
-                    color: Color(0xFFD9D9D9),
-                    fontSize: 12,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w400,
+                  style: context.themeText.detail?.copyWith(
+                    color: const Color(0xFFD9D9D9),
                   ),
                 ),
             ],
@@ -285,20 +294,15 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
       children: [
         Text(
           title,
-          style: const TextStyle(
-            color: Color(0xFFD9D9D9),
-            fontSize: 16,
-            fontFamily: 'Fira Code',
+          style: context.themeText.paragraph?.copyWith(
+            color: const Color(0xFFD9D9D9),
             fontWeight: FontWeight.w600,
           ),
         ),
         Text(
           value,
-          style: TextStyle(
+          style: context.themeText.largeTag?.copyWith(
             color: const Color(0xFFD9D9D9),
-            fontSize: title == 'Recipient' ? 10 : 16,
-            fontFamily: 'Fira Code',
-            fontWeight: FontWeight.w400,
           ),
         ),
       ],
@@ -314,14 +318,12 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: 5,
       children: [
-        const SizedBox(
+        SizedBox(
           width: 269,
           child: Text(
             'Recipient',
-            style: TextStyle(
-              color: Color(0xFFD9D9D9),
-              fontSize: 16,
-              fontFamily: 'Fira Code',
+            style: context.themeText.paragraph?.copyWith(
+              color: const Color(0xFFD9D9D9),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -334,22 +336,16 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
 
             return Text(
               checkPhrase,
-              style: const TextStyle(
-                color: Color(0xFF16CECE),
-                fontSize: 14,
-                fontFamily: 'Fira Code',
-                fontWeight: FontWeight.w400,
+              style: context.themeText.smallParagraph?.copyWith(
+                color: context.themeColors.checksum,
               ),
             );
           },
         ),
         Text(
-          formattedAddress,
-          style: const TextStyle(
-            color: Color(0xFFD9D9D9),
-            fontSize: 12,
-            fontFamily: 'Fira Code',
-            fontWeight: FontWeight.w400,
+          context.isTablet ? address : formattedAddress,
+          style: context.themeText.detail?.copyWith(
+            color: const Color(0xFFD9D9D9),
           ),
         ),
       ],
@@ -392,8 +388,11 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
-        width: 260,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        width: context.isTablet ? 520 : 260,
+        padding: EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: context.isTablet ? 16 : 12,
+        ),
         decoration: ShapeDecoration(
           color: bgColor,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
@@ -401,12 +400,7 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
         child: Text(
           text,
           textAlign: TextAlign.center,
-          style: TextStyle(
-            color: textColor,
-            fontSize: 14,
-            fontFamily: 'Fira Code',
-            fontWeight: FontWeight.w500,
-          ),
+          style: context.themeText.smallTitle?.copyWith(color: textColor),
         ),
       ),
     );
@@ -415,13 +409,11 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
   Widget _buildConfirmCancelButtons() {
     Widget buttons = Column(
       children: [
-        const Text(
+        Text(
           'Are you sure you want to cancel this tx?',
           textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Color(0xFFD9D9D9),
-            fontSize: 16,
-            fontFamily: 'Fira Code',
+          style: context.themeText.paragraph?.copyWith(
+            color: const Color(0xFFD9D9D9),
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -431,16 +423,19 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
         else ...[
           _buildButton(
             'Yes Cancel',
-            const Color(0xFFFF2D53),
-            Colors.white,
+            context.themeColors.error,
+            context.themeColors.textPrimary,
             _cancelTransaction,
           ),
           const SizedBox(height: 12),
           GestureDetector(
             onTap: () => setState(() => _sheetState = _SheetState.initial),
             child: Container(
-              width: 260,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              width: context.isTablet ? 520 : 260,
+              padding: EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: context.isTablet ? 16 : 12,
+              ),
               decoration: ShapeDecoration(
                 shape: RoundedRectangleBorder(
                   side: BorderSide(
@@ -450,14 +445,11 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
-              child: const Text(
-                'Keep transaction',
+              child: Text(
+                'Keep Transaction',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Color(0xFFD9D9D9),
-                  fontSize: 14,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w500,
+                style: context.themeText.smallTitle?.copyWith(
+                  color: const Color(0xFFD9D9D9),
                 ),
               ),
             ),

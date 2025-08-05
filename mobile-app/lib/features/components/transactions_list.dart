@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/models/transaction_role.dart';
 
 class RecentTransactionsList extends StatelessWidget {
@@ -59,9 +60,9 @@ class RecentTransactionsList extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (transactionsToShow.isEmpty)
-              const Text(
+              Text(
                 'No transactions yet.',
-                style: TextStyle(color: Colors.white, fontFamily: 'Fira Code'),
+                style: context.themeText.smallParagraph,
               )
             else ...[
               if (scheduled.isNotEmpty)

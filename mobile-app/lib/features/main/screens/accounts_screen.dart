@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/account_settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
@@ -46,7 +49,8 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0E0E0E),
+      extendBodyBehindAppBar: true,
+      backgroundColor: context.themeColors.background,
       appBar: const WalletAppBar(title: 'Your Accounts'),
       body: Stack(
         children: [
@@ -64,7 +68,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
               children: [
                 // Row 2: Accounts List (takes remaining space, scrollable)
                 Expanded(child: _buildAccountsList()),
-                // Row 3: Create Button (takes needed space)
+
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: _buildCreateNewAccountButton(),
@@ -82,20 +86,27 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     final activeAccountAsync = ref.watch(activeAccountProvider);
 
     return accountsAsync.when(
-      loading: () =>
-          const Center(child: CircularProgressIndicator(color: Colors.white)),
+      loading: () => Center(
+        child: CircularProgressIndicator(
+          color: context.themeColors.circularLoader,
+        ),
+      ),
       error: (error, _) => Center(
         child: Text(
           'Failed to load accounts: $error',
-          style: const TextStyle(color: Colors.white70),
+          style: context.themeText.smallParagraph?.copyWith(
+            color: Colors.white70,
+          ),
         ),
       ),
       data: (accounts) {
         if (accounts.isEmpty) {
-          return const Center(
+          return Center(
             child: Text(
               'No accounts found.',
-              style: TextStyle(color: Colors.white70),
+              style: context.themeText.smallParagraph?.copyWith(
+                color: Colors.white70,
+              ),
             ),
           );
         }
@@ -136,7 +147,10 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
       onTap: _isCreatingAccount ? null : _createNewAccount,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.symmetric(
+          vertical: context.isTablet ? 18 : 16,
+          horizontal: 16,
+        ),
         decoration: ShapeDecoration(
           color: Colors.black.useOpacity(0.50),
           shape: RoundedRectangleBorder(
@@ -151,15 +165,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
             if (_isCreatingAccount)
               const CircularProgressIndicator(color: Colors.white)
             else
-              const Text(
-                'Create New Account',
-                style: TextStyle(
-                  color: Color(0xFFE6E6E6),
-                  fontSize: 18,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              Text('Create New Account', style: context.themeText.smallTitle),
           ],
         ),
       ),
@@ -181,13 +187,15 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
           Expanded(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              height: 105,
+              height: context.themeSize.accountListItemHeight,
               decoration: ShapeDecoration(
-                color: isActive ? Colors.white : Colors.black.useOpacity(0.65),
+                color: isActive
+                    ? context.themeColors.surfaceActive
+                    : context.themeColors.surface,
                 shape: RoundedRectangleBorder(
                   side: BorderSide(
                     width: 1,
-                    color: Colors.white.useOpacity(0.15),
+                    color: context.themeColors.borderLight,
                   ),
                   borderRadius: BorderRadius.circular(5),
                 ),
@@ -197,8 +205,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                   const SizedBox(width: 8),
                   SvgPicture.asset(
                     'assets/res_icon.svg',
-                    width: 32,
-                    height: 32,
+                    width: context.themeSize.accountListItemLogoWidth,
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -220,78 +227,50 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                               children: [
                                 Text(
                                   account.name,
-                                  style: TextStyle(
-                                    color: isActive
-                                        ? Colors.black
-                                        : Colors.white,
-                                    fontSize: 14,
-                                    fontFamily: 'Fira Code',
-                                    fontWeight: FontWeight.w400,
-                                  ),
+                                  style: context.themeText.smallParagraph
+                                      ?.copyWith(
+                                        color: isActive
+                                            ? Colors.black
+                                            : Colors.white,
+                                      ),
                                 ),
                                 Text(
                                   humanChecksum,
-                                  style: TextStyle(
+                                  style: context.themeText.detail?.copyWith(
                                     color: isActive
-                                        ? const Color(0xFF06A8A8)
-                                        : const Color(0xFF16CECE),
-                                    fontSize: 12,
-                                    fontFamily: 'Fira Code',
-                                    fontWeight: FontWeight.w400,
+                                        ? context.themeColors.checksumDarker
+                                        : context.themeColors.checksum,
                                   ),
                                 ),
                                 Row(
                                   children: [
                                     Text(
-                                      AddressFormattingService.formatAddress(
-                                        account.accountId,
-                                      ),
-                                      style: TextStyle(
+                                      context.isTablet
+                                          ? account.accountId
+                                          // ignore: lines_longer_than_80_chars
+                                          : AddressFormattingService.formatAddress(
+                                              account.accountId,
+                                            ),
+                                      style: context.themeText.tiny?.copyWith(
                                         color: isActive
-                                            ? const Color(0xFF313131)
-                                            : Colors.white.useOpacity(0.99),
-                                        fontSize: 10,
-                                        fontFamily: 'Fira Code',
-                                        fontWeight: FontWeight.w300,
+                                            ? context.themeColors.darkGray
+                                            : context.themeColors.textMuted,
                                       ),
                                     ),
                                     const SizedBox(width: 5),
                                     InkWell(
-                                      onTap: () {
-                                        Clipboard.setData(
-                                          ClipboardData(
-                                            text: account.accountId,
+                                      onTap: () =>
+                                          // ignore: lines_longer_than_80_chars
+                                          ClipboardExtensions.copyTextWithSnackbar(
+                                            context,
+                                            account.accountId,
                                           ),
-                                        );
-
-                                        showTopSnackBar(
-                                          context,
-                                          icon: Container(
-                                            width: 36,
-                                            height: 36,
-                                            decoration: const ShapeDecoration(
-                                              color: Color(0xFF494949),
-                                              shape: OvalBorder(),
-                                            ),
-                                            alignment: Alignment.center,
-                                            child: SvgPicture.asset(
-                                              'assets/copy_icon.svg',
-                                              width: 16,
-                                              height: 16,
-                                            ),
-                                          ),
-                                          title: 'Copied!',
-                                          message:
-                                              'Address '
-                                              'copied to clipboard',
-                                        );
-                                      },
                                       child: Icon(
                                         Icons.copy,
-                                        size: 14,
+                                        size: context.isTablet ? 20 : 14,
                                         color: isActive
-                                            ? const Color(0xFF313131)
-                                            : Colors.white.useOpacity(0.6),
+                                            ? context.themeColors.darkGray
+                                            : context.themeColors.textMuted,
                                       ),
                                     ),
                                   ],
@@ -300,24 +279,18 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                 balanceAsync.when(
                                   loading: () => Text(
                                     'loading balance...',
-                                    style: TextStyle(
+                                    style: context.themeText.detail?.copyWith(
                                       color: isActive
-                                          ? const Color(0xFF313131)
-                                          : const Color(0xFFE6E6E6),
-                                      fontSize: 12,
-                                      fontFamily: 'Fira Code',
-                                      fontWeight: FontWeight.w400,
+                                          ? context.themeColors.darkGray
+                                          : context.themeColors.light,
                                     ),
                                   ),
                                   error: (error, _) => Text(
                                     'error loading',
-                                    style: TextStyle(
+                                    style: context.themeText.detail?.copyWith(
                                       color: isActive
-                                          ? const Color(0xFF313131)
-                                          : const Color(0xFFE6E6E6),
-                                      fontSize: 12,
-                                      fontFamily: 'Fira Code',
-                                      fontWeight: FontWeight.w400,
+                                          ? context.themeColors.darkGray
+                                          : context.themeColors.light,
                                     ),
                                   ),
                                   data: (balance) => Text.rich(
@@ -326,25 +299,25 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                         TextSpan(
                                           text: _formattingService
                                               .formatBalance(balance),
-                                          style: TextStyle(
-                                            color: isActive
-                                                ? const Color(0xFF313131)
-                                                : const Color(0xFFE6E6E6),
-                                            fontSize: 12,
-                                            fontFamily: 'Fira Code',
-                                            fontWeight: FontWeight.w400,
-                                          ),
+                                          style: context.themeText.detail
+                                              ?.copyWith(
+                                                color: isActive
+                                                    ? context
+                                                          .themeColors
+                                                          .darkGray
+                                                    : context.themeColors.light,
+                                              ),
                                         ),
                                         TextSpan(
                                           text: ' ${AppConstants.tokenSymbol}',
-                                          style: TextStyle(
-                                            color: isActive
-                                                ? const Color(0xFF313131)
-                                                : const Color(0xFFE6E6E6),
-                                            fontSize: 10,
-                                            fontFamily: 'Fira Code',
-                                            fontWeight: FontWeight.w400,
-                                          ),
+                                          style: context.themeText.tiny
+                                              ?.copyWith(
+                                                color: isActive
+                                                    ? context
+                                                          .themeColors
+                                                          .darkGray
+                                                    : context.themeColors.light,
+                                              ),
                                         ),
                                       ],
                                     ),
@@ -367,8 +340,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
             constraints: const BoxConstraints(),
             icon: SvgPicture.asset(
               'assets/settings_icon_off.svg',
-              width: 21,
-              height: 21,
+              width: context.isTablet ? 28 : 21,
               colorFilter: const ColorFilter.mode(
                 Colors.white,
                 BlendMode.srcIn,

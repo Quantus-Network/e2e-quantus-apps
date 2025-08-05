@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
 class RecentAddressListItem extends StatefulWidget {
   final String address;
@@ -38,35 +40,26 @@ class _RecentAddressListItemState extends State<RecentAddressListItem> {
             future: _humanReadableNameFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Text(
+                return Text(
                   'Loading name...',
-                  style: TextStyle(
-                    color: Color(0xFF16CECE),
-                    fontSize: 14,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w400,
+                  style: context.themeText.smallParagraph?.copyWith(
+                    color: context.themeColors.checksum,
                   ),
                 );
               } else if (snapshot.hasError ||
                   !snapshot.hasData ||
                   snapshot.data!.isEmpty) {
-                return const Text(
+                return Text(
                   'Unknown Name',
-                  style: TextStyle(
-                    color: Color(0xFF16CECE),
-                    fontSize: 14,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w400,
+                  style: context.themeText.smallParagraph?.copyWith(
+                    color: context.themeColors.checksum,
                   ),
                 );
               }
               return Text(
                 snapshot.data!,
-                style: const TextStyle(
-                  color: Color(0xFF16CECE),
-                  fontSize: 14,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w400,
+                style: context.themeText.smallParagraph?.copyWith(
+                  color: context.themeColors.checksum,
                 ),
               );
             },
@@ -74,11 +67,8 @@ class _RecentAddressListItemState extends State<RecentAddressListItem> {
           const SizedBox(height: 4),
           Text(
             widget.address,
-            style: TextStyle(
-              color: Colors.white.useOpacity(0.60),
-              fontSize: 11,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w300,
+            style: context.themeText.detail?.copyWith(
+              color: context.themeColors.textMuted,
             ),
           ),
         ],

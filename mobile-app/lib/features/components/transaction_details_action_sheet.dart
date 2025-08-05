@@ -2,12 +2,15 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
 import 'package:resonance_network_wallet/features/components/reversible_timer.dart';
-import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/models/transaction_role.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -156,7 +159,10 @@ class _TransactionDetailsActionSheetState
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white),
+                        icon: Icon(
+                          Icons.close,
+                          size: context.themeSize.overlayCloseIconSize,
+                        ),
                         onPressed: () => Navigator.of(context).pop(),
                       ),
                     ],
@@ -167,33 +173,26 @@ class _TransactionDetailsActionSheetState
                   if (widget.transaction.isFailed)
                     SvgPicture.asset(
                       'assets/send_failed_icon.svg',
-                      width: 51,
-                      height: 42,
+                      width: context.themeSize.txDetailsIconWidth,
+                      height: context.themeSize.txDetailsIconHeight,
                     )
                   else if (widget.transaction.isReversibleCancelled)
                     SvgPicture.asset(
                       'assets/stop_icon.svg',
-                      width: 51,
-                      height: 42,
+                      width: context.themeSize.txDetailsIconWidth,
                     )
                   else
                     Image.asset(
                       widget.role == TransactionRole.sender
                           ? 'assets/send_icon.png'
                           : 'assets/receive_icon_sm.png',
-                      width: 51,
-                      height: 42,
+                      height: context.themeSize.txDetailsIconHeight,
                     ),
                   const SizedBox(height: 17),
                   Text(
                     title,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 30,
-                      fontFamily: 'Fira Code',
-                      fontWeight: FontWeight.w300,
-                    ),
+                    style: context.themeText.largeTitle,
                   ),
                   const SizedBox(height: 26),
                   _buildDetails(),
@@ -209,36 +208,10 @@ class _TransactionDetailsActionSheetState
                       gapLength: 3,
                       borderRadius: const Radius.circular(4),
                       child: InkWell(
-                        onTap: () async {
-                          if (!context.mounted) return;
-
-                          Clipboard.setData(ClipboardData(text: accountId));
-                          if (!context.mounted) {
-                            return;
-                          }
-                          showTopSnackBar(
-                            context,
-                            icon: Container(
-                              width: 36,
-                              height: 36,
-                              decoration: const ShapeDecoration(
-                                color: Color(
-                                  0xFF494949,
-                                ), // Default grey background
-                                shape:
-                                    OvalBorder(), // Use OvalBorder for circle
-                              ),
-                              alignment: Alignment.center,
-                              child: SvgPicture.asset(
-                                'assets/copy_icon.svg',
-                                width: 16,
-                                height: 16,
-                              ),
-                            ),
-                            title: 'Copied!',
-                            message: 'Address copied to clipboard',
-                          );
-                        },
+                        onTap: () => ClipboardExtensions.copyTextWithSnackbar(
+                          context,
+                          accountId,
+                        ),
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Row(
@@ -249,17 +222,11 @@ class _TransactionDetailsActionSheetState
                             children: [
                               SvgPicture.asset(
                                 'assets/copy_icon.svg',
-                                width: 20,
-                                height: 20,
+                                width: context.isTablet ? 28 : 20,
                               ),
-                              const Text(
+                              Text(
                                 'Copy Address',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontFamily: 'Fira Code',
-                                  fontWeight: FontWeight.w400,
-                                ),
+                                style: context.themeText.smallParagraph,
                               ),
                             ],
                           ),
@@ -296,7 +263,7 @@ class _TransactionDetailsActionSheetState
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -305,11 +272,9 @@ class _TransactionDetailsActionSheetState
                 Text(
                   'Retry',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 14,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w500,
+                  style: context.themeText.smallParagraph?.copyWith(
+                    color: context.themeColors.textSecondary,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -328,19 +293,21 @@ class _TransactionDetailsActionSheetState
         ? 'reversible-transactions'
         : 'immediate-transactions';
 
+    final hasExtrinsicHash = widget.transaction.extrinsicHash != null;
+
     return Column(
       children: [
         const SizedBox(height: 20),
         GestureDetector(
           onTap: () async {
-            if (widget.transaction.extrinsicHash != null) {
+            if (hasExtrinsicHash) {
               final Uri url = Uri.parse(
                 '${AppConstants.explorerEndpoint}/$transactionType/${widget.transaction.extrinsicHash}',
               );
               await launchUrl(url);
             }
           },
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -349,17 +316,19 @@ class _TransactionDetailsActionSheetState
               Text(
                 'View in Explorer',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Color(0xFF16CECE) /* other-blue */,
-                  fontSize: 12,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w500,
+                style: context.themeText.detail?.copyWith(
+                  color: hasExtrinsicHash
+                      ? context.themeColors.checksum
+                      : Colors.grey,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               Icon(
                 Icons.open_in_new,
-                size: 12,
-                color: Color(0xFF16CECE) /* other-blue */,
+                size: context.isTablet ? 20 : 12,
+                color: hasExtrinsicHash
+                    ? context.themeColors.checksum
+                    : Colors.grey,
               ),
             ],
           ),
@@ -383,21 +352,11 @@ class _TransactionDetailsActionSheetState
             children: [
               TextSpan(
                 text: formattedAmount,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w500,
-                ),
+                style: context.themeText.mediumTitle,
               ),
-              const TextSpan(
+              TextSpan(
                 text: ' ${AppConstants.tokenSymbol}',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w500,
-                ),
+                style: context.themeText.paragraph,
               ),
             ],
           ),
@@ -405,11 +364,8 @@ class _TransactionDetailsActionSheetState
         Text(
           detailText,
           textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.50),
-            fontSize: 12,
-            fontFamily: 'Fira Code',
-            fontWeight: FontWeight.w400,
+          style: context.themeText.smallParagraph?.copyWith(
+            color: context.themeColors.textMuted,
           ),
         ),
         if (widget.role == TransactionRole.receiver &&
@@ -424,12 +380,7 @@ class _TransactionDetailsActionSheetState
             return Text(
               checkPhrase,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontFamily: 'Fira Code',
-                fontWeight: FontWeight.w400,
-              ),
+              style: context.themeText.paragraph,
             );
           },
         ),
@@ -438,12 +389,7 @@ class _TransactionDetailsActionSheetState
               ? widget.transaction.to
               : widget.transaction.from,
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 10,
-            fontFamily: 'Fira Code',
-            fontWeight: FontWeight.w400,
-          ),
+          style: context.themeText.tiny,
         ),
       ],
     );

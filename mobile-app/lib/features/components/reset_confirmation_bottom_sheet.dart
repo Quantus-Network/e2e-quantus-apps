@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class ResetConfirmationBottomSheet extends StatefulWidget {
   final VoidCallback onReset;
@@ -32,84 +36,60 @@ class _ResetConfirmationBottomSheetState
             Align(
               alignment: Alignment.topRight,
               child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white),
+                icon: Icon(
+                  Icons.close,
+                  size: context.themeSize.overlayCloseIconSize,
+                ),
                 onPressed: () => Navigator.of(context).pop(),
               ),
             ),
             const SizedBox(height: 10),
-            const Text(
-              'Confirm Reset',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 28,
-                fontFamily: 'Fira Code',
-                fontWeight: FontWeight.w300,
-              ),
-            ),
+            Text('Confirm Reset', style: context.themeText.mediumTitle),
             const SizedBox(height: 13),
-            const SizedBox(
-              width: 309,
+            SizedBox(
+              width: context.isTablet ? null : 309,
               child: Text(
                 'Are you sure you want to proceed? This will delete all local '
                 'wallet data. Make sure you have backed up your recovery '
                 'phrase.',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w500,
-                ),
+                style: context.themeText.smallParagraph,
               ),
             ),
             const SizedBox(height: 28),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Checkbox(
-                  value: _isCheckboxChecked,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      _isCheckboxChecked = value ?? false;
-                    });
-                  },
-                  activeColor: const Color(0xFF8AF9A8),
-                  checkColor: Colors.black,
-                  side: const BorderSide(color: Colors.white),
-                ),
-                const SizedBox(width: 8),
-                const Expanded(
-                  child: Text(
-                    'I have backed up my recovery phrase',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontFamily: 'Fira Code',
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ),
-              ],
+            CheckboxListTile(
+              contentPadding: const EdgeInsets.all(0),
+              controlAffinity: ListTileControlAffinity.leading,
+              value: _isCheckboxChecked,
+              onChanged: (bool? value) {
+                setState(() {
+                  _isCheckboxChecked = value ?? false;
+                });
+              },
+              activeColor: const Color(0xFF8AF9A8),
+              checkColor: Colors.black,
+              side: const BorderSide(color: Colors.white),
+              title: Text(
+                'I have backed up my recovery phrase',
+                style: context.themeText.detail,
+              ),
             ),
             const SizedBox(height: 28),
             ElevatedButton(
               onPressed: _isCheckboxChecked ? widget.onReset : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF2D53),
+                backgroundColor: context.themeColors.error,
                 minimumSize: const Size(double.infinity, 56),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(5),
                 ),
-                disabledBackgroundColor: const Color(
-                  0xFFFF2D53,
-                ).useOpacity(0.5),
+                disabledBackgroundColor: context.themeColors.error.useOpacity(
+                  0.5,
+                ),
               ),
-              child: const Text(
+              child: Text(
                 'Reset & Clear Data',
-                style: TextStyle(
-                  color: Color(0xFF0E0E0E),
-                  fontSize: 18,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w500,
+                style: context.themeText.smallTitle?.copyWith(
+                  color: context.themeColors.textSecondary,
                 ),
               ),
             ),
@@ -117,13 +97,9 @@ class _ResetConfirmationBottomSheetState
             Center(
               child: TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text(
+                child: Text(
                   'Cancel',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w500,
+                  style: context.themeText.smallParagraph?.copyWith(
                     decoration: TextDecoration.underline,
                   ),
                 ),

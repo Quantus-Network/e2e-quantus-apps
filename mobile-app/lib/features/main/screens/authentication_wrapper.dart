@@ -3,6 +3,8 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_initializer.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 
 class AuthenticationWrapper extends StatefulWidget {
@@ -97,7 +99,8 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper>
 
   Widget _buildLockScreen() {
     return Scaffold(
-      backgroundColor: const Color(0xFF0E0E0E),
+      extendBodyBehindAppBar: true,
+      backgroundColor: context.themeColors.background,
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
@@ -110,36 +113,30 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
+              Text(
                 'Authentication Required',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontFamily: 'Fira Code',
-                ),
+                style: context.themeText.lockTitle,
               ),
               const SizedBox(height: 30),
               if (_isAuthenticating)
-                const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    context.themeColors.circularLoader,
+                  ),
                 )
               else
                 ElevatedButton(
                   onPressed: _authenticate,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF16CECE),
+                    backgroundColor: context.themeColors.authButtonBg,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 40,
                       vertical: 15,
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Authenticate',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontFamily: 'Fira Code',
-                      fontSize: 16,
-                    ),
+                    style: context.themeText.paragraph,
                   ),
                 ),
             ],

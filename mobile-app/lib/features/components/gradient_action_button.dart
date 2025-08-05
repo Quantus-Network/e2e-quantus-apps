@@ -12,6 +12,7 @@ class GradientActionButton extends StatelessWidget {
   final double fontSize;
   final String fontFamily;
   final FontWeight fontWeight;
+  final TextStyle? textStyle;
 
   const GradientActionButton({
     super.key,
@@ -31,6 +32,7 @@ class GradientActionButton extends StatelessWidget {
     this.fontSize = 18,
     this.fontFamily = 'Fira Code',
     this.fontWeight = FontWeight.w500,
+    this.textStyle,
   });
 
   @override
@@ -65,12 +67,14 @@ class GradientActionButton extends StatelessWidget {
                   )
                 : Text(
                     label,
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: fontSize,
-                      fontFamily: fontFamily,
-                      fontWeight: fontWeight,
-                    ),
+                    style:
+                        textStyle ??
+                        TextStyle(
+                          color: textColor,
+                          fontSize: fontSize,
+                          fontFamily: fontFamily,
+                          fontWeight: fontWeight,
+                        ),
                   ),
           ),
         ),

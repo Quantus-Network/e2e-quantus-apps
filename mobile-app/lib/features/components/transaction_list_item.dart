@@ -5,6 +5,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/transaction_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/transaction_details_action_sheet.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/models/transaction_role.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 
@@ -54,18 +58,18 @@ class TransactionListItemState extends State<TransactionListItem> {
 
   Color get titleColor {
     if (widget.transaction.isReversibleCancelled) {
-      return const Color(0xFFFF2D53);
+      return context.themeColors.error;
     }
 
     if (role == TransactionRole.sender && isPendingOrScheduled) {
-      return const Color(0xFF16CECE);
+      return context.themeColors.checksum;
     }
     if (role == TransactionRole.receiver && isPendingOrScheduled) {
-      return const Color(0xFFB259F2);
+      return context.themeColors.purple;
     }
 
     if (role == TransactionRole.sender) return const Color(0xFF16CECE);
-    return const Color(0xFFB259F2);
+    return context.themeColors.purple;
   }
 
   @override
@@ -149,6 +153,7 @@ class TransactionListItemState extends State<TransactionListItem> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
       barrierColor: Colors.transparent,
       backgroundColor: Colors.transparent,
       builder: (context) => Stack(
@@ -181,8 +186,6 @@ class TransactionListItemState extends State<TransactionListItem> {
         (widget.transaction as PendingTransactionEvent).transactionState ==
             TransactionState.failed;
 
-    const textStyle = TextStyle(fontFamily: 'Fira Code', color: Colors.white);
-
     return InkWell(
       onTap: () {
         _showActionSheet(context);
@@ -196,15 +199,21 @@ class TransactionListItemState extends State<TransactionListItem> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 if (widget.transaction.isReversibleCancelled)
-                  SvgPicture.asset('assets/stop_icon.svg', width: 21)
+                  SvgPicture.asset(
+                    'assets/stop_icon.svg',
+                    width: context.themeSize.txListItemIconWidth,
+                  )
                 else if (isFailed)
-                  SvgPicture.asset('assets/send_failed_icon.svg', width: 21)
+                  SvgPicture.asset(
+                    'assets/send_failed_icon.svg',
+                    width: context.themeSize.txListItemIconWidth,
+                  )
                 else
                   Image.asset(
                     role == TransactionRole.sender
                         ? 'assets/send_icon.png'
                         : 'assets/receive_icon_sm.png',
-                    width: 21,
+                    width: context.themeSize.txListItemIconWidth,
                   ),
                 const SizedBox(width: 11),
                 Expanded(
@@ -217,37 +226,25 @@ class TransactionListItemState extends State<TransactionListItem> {
                           children: [
                             TextSpan(
                               text: title,
-                              style: textStyle.copyWith(
+                              style: context.themeText.smallParagraph?.copyWith(
                                 color: titleColor,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
                               ),
                             ),
                             TextSpan(
                               text:
                                   // ignore: lines_longer_than_80_chars
                                   ' ${_formatAmount(widget.transaction.amount)}',
-                              style: textStyle.copyWith(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
+                              style: context.themeText.smallParagraph?.copyWith(
                                 color: widget.transaction.isReversibleCancelled
                                     ? const Color(0xFFD9D9D9)
-                                    : textStyle.color,
+                                    : context.themeColors.textPrimary,
                               ),
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        _getSubtitle(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontFamily: 'Fira Code',
-                          fontWeight: FontWeight.w300,
-                        ),
-                      ),
+                      Text(_getSubtitle(), style: context.themeText.tiny),
                       if (!widget.transaction.isReversibleScheduled)
                         Text(
                           _getTimestampString(),
@@ -326,16 +323,14 @@ class _TimerDisplay extends StatelessWidget {
           Text(
             duration,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w400,
-            ),
+            style: context.themeText.detail,
           ),
           if (isSending) const SizedBox(width: 10),
           if (isSending)
-            SvgPicture.asset('assets/stop_icon.svg', width: 13, height: 13),
+            SvgPicture.asset(
+              'assets/stop_icon.svg',
+              width: context.isTablet ? 16 : 13,
+            ),
         ],
       ),
     );
@@ -348,14 +343,7 @@ class _StatusDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      status,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 12,
-        fontFamily: 'Fira Code',
-      ),
-    );
+    return Text(status, style: context.themeText.detail);
   }
 }
 
@@ -368,8 +356,8 @@ class _PendingStatusDisplay extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 8,
-          height: 8,
+          width: context.isTablet ? 12 : 8,
+          height: context.isTablet ? 12 : 8,
           decoration: const ShapeDecoration(
             color: Colors.yellow,
             shape: OvalBorder(),
@@ -378,11 +366,7 @@ class _PendingStatusDisplay extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           transaction.transactionState.name,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-            fontFamily: 'Fira Code',
-          ),
+          style: context.themeText.detail,
         ),
       ],
     );

@@ -10,6 +10,10 @@ import 'package:resonance_network_wallet/features/main/screens/accounts_screen.d
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -49,13 +53,21 @@ class _WalletMainState extends ConsumerState<WalletMain> {
     if (iconWidget is SvgPicture) {
       finalIconWidget = SvgPicture.asset(
         (iconWidget.bytesLoader as SvgAssetLoader).assetName,
-        width: 20,
-        height: 20,
+        width: context.themeSize.mainMenuWidth,
+        height: context.themeSize.mainMenuHeight,
       );
     } else if (iconWidget is Icon) {
-      finalIconWidget = Icon(iconWidget.icon, color: color, size: 20);
+      finalIconWidget = Icon(
+        iconWidget.icon,
+        color: color,
+        size: context.themeSize.mainMenuHeight,
+      );
     } else if (iconWidget is Image) {
-      finalIconWidget = SizedBox(width: 20, height: 20, child: iconWidget);
+      finalIconWidget = SizedBox(
+        width: context.themeSize.mainMenuWidth,
+        height: context.themeSize.mainMenuHeight,
+        child: iconWidget,
+      );
     }
 
     return Opacity(
@@ -64,9 +76,9 @@ class _WalletMainState extends ConsumerState<WalletMain> {
         onTap: disabled ? null : onPressed,
         borderRadius: BorderRadius.circular(4),
         child: Container(
-          width: 65,
-          height: 56,
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          width: context.isTablet ? 105 : 65,
+          height: context.isTablet ? 96 : 56,
+          padding: const EdgeInsets.symmetric(vertical: 6),
           decoration: ShapeDecoration(
             color: bgColor,
             shape: RoundedRectangleBorder(
@@ -83,12 +95,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
               Text(
                 label,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 10,
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w300,
-                ),
+                style: context.themeText.tag,
               ),
             ],
           ),
@@ -114,15 +121,12 @@ class _WalletMainState extends ConsumerState<WalletMain> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.only(left: 10.0, bottom: 10.0),
+            Padding(
+              padding: const EdgeInsets.only(left: 10.0, bottom: 10.0),
               child: Text(
                 'Recent Transactions',
-                style: TextStyle(
-                  color: Color(0xFFE6E6E6),
-                  fontSize: 14,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w500,
+                style: context.themeText.smallParagraph?.copyWith(
+                  color: context.themeColors.light,
                 ),
               ),
             ),
@@ -154,11 +158,8 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                     },
                     child: Text(
                       'Transaction History →',
-                      style: TextStyle(
-                        color: Colors.white.useOpacity(0.80),
-                        fontSize: 12,
-                        fontFamily: 'Fira Code',
-                        fontWeight: FontWeight.w500,
+                      style: context.themeText.detail?.copyWith(
+                        color: context.themeColors.textPrimary.useOpacity(0.80),
                       ),
                     ),
                   ),
@@ -168,7 +169,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
         );
       },
       loading: () => Container(
-        width: 321,
+        width: double.infinity,
         padding: const EdgeInsets.all(10),
         decoration: ShapeDecoration(
           color: Colors.black.withAlpha(64),
@@ -184,7 +185,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
         ),
       ),
       error: (error, stack) => Container(
-        width: 321,
+        width: double.infinity,
         padding: const EdgeInsets.all(20),
         decoration: ShapeDecoration(
           color: Colors.black.withAlpha(64),
@@ -196,13 +197,15 @@ class _WalletMainState extends ConsumerState<WalletMain> {
             children: [
               Text(
                 error.toString(),
-                style: const TextStyle(color: Colors.white70),
+                style: context.themeText.smallParagraph?.copyWith(
+                  color: Colors.white70,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
               TextButton(
                 onPressed: () => ref.invalidate(activeAccountHistoryProvider),
-                child: const Text('Retry'),
+                child: Text('Retry', style: context.themeText.smallParagraph),
               ),
             ],
           ),
@@ -241,9 +244,14 @@ class _WalletMainState extends ConsumerState<WalletMain> {
     final allTransactionsAsync = ref.watch(allTransactionsProvider);
 
     if (activeAccountAsync.isLoading) {
-      return const Scaffold(
-        backgroundColor: Color(0xFF0E0E0E),
-        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      return Scaffold(
+        extendBodyBehindAppBar: true,
+        backgroundColor: context.themeColors.background,
+        body: Center(
+          child: CircularProgressIndicator(
+            color: context.themeColors.circularLoader,
+          ),
+        ),
       );
     }
 
@@ -254,7 +262,8 @@ class _WalletMainState extends ConsumerState<WalletMain> {
 
     if (hasError || noAccount) {
       return Scaffold(
-        backgroundColor: const Color(0xFF0E0E0E),
+        extendBodyBehindAppBar: true,
+        backgroundColor: context.themeColors.background,
         body: Column(
           children: [
             Expanded(
@@ -264,19 +273,15 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.error_outline,
-                        color: Colors.red,
+                        color: context.themeColors.error,
                         size: 50,
                       ),
                       const SizedBox(height: 20),
-                      const Text(
+                      Text(
                         'Failed to Connect',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: context.themeText.smallTitle,
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 10),
@@ -284,9 +289,10 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                         activeAccountAsync.error?.toString() ??
                             'Could not load wallet data. Please check your '
                                 'network connection and try again.',
-                        style: TextStyle(
-                          color: Colors.white.useOpacity(0.7),
-                          fontSize: 14,
+                        style: context.themeText.smallParagraph?.copyWith(
+                          color: context.themeColors.textPrimary.useOpacity(
+                            0.7,
+                          ),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -331,7 +337,8 @@ class _WalletMainState extends ConsumerState<WalletMain> {
     final activeAccount = activeAccountAsync.value!;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0E0E0E),
+      extendBodyBehindAppBar: true,
+      backgroundColor: context.themeColors.background,
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
@@ -375,15 +382,14 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                           children: [
                             SvgPicture.asset(
                               'assets/quantus_logo_hz.svg',
-                              height: 40,
+                              height: context.isTablet ? 60 : 40,
                             ),
                             Row(
                               children: [
                                 IconButton(
                                   icon: SvgPicture.asset(
                                     'assets/wallet_icon.svg',
-                                    width: 24,
-                                    height: 24,
+                                    width: context.isTablet ? 32 : 24,
                                   ),
                                   onPressed: () {
                                     Navigator.push(
@@ -424,67 +430,55 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                                   children: [
                                     Image.asset(
                                       'assets/active_dot.png',
-                                      width: 20,
-                                      height: 20,
+                                      width: context.isTablet ? 28 : 20,
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
                                       activeAccount.name,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontFamily: 'Fira Code',
-                                        fontWeight: FontWeight.w400,
-                                      ),
+                                      style: context.themeText.smallParagraph,
                                     ),
                                     const SizedBox(width: 8),
-                                    const Icon(
+                                    Icon(
                                       Icons.arrow_forward_ios,
                                       color: Colors.white70,
-                                      size: 12,
+                                      size: context.isTablet ? 18 : 12,
                                     ),
                                   ],
                                 ),
                               ),
                             ),
                             const SizedBox(height: 7),
-                            Container(
-                              height: 50,
-                              alignment: Alignment.center,
-                              child: balanceAsync.when(
-                                data: (balance) => Text.rich(
-                                  TextSpan(
-                                    children: [
-                                      TextSpan(
-                                        text: _formattingService.formatBalance(
-                                          balance,
-                                        ),
-                                        style: const TextStyle(
-                                          color: Color(0xFFE6E6E6),
-                                          fontSize: 40,
-                                          fontFamily: 'Fira Code',
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                            balanceAsync.when(
+                              data: (balance) => Text.rich(
+                                TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: _formattingService.formatBalance(
+                                        balance,
                                       ),
-                                      const TextSpan(
-                                        text: ' ${AppConstants.tokenSymbol}',
-                                        style: TextStyle(
-                                          color: Color(0xFFE6E6E6),
-                                          fontSize: 20,
-                                          fontFamily: 'Fira Code',
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  textAlign: TextAlign.center,
+                                      style: context.themeText.extraLargeTitle
+                                          ?.copyWith(
+                                            color: context.themeColors.light,
+                                          ),
+                                    ),
+                                    TextSpan(
+                                      text: ' ${AppConstants.tokenSymbol}',
+                                      style: context.themeText.smallTitle
+                                          ?.copyWith(
+                                            color: context.themeColors.light,
+                                          ),
+                                    ),
+                                  ],
                                 ),
-                                loading: () => const CircularProgressIndicator(
-                                  color: Colors.white,
-                                ),
-                                error: (err, stack) => const Text(
-                                  'Error',
-                                  style: TextStyle(color: Colors.red),
+                                textAlign: TextAlign.center,
+                              ),
+                              loading: () => CircularProgressIndicator(
+                                color: context.themeColors.circularLoader,
+                              ),
+                              error: (err, stack) => Text(
+                                'Error',
+                                style: TextStyle(
+                                  color: context.themeColors.textError,
                                 ),
                               ),
                             ),
@@ -492,11 +486,15 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                         ),
                         const SizedBox(height: 30),
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          spacing: context.isTablet ? 28 : 0,
+                          mainAxisAlignment: context.isTablet
+                              ? MainAxisAlignment.center
+                              : MainAxisAlignment.spaceBetween,
                           children: [
                             _buildActionButton(
                               iconWidget: SvgPicture.asset(
                                 'assets/send_icon_1.svg',
+                                width: 19,
                               ),
                               label: 'SEND',
                               borderColor: const Color(0xFF0AD4F6),
@@ -507,6 +505,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                             _buildActionButton(
                               iconWidget: SvgPicture.asset(
                                 'assets/receive_icon_1.svg',
+                                width: 19,
                               ),
                               label: 'RECEIVE',
                               borderColor: const Color(0xFFB258F1),
@@ -517,6 +516,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                             _buildActionButton(
                               iconWidget: SvgPicture.asset(
                                 'assets/swap_icon_1.svg',
+                                width: 19,
                               ),
                               label: 'SWAP',
                               borderColor: const Color(0xFF0AD4F6),
@@ -526,6 +526,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                             _buildActionButton(
                               iconWidget: SvgPicture.asset(
                                 'assets/bridge_icon.svg',
+                                width: 19,
                               ),
                               label: 'BRIDGE',
                               borderColor: const Color(0xFF0AD4F6),
@@ -573,11 +574,8 @@ class _WalletMainState extends ConsumerState<WalletMain> {
         child: Center(
           child: Text(
             label,
-            style: TextStyle(
-              color: textColor ?? const Color(0xFF0E0E0E),
-              fontSize: 18,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w500,
+            style: context.themeText.smallTitle?.copyWith(
+              color: context.themeColors.textSecondary,
             ),
           ),
         ),

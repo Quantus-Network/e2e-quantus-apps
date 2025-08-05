@@ -3,7 +3,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class AccountSettingsScreen extends StatefulWidget {
   final Account account;
@@ -22,10 +25,6 @@ class AccountSettingsScreen extends StatefulWidget {
 }
 
 class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
-  void _showReceiveModal() {
-    showReceiveSheet(context);
-  }
-
   void _editAccountName() {
     Navigator.push<bool?>(
       context,
@@ -44,7 +43,8 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0E0E0E),
+      extendBodyBehindAppBar: true,
+      backgroundColor: context.themeColors.background,
       appBar: const WalletAppBar(title: 'Account Settings'),
       body: Container(
         decoration: const BoxDecoration(
@@ -74,21 +74,17 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     return Column(
       children: [
         // Placeholder for account icon
-        SvgPicture.asset('assets/res_icon.svg', width: 60, height: 60),
+        SvgPicture.asset(
+          'assets/res_icon.svg',
+          width: context.isTablet ? 80 : 60,
+        ),
         const SizedBox(height: 10),
         InkWell(
           onTap: _editAccountName,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                widget.account.name,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontFamily: 'Fira Code',
-                ),
-              ),
+              Text(widget.account.name, style: context.themeText.largeTag),
               const SizedBox(width: 8),
               const Icon(Icons.edit, color: Colors.white70, size: 16),
             ],
@@ -97,19 +93,15 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         const SizedBox(height: 5),
         Text(
           widget.checksumName,
-          style: const TextStyle(
-            color: Color(0xFF16CECE),
-            fontSize: 14,
-            fontFamily: 'Fira Code',
+          style: context.themeText.smallParagraph?.copyWith(
+            color: context.themeColors.checksum,
           ),
         ),
         const SizedBox(height: 5),
         Text(
           widget.balance,
-          style: const TextStyle(
-            color: Color(0xFFE6E6E6),
-            fontSize: 14,
-            fontFamily: 'Fira Code',
+          style: context.themeText.smallParagraph?.copyWith(
+            color: context.themeColors.light,
           ),
         ),
       ],
@@ -120,7 +112,10 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        padding: EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: context.isTablet ? 12 : 8,
+        ),
         decoration: BoxDecoration(
           color: const Color(0xFF313131),
           borderRadius: BorderRadius.circular(4),
@@ -128,25 +123,32 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Expanded(child: SizedBox()),
+            if (!context.isTablet) const Expanded(child: SizedBox()),
             SizedBox(
-              width: 170,
+              width: context.isTablet ? 550 : 180,
               child: Text(
-                AddressFormattingService.splitIntoChunks(
-                  widget.account.accountId,
-                ).join(' '),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontFamily: 'Fira Code',
-                ),
+                context.isTablet
+                    ? widget.account.accountId
+                    : AddressFormattingService.splitIntoChunks(
+                        widget.account.accountId,
+                      ).join(' '),
+                textAlign: context.isTablet
+                    ? TextAlign.start
+                    : TextAlign.center,
+                style: context.themeText.smallParagraph,
               ),
             ),
-            const Expanded(child: SizedBox()),
+            if (!context.isTablet) const Expanded(child: SizedBox()),
             IconButton(
-              icon: const Icon(Icons.copy, color: Colors.white, size: 22),
-              onPressed: _showReceiveModal,
+              icon: Icon(
+                Icons.copy,
+                color: Colors.white,
+                size: context.isTablet ? 26 : 22,
+              ),
+              onPressed: () => ClipboardExtensions.copyTextWithSnackbar(
+                context,
+                widget.account.accountId,
+              ),
             ),
           ],
         ),
@@ -168,26 +170,23 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           children: [
             Row(
               children: [
-                SvgPicture.asset('assets/lock_icon.svg'),
+                SvgPicture.asset(
+                  'assets/lock_icon.svg',
+                  width: context.isTablet ? 28 : 20,
+                ),
                 const SizedBox(width: 12),
-                const Column(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'High Security Features',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontFamily: 'Fira Code',
-                      ),
+                      style: context.themeText.largeTag,
                     ),
                     Text(
                       'COMING SOON',
-                      style: TextStyle(
-                        color: Color(0xFFFADC34),
-                        fontSize: 12,
-                        fontFamily: 'Fira Code',
-                        fontWeight: FontWeight.w500,
+                      style: context.themeText.detail?.copyWith(
+                        color: const Color(0xFFFADC34),
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],

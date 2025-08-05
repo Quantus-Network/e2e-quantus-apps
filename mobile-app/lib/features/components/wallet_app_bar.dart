@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 
 class WalletAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -15,26 +18,26 @@ class WalletAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      iconTheme: const IconThemeData(color: Color(0xFFE6E6E6)),
+      iconTheme: IconThemeData(color: context.themeColors.light),
       centerTitle: false,
       titleSpacing: 0,
       leading: (Navigator.canPop(context) || onBack != null)
           ? IconButton(
-              icon: const Icon(Icons.arrow_back_ios, size: 20),
+              icon: Icon(
+                Icons.arrow_back_ios,
+                size: context.themeSize.appbarIconSize,
+              ),
               onPressed: onBack ?? () => Navigator.of(context).pop(),
             )
           : null,
-      title: Text(
-        title,
-        style: const TextStyle(
-          color: Color(0xFFE6E6E6),
-          fontSize: 12,
-          fontFamily: 'Fira Code',
-          fontWeight: FontWeight.w400,
-        ),
+      title: GestureDetector(
+        onTap: Navigator.canPop(context) || onBack != null
+            ? onBack ?? () => Navigator.of(context).pop()
+            : null,
+        child: Text(title, style: context.themeText.detail),
       ),
       actions: actions,
-      backgroundColor: const Color(0xFF0E0E0E),
+      backgroundColor: Colors.transparent,
       elevation: 0,
     );
   }

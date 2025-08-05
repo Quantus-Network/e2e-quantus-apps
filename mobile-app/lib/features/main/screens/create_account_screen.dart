@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/gradient_action_button.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class CreateAccountScreen extends StatefulWidget {
   final Account? accountToEdit;
@@ -138,7 +141,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0E0E0E),
+      extendBodyBehindAppBar: true,
+      backgroundColor: context.themeColors.background,
       appBar: WalletAppBar(
         title: _isEditMode ? 'Edit Account' : 'Create New Account',
       ),
@@ -186,23 +190,16 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Name your Account',
-          style: TextStyle(
-            color: Color(0xFFE6E6E6),
-            fontSize: 18,
-            fontFamily: 'Fira Code',
-            fontWeight: FontWeight.w500,
+          style: context.themeText.smallTitle?.copyWith(
+            color: context.themeColors.light,
           ),
         ),
         const SizedBox(height: 10),
         TextField(
           controller: _nameController,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontFamily: 'Fira Code',
-          ),
+          style: context.themeText.smallTitle,
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.black,
@@ -224,32 +221,26 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Your Account Checkphrase',
-          style: TextStyle(
-            color: Color(0xFFE6E6E6),
-            fontSize: 18,
-            fontFamily: 'Fira Code',
-            fontWeight: FontWeight.w500,
+          style: context.themeText.smallTitle?.copyWith(
+            color: context.themeColors.light,
           ),
         ),
         const SizedBox(height: 3),
         SizedBox(
-          width: 325,
+          width: context.isTablet ? 600 : 325,
           child: Text(
             'A unique phrase which allows you to easily recognise and '
             'verify your wallet.',
-            style: TextStyle(
-              color: Colors.white.useOpacity(0.60),
-              fontSize: 14,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w400,
+            style: context.themeText.smallParagraph?.copyWith(
+              color: context.themeColors.textMuted,
             ),
           ),
         ),
         const SizedBox(height: 16),
         SizedBox(
-          width: 311,
+          width: context.isTablet ? 600 : 311,
           height: 50, // Set a fixed height to avoid layout jump
           child: FutureBuilder<String>(
             future: _checksumFuture,
@@ -272,11 +263,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
               if (snapshot.hasData) {
                 return Text(
                   snapshot.data!,
-                  style: const TextStyle(
-                    color: Color(0xFF16CECE),
-                    fontSize: 16,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w400,
+                  style: context.themeText.largeTag?.copyWith(
+                    color: context.themeColors.checksum,
                   ),
                 );
               }
@@ -296,6 +284,9 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
           : GradientActionButton(
               onPressed: _saveAccount,
               label: _isEditMode ? 'Save' : 'Create Account',
+              textStyle: context.themeText.smallTitle?.copyWith(
+                color: context.themeColors.textSecondary,
+              ),
             ),
     );
   }

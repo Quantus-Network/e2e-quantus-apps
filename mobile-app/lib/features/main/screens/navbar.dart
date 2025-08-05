@@ -5,10 +5,13 @@ import 'package:resonance_network_wallet/features/main/screens/notifications_scr
 import 'package:resonance_network_wallet/features/main/screens/settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class NavItem {
-  final SvgPicture offIcon;
-  final SvgPicture onIcon;
+  final String offIcon;
+  final String onIcon;
   final String label;
 
   NavItem(this.offIcon, this.onIcon, this.label);
@@ -16,10 +19,21 @@ class NavItem {
 
 // Custom painter for the custom bottom navigation bar
 class BottomNavPainter extends CustomPainter {
+  final bool isTablet;
+  final Color background;
+
+  BottomNavPainter({
+    super.repaint,
+    required this.background,
+    required this.isTablet,
+  });
+
+  double get offset => isTablet ? 130 : 80;
+
   @override
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint()
-      ..color = Colors.black
+      ..color = background
       ..style = PaintingStyle.fill;
 
     Path path = Path();
@@ -28,9 +42,9 @@ class BottomNavPainter extends CustomPainter {
 
     path.lineTo(size.width, size.height);
     path.lineTo(size.width, 0);
-    path.lineTo((size.width * 1 / 2) + 80, 0);
+    path.lineTo((size.width * 1 / 2) + offset, 0);
     path.lineTo((size.width * 1 / 2), size.height / 2);
-    path.lineTo((size.width * 1 / 2) - 80, 0);
+    path.lineTo((size.width * 1 / 2) - offset, 0);
     path.lineTo(0, 0);
 
     path.close();
@@ -94,28 +108,28 @@ class _NavbarState extends ConsumerState<Navbar> {
 
   final List<NavItem> _navItems = [
     NavItem(
-      SvgPicture.asset('assets/navbar/home_icon_off.svg'),
-      SvgPicture.asset('assets/navbar/home_icon_on.svg'),
+      'assets/navbar/home_icon_off.svg',
+      'assets/navbar/home_icon_on.svg',
       'Home',
     ),
     NavItem(
-      SvgPicture.asset('assets/navbar/history_icon_off.svg'),
-      SvgPicture.asset('assets/navbar/history_icon_on.svg'),
+      'assets/navbar/history_icon_off.svg',
+      'assets/navbar/history_icon_on.svg',
       'History',
     ),
     NavItem(
-      SvgPicture.asset('assets/navbar/floating_button.svg'),
-      SvgPicture.asset('assets/navbar/floating_button.svg'),
+      'assets/navbar/floating_button.svg',
+      'assets/navbar/floating_button.svg',
       'Send',
     ),
     NavItem(
-      SvgPicture.asset('assets/navbar/settings_icon_off.svg'),
-      SvgPicture.asset('assets/navbar/settings_icon_on.svg'),
+      'assets/navbar/settings_icon_off.svg',
+      'assets/navbar/settings_icon_on.svg',
       'Settings',
     ),
     NavItem(
-      SvgPicture.asset('assets/navbar/notifications_icon_off.svg'),
-      SvgPicture.asset('assets/navbar/notifications_icon_on.svg'),
+      'assets/navbar/notifications_icon_off.svg',
+      'assets/navbar/notifications_icon_on.svg',
       'Notifications',
     ),
   ];
@@ -134,13 +148,13 @@ class _NavbarState extends ConsumerState<Navbar> {
     // Floating action button item
     if (index == 2) {
       return SizedBox(
-        height: 75,
-        width: 70,
+        height: context.themeSize.floatingBtnHeight,
+        width: context.themeSize.floatingBtnWidth,
         child: GestureDetector(
           onTap: () {
             Navigator.pushNamed(context, '/send');
           },
-          child: item.onIcon,
+          child: SvgPicture.asset(item.onIcon),
         ),
       );
     }
@@ -148,8 +162,8 @@ class _NavbarState extends ConsumerState<Navbar> {
     // Notification item with test flag
     if (index == 4 && _notificationTestDisabled) {
       return SizedBox(
-        height: 32,
-        width: 70,
+        height: context.themeSize.navbarItemHeight,
+        width: context.themeSize.navbarItemWidth,
         child: InkWell(
           onTap: null,
           child: Column(
@@ -157,6 +171,7 @@ class _NavbarState extends ConsumerState<Navbar> {
             children: [
               SvgPicture.asset(
                 'assets/navbar/notifications_icon_off.svg',
+                width: context.themeSize.navbarIconWidth,
                 colorFilter: const ColorFilter.mode(
                   Colors.blueGrey,
                   BlendMode.srcIn,
@@ -173,11 +188,21 @@ class _NavbarState extends ConsumerState<Navbar> {
         _onItemTapped(index);
       },
       child: SizedBox(
-        height: 32,
-        width: 70,
+        height: context.themeSize.navbarItemHeight,
+        width: context.themeSize.navbarItemWidth,
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [isSelected ? item.onIcon : item.offIcon],
+          children: [
+            isSelected
+                ? SvgPicture.asset(
+                    item.onIcon,
+                    width: context.themeSize.navbarIconWidth,
+                  )
+                : SvgPicture.asset(
+                    item.offIcon,
+                    width: context.themeSize.navbarIconWidth,
+                  ),
+          ],
         ),
       ),
     );
@@ -198,12 +223,18 @@ class _NavbarState extends ConsumerState<Navbar> {
   Widget _buildBottomNavigationBar() {
     return Container(
       color: Colors.transparent,
-      height: 90,
+      height: context.themeSize.navbarHeight,
       child: Stack(
         children: [
           CustomPaint(
-            size: Size(MediaQuery.of(context).size.width, 90),
-            painter: BottomNavPainter(),
+            size: Size(
+              MediaQuery.of(context).size.width,
+              context.themeSize.navbarHeight,
+            ),
+            painter: BottomNavPainter(
+              background: context.themeColors.navbarBg,
+              isTablet: context.isTablet,
+            ),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -222,6 +253,7 @@ class _NavbarState extends ConsumerState<Navbar> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       extendBody: true,
       body: _buildBody(),
       bottomNavigationBar: _buildBottomNavigationBar(),

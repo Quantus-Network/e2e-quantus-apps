@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/mnemonic_grid.dart';
 import 'package:resonance_network_wallet/features/components/reveal_overlay.dart';
-import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class ShowRecoveryPhraseScreen extends StatefulWidget {
   const ShowRecoveryPhraseScreen({super.key});
@@ -37,7 +39,8 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0E0E0E),
+      extendBodyBehindAppBar: true,
+      backgroundColor: context.themeColors.background,
       appBar: const WalletAppBar(title: 'Your Recovery Phrase'),
       body: Container(
         decoration: const BoxDecoration(
@@ -70,36 +73,26 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: _buildDoneButton(context),
+      floatingActionButton: _buildDoneButton(),
     );
   }
 
   Widget _buildDescription() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 25.0),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Keep your Recovery Phrase Safe',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w500,
-            ),
+            style: context.themeText.smallTitle,
           ),
-          SizedBox(height: 13),
+          const SizedBox(height: 13),
           Text(
             // ignore: lines_longer_than_80_chars
             'This is the only way to recover your wallet. Anyone who has this phrase will have full access to this wallet, your funds may be lost.',
-            // Anyone who has this phrase will have full access to this wallet,
-            // your funds may be lost.',
-            style: TextStyle(
-              color: Colors.white60,
-              fontSize: 14,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w400,
+            style: context.themeText.smallParagraph?.copyWith(
+              color: context.themeColors.textMuted,
             ),
           ),
         ],
@@ -152,35 +145,26 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: InkWell(
-        onTap: () async {
-          await Clipboard.setData(
-            ClipboardData(text: _recoveryPhrase.join(' ')),
-          );
-          if (!context.mounted) return;
-          showTopSnackBar(
-            // ignore: use_build_context_synchronously
-            context,
-            title: 'Copied',
-            message: 'Recovery phrase copied to clipboard.',
-            icon: buildCheckmarkIcon(),
-          );
-        },
-        child: const Opacity(
+        onTap: () => ClipboardExtensions.copyTextWithSnackbar(
+          context,
+          _recoveryPhrase.join(' '),
+          message: 'Checkphrase copied to clipboard',
+        ),
+        child: Opacity(
           opacity: 0.80,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(Icons.copy, color: Colors.white, size: 24),
-              SizedBox(width: 8),
+              Icon(
+                Icons.copy,
+                color: Colors.white,
+                size: context.isTablet ? 28 : 24,
+              ),
+              const SizedBox(width: 8),
               Text(
                 'Copy to Clipboard',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w400,
-                ),
+                style: context.themeText.smallParagraph,
               ),
             ],
           ),
@@ -190,22 +174,19 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
   }
 
   Widget _buildWarning() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 25),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 25),
       child: Text(
         // ignore: lines_longer_than_80_chars
         'Do not share your Recovery Phrase with any 3rd party, person, website or application',
-        style: TextStyle(
-          color: Colors.white60,
-          fontSize: 14,
-          fontFamily: 'Fira Code',
-          fontWeight: FontWeight.w400,
+        style: context.themeText.smallParagraph?.copyWith(
+          color: context.themeColors.textMuted,
         ),
       ),
     );
   }
 
-  Widget _buildDoneButton(BuildContext context) {
+  Widget _buildDoneButton() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 20.0),
       child: SizedBox(
@@ -214,36 +195,22 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
           onPressed: () => Navigator.of(context).pop(),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.white,
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.symmetric(
+              vertical: context.isTablet ? 18 : 16,
+              horizontal: 16,
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(5),
             ),
           ),
-          child: const Text(
+          child: Text(
             'Done',
-            style: TextStyle(
-              color: Color(0xFF0E0E0E),
-              fontSize: 18,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w500,
+            style: context.themeText.smallTitle?.copyWith(
+              color: context.themeColors.textSecondary,
             ),
           ),
         ),
       ),
     );
   }
-}
-
-Widget buildCheckmarkIcon() {
-  return Container(
-    width: 24,
-    height: 24,
-    decoration: const ShapeDecoration(
-      color: Color(0xFF0CE6ED),
-      shape: OvalBorder(),
-    ),
-    child: const Center(
-      child: Icon(Icons.check, color: Colors.black, size: 16),
-    ),
-  );
 }
