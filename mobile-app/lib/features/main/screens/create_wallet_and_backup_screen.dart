@@ -115,6 +115,8 @@ class CreateWalletAndBackupScreenState
     final bool canContinue = _hasSavedMnemonic && !_isLoading && _error == null;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: const WalletAppBar(title: 'Create Wallet'),
       backgroundColor: context.themeColors.background,
       body: Container(
         decoration: const BoxDecoration(
@@ -130,7 +132,6 @@ class CreateWalletAndBackupScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const WalletAppBar(title: 'Create Wallet'),
                 const SizedBox(height: 24),
                 Expanded(
                   child: SingleChildScrollView(

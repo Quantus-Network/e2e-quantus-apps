@@ -39,6 +39,7 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: context.themeColors.background,
       appBar: const WalletAppBar(title: 'Your Recovery Phrase'),
       body: Container(

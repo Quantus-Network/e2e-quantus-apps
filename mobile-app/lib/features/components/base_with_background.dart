@@ -11,6 +11,7 @@ class BaseWithBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: appBar,
+      extendBodyBehindAppBar: true,
       backgroundColor: context.themeColors.background,
       body: Stack(
         children: [

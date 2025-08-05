@@ -99,6 +99,7 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper>
 
   Widget _buildLockScreen() {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: context.themeColors.background,
       body: Container(
         decoration: const BoxDecoration(

@@ -39,6 +39,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: const WalletAppBar(title: 'Transaction History'),
       backgroundColor: context.themeColors.background,
       body: SafeArea(child: _buildBody()),

@@ -49,6 +49,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: context.themeColors.background,
       appBar: const WalletAppBar(title: 'Your Accounts'),
       body: Stack(

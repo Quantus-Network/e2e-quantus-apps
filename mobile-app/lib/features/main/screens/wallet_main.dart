@@ -242,6 +242,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
 
     if (activeAccountAsync.isLoading) {
       return Scaffold(
+        extendBodyBehindAppBar: true,
         backgroundColor: context.themeColors.background,
         body: Center(
           child: CircularProgressIndicator(
@@ -258,6 +259,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
 
     if (hasError || noAccount) {
       return Scaffold(
+        extendBodyBehindAppBar: true,
         backgroundColor: context.themeColors.background,
         body: Column(
           children: [
@@ -332,6 +334,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
     final activeAccount = activeAccountAsync.value!;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: context.themeColors.background,
       body: Container(
         decoration: const BoxDecoration(

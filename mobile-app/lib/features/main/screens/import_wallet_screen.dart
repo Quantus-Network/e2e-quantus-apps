@@ -101,6 +101,8 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: const WalletAppBar(title: 'Import Wallet'),
       backgroundColor: context.themeColors.background,
       body: Container(
         decoration: const BoxDecoration(
@@ -116,7 +118,6 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const WalletAppBar(title: 'Import Wallet'),
                 const SizedBox(height: 40),
                 Text('Import Wallet', style: context.themeText.smallTitle),
                 const SizedBox(height: 13),

@@ -140,6 +140,7 @@ class _AuthenticationSettingsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: context.themeColors.background,
       body: Container(
         decoration: const BoxDecoration(

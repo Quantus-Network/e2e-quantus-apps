@@ -141,6 +141,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: context.themeColors.background,
       appBar: WalletAppBar(
         title: _isEditMode ? 'Edit Account' : 'Create New Account',
