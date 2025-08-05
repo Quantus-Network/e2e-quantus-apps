@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class MnemonicGrid extends StatelessWidget {
@@ -9,8 +10,6 @@ class MnemonicGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).isTablet;
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 12.5),
@@ -30,7 +29,7 @@ class MnemonicGrid extends StatelessWidget {
 
           // You might need to adjust this value slightly based on padding/margins
           // and font rendering.
-          final double desiredCellHeight = isTablet ? 80 : 31.0;
+          final double desiredCellHeight = context.isTablet ? 80 : 31.0;
 
           // Calculate the aspect ratio
           final double childAspectRatio = itemWidth / desiredCellHeight;
@@ -43,7 +42,7 @@ class MnemonicGrid extends StatelessWidget {
             crossAxisSpacing: 9.0,
             childAspectRatio: childAspectRatio,
             children: List.generate(words.length, (index) {
-              return _buildMnemonicWord(index + 1, words[index], isTablet);
+              return _buildMnemonicWord(index + 1, words[index], context);
             }),
           );
         },
@@ -51,7 +50,7 @@ class MnemonicGrid extends StatelessWidget {
     );
   }
 
-  Widget _buildMnemonicWord(int index, String word, bool isTablet) {
+  Widget _buildMnemonicWord(int index, String word, BuildContext context) {
     return Container(
       decoration: ShapeDecoration(
         shape: RoundedRectangleBorder(
@@ -63,12 +62,7 @@ class MnemonicGrid extends StatelessWidget {
       child: Text(
         '$index.$word',
         textAlign: TextAlign.center,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: isTablet ? 18 : 13,
-          fontFamily: 'Fira Code',
-          fontWeight: FontWeight.w400,
-        ),
+        style: context.themeText.detail,
       ),
     );
   }
