@@ -119,8 +119,12 @@ class AppTheme {
         fillColor: appColors.surface,
       ),
       extensions: [
-        isTablet ? const AppTextTheme.iPad() : const AppTextTheme.fallback(),
-        isTablet ? const AppSizeTheme.iPad() : const AppSizeTheme.fallback(),
+        isTablet
+            ? const AppTextTheme.iPad()
+            : const AppTextTheme.defaultTheme(),
+        isTablet
+            ? const AppSizeTheme.iPad()
+            : const AppSizeTheme.defaultTheme(),
         appColors,
       ],
     );

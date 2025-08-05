@@ -48,7 +48,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
     required this.txDetailsIconWidth,
   });
 
-  const AppSizeTheme.fallback()
+  const AppSizeTheme.defaultTheme()
     : this(
         logoHeight: 130.0,
         mainMenuHeight: 20,

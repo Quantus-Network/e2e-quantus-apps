@@ -30,7 +30,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
     this.tiny,
   });
 
-  const AppTextTheme.fallback()
+  const AppTextTheme.defaultTheme()
     : this(
         lockTitle: const TextStyle(fontSize: 24, fontFamily: 'Fira Code'),
         extraLargeTitle: const TextStyle(
