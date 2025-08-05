@@ -18,18 +18,3 @@ void main() async {
     ),
   );
 }
-
-/// class MyApp extends StatelessWidget {
-///   @override
-///   Widget build(BuildContext context) {
-///     return ProviderScope(
-///       child: AppInitializer(
-///         child: AppLifecycleManager(
-///           child: MaterialApp(
-///             // Your app content here
-///           ),
-///         ),
-///       ),
-///     );
-///   }
-/// }
