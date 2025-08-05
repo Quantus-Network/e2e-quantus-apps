@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
@@ -59,7 +60,12 @@ class TopSnackBarContent extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: context.themeText.smallParagraph),
+                Text(
+                  title,
+                  style: context.themeText.smallParagraph?.copyWith(
+                    color: context.themeColors.textSecondary,
+                  ),
+                ),
                 const SizedBox(height: 2), // Spacing
                 Text(
                   message,
