@@ -30,9 +30,14 @@ class WalletAppBar extends StatelessWidget implements PreferredSizeWidget {
               onPressed: onBack ?? () => Navigator.of(context).pop(),
             )
           : null,
-      title: Text(title, style: context.themeText.detail),
+      title: GestureDetector(
+        onTap: Navigator.canPop(context) || onBack != null
+            ? onBack ?? () => Navigator.of(context).pop()
+            : null,
+        child: Text(title, style: context.themeText.detail),
+      ),
       actions: actions,
-      backgroundColor: const Color(0xFF0E0E0E),
+      backgroundColor: Colors.transparent,
       elevation: 0,
     );
   }
