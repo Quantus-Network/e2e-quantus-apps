@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/features/styles/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/main/screens/authentication_wrapper.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/send_screen.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
