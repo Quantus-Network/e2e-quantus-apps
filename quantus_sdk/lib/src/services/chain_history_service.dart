@@ -297,6 +297,102 @@ query TransactionsAndBlockInBlock(
 }
 ''';
 
+  // GraphQL query to search for transactions matching pending transaction criteria
+  final String _searchPendingTransferQuery = r'''
+query SearchPendingTransaction(
+  $from: String!,
+  $to: String!,
+  $amount: BigInt!,
+  $blockHeightAfter: Int!,
+  $limit: Int!
+) {
+  events(
+    limit: $limit
+    where: {
+      transfer: {
+        from: { id_eq: $from },
+        to: { id_eq: $to },
+        amount_eq: $amount,
+        block: {
+          height_gt: $blockHeightAfter
+        }
+      }
+    }
+    orderBy: timestamp_DESC
+  ) {
+    id
+    timestamp
+    extrinsicHash
+    transfer {
+      id
+      amount
+      timestamp
+      from { id }
+      to { id }
+      block { height hash }
+      extrinsicHash
+      timestamp
+      fee
+    }
+    reversibleTransfer {
+      id
+      amount
+      timestamp
+      from { id }
+      to { id }
+      txId
+      scheduledAt
+      status
+      block { height hash }
+      extrinsicHash
+      timestamp
+    }
+  }
+}
+''';
+
+  final String _searchPendingReversibleQuery = r'''
+query SearchPendingTransaction(
+  $from: String!,
+  $to: String!,
+  $amount: BigInt!,
+  $blockHeightAfter: Int!,
+  $limit: Int!
+) {
+  events(
+    limit: $limit
+    where: {   
+      reversibleTransfer: {
+        from: { id_eq: $from },
+        to: { id_eq: $to },
+        amount_eq: $amount,
+        block: {
+          height_gt: $blockHeightAfter
+        }
+      }
+    }
+    orderBy: timestamp_DESC
+  ) {
+    id
+    timestamp
+    extrinsicHash
+    reversibleTransfer {
+      id
+      amount
+      timestamp
+      from { id }
+      to { id }
+      txId
+      scheduledAt
+      status
+      block { height hash }
+      extrinsicHash
+      timestamp
+    }
+  }
+}
+''';
+
   Future<SortedTransactionsList> fetchAllTransactionTypes({
     required List<String> accountIds,
     int limit = 20,
@@ -330,9 +426,9 @@ query TransactionsAndBlockInBlock(
 
     final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
 
-    print(
-      'Fetching transactions by hash: $transactionHashes (limit: $limit, offset: $offset)',
-    );
+    // print(
+    //   'Fetching transactions by hash: $transactionHashes (limit: $limit, offset: $offset)',
+    // );
 
     final Map<String, dynamic> requestBody = {
       'query': _transactionsByHashQuery,
@@ -393,9 +489,9 @@ query TransactionsAndBlockInBlock(
         }
       }
 
-      print(
-        'Found ${transactions.length} transactions for ${transactionHashes.length} hashes',
-      );
+      // print(
+      //   'Found ${transactions.length} transactions for ${transactionHashes.length} hashes',
+      // );
       for (final t in transactions) {
         print(
           '${t.id} ${t.extrinsicHash} ${(t as ReversibleTransferEvent).status}',
@@ -622,6 +718,92 @@ query TransactionsAndBlockInBlock(
       );
     } catch (e, stackTrace) {
       print('Error fetching transactions by block hash: $e');
+      print(stackTrace);
+      rethrow;
+    }
+  }
+
+  /// Searches for transactions matching the criteria of a pending transaction.
+  /// This is used to find if a broadcast transaction has been confirmed.
+  /// Searches both transfer and reversibleTransfer types.
+  Future<TransactionEvent?> searchForPendingTransaction({
+    required String from,
+    required String to,
+    required BigInt amount,
+    required bool isReversible,
+    required int blockHeightAfter,
+    int limit = 10,
+  }) async {
+    final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
+
+    print(
+      'Searching for pending transaction: $from → $to, amount: $amount, '
+      'reversible: $isReversible, after block: $blockHeightAfter',
+    );
+
+    final Map<String, dynamic> requestBody = {
+      'query': isReversible
+          ? _searchPendingReversibleQuery
+          : _searchPendingTransferQuery,
+      'variables': {
+        'from': from,
+        'to': to,
+        'amount': amount.toInt(),
+        'blockHeightAfter': blockHeightAfter,
+        'limit': limit,
+      },
+    };
+
+    try {
+      final http.Response response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}',
+        );
+      }
+
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+
+      if (responseBody['errors'] != null) {
+        print('GraphQL errors in response: ${responseBody['errors']}');
+        throw Exception('GraphQL errors: ${responseBody['errors'].toString()}');
+      }
+
+      final Map<String, dynamic>? data = responseBody['data'];
+      if (data == null) {
+        throw Exception('GraphQL response data is null.');
+      }
+
+      final List<dynamic>? events = data['events'];
+      print('result $data');
+      print('events $events');
+
+      if (events == null || events.isEmpty) {
+        print('No matching transactions found for pending transaction');
+        return null;
+      }
+
+      final TransactionEvent transaction;
+      var eventJson = events.first!;
+
+      if (isReversible) {
+        final reversibleTransferData =
+            eventJson['reversibleTransfer'] as Map<String, dynamic>;
+        transaction = ReversibleTransferEvent.fromJson(reversibleTransferData);
+      } else {
+        final transferData = eventJson['transfer'] as Map<String, dynamic>;
+        transaction = TransferEvent.fromJson(transferData);
+      }
+
+      print('Found 1 matching transactions for pending transaction');
+      return transaction;
+    } catch (e, stackTrace) {
+      print('Error searching for pending transaction: $e');
       print(stackTrace);
       rethrow;
     }
