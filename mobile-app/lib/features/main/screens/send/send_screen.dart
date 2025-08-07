@@ -19,6 +19,7 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 // Local provider for existential deposit toggle in send screen
@@ -67,7 +68,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
   BigInt _amount = BigInt.zero;
   bool _hasAddressError = false;
   bool _hasAmountError = false;
-  String _savedAddressesLabel = '';
+  String _humanReadableCheckphrase = '';
   Timer? _debounce;
   int? _blockHeight;
 
@@ -143,7 +144,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
     if (recipient.isEmpty) {
       if (!mounted) return; // Check mounted before setState
       setState(() {
-        _savedAddressesLabel = '';
+        _humanReadableCheckphrase = '';
         _hasAddressError = false;
       });
       return;
@@ -163,20 +164,20 @@ class SendScreenState extends ConsumerState<SendScreen> {
         print('Final humanReadableName: $humanReadableName');
         if (!mounted) return; // Check mounted before setState
         setState(() {
-          _savedAddressesLabel = humanReadableName;
+          _humanReadableCheckphrase = humanReadableName;
         });
         _debounceFetchFee();
       } else {
         if (!mounted) return; // Check mounted before setState
         setState(() {
-          _savedAddressesLabel = '';
+          _humanReadableCheckphrase = '';
         });
       }
     } catch (e) {
       debugPrint('Error in identity lookup: $e');
       if (!mounted) return; // Check mounted before setState
       setState(() {
-        _savedAddressesLabel = '';
+        _humanReadableCheckphrase = '';
         _hasAddressError = true;
       });
     }
@@ -383,7 +384,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
             child: SendConfirmationOverlay(
               key: overlayKey,
               amount: _amount,
-              recipientName: _savedAddressesLabel,
+              recipientName: _humanReadableCheckphrase,
               recipientAddress: _recipientController.text,
               fee: _networkFee,
               reversibleTimeSeconds: _reversibleTimeSeconds,
@@ -921,13 +922,43 @@ class SendScreenState extends ConsumerState<SendScreen> {
                             );
                           },
                         ),
-                        if (_savedAddressesLabel.isNotEmpty)
+                        if (_humanReadableCheckphrase.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 4.0),
-                            child: Text(
-                              _savedAddressesLabel,
-                              style: context.themeText.detail?.copyWith(
-                                color: context.themeColors.checksum,
+                            child: InkWell(
+                              onTap: () async {
+                                ClipboardExtensions.copyTextWithSnackbar(
+                                  context,
+                                  _humanReadableCheckphrase,
+                                  title: 'Copied',
+                                  message: 'Check phrase copied to clipboard',
+                                );
+                                HapticFeedback.lightImpact();
+                              },
+                              borderRadius: BorderRadius.circular(4),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      _humanReadableCheckphrase,
+                                      style: context.themeText.detail?.copyWith(
+                                        color: context.themeColors.checksum,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 1.0),
+                                    child: Icon(
+                                      Icons.copy,
+                                      size: 14,
+                                      color: context.themeColors.checksum
+                                          .useOpacity(0.7),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
