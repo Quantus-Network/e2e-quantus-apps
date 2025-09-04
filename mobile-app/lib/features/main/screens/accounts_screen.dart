@@ -10,7 +10,6 @@ import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/utils/color_generator_engine.dart';
 
@@ -277,22 +276,6 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                               account.accountId,
                                             ),
                                       style: context.themeText.tiny?.copyWith(
-                                        color: isActive
-                                            ? context.themeColors.darkGray
-                                            : context.themeColors.textMuted,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 5),
-                                    InkWell(
-                                      onTap: () =>
-                                          // ignore: lines_longer_than_80_chars
-                                          ClipboardExtensions.copyTextWithSnackbar(
-                                            context,
-                                            account.accountId,
-                                          ),
-                                      child: Icon(
-                                        Icons.copy,
-                                        size: context.isTablet ? 20 : 14,
                                         color: isActive
                                             ? context.themeColors.darkGray
                                             : context.themeColors.textMuted,
