@@ -128,8 +128,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             MaterialPageRoute(builder: (context) => const AccountsScreen()),
           );
         }),
-        const SizedBox(height: 22),
-        _buildSettingsItem(context, 'Notifications', () {}),
+        // const SizedBox(height: 22),
+        // _buildSettingsItem(context, 'Notifications', () {}),
         const SizedBox(height: 22),
         _buildSettingsItem(context, 'Authentication', () {
           Navigator.push(
