@@ -72,7 +72,6 @@ flutter:
     - assets/scan_1.svg
     - assets/main_wallet_title_logo.svg
     - assets/account_list_icon.svg
-    - assets/res_icon.svg
     - assets/intro_bg_video.mp4
     - assets/paste_icon_1.svg
     - assets/active_dot.png
@@ -80,7 +79,6 @@ flutter:
     - assets/receive_line.svg
     - assets/bridge_icon.svg
     - assets/quantus_logo.svg
-    - assets/quantus_logo_hz.svg
     - assets/stop_icon.svg
     - assets/receive_icon_sm.png
     - assets/hourglass.svg
