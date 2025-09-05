@@ -1,0 +1,272 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+
+import '../services/miner_process.dart';
+
+class LogsWidget extends StatefulWidget {
+  final MinerProcess? minerProcess;
+  final int maxLines;
+
+  const LogsWidget({super.key, this.minerProcess, this.maxLines = 100});
+
+  @override
+  State<LogsWidget> createState() => _LogsWidgetState();
+}
+
+class _LogsWidgetState extends State<LogsWidget> {
+  final List<LogEntry> _logs = [];
+  StreamSubscription<LogEntry>? _logsSubscription;
+  final ScrollController _scrollController = ScrollController();
+  bool _autoScroll = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _setupLogsListener();
+  }
+
+  @override
+  void didUpdateWidget(LogsWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.minerProcess != widget.minerProcess) {
+      _setupLogsListener();
+    }
+  }
+
+  void _setupLogsListener() {
+    _logsSubscription?.cancel();
+    _logs.clear();
+
+    if (widget.minerProcess != null) {
+      _logsSubscription = widget.minerProcess!.logsStream.listen((logEntry) {
+        if (mounted) {
+          setState(() {
+            _logs.add(logEntry);
+            // Keep only the last maxLines entries
+            if (_logs.length > widget.maxLines) {
+              _logs.removeRange(0, _logs.length - widget.maxLines);
+            }
+          });
+
+          // Auto-scroll to bottom if enabled
+          if (_autoScroll) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _scrollToBottom();
+            });
+          }
+        }
+      });
+    }
+  }
+
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  void _toggleAutoScroll() {
+    setState(() {
+      _autoScroll = !_autoScroll;
+    });
+  }
+
+  void _clearLogs() {
+    setState(() {
+      _logs.clear();
+    });
+  }
+
+  Color _getLogColor(String source) {
+    switch (source) {
+      case 'node':
+        return Colors.blue;
+      case 'node-error':
+        return Colors.red;
+      case 'external-miner':
+        return Colors.green;
+      case 'external-miner-error':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Column(
+        children: [
+          // Header with controls
+          Container(
+            padding: const EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Text(
+                  'Live Logs',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: Icon(
+                    _autoScroll
+                        ? Icons.vertical_align_bottom
+                        : Icons.vertical_align_top,
+                    size: 20,
+                  ),
+                  onPressed: _toggleAutoScroll,
+                  tooltip: _autoScroll
+                      ? 'Disable auto-scroll'
+                      : 'Enable auto-scroll',
+                ),
+                IconButton(
+                  icon: const Icon(Icons.clear, size: 20),
+                  onPressed: _clearLogs,
+                  tooltip: 'Clear logs',
+                ),
+              ],
+            ),
+          ),
+
+          // Logs display
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(8.0),
+              child: _logs.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No logs available\nStart mining to see live logs',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      controller: _scrollController,
+                      itemCount: _logs.length,
+                      itemBuilder: (context, index) {
+                        final log = _logs[index];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2.0),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Timestamp
+                              SizedBox(
+                                width: 80,
+                                child: Text(
+                                  log.timestamp.toIso8601String().substring(
+                                    11,
+                                    19,
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                    fontFamily: 'monospace',
+                                  ),
+                                ),
+                              ),
+
+                              // Source indicator
+                              Container(
+                                width: 12,
+                                height: 12,
+                                margin: const EdgeInsets.only(right: 8, top: 2),
+                                decoration: BoxDecoration(
+                                  color: _getLogColor(log.source),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+
+                              // Source label
+                              SizedBox(
+                                width: 100,
+                                child: Text(
+                                  '[${log.source}]',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: _getLogColor(log.source),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+
+                              // Log message
+                              Expanded(
+                                child: SelectableText(
+                                  log.message,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontFamily: 'monospace',
+                                    height: 1.2,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ),
+
+          // Footer with log count
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor.withOpacity(0.05),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(12),
+                bottomRight: Radius.circular(12),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Total logs: ${_logs.length}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                if (widget.minerProcess != null)
+                  Text(
+                    'Live',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.green,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  )
+                else
+                  Text(
+                    'Not connected',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _logsSubscription?.cancel();
+    _scrollController.dispose();
+    super.dispose();
+  }
+}

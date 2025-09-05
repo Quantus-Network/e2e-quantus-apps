@@ -1,13 +1,17 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:flutter/material.dart';
+
 import '../services/binary_manager.dart';
 import '../services/miner_process.dart';
 // PrometheusService import might not be needed here anymore if hashrate is exclusively from MinerProcess
 // import '../services/prometheus_service.dart';
 
 class MinerControls extends StatefulWidget {
-  const MinerControls({super.key});
+  final Function(MinerProcess?)? onMinerProcessChanged;
+
+  const MinerControls({super.key, this.onMinerProcessChanged});
 
   @override
   State<MinerControls> createState() => _MinerControlsState();
@@ -90,6 +94,10 @@ class _MinerControlsState extends State<MinerControls> {
           }
         },
       );
+
+      // Notify parent about the new miner process
+      widget.onMinerProcessChanged?.call(_proc);
+
       try {
         setState(() {
           _isSyncingNode = true;
@@ -107,6 +115,8 @@ class _MinerControlsState extends State<MinerControls> {
           );
         }
         _proc = null;
+        // Notify parent that miner process is null
+        widget.onMinerProcessChanged?.call(null);
         setState(() {
           _isSyncingNode = false;
           _currentBlock = null;
@@ -119,6 +129,8 @@ class _MinerControlsState extends State<MinerControls> {
       _proc!.stop();
       // _poll?.cancel(); // _poll removed
       _proc = null;
+      // Notify parent that miner process is stopped
+      widget.onMinerProcessChanged?.call(null);
       _hashrate = null;
       if (mounted) {
         setState(() {

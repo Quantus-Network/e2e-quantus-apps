@@ -8,6 +8,24 @@ import './binary_manager.dart';
 import './log_filter_service.dart';
 import './prometheus_service.dart';
 
+class LogEntry {
+  final String message;
+  final DateTime timestamp;
+  final String source; // 'node', 'external-miner', 'error'
+
+  LogEntry({
+    required this.message,
+    required this.timestamp,
+    required this.source,
+  });
+
+  @override
+  String toString() {
+    final timeStr = timestamp.toIso8601String().substring(11, 19); // HH:MM:SS
+    return '[$timeStr] [$source] $message';
+  }
+}
+
 /// quantus_sdk/lib/src/services/miner_process.dart
 class MinerProcess {
   final File bin;
@@ -23,6 +41,10 @@ class MinerProcess {
   double? _currentHashrate;
   final int minerCores;
   final int externalMinerPort;
+
+  // Stream for logs
+  final _logsController = StreamController<LogEntry>.broadcast();
+  Stream<LogEntry> get logsStream => _logsController.stream;
 
   final Function(
     bool isSyncing,
@@ -103,6 +125,12 @@ class MinerProcess {
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen((line) {
+          final logEntry = LogEntry(
+            message: line,
+            timestamp: DateTime.now(),
+            source: 'external-miner',
+          );
+          _logsController.add(logEntry);
           print('[ext-miner] $line');
         });
 
@@ -110,6 +138,12 @@ class MinerProcess {
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen((line) {
+          final logEntry = LogEntry(
+            message: line,
+            timestamp: DateTime.now(),
+            source: 'external-miner-error',
+          );
+          _logsController.add(logEntry);
           print('[ext-miner-err] $line');
         });
 
@@ -320,6 +354,13 @@ class MinerProcess {
       }
 
       if (shouldPrint) {
+        final source = streamType == 'stdout' ? 'node' : 'node-error';
+        final logEntry = LogEntry(
+          message: line,
+          timestamp: DateTime.now(),
+          source: source,
+        );
+        _logsController.add(logEntry);
         print(streamType == 'stdout' ? '[node] $line' : '[err]  $line');
       }
     }
@@ -356,5 +397,8 @@ class MinerProcess {
     } catch (e) {
       print('MinerProcess: Error killing external miner process: $e');
     }
+
+    // Close the logs stream
+    _logsController.close();
   }
 }

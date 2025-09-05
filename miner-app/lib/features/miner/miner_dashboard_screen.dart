@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Import secure storage
 import 'package:go_router/go_router.dart'; // Import GoRouter
+import 'package:quantus_miner/src/services/miner_process.dart'; // Import MinerProcess
 import 'package:quantus_miner/src/services/miner_settings_service.dart'; // Import the new service
+import 'package:quantus_miner/src/services/mining_stats_service.dart'; // Import mining stats service
+import 'package:quantus_miner/src/ui/logs_widget.dart'; // Import LogsWidget
 import 'package:quantus_miner/src/ui/miner_controls.dart'; // Import MinerControls
 import 'package:quantus_sdk/quantus_sdk.dart'; // Assuming quantus_sdk exports necessary components
 
@@ -25,22 +28,45 @@ class MinerDashboardScreen extends StatefulWidget {
 class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
   String _walletBalance = 'Loading...';
   String? _walletAddress;
-  final String _miningStats =
-      'Fetching stats...'; // Placeholder for aggregated stats
+  MiningStats? _miningStats;
+  MinerProcess? _currentMinerProcess;
 
   final _storage = const FlutterSecureStorage(); // Instantiate secure storage
   final _minerSettingsService =
       MinerSettingsService(); // Instantiate the service
+  final _miningStatsService =
+      MiningStatsService(); // Instantiate mining stats service
 
   @override
   void initState() {
     super.initState();
     _fetchWalletBalance();
+    _startMiningStatsMonitoring();
   }
 
   @override
   void dispose() {
+    _miningStatsService.stopMonitoring();
     super.dispose();
+  }
+
+  void _startMiningStatsMonitoring() {
+    _miningStatsService.startMonitoring();
+    _miningStatsService.statsStream.listen((stats) {
+      if (mounted) {
+        setState(() {
+          _miningStats = stats;
+        });
+      }
+    });
+  }
+
+  void _onMinerProcessChanged(MinerProcess? minerProcess) {
+    if (mounted) {
+      setState(() {
+        _currentMinerProcess = minerProcess;
+      });
+    }
   }
 
   Future<void> _fetchWalletBalance() async {
@@ -215,7 +241,12 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                   ),
                   const SizedBox(width: 16),
                   // Mine Button Section (Right)
-                  const Expanded(flex: 1, child: MinerControls()),
+                  Expanded(
+                    flex: 1,
+                    child: MinerControls(
+                      onMinerProcessChanged: _onMinerProcessChanged,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -227,22 +258,104 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Mining Stats:',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                    Row(
+                      children: [
+                        const Text(
+                          'Mining Stats:',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Spacer(),
+                        if (_miningStats != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _miningStats!.isSyncing
+                                  ? Colors.orange
+                                  : Colors.green,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              _miningStats!.status,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    if (_miningStats != null)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.people,
+                                size: 16,
+                                color: Colors.blue,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Peers: ${_miningStats!.peerCount}',
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                              const SizedBox(width: 24),
+                              const Icon(
+                                Icons.block,
+                                size: 16,
+                                color: Colors.green,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Block: ${_miningStats!.currentBlock}/${_miningStats!.targetBlock}',
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.speed,
+                                size: 16,
+                                color: Colors.orange,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Hashrate: ${_miningStats!.hashrate.toStringAsFixed(2)} H/s',
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ],
+                      )
+                    else
+                      const Text(
+                        'Loading mining stats...',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontStyle: FontStyle.italic,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      (_miningStats.trim().isEmpty)
-                          ? 'No data'
-                          : _miningStats.replaceAll('\\n', '\n'),
-                      style: const TextStyle(fontSize: 16),
-                    ),
                   ],
                 ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Logs Panel
+            Expanded(
+              child: LogsWidget(
+                minerProcess: _currentMinerProcess,
+                maxLines: 200,
               ),
             ),
           ],
