@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:path/path.dart' as p;
+
 import './binary_manager.dart';
 import './log_filter_service.dart';
 import './prometheus_service.dart';
@@ -198,9 +200,9 @@ class MinerProcess {
 
     final nodeKeyFileFromFileSystem = await BinaryManager.getNodeKeyFile();
     if (await nodeKeyFileFromFileSystem.exists()) {
-      final content = await nodeKeyFileFromFileSystem.readAsString();
+      final stat = await nodeKeyFileFromFileSystem.stat();
       print(
-        'DEBUG: Content of nodeKeyFileFromFileSystem (${nodeKeyFileFromFileSystem.path}): $content',
+        'DEBUG: nodeKeyFileFromFileSystem (${nodeKeyFileFromFileSystem.path}) exists (size: ${stat.size} bytes)',
       );
     } else {
       print(
@@ -209,9 +211,9 @@ class MinerProcess {
     }
 
     if (await identityPath.exists()) {
-      final identityContent = await identityPath.readAsString();
+      final stat = await identityPath.stat();
       print(
-        'DEBUG: Content of identityPath file (${identityPath.path}) to be used by node: $identityContent',
+        'DEBUG: identityPath file (${identityPath.path}) exists (size: ${stat.size} bytes)',
       );
     } else {
       print(

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 
@@ -309,18 +310,18 @@ class BinaryManager {
   static Future<File> ensureNodeKeyFile() async {
     final nodeKeyFile = await getNodeKeyFile();
 
-    // Crude check: if file exists and is not empty or dummy, assume it's ok.
-    // A more robust check would be to try to parse it, but that's complex.
+    // Check if file exists and is not empty
     if (await nodeKeyFile.exists()) {
-      final content = await nodeKeyFile.readAsString();
-      if (content.trim().isNotEmpty &&
-          content.trim() != 'dummy_node_key_content_for_testing') {
-        print('Node key file already exists and seems valid: $content');
+      final stat = await nodeKeyFile.stat();
+      if (stat.size > 0) {
+        print(
+          'Node key file already exists and has content (size: ${stat.size} bytes)',
+        );
         return nodeKeyFile;
       }
     }
 
-    print('Node key file not found or invalid. Generating new key...');
+    print('Node key file not found or empty. Generating new key...');
     final nodeBinaryPath = await getNodeBinaryFilePath();
     if (!await File(nodeBinaryPath).exists()) {
       throw Exception(
@@ -329,28 +330,29 @@ class BinaryManager {
     }
 
     try {
-      final processResult = await Process.run(
-        nodeBinaryPath,
-        ['key', 'generate-node-key'], // Common Substrate command
-      );
+      // Use the --file flag to generate the key file directly in the correct format
+      final processResult = await Process.run(nodeBinaryPath, [
+        'key',
+        'generate-node-key',
+        '--file',
+        nodeKeyFile.path,
+      ]);
 
       if (processResult.exitCode == 0) {
-        final outputLines = processResult.stdout.toString().trim().split('\n');
-        // if (outputLines.length < 2) {
-        //   throw Exception(
-        //       'Failed to generate node key: command output did not contain enough lines. Output: ${processResult.stdout}');
-        // }
-        final nodeKey = outputLines.last
-            .trim(); // The secret key is the last line
-
-        if (nodeKey.isEmpty) {
-          throw Exception(
-            'Failed to generate node key: extracted secret key was empty. Stderr: ${processResult.stderr}',
-          );
+        // Verify the file was created and has content
+        if (await nodeKeyFile.exists()) {
+          final stat = await nodeKeyFile.stat();
+          if (stat.size > 0) {
+            print(
+              'Successfully generated node key file: ${nodeKeyFile.path} (size: ${stat.size} bytes)',
+            );
+            return nodeKeyFile;
+          } else {
+            throw Exception('Node key file was created but is empty');
+          }
+        } else {
+          throw Exception('Node key file was not created');
         }
-        await nodeKeyFile.writeAsString(nodeKey);
-        print('Successfully generated and saved node key: $nodeKey');
-        return nodeKeyFile;
       } else {
         throw Exception(
           'Failed to generate node key. Exit code: ${processResult.exitCode}\nStderr: ${processResult.stderr}\nStdout: ${processResult.stdout}',

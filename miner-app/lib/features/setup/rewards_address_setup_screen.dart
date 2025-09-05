@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Required for Clipboard
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Will need this for secure storage
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart'; // Import go_router
+import 'package:quantus_miner/src/services/binary_manager.dart';
 import 'package:quantus_sdk/quantus_sdk.dart'; // Assuming quantus_sdk has wallet/address functions
 
 enum RewardsAddressSetupStep {
@@ -132,10 +135,36 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
     try {
       await _storage.write(key: 'rewards_address_mnemonic', value: mnemonic);
       print('Mnemonic securely stored.');
+
+      // Also create the rewards-address.txt file for the miner process
+      await _createRewardsAddressFile(mnemonic);
     } catch (e) {
       print('Error securely storing seed: $e');
       // Depending on the severity and platform, you might want to show a critical error message.
       rethrow; // Rethrow to be caught by the calling function
+    }
+  }
+
+  Future<void> _createRewardsAddressFile(String mnemonic) async {
+    try {
+      // Derive address from mnemonic
+      // ignore: deprecated_member_use
+      final keypair = SubstrateService().nonHDdilithiumKeypairFromMnemonic(
+        mnemonic,
+      );
+      final address = toAccountId(obj: keypair);
+
+      // Create the rewards address file
+      final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
+      final rewardsFile = File('$quantusHome/rewards-address.txt');
+      await rewardsFile.writeAsString(address);
+
+      print(
+        'Rewards address file created: ${rewardsFile.path} with address: $address',
+      );
+    } catch (e) {
+      print('Error creating rewards address file: $e');
+      rethrow;
     }
   }
 
