@@ -8,7 +8,7 @@ class LogsWidget extends StatefulWidget {
   final MinerProcess? minerProcess;
   final int maxLines;
 
-  const LogsWidget({super.key, this.minerProcess, this.maxLines = 100});
+  const LogsWidget({super.key, this.minerProcess, this.maxLines = 20000});
 
   @override
   State<LogsWidget> createState() => _LogsWidgetState();

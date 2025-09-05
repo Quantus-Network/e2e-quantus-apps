@@ -88,6 +88,10 @@ class MiningStatsService {
   Future<int> _getPeerCount() async {
     try {
       final result = await _substrateService.provider!.send('system_peers', []);
+      if (result.result == null) {
+        print('Peer count result is null');
+        return 0;
+      }
       final peers = result.result as List;
       return peers.length;
     } catch (e) {

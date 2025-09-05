@@ -5,16 +5,38 @@ class LogFilterService {
   final List<String> criticalKeywordsDuringSync;
 
   LogFilterService({
-    this.initialLinesToPrint = 20,
+    this.initialLinesToPrint =
+        50, // Increased initial lines to show more startup info
     this.keywordsToWatch = const [
-      '[peers]',
+      // Info level logs that users want to see by default
+      'info',
+      'INFO',
+      'Starting',
+      'Started',
+      'Listening',
+      'Connected',
+      'Connection',
+      'Sync',
+      'sync',
+      'Block',
+      'block',
+      'Peer',
+      'peer',
+      'Mining',
+      'mining',
+      'Hash',
+      'hash',
+      'Reward',
+      'reward',
+      'Transaction',
+      'transaction',
       'imported',
       'finalized',
       'sealed',
       'proposed',
-      // 'best',
       'Miner rewarded:',
-      // Critical keywords like error/panic will be in criticalKeywordsDuringSync
+      // Keep existing keywords
+      '[peers]',
     ],
     this.criticalKeywordsDuringSync = const [
       'error',
@@ -22,7 +44,13 @@ class LogFilterService {
       'fatal',
       'critical',
       'Error encountered',
-      'IO error', // Example of another critical I/O related error
+      'IO error',
+      'Failed',
+      'failed',
+      'WARN',
+      'WARNING',
+      'warn',
+      'warning',
     ],
   });
 
@@ -47,9 +75,10 @@ class LogFilterService {
     }
 
     if (isNodeSyncing) {
-      // During sync (and after initial burst, and not critical), be very quiet.
-      // We've already checked critical keywords, so effectively we print nothing else here.
-      return false;
+      // During sync, show info level logs and keywords (not just critical messages)
+      return keywordsToWatch.any(
+        (keyword) => lowerLine.contains(keyword.toLowerCase()),
+      );
     } else {
       // When synced (and after initial burst, and not critical), print if it matches normal keywords.
       return keywordsToWatch.any(

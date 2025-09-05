@@ -354,14 +354,32 @@ class MinerProcess {
       }
 
       if (shouldPrint) {
-        final source = streamType == 'stdout' ? 'node' : 'node-error';
+        // Determine source based on content rather than just stream type
+        String source;
+        final lowerLine = line.toLowerCase();
+
+        // Check if it's actually an error/warning
+        if (lowerLine.contains('error') ||
+            lowerLine.contains('panic') ||
+            lowerLine.contains('fatal') ||
+            lowerLine.contains('critical') ||
+            lowerLine.contains('failed') ||
+            lowerLine.contains('warn')) {
+          source = 'node-error';
+        } else if (streamType == 'stdout') {
+          source = 'node';
+        } else {
+          // stderr but not clearly an error - treat as normal node log
+          source = 'node';
+        }
+
         final logEntry = LogEntry(
           message: line,
           timestamp: DateTime.now(),
           source: source,
         );
         _logsController.add(logEntry);
-        print(streamType == 'stdout' ? '[node] $line' : '[err]  $line');
+        print(source == 'node' ? '[node] $line' : '[node-error] $line');
       }
     }
 
