@@ -67,6 +67,8 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
         _currentMinerProcess = minerProcess;
       });
     }
+    // Connect miner process to mining stats service for real hashrate
+    _miningStatsService.setMinerProcess(minerProcess);
   }
 
   Future<void> _fetchWalletBalance() async {
@@ -229,7 +231,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                   _walletAddress!,
                                   style: const TextStyle(
                                     fontSize: 14,
-                                    color: Colors.black54,
+                                    color: Colors.white70,
                                     fontFamily: 'Fira Code',
                                   ),
                                 ),
