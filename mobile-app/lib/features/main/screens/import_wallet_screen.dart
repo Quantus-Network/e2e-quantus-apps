@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/gradient_action_button.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
@@ -136,8 +137,8 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
                 Text('Import Wallet', style: context.themeText.smallTitle),
                 const SizedBox(height: 13),
                 Text(
-                  'Restore an existing wallet with your 12 or 24 word '
-                  'recovery phrase',
+                  'Restore an existing wallet with your '
+                  '12 or 24 word recovery phrase',
                   style: context.themeText.smallParagraph?.copyWith(
                     color: context.themeColors.textMuted,
                   ),
@@ -214,7 +215,8 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
                     ),
                   )
                 else
-                  GradientActionButton(
+                  Button(
+                    variant: ButtonVariant.primary,
                     label: 'Import Wallet',
                     onPressed: _importWallet,
                     isLoading: _isLoading,

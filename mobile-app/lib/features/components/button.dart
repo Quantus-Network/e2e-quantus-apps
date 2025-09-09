@@ -34,7 +34,7 @@ class Button extends StatelessWidget {
     final bool isDisabled = onPressed == null || isLoading;
 
     // Define a default text style if none is provided.
-    final effectiveTextStyle = textStyle ?? context.themeText.paragraph!;
+    final effectiveTextStyle = textStyle ?? context.themeText.smallTitle!;
 
     final buttonContent = Center(
       child: isLoading
@@ -57,12 +57,13 @@ class Button extends StatelessWidget {
           width: width,
           padding: padding,
           decoration: ShapeDecoration(
+            color: isDisabled ? context.themeColors.buttonDisabled : null,
             // Use the provided gradient
-            gradient: LinearGradient(
+            gradient:  !isDisabled ? LinearGradient(
               begin: const Alignment(0.00, -1.00),
               end: const Alignment(0, 1),
               colors: context.themeColors.buttonPrimary,
-            ),
+            ) : null,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(50),
             ),
@@ -89,7 +90,7 @@ class Button extends StatelessWidget {
           width: width,
           padding: padding,
           decoration: ShapeDecoration(
-            color: context.themeColors.buttonNeutral,
+            color: isDisabled ? context.themeColors.buttonDisabled : context.themeColors.buttonNeutral,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(50),
             ),
@@ -103,7 +104,7 @@ class Button extends StatelessWidget {
           width: width,
           padding: padding,
           decoration: ShapeDecoration(
-            color: context.themeColors.buttonDanger,
+            color: isDisabled ? context.themeColors.buttonDisabled : context.themeColors.buttonDanger,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(50),
             ),
@@ -117,7 +118,7 @@ class Button extends StatelessWidget {
           width: width,
           padding: padding,
           decoration: ShapeDecoration(
-            color: context.themeColors.buttonSuccess,
+            color: isDisabled ? context.themeColors.buttonDisabled : context.themeColors.buttonSuccess,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(50),
             ),
@@ -135,7 +136,7 @@ class Button extends StatelessWidget {
               width: width,
               padding: padding,
               decoration: ShapeDecoration(
-                color: context.themeColors.buttonGlass,
+                color: isDisabled ? context.themeColors.buttonDisabled : context.themeColors.buttonGlass,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(50),
                 ),

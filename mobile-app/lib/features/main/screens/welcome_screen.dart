@@ -93,7 +93,6 @@ class WelcomeScreen extends StatelessWidget {
                         ),
                       );
                     },
-                    textStyle: context.themeText.smallTitle,
                   ),
                 ),
                 const SizedBox(height: 26),
@@ -108,7 +107,6 @@ class WelcomeScreen extends StatelessWidget {
                       ),
                     );
                   },
-                  textStyle: context.themeText.smallTitle,
                 ),
               ],
             ),
