@@ -27,6 +27,11 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
   final Color checksum;
   final Color checksumDarker;
   final Color darkGray;
+  final Color buttonGlass;
+  final Color buttonDanger;
+  final Color buttonSuccess;
+  final Color buttonNeutral;
+  final List<Color> buttonPrimary;
 
   const AppColorsTheme({
     required this.primary,
@@ -51,6 +56,11 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     required this.checksum,
     required this.checksumDarker,
     required this.darkGray,
+    required this.buttonGlass,
+    required this.buttonDanger,
+    required this.buttonSuccess,
+    required this.buttonNeutral,
+    required this.buttonPrimary,
   });
 
   const AppColorsTheme.light()
@@ -77,6 +87,11 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
         checksum: const Color(0xFF16CECE),
         checksumDarker: const Color(0xFF07A8A8),
         darkGray: const Color(0xFF323232),
+        buttonGlass: const Color(0x14F4F6F9),
+        buttonDanger: const Color(0xFFFF1F45),
+        buttonSuccess: const Color(0xFF1FFFA7),
+        buttonNeutral: const Color(0xFFF4F6F9),
+        buttonPrimary: const [Color(0xFF0000FF), Color(0xFFED4CCE)],
       );
 
   const AppColorsTheme.dark()
@@ -103,6 +118,11 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
         checksum: const Color(0xFF16CECE),
         checksumDarker: const Color(0xFF07A8A8),
         darkGray: const Color(0xFF323232),
+        buttonGlass: const Color(0x14F4F6F9),
+        buttonDanger: const Color(0xFFFF1F45),
+        buttonSuccess: const Color(0xFF1FFFA7),
+        buttonNeutral: const Color(0xFFF4F6F9),
+        buttonPrimary: const [Color(0xFF0000FF), Color(0xFFED4CCE)],
       );
 
   @override
@@ -127,7 +147,12 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     Color? navbarBg,
     Color? checksum,
     Color? checksumDarker,
+    Color? buttonGlass,
     Color? darkGray,
+    List<Color>? buttonPrimary,
+    Color? buttonNeutral,
+    Color? buttonDanger,
+    Color? buttonSuccess,
   }) {
     return AppColorsTheme(
       primary: primary ?? this.primary,
@@ -151,6 +176,11 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
       checksum: checksum ?? this.checksum,
       checksumDarker: checksumDarker ?? this.checksumDarker,
       darkGray: darkGray ?? this.darkGray,
+      buttonGlass: buttonGlass ?? this.buttonGlass,
+      buttonPrimary: buttonPrimary ?? this.buttonPrimary,
+      buttonNeutral: buttonNeutral ?? this.buttonNeutral,
+      buttonDanger: buttonDanger ?? this.buttonDanger,
+      buttonSuccess: buttonSuccess ?? this.buttonSuccess,
     );
   }
 
@@ -185,6 +215,11 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
       checksumDarker:
           Color.lerp(checksumDarker, other.checksumDarker, t) ?? checksumDarker,
       darkGray: Color.lerp(darkGray, other.darkGray, t) ?? darkGray,
+      buttonGlass: Color.lerp(buttonGlass, other.buttonGlass, t) ?? buttonGlass,
+      buttonNeutral: Color.lerp(buttonNeutral, other.buttonNeutral, t) ?? buttonNeutral,
+      buttonDanger: Color.lerp(buttonDanger, other.buttonDanger, t) ?? buttonDanger,
+      buttonSuccess: Color.lerp(buttonSuccess, other.buttonSuccess, t) ?? buttonSuccess,
+      buttonPrimary: other.buttonPrimary
     );
   }
 }
