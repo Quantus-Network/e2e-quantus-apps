@@ -15,6 +15,7 @@ class Button extends StatelessWidget {
   final EdgeInsets? padding;
   final TextStyle? textStyle;
   final ButtonVariant variant;
+  final bool isDisabled;
 
   /// The main constructor for creating a highly customized button.
   /// It's recommended to use the factory constructors for specific variants.
@@ -27,11 +28,21 @@ class Button extends StatelessWidget {
     this.padding = const EdgeInsets.all(16),
     this.textStyle,
     this.variant = ButtonVariant.glass,
+    this.isDisabled = false,
   });
+
+  Color? _getTitleColor(BuildContext context, ButtonVariant variant) {
+    switch (variant) {
+      case ButtonVariant.neutral:
+        return context.themeColors.textSecondary;
+      default:
+        return null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final bool isDisabled = onPressed == null || isLoading;
+    final bool disabled = onPressed == null || isLoading || isDisabled;
 
     // Define a default text style if none is provided.
     final effectiveTextStyle = textStyle ?? context.themeText.smallTitle!;
@@ -46,7 +57,19 @@ class Button extends StatelessWidget {
                 strokeWidth: 2.0,
               ),
             )
-          : Text(label, style: effectiveTextStyle),
+          : Opacity(
+              opacity: disabled ? 0.6 : 1,
+              child: Text(
+                label,
+                style: disabled
+                    ? effectiveTextStyle.copyWith(
+                        color: context.themeColors.textMuted,
+                      )
+                    : effectiveTextStyle.copyWith(
+                        color: _getTitleColor(context, variant),
+                      ),
+              ),
+            ),
     );
 
     Widget buttonWidget;
@@ -57,13 +80,15 @@ class Button extends StatelessWidget {
           width: width,
           padding: padding,
           decoration: ShapeDecoration(
-            color: isDisabled ? context.themeColors.buttonDisabled : null,
+            color: disabled ? context.themeColors.buttonDisabled : null,
             // Use the provided gradient
-            gradient:  !isDisabled ? LinearGradient(
-              begin: const Alignment(0.00, -1.00),
-              end: const Alignment(0, 1),
-              colors: context.themeColors.buttonPrimary,
-            ) : null,
+            gradient: !disabled
+                ? LinearGradient(
+                    begin: const Alignment(0.00, -1.00),
+                    end: const Alignment(0, 1),
+                    colors: context.themeColors.buttonPrimary,
+                  )
+                : null,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(50),
             ),
@@ -90,7 +115,9 @@ class Button extends StatelessWidget {
           width: width,
           padding: padding,
           decoration: ShapeDecoration(
-            color: isDisabled ? context.themeColors.buttonDisabled : context.themeColors.buttonNeutral,
+            color: disabled
+                ? context.themeColors.buttonDisabled
+                : context.themeColors.buttonNeutral,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(50),
             ),
@@ -104,7 +131,9 @@ class Button extends StatelessWidget {
           width: width,
           padding: padding,
           decoration: ShapeDecoration(
-            color: isDisabled ? context.themeColors.buttonDisabled : context.themeColors.buttonDanger,
+            color: disabled
+                ? context.themeColors.buttonDisabled
+                : context.themeColors.buttonDanger,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(50),
             ),
@@ -118,7 +147,9 @@ class Button extends StatelessWidget {
           width: width,
           padding: padding,
           decoration: ShapeDecoration(
-            color: isDisabled ? context.themeColors.buttonDisabled : context.themeColors.buttonSuccess,
+            color: disabled
+                ? context.themeColors.buttonDisabled
+                : context.themeColors.buttonSuccess,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(50),
             ),
@@ -136,7 +167,9 @@ class Button extends StatelessWidget {
               width: width,
               padding: padding,
               decoration: ShapeDecoration(
-                color: isDisabled ? context.themeColors.buttonDisabled : context.themeColors.buttonGlass,
+                color: disabled
+                    ? context.themeColors.buttonDisabled
+                    : context.themeColors.buttonGlass,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(50),
                 ),
@@ -149,7 +182,7 @@ class Button extends StatelessWidget {
     }
 
     return GestureDetector(
-      onTap: isDisabled ? null : onPressed,
+      onTap: disabled ? null : onPressed,
       child: buttonWidget,
     );
   }
