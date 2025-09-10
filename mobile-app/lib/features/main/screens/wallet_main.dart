@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
@@ -43,7 +45,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
     bool disabled = false,
   }) {
     final color = disabled ? Colors.white.useOpacity(0.5) : Colors.white;
-    final bgColor = Colors.black.useOpacity(166 / 255.0);
+    final bgColor = Colors.black;
     final effectiveBorderColor = disabled
         ? borderColor.useOpacity(0.5)
         : borderColor;
@@ -77,26 +79,33 @@ class _WalletMainState extends ConsumerState<WalletMain> {
         child: Container(
           width: context.isTablet ? 105 : 65,
           height: context.isTablet ? 96 : 56,
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          decoration: ShapeDecoration(
-            color: bgColor,
-            shape: RoundedRectangleBorder(
-              side: BorderSide(width: 1, color: effectiveBorderColor),
+          padding: const EdgeInsets.all(1),
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              radius: 1,
+              colors: [effectiveBorderColor, const Color(0x26FFFFFF)],
+              stops: [0, 1],
+            ),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              color: bgColor,
               borderRadius: BorderRadius.circular(4),
             ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              finalIconWidget,
-              const SizedBox(height: 4),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: context.themeText.tag,
-              ),
-            ],
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                finalIconWidget,
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: context.themeText.tag,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -223,10 +232,8 @@ class _WalletMainState extends ConsumerState<WalletMain> {
     );
 
     if (activeAccountAsync.isLoading) {
-      return Scaffold(
-        extendBodyBehindAppBar: true,
-        backgroundColor: context.themeColors.background,
-        body: Center(
+      return ScaffoldBase(
+        child: Center(
           child: CircularProgressIndicator(
             color: context.themeColors.circularLoader,
           ),
@@ -240,10 +247,8 @@ class _WalletMainState extends ConsumerState<WalletMain> {
     print('error: $hasError, noAccount: $noAccount');
 
     if (hasError || noAccount) {
-      return Scaffold(
-        extendBodyBehindAppBar: true,
-        backgroundColor: context.themeColors.background,
-        body: Column(
+      return ScaffoldBase(
+        child: Column(
           children: [
             Expanded(
               child: Center(
@@ -308,231 +313,217 @@ class _WalletMainState extends ConsumerState<WalletMain> {
 
     final activeAccount = activeAccountAsync.value!;
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      backgroundColor: context.themeColors.background,
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/light_leak_effect_background.jpg'),
-            fit: BoxFit.cover,
-            opacity: 0.54,
-          ),
+    return ScaffoldBase(
+      dim: 0,
+      decorations: [
+        Positioned(
+          left: context.getHorizontalCenterPosition(252),
+          bottom: -30,
+          child: const Sphere(variant: 6, size: 252),
         ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: RefreshIndicator(
-              onRefresh: () async {
-                // Refresh balances with loading indicator
-                final activeAccount = ref.read(activeAccountProvider).value;
-                if (activeAccount != null) {
-                  ref.invalidate(balanceProviderFamily);
-                  // Trigger a loading refresh on the filtered controller
-                  // used by active transactions
-                  await ref
-                      .read(
-                        filteredPaginationControllerProviderFamily(
-                          AccountIdListCache.get([activeAccount.accountId]),
-                        ).notifier,
-                      )
-                      .loadingRefresh();
-                }
-                ref.invalidate(balanceProviderRaw);
-                // Invalidate combined active account provider to recompute
-                ref.invalidate(activeAccountTransactionsProvider);
-              },
-              color: const Color(0xFF0CE6ED),
-              backgroundColor: Colors.black,
-              child: CustomScrollView(
-                controller: _scrollController,
-                physics: const AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                SvgPicture.asset(
-                                  'assets/logo/logo.svg',
-                                  height: context.isTablet ? 45 : 25,
+      ],
+      padding: const EdgeInsetsGeometry.symmetric(horizontal: 24.0),
+      child: RefreshIndicator(
+        onRefresh: () async {
+          // Refresh balances with loading indicator
+          final activeAccount = ref.read(activeAccountProvider).value;
+          if (activeAccount != null) {
+            ref.invalidate(balanceProviderFamily);
+            // Trigger a loading refresh on the filtered controller
+            // used by active transactions
+            await ref
+                .read(
+                  filteredPaginationControllerProviderFamily(
+                    AccountIdListCache.get([activeAccount.accountId]),
+                  ).notifier,
+                )
+                .loadingRefresh();
+          }
+          ref.invalidate(balanceProviderRaw);
+          // Invalidate combined active account provider to recompute
+          ref.invalidate(activeAccountTransactionsProvider);
+        },
+        color: const Color(0xFF0CE6ED),
+        backgroundColor: Colors.black,
+        child: CustomScrollView(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          SvgPicture.asset(
+                            'assets/logo/logo.svg',
+                            height: context.isTablet ? 45 : 25,
+                          ),
+                          const SizedBox(width: 9.0),
+                          SvgPicture.asset(
+                            'assets/logo/logo-name.svg',
+                            height: context.isTablet ? 35.6 : 15.6,
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: SvgPicture.asset(
+                              'assets/wallet_icon.svg',
+                              width: context.isTablet ? 32 : 24,
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const AccountsScreen(),
                                 ),
-                                const SizedBox(width: 9.0),
-                                SvgPicture.asset(
-                                  'assets/logo/logo-name.svg',
-                                  height: context.isTablet ? 35.6 : 15.6,
-                                ),
-                              ],
-                            ),
-                            Row(
-                              children: [
-                                IconButton(
-                                  icon: SvgPicture.asset(
-                                    'assets/wallet_icon.svg',
-                                    width: context.isTablet ? 32 : 24,
-                                  ),
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const AccountsScreen(),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 40),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            InkWell(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const AccountsScreen(),
-                                  ),
-                                );
-                              },
-                              borderRadius: BorderRadius.circular(5),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 5,
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Image.asset(
-                                      'assets/active_dot.png',
-                                      width: context.isTablet ? 28 : 20,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      activeAccount.name,
-                                      style: context.themeText.smallParagraph,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Icon(
-                                      Icons.arrow_forward_ios,
-                                      color: Colors.white70,
-                                      size: context.isTablet ? 18 : 12,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 7),
-                            balanceAsync.when(
-                              data: (balance) => Text.rich(
-                                TextSpan(
-                                  children: [
-                                    TextSpan(
-                                      text: _formattingService.formatBalance(
-                                        balance,
-                                      ),
-                                      style: context.themeText.extraLargeTitle
-                                          ?.copyWith(
-                                            color: context.themeColors.light,
-                                          ),
-                                    ),
-                                    TextSpan(
-                                      text: ' ${AppConstants.tokenSymbol}',
-                                      style: context.themeText.smallTitle
-                                          ?.copyWith(
-                                            color: context.themeColors.light,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              loading: () => CircularProgressIndicator(
-                                color: context.themeColors.circularLoader,
-                              ),
-                              error: (err, stack) => Text(
-                                'Error',
-                                style: TextStyle(
-                                  color: context.themeColors.textError,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 30),
-                        Row(
-                          spacing: context.isTablet ? 28 : 0,
-                          mainAxisAlignment: context.isTablet
-                              ? MainAxisAlignment.center
-                              : MainAxisAlignment.spaceBetween,
-                          children: [
-                            _buildActionButton(
-                              iconWidget: SvgPicture.asset(
-                                'assets/send_icon_1.svg',
-                                width: 19,
-                              ),
-                              label: 'SEND',
-                              borderColor: const Color(0xFF0AD4F6),
-                              onPressed: () {
-                                Navigator.pushNamed(context, '/send');
-                              },
-                            ),
-                            _buildActionButton(
-                              iconWidget: SvgPicture.asset(
-                                'assets/receive_icon_1.svg',
-                                width: 19,
-                              ),
-                              label: 'RECEIVE',
-                              borderColor: const Color(0xFFB258F1),
-                              onPressed: () {
-                                showReceiveSheet(context);
-                              },
-                            ),
-                            _buildActionButton(
-                              iconWidget: SvgPicture.asset(
-                                'assets/swap_icon_1.svg',
-                                width: 19,
-                              ),
-                              label: 'SWAP',
-                              borderColor: const Color(0xFF0AD4F6),
-                              onPressed: () {},
-                              disabled: true,
-                            ),
-                            _buildActionButton(
-                              iconWidget: SvgPicture.asset(
-                                'assets/bridge_icon.svg',
-                                width: 19,
-                              ),
-                              label: 'BRIDGE',
-                              borderColor: const Color(0xFF0AD4F6),
-                              onPressed: () {},
-                              disabled: true,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 30),
-                      ],
-                    ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  SliverToBoxAdapter(
-                    child: _buildHistorySection(
-                      activeAccountTransactionsAsync,
-                      activeAccount,
-                    ),
+                  const SizedBox(height: 40),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AccountsScreen(),
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(5),
+                        child: _createAccountDetails(context, activeAccount),
+                      ),
+                      const SizedBox(height: 7),
+                      balanceAsync.when(
+                        data: (balance) => Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: _formattingService.formatBalance(balance),
+                                style: context.themeText.extraLargeTitle
+                                    ?.copyWith(
+                                      color: context.themeColors.light,
+                                    ),
+                              ),
+                              TextSpan(
+                                text: ' ${AppConstants.tokenSymbol}',
+                                style: context.themeText.smallTitle?.copyWith(
+                                  color: context.themeColors.light,
+                                ),
+                              ),
+                            ],
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        loading: () => CircularProgressIndicator(
+                          color: context.themeColors.circularLoader,
+                        ),
+                        error: (err, stack) => Text(
+                          'Error',
+                          style: TextStyle(
+                            color: context.themeColors.textError,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 30),
+                  Row(
+                    spacing: context.isTablet ? 28 : 0,
+                    mainAxisAlignment: context.isTablet
+                        ? MainAxisAlignment.center
+                        : MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildActionButton(
+                        iconWidget: SvgPicture.asset(
+                          'assets/transaction/send_icon.svg',
+                          width: 19,
+                        ),
+                        label: 'SEND',
+                        borderColor: const Color(0xFF16CECE),
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/send');
+                        },
+                      ),
+                      _buildActionButton(
+                        iconWidget: SvgPicture.asset(
+                          'assets/transaction/receive_icon.svg',
+                          width: 19,
+                        ),
+                        label: 'RECEIVE',
+                        borderColor: const Color(0xFFED4CCE),
+                        onPressed: () {
+                          showReceiveSheet(context);
+                        },
+                      ),
+                      _buildActionButton(
+                        iconWidget: SvgPicture.asset(
+                          'assets/transaction/swap_icon.svg',
+                          width: 19,
+                        ),
+                        label: 'SWAP',
+                        borderColor: const Color(0xFF0AD4F6),
+                        onPressed: () {},
+                        disabled: true,
+                      ),
+                      _buildActionButton(
+                        iconWidget: SvgPicture.asset(
+                          'assets/transaction/bridge_icon.svg',
+                          width: 19,
+                        ),
+                        label: 'BRIDGE',
+                        borderColor: const Color(0xFF0AD4F6),
+                        onPressed: () {},
+                        disabled: true,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 30),
                 ],
               ),
             ),
-          ),
+            SliverToBoxAdapter(
+              child: _buildHistorySection(
+                activeAccountTransactionsAsync,
+                activeAccount,
+              ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _createAccountDetails(BuildContext context, Account activeAccount) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Image.asset(
+            'assets/active_dot.png',
+            width: context.isTablet ? 28 : 20,
+          ),
+          const SizedBox(width: 8),
+          Text(activeAccount.name, style: context.themeText.smallParagraph),
+          const SizedBox(width: 8),
+          Icon(
+            Icons.arrow_forward_ios,
+            color: Colors.white70,
+            size: context.isTablet ? 18 : 12,
+          ),
+        ],
       ),
     );
   }

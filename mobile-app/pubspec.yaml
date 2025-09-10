@@ -82,6 +82,7 @@ flutter:
     - assets/settings_icon_off.svg
     - assets/navbar/
     - assets/notification/
+    - assets/transaction/
     - assets/logo/
     - assets/background.png
 
