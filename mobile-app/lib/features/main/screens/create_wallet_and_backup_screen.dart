@@ -7,10 +7,10 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/label.dart';
 import 'package:resonance_network_wallet/features/components/mnemonic_grid.dart';
+import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
-import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
@@ -145,94 +145,87 @@ class CreateWalletAndBackupScreenState
 
     final bool canContinue = !_isLoading && _error == null;
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: const WalletAppBar(title: 'Create New Wallet'),
-      backgroundColor: context.themeColors.background,
-      body: Stack(
-        children: [
-          const Positioned(
-            right: -32.0,
-            bottom: 120.0,
-            child: Sphere(variant: 1, size: 321.0),
-          ),
-          BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 25.0),
-                    Focus(
-                      child: CustomTextField(
-                        controller: _accountName,
-                        labelText: 'ACCOUNT NAME',
-                        icon: !_isEditing ? const Icon(Icons.edit) : null,
-                      ),
-                      onFocusChange: (value) {
-                        setState(() {
-                          _isEditing = value;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 25.0),
-                    _createDetailItem(
-                      context,
-                      _isLoading ? 'Loading checksum...' : _checksum,
-                      const Icon(Icons.info_outline),
-                      label: 'ACCOUNT CHECKPHRASE',
-                      onPressed: () {},
-                      textColor: context.themeColors.checksumDarker,
-                    ),
-                    const SizedBox(height: 25.0),
-                    _createDetailItem(
-                      context,
-                      _isLoading
-                          ? 'Loading address...'
-                          : AddressFormattingService.splitIntoChunks(
-                              _address,
-                            ).join(' '),
-                      const Icon(Icons.copy),
-                      onPressed: () {
-                        ClipboardExtensions.copyTextWithSnackbar(
-                          context,
-                          _address,
-                        );
-                      },
-                      label: 'ACCOUNT ADDRESS',
-                    ),
-                    const SizedBox(height: 25.0),
-                    _createDetailItem(
-                      context,
-                      'Show Recovery Phrase',
-                      const Icon(Icons.chevron_right),
-                      onPressed: () {
-                        showRecoveryPhraseSheet(
-                          context,
-                          words,
-                          _isLoading,
-                          _error,
-                          _mnemonic,
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 32),
-                    Button(
-                      variant: ButtonVariant.primary,
-                      label: 'Create Wallet',
-                      textStyle: context.themeText.smallTitle,
-                      onPressed: _saveWalletAndContinue,
-                      isLoading: _isLoading,
-                      isDisabled: !canContinue,
-                    ),
-                  ],
+    return ScaffoldBase(
+      appBar: 'Create New Wallet',
+      decorations: [
+        const Positioned(
+          right: -32.0,
+          bottom: 120.0,
+          child: Sphere(variant: 1, size: 321.0),
+        ),
+      ],
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(height: 25.0),
+                Focus(
+                  child: CustomTextField(
+                    controller: _accountName,
+                    labelText: 'ACCOUNT NAME',
+                    icon: !_isEditing ? const Icon(Icons.edit) : null,
+                  ),
+                  onFocusChange: (value) {
+                    setState(() {
+                      _isEditing = value;
+                    });
+                  },
                 ),
-              ),
+                const SizedBox(height: 25.0),
+                _createDetailItem(
+                  context,
+                  _isLoading ? 'Loading checksum...' : _checksum,
+                  const Icon(Icons.info_outline),
+                  label: 'ACCOUNT CHECKPHRASE',
+                  onPressed: () {},
+                  textColor: context.themeColors.checksumDarker,
+                ),
+                const SizedBox(height: 25.0),
+                _createDetailItem(
+                  context,
+                  _isLoading
+                      ? 'Loading address...'
+                      : AddressFormattingService.splitIntoChunks(
+                          _address,
+                        ).join(' '),
+                  const Icon(Icons.copy),
+                  onPressed: () {
+                    ClipboardExtensions.copyTextWithSnackbar(context, _address);
+                  },
+                  label: 'ACCOUNT ADDRESS',
+                ),
+                const SizedBox(height: 25.0),
+                _createDetailItem(
+                  context,
+                  'Show Recovery Phrase',
+                  const Icon(Icons.chevron_right),
+                  onPressed: () {
+                    showRecoveryPhraseSheet(
+                      context,
+                      words,
+                      _isLoading,
+                      _error,
+                      _mnemonic,
+                    );
+                  },
+                ),
+                const SizedBox(height: 32),
+                Button(
+                  variant: ButtonVariant.primary,
+                  label: 'Create Wallet',
+                  textStyle: context.themeText.smallTitle,
+                  onPressed: _saveWalletAndContinue,
+                  isLoading: _isLoading,
+                  isDisabled: !canContinue,
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
