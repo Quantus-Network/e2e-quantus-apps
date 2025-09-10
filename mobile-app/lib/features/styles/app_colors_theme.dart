@@ -17,6 +17,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
   final Color textSecondary;
   final Color textError;
   final Color textMuted;
+  final Color inputLabel;
   final Color light;
   final Color circularLoader;
   final Color authButtonBg;
@@ -27,6 +28,11 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
   final Color checksum;
   final Color checksumDarker;
   final Color darkGray;
+  final Color buttonGlass;
+  final Color buttonDanger;
+  final Color buttonSuccess;
+  final Color buttonNeutral;
+  final List<Color> buttonPrimary;
 
   const AppColorsTheme({
     required this.primary,
@@ -40,6 +46,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     required this.textPrimary,
     required this.textSecondary,
     required this.textError,
+    required this.inputLabel,
     required this.light,
     required this.circularLoader,
     required this.authButtonBg,
@@ -51,6 +58,11 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     required this.checksum,
     required this.checksumDarker,
     required this.darkGray,
+    required this.buttonGlass,
+    required this.buttonDanger,
+    required this.buttonSuccess,
+    required this.buttonNeutral,
+    required this.buttonPrimary,
   });
 
   const AppColorsTheme.light()
@@ -59,24 +71,30 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
         secondary: const Color(0xFF9F7AEA),
 
         purple: const Color(0xFFB259F2),
-        background: const Color(0xFF0E0E0E),
+        background: const Color(0xFF0B0F14),
         surface: const Color(0xA6000000),
         surfaceActive: Colors.white,
         error: const Color(0xFFFF2D53),
         textError: const Color(0xFFFF5252),
-        textPrimary: Colors.white,
-        textSecondary: const Color(0xFF0F0F0F),
+        textPrimary: const Color(0xFFF4F6F9),
+        textSecondary: const Color(0xFF0B0F14),
+        inputLabel: const Color(0xFFD4D3E0),
         light: const Color(0xFFE6E6E6),
         circularLoader: Colors.white,
         authButtonBg: const Color(0xFF16CECE),
-        textMuted: const Color(0x99FFFFFF),
+        textMuted: const Color(0xFFD4D3E0),
         border: const Color(0xcfe6e6e6),
         borderLight: const Color(0x26ffffff),
-        buttonDisabled: const Color(0xFFE6E6E6),
+        buttonDisabled: const Color(0xFF3D3C44),
         navbarBg: Colors.black,
         checksum: const Color(0xFF16CECE),
-        checksumDarker: const Color(0xFF07A8A8),
+        checksumDarker: const Color(0xFF4CEDE7),
         darkGray: const Color(0xFF323232),
+        buttonGlass: const Color(0x14F4F6F9),
+        buttonDanger: const Color(0xFFFF1F45),
+        buttonSuccess: const Color(0xFF1FFFA7),
+        buttonNeutral: const Color(0xFFF4F6F9),
+        buttonPrimary: const [Color(0xFF0000FF), Color(0xFFED4CCE)],
       );
 
   const AppColorsTheme.dark()
@@ -85,24 +103,30 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
         secondary: const Color(0xFF9F7AEA),
 
         purple: const Color(0xFFB259F2),
-        background: const Color(0xFF0E0E0E),
+        background: const Color(0xFF0B0F14),
         surface: const Color(0xA6000000),
         surfaceActive: Colors.white,
         error: const Color(0xFFFF2D53),
         textError: const Color(0xFFFF5252),
-        textPrimary: Colors.white,
+        textPrimary: const Color(0xFFF4F6F9),
         textSecondary: const Color(0xFF0F0F0F),
+        inputLabel: const Color(0xFFD4D3E0),
         light: const Color(0xFFE6E6E6),
         circularLoader: Colors.white,
         authButtonBg: const Color(0xFF16CECE),
-        textMuted: const Color(0x99FFFFFF),
+        textMuted: const Color(0xFFD4D3E0),
         border: const Color(0xe6e6e6cf),
         borderLight: const Color(0x26ffffff),
-        buttonDisabled: const Color(0xFFE6E6E6),
+        buttonDisabled: const Color(0xFF3D3C44),
         navbarBg: Colors.black,
         checksum: const Color(0xFF16CECE),
-        checksumDarker: const Color(0xFF07A8A8),
+        checksumDarker: const Color(0xFF4CEDE7),
         darkGray: const Color(0xFF323232),
+        buttonGlass: const Color(0x14F4F6F9),
+        buttonDanger: const Color(0xFFFF1F45),
+        buttonSuccess: const Color(0xFF1FFFA7),
+        buttonNeutral: const Color(0xFFF4F6F9),
+        buttonPrimary: const [Color(0xFF0000FF), Color(0xFFED4CCE)],
       );
 
   @override
@@ -117,6 +141,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     Color? textPrimary,
     Color? textSecondary,
     Color? textError,
+    Color? inputLabel,
     Color? light,
     Color? circularLoader,
     Color? authButtonBg,
@@ -127,7 +152,12 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     Color? navbarBg,
     Color? checksum,
     Color? checksumDarker,
+    Color? buttonGlass,
     Color? darkGray,
+    List<Color>? buttonPrimary,
+    Color? buttonNeutral,
+    Color? buttonDanger,
+    Color? buttonSuccess,
   }) {
     return AppColorsTheme(
       primary: primary ?? this.primary,
@@ -140,6 +170,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
       textPrimary: textPrimary ?? this.textPrimary,
       textSecondary: textSecondary ?? this.textSecondary,
       textError: textError ?? this.textError,
+      inputLabel: inputLabel ?? this.inputLabel,
       light: light ?? this.light,
       circularLoader: circularLoader ?? this.circularLoader,
       authButtonBg: authButtonBg ?? this.authButtonBg,
@@ -151,6 +182,11 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
       checksum: checksum ?? this.checksum,
       checksumDarker: checksumDarker ?? this.checksumDarker,
       darkGray: darkGray ?? this.darkGray,
+      buttonGlass: buttonGlass ?? this.buttonGlass,
+      buttonPrimary: buttonPrimary ?? this.buttonPrimary,
+      buttonNeutral: buttonNeutral ?? this.buttonNeutral,
+      buttonDanger: buttonDanger ?? this.buttonDanger,
+      buttonSuccess: buttonSuccess ?? this.buttonSuccess,
     );
   }
 
@@ -170,6 +206,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
       textSecondary:
           Color.lerp(textSecondary, other.textSecondary, t) ?? textSecondary,
       textError: Color.lerp(textError, other.textError, t) ?? textError,
+      inputLabel: Color.lerp(inputLabel, other.inputLabel, t) ?? inputLabel,
       light: Color.lerp(light, other.light, t) ?? light,
       circularLoader:
           Color.lerp(circularLoader, other.circularLoader, t) ?? circularLoader,
@@ -185,6 +222,11 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
       checksumDarker:
           Color.lerp(checksumDarker, other.checksumDarker, t) ?? checksumDarker,
       darkGray: Color.lerp(darkGray, other.darkGray, t) ?? darkGray,
+      buttonGlass: Color.lerp(buttonGlass, other.buttonGlass, t) ?? buttonGlass,
+      buttonNeutral: Color.lerp(buttonNeutral, other.buttonNeutral, t) ?? buttonNeutral,
+      buttonDanger: Color.lerp(buttonDanger, other.buttonDanger, t) ?? buttonDanger,
+      buttonSuccess: Color.lerp(buttonSuccess, other.buttonSuccess, t) ?? buttonSuccess,
+      buttonPrimary: other.buttonPrimary
     );
   }
 }

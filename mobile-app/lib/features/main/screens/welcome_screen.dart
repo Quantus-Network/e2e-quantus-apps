@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_wallet_and_backup_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/import_wallet_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
@@ -28,7 +29,12 @@ class WelcomeScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(height: 60),
+                Text(
+                  'Welcome to',
+                  textAlign: TextAlign.center,
+                  style: context.themeText.smallTitle,
+                ),
+                const SizedBox(height: 36),
                 Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -45,15 +51,24 @@ class WelcomeScreen extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 0),
                   child: Text(
-                    'Quantum-Secure your crypto',
+                    'Quantum-Secure Your crypto',
                     textAlign: TextAlign.center,
                     style: context.themeText.smallTitle,
                   ),
                 ),
-                const SizedBox(height: 27),
+                const SizedBox(height: 36),
+                SizedBox(
+                  width: 343,
+                  child: Text(
+                    'Create a new wallet or import an existing one to get started',
+                    textAlign: TextAlign.center,
+                    style: context.themeText.paragraph,
+                  ),
+                ),
               ],
             ),
           ),
+
           Positioned(
             bottom:
                 MediaQuery.of(context).padding.bottom +
@@ -65,15 +80,9 @@ class WelcomeScreen extends StatelessWidget {
               children: [
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: context.themeColors.textSecondary,
-                      backgroundColor: context.themeColors.light,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(5.0),
-                      ),
-                    ),
+                  child: Button(
+                    variant: ButtonVariant.primary,
+                    label: 'Create New Wallet',
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -84,38 +93,20 @@ class WelcomeScreen extends StatelessWidget {
                         ),
                       );
                     },
-                    child: Text(
-                      'Create New Wallet',
-                      style: context.themeText.smallTitle,
-                    ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: context.themeColors.light,
-                      side: BorderSide(color: context.themeColors.light),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(5.0),
+                const SizedBox(height: 26),
+                Button(
+                  label: 'Import Wallet',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        settings: const RouteSettings(name: 'import_wallet'),
+                        builder: (context) => const ImportWalletScreen(),
                       ),
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          settings: const RouteSettings(name: 'import_wallet'),
-                          builder: (context) => const ImportWalletScreen(),
-                        ),
-                      );
-                    },
-                    child: Text(
-                      'Import Existing Wallet',
-                      style: context.themeText.smallTitle,
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ],
             ),

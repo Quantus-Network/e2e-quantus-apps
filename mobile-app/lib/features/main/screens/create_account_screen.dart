@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/gradient_action_button.dart';
+import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
@@ -300,7 +300,8 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: _isCreating
           ? const Center(child: CircularProgressIndicator())
-          : GradientActionButton(
+          : Button(
+            variant: ButtonVariant.primary,
               onPressed: _saveAccount,
               label: _isEditMode ? 'Save' : 'Create Account',
               textStyle: context.themeText.smallTitle?.copyWith(
