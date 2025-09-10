@@ -37,6 +37,7 @@ class TransactionListItemState extends State<TransactionListItem> {
 
   String get title {
     if (widget.transaction.isReversibleCancelled) return 'Cancelled';
+
     switch (role) {
       case TransactionRole.sender:
         if (isPendingOrScheduled) {
@@ -56,21 +57,23 @@ class TransactionListItemState extends State<TransactionListItem> {
     }
   }
 
-  Color get titleColor {
+  Color get titleColor => context.themeColors.textPrimary;
+
+  Color get amountColor {
     if (widget.transaction.isReversibleCancelled) {
-      return context.themeColors.error;
+      return context.themeColors.textPrimary;
     }
     if (role == TransactionRole.sender && isPendingOrScheduled) {
-      return context.themeColors.checksum;
+      return context.themeColors.textPrimary;
     }
     if (role == TransactionRole.receiver && isPendingOrScheduled) {
-      return context.themeColors.purple;
+      return context.themeColors.textPrimary;
     }
     if (role == TransactionRole.sender) {
-      return context.themeColors.checksum;
+      return context.themeColors.checksumDarker;
     } else {
       // default - receiver
-      return context.themeColors.purple;
+      return context.themeColors.pink;
     }
   }
 
@@ -207,19 +210,19 @@ class TransactionListItemState extends State<TransactionListItem> {
               children: [
                 if (widget.transaction.isReversibleCancelled)
                   SvgPicture.asset(
-                    'assets/stop_icon.svg',
+                    'assets/transaction/cancel_icon.svg',
                     width: context.themeSize.txListItemIconWidth,
                   )
                 else if (isFailed)
                   SvgPicture.asset(
-                    'assets/send_failed_icon.svg',
+                    'assets/transaction/fail_icon.svg',
                     width: context.themeSize.txListItemIconWidth,
                   )
                 else
-                  Image.asset(
+                  SvgPicture.asset(
                     role == TransactionRole.sender
-                        ? 'assets/send_icon.png'
-                        : 'assets/receive_icon_sm.png',
+                        ? 'assets/transaction/send_icon.svg'
+                        : 'assets/transaction/receive_icon.svg',
                     width: context.themeSize.txListItemIconWidth,
                   ),
                 const SizedBox(width: 11),
@@ -228,30 +231,33 @@ class TransactionListItemState extends State<TransactionListItem> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text: title,
-                              style: context.themeText.smallParagraph?.copyWith(
-                                color: titleColor,
-                              ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            title,
+                            style: context.themeText.smallParagraph?.copyWith(
+                              color: titleColor,
                             ),
-                            TextSpan(
-                              text:
-                                  // ignore: lines_longer_than_80_chars
-                                  ' ${_formatAmount(widget.transaction.amount)}',
-                              style: context.themeText.smallParagraph?.copyWith(
-                                color: widget.transaction.isReversibleCancelled
-                                    ? const Color(0xFFD9D9D9)
-                                    : context.themeColors.textPrimary,
-                              ),
+                          ),
+                          Text(
+                            _formatAmount(widget.transaction.amount),
+                            style: context.themeText.smallParagraph?.copyWith(
+                              color: amountColor,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
+
                       const SizedBox(height: 4),
-                      Text(_getSubtitle(), style: context.themeText.tiny),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(_getSubtitle(), style: context.themeText.tiny),
+                          _buildStatusOrTimer(),
+                        ],
+                      ),
                       if (!widget.transaction.isReversibleScheduled)
                         Text(
                           _getTimestampString(),
@@ -268,7 +274,6 @@ class TransactionListItemState extends State<TransactionListItem> {
               ],
             ),
           ),
-          _buildStatusOrTimer(),
         ],
       ),
     );
@@ -335,7 +340,7 @@ class _TimerDisplay extends StatelessWidget {
           if (isSending) const SizedBox(width: 10),
           if (isSending)
             SvgPicture.asset(
-              'assets/stop_icon.svg',
+              'assets/transaction/cancel_icon.svg',
               width: context.isTablet ? 16 : 13,
             ),
         ],

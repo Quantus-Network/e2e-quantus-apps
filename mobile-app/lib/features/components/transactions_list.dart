@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/models/transaction_role.dart';
 
@@ -82,9 +83,9 @@ class RecentTransactionsList extends StatelessWidget {
                   separatorBuilder: (context, index) => const _Divider(),
                 ),
               if (scheduled.isNotEmpty && others.isNotEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12.0),
-                  child: Divider(color: Colors.white, thickness: 1),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12.0),
+                  child: Divider(color: context.themeColors.darkGray, thickness: 1),
                 ),
               if (others.isNotEmpty)
                 ListView.separated(
