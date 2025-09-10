@@ -20,7 +20,7 @@ class ScaffoldBase extends StatelessWidget {
     this.extendBodyBehingAppBar = true,
     this.backdropBlur = 12.0,
     this.decorations,
-    this.dim = 0.5,
+    this.dim = 0.25,
     this.padding = const EdgeInsets.symmetric(horizontal: 16.0),
     required this.child,
   });
