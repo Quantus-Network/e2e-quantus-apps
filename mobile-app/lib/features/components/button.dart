@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
-/// Enum to define the visual style of the button.
 enum ButtonVariant { transparent, neutral, primary, success, danger, glass }
 
-/// A versatile and customizable action button with gradient and variant support.
+
 class Button extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -17,8 +16,8 @@ class Button extends StatelessWidget {
   final ButtonVariant variant;
   final bool isDisabled;
 
-  /// The main constructor for creating a highly customized button.
-  /// It's recommended to use the factory constructors for specific variants.
+  static const double buttonRadius = 50.0;
+
   const Button({
     super.key,
     required this.label,
@@ -44,7 +43,6 @@ class Button extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool disabled = onPressed == null || isLoading || isDisabled;
 
-    // Define a default text style if none is provided.
     final effectiveTextStyle = textStyle ?? context.themeText.smallTitle!;
 
     final buttonContent = Center(
@@ -81,7 +79,6 @@ class Button extends StatelessWidget {
           padding: padding,
           decoration: ShapeDecoration(
             color: disabled ? context.themeColors.buttonDisabled : null,
-            // Use the provided gradient
             gradient: !disabled
                 ? LinearGradient(
                     begin: const Alignment(0.00, -1.00),
@@ -90,7 +87,7 @@ class Button extends StatelessWidget {
                   )
                 : null,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(50),
+              borderRadius: BorderRadius.circular(buttonRadius),
             ),
           ),
           child: buttonContent,
@@ -103,7 +100,7 @@ class Button extends StatelessWidget {
           padding: padding,
           decoration: ShapeDecoration(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(50),
+              borderRadius: BorderRadius.circular(buttonRadius),
             ),
           ),
           child: buttonContent,
@@ -119,7 +116,7 @@ class Button extends StatelessWidget {
                 ? context.themeColors.buttonDisabled
                 : context.themeColors.buttonNeutral,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(50),
+              borderRadius: BorderRadius.circular(buttonRadius),
             ),
           ),
           child: buttonContent,
@@ -135,7 +132,7 @@ class Button extends StatelessWidget {
                 ? context.themeColors.buttonDisabled
                 : context.themeColors.buttonDanger,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(50),
+              borderRadius: BorderRadius.circular(buttonRadius),
             ),
           ),
           child: buttonContent,
@@ -151,7 +148,7 @@ class Button extends StatelessWidget {
                 ? context.themeColors.buttonDisabled
                 : context.themeColors.buttonSuccess,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(50),
+              borderRadius: BorderRadius.circular(buttonRadius),
             ),
           ),
           child: buttonContent,
@@ -160,7 +157,7 @@ class Button extends StatelessWidget {
 
       default:
         buttonWidget = ClipRRect(
-          borderRadius: BorderRadius.circular(50),
+          borderRadius: BorderRadius.circular(buttonRadius),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
@@ -171,7 +168,9 @@ class Button extends StatelessWidget {
                     ? context.themeColors.buttonDisabled
                     : context.themeColors.buttonGlass,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(50),
+                  borderRadius: BorderRadius.circular(
+                    buttonRadius,
+                  ),
                 ),
               ),
               child: buttonContent,
