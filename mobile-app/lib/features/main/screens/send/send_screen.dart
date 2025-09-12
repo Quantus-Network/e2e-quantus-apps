@@ -58,6 +58,8 @@ class SendScreen extends ConsumerStatefulWidget {
 }
 
 class SendScreenState extends ConsumerState<SendScreen> {
+  bool _isInit = true;
+
   final TextEditingController _recipientController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
   final NumberFormattingService _formattingService = NumberFormattingService();
@@ -82,6 +84,29 @@ class SendScreenState extends ConsumerState<SendScreen> {
     // Listen for changes in recipient and amount to update fee
     _recipientController.addListener(_debounceFetchFee);
     _amountController.addListener(_debounceFetchFee);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Check the flag
+    if (_isInit) {
+      // Get the passed address
+      final String? address =
+          ModalRoute.of(context)?.settings.arguments as String?;
+      if (address != null) {
+        // You can directly update the controller here.
+        // No need for addPostFrameCallback.
+        _recipientController.text = address;
+        _lookupIdentity();
+      }
+
+      // Set the flag to false so this doesn't run again
+      setState(() {
+        _isInit = false;
+      });
+    }
   }
 
   @override

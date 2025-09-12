@@ -46,6 +46,7 @@ dependencies:
   riverpod_annotation: ^2.6.1
   telemetrydecksdk: ^2.5.0
   async: ^2.13.0
+  app_links: ^6.4.1
 
 dev_dependencies:
   flutter_test:
@@ -82,6 +83,7 @@ flutter:
     - assets/settings_icon_off.svg
     - assets/navbar/
     - assets/notification/
+    - assets/transaction/
     - assets/logo/
     - assets/background.png
 

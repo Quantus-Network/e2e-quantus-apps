@@ -9,6 +9,8 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
 
   // What we use
   final Color purple;
+  final Color pink;
+  final Color yellow;
   final Color background;
   final Color surface;
   final Color surfaceActive;
@@ -39,6 +41,8 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     required this.secondary,
 
     required this.purple,
+    required this.pink,
+    required this.yellow,
     required this.background,
     required this.surface,
     required this.surfaceActive,
@@ -71,6 +75,8 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
         secondary: const Color(0xFF9F7AEA),
 
         purple: const Color(0xFFB259F2),
+        pink: const Color(0xFFED4CCE),
+        yellow: const Color(0xFFFFE91F),
         background: const Color(0xFF0B0F14),
         surface: const Color(0xA6000000),
         surfaceActive: Colors.white,
@@ -89,7 +95,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
         navbarBg: Colors.black,
         checksum: const Color(0xFF16CECE),
         checksumDarker: const Color(0xFF4CEDE7),
-        darkGray: const Color(0xFF323232),
+        darkGray: const Color(0xFF3D3C44),
         buttonGlass: const Color(0x14F4F6F9),
         buttonDanger: const Color(0xFFFF1F45),
         buttonSuccess: const Color(0xFF1FFFA7),
@@ -103,6 +109,8 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
         secondary: const Color(0xFF9F7AEA),
 
         purple: const Color(0xFFB259F2),
+        pink: const Color(0xFFED4CCE),
+        yellow: const Color(0xFFFFE91F),
         background: const Color(0xFF0B0F14),
         surface: const Color(0xA6000000),
         surfaceActive: Colors.white,
@@ -121,7 +129,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
         navbarBg: Colors.black,
         checksum: const Color(0xFF16CECE),
         checksumDarker: const Color(0xFF4CEDE7),
-        darkGray: const Color(0xFF323232),
+        darkGray: const Color(0xFF3D3C44),
         buttonGlass: const Color(0x14F4F6F9),
         buttonDanger: const Color(0xFFFF1F45),
         buttonSuccess: const Color(0xFF1FFFA7),
@@ -134,6 +142,8 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     Color? primary,
     Color? secondary,
     Color? purple,
+    Color? pink,
+    Color? yellow,
     Color? background,
     Color? surface,
     Color? surfaceActive,
@@ -163,6 +173,8 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
       primary: primary ?? this.primary,
       secondary: secondary ?? this.secondary,
       purple: purple ?? this.purple,
+      pink: pink ?? this.pink,
+      yellow: yellow ?? this.yellow,
       background: background ?? this.background,
       surface: surface ?? this.surface,
       surfaceActive: surfaceActive ?? this.surfaceActive,
@@ -197,6 +209,8 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
       primary: Color.lerp(primary, other.primary, t) ?? primary,
       secondary: Color.lerp(secondary, other.secondary, t) ?? secondary,
       purple: Color.lerp(purple, other.purple, t) ?? purple,
+      pink: Color.lerp(pink, other.pink, t) ?? pink,
+      yellow: Color.lerp(yellow, other.yellow, t) ?? yellow,
       background: Color.lerp(background, other.background, t) ?? background,
       surface: Color.lerp(surface, other.surface, t) ?? surface,
       surfaceActive:
@@ -223,10 +237,13 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
           Color.lerp(checksumDarker, other.checksumDarker, t) ?? checksumDarker,
       darkGray: Color.lerp(darkGray, other.darkGray, t) ?? darkGray,
       buttonGlass: Color.lerp(buttonGlass, other.buttonGlass, t) ?? buttonGlass,
-      buttonNeutral: Color.lerp(buttonNeutral, other.buttonNeutral, t) ?? buttonNeutral,
-      buttonDanger: Color.lerp(buttonDanger, other.buttonDanger, t) ?? buttonDanger,
-      buttonSuccess: Color.lerp(buttonSuccess, other.buttonSuccess, t) ?? buttonSuccess,
-      buttonPrimary: other.buttonPrimary
+      buttonNeutral:
+          Color.lerp(buttonNeutral, other.buttonNeutral, t) ?? buttonNeutral,
+      buttonDanger:
+          Color.lerp(buttonDanger, other.buttonDanger, t) ?? buttonDanger,
+      buttonSuccess:
+          Color.lerp(buttonSuccess, other.buttonSuccess, t) ?? buttonSuccess,
+      buttonPrimary: other.buttonPrimary,
     );
   }
 }

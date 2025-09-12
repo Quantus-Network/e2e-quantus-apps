@@ -4,7 +4,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:resonance_network_wallet/features/main/screens/notifications_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
+import 'package:resonance_network_wallet/features/main/screens/wallet_main/wallet_main.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
@@ -97,7 +97,9 @@ class NavbarItem extends StatelessWidget {
 }
 
 class Navbar extends ConsumerStatefulWidget {
-  const Navbar({super.key});
+  final String? address;
+
+  const Navbar({super.key, this.address});
 
   @override
   ConsumerState<Navbar> createState() => _NavbarState();
@@ -227,11 +229,11 @@ class _NavbarState extends ConsumerState<Navbar> {
   Widget _buildBody() {
     return IndexedStack(
       index: _selectedIndex,
-      children: const [
-        WalletMain(),
-        TransactionsScreen(),
-        SettingsScreen(),
-        NotificationsScreen(),
+      children: [
+        WalletMain(address: widget.address),
+        const TransactionsScreen(),
+        const SettingsScreen(),
+        const NotificationsScreen(),
       ],
     );
   }

@@ -69,7 +69,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
         overlayCloseIconSize: 24.0,
         mnemonicCellDesiredHeight: 31.0,
         txListItemIconWidth: 21.0,
-        txDetailsIconHeight: 42.0,
+        txDetailsIconHeight: 43.0,
         txDetailsIconWidth: 51.0,
       );
 

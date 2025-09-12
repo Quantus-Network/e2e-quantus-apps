@@ -180,20 +180,20 @@ class _TransactionDetailsActionSheetState
                   // Display transaction icon based on type and status
                   if (widget.transaction.isFailed)
                     SvgPicture.asset(
-                      'assets/send_failed_icon.svg',
+                      'assets/transaction/fail_icon.svg',
                       width: context.themeSize.txDetailsIconWidth,
                       height: context.themeSize.txDetailsIconHeight,
                     )
                   else if (widget.transaction.isReversibleCancelled)
                     SvgPicture.asset(
-                      'assets/stop_icon.svg',
+                      'assets/transaction/cancel_icon.svg',
                       width: context.themeSize.txDetailsIconWidth,
                     )
                   else
-                    Image.asset(
+                    SvgPicture.asset(
                       widget.role == TransactionRole.sender
-                          ? 'assets/send_icon.png'
-                          : 'assets/receive_icon_sm.png',
+                          ? 'assets/transaction/send_icon.svg'
+                          : 'assets/transaction/receive_icon.svg',
                       height: context.themeSize.txDetailsIconHeight,
                     ),
                   const SizedBox(height: 17),

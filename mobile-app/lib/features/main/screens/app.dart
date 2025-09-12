@@ -5,14 +5,39 @@ import 'package:resonance_network_wallet/features/main/screens/send/send_screen.
 import 'package:resonance_network_wallet/features/styles/app_theme.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_navigator_observer.dart';
+import 'package:resonance_network_wallet/services/deep_link_service.dart'; 
 
-class ResonanceWalletApp extends ConsumerWidget {
+// This ensures it's a single, persistent key for the entire app lifecycle.
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+class ResonanceWalletApp extends ConsumerStatefulWidget {
   const ResonanceWalletApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ResonanceWalletApp> createState() => _ResonanceWalletAppState();
+}
+
+class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(deepLinkServiceProvider).init(navigatorKey);
+    });
+  }
+
+  @override
+  void dispose() {
+    ref.read(deepLinkServiceProvider).dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Quantus Wallet',
+      navigatorKey: navigatorKey,
       navigatorObservers: [TelemetryNavigatorObserver()],
       initialRoute: '/',
       routes: {
@@ -23,6 +48,11 @@ class ResonanceWalletApp extends ConsumerWidget {
         '/send': (context) => LocalAuthService().shouldRequireAuthentication()
             ? const AuthenticationWrapper()
             : const SendScreen(),
+
+        // The AuthenticationWrapper will need to be smart enough to handle
+        // the arguments passed to this route. The arguments will only accesible
+        // to the AuthenticationWrapper widget, we have to pass it to the next widget
+        '/account': (context) => const AuthenticationWrapper(),
       },
       theme: AppTheme.lightTheme(context),
       darkTheme: AppTheme.darkTheme(context),

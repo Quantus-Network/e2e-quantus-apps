@@ -4,7 +4,9 @@ import 'package:resonance_network_wallet/features/main/screens/welcome_screen.da
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class WalletInitializer extends StatefulWidget {
-  const WalletInitializer({super.key});
+  final String? address;
+
+  const WalletInitializer({super.key, this.address});
 
   @override
   WalletInitializerState createState() => WalletInitializerState();
@@ -37,7 +39,7 @@ class WalletInitializerState extends State<WalletInitializer> {
     }
 
     if (_walletExists) {
-      return const Navbar();
+      return Navbar(address: widget.address);
     } else {
       return const WelcomeScreen();
     }
