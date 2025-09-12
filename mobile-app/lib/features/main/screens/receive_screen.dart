@@ -288,7 +288,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                         spacing: 8,
                         children: [
                           Container(
-                            width: context.isTablet ? 386 : 300,
+                            width: context.isTablet ? 386 : 271,
                             padding: const EdgeInsets.all(10),
                             decoration: ShapeDecoration(
                               color: Colors.white.withValues(alpha: 0.15),

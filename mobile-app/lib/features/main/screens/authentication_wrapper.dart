@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_initializer.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
@@ -94,53 +95,39 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper>
 
   @override
   Widget build(BuildContext context) {
-    return _isAuthenticated ? const WalletInitializer() : _buildLockScreen();
+    // This is accessing the deep link argument
+    final String? address = ModalRoute.of(context)?.settings.arguments as String?;
+
+    return _isAuthenticated ? WalletInitializer(address: address) : _buildLockScreen();
   }
 
   Widget _buildLockScreen() {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      backgroundColor: context.themeColors.background,
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/light_leak_effect_background.jpg'),
-            fit: BoxFit.cover,
-            opacity: 0.54,
-          ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Authentication Required',
-                style: context.themeText.lockTitle,
-              ),
-              const SizedBox(height: 30),
-              if (_isAuthenticating)
-                CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    context.themeColors.circularLoader,
-                  ),
-                )
-              else
-                ElevatedButton(
-                  onPressed: _authenticate,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: context.themeColors.authButtonBg,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 40,
-                      vertical: 15,
-                    ),
-                  ),
-                  child: Text(
-                    'Authenticate',
-                    style: context.themeText.paragraph,
+    return ScaffoldBase(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Authentication Required', style: context.themeText.lockTitle),
+            const SizedBox(height: 30),
+            if (_isAuthenticating)
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  context.themeColors.circularLoader,
+                ),
+              )
+            else
+              ElevatedButton(
+                onPressed: _authenticate,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: context.themeColors.authButtonBg,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 15,
                   ),
                 ),
-            ],
-          ),
+                child: Text('Authenticate', style: context.themeText.paragraph),
+              ),
+          ],
         ),
       ),
     );

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
@@ -21,7 +22,9 @@ import 'package:resonance_network_wallet/shared/extensions/media_query_data_exte
 import 'package:resonance_network_wallet/utils/transaction_utils.dart';
 
 class WalletMain extends ConsumerStatefulWidget {
-  const WalletMain({super.key});
+  final String? address;
+
+  const WalletMain({super.key, this.address});
 
   @override
   ConsumerState<WalletMain> createState() => _WalletMainState();
@@ -30,6 +33,17 @@ class WalletMain extends ConsumerStatefulWidget {
 class _WalletMainState extends ConsumerState<WalletMain> {
   final NumberFormattingService _formattingService = NumberFormattingService();
   final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (true) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        showSharedAddressActionSheet(context, 'qzmviwoPJDWSHYw9BUwfjBc6gACdZCzho6eNEkEX459zrTdPK');
+      });
+    }
+  }
 
   @override
   void dispose() {

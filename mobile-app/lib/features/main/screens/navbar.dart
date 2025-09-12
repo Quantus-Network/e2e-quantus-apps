@@ -97,7 +97,9 @@ class NavbarItem extends StatelessWidget {
 }
 
 class Navbar extends ConsumerStatefulWidget {
-  const Navbar({super.key});
+  final String? address;
+
+  const Navbar({super.key, this.address});
 
   @override
   ConsumerState<Navbar> createState() => _NavbarState();
@@ -227,11 +229,11 @@ class _NavbarState extends ConsumerState<Navbar> {
   Widget _buildBody() {
     return IndexedStack(
       index: _selectedIndex,
-      children: const [
-        WalletMain(),
-        TransactionsScreen(),
-        SettingsScreen(),
-        NotificationsScreen(),
+      children: [
+        WalletMain(address: widget.address),
+        const TransactionsScreen(),
+        const SettingsScreen(),
+        const NotificationsScreen(),
       ],
     );
   }

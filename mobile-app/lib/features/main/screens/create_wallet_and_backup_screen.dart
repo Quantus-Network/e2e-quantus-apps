@@ -260,7 +260,7 @@ class CreateWalletAndBackupScreenState
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 SizedBox(
-                  width: 300,
+                  width: 251,
                   child: Text(
                     text,
                     style: context.themeText.smallParagraph?.copyWith(
