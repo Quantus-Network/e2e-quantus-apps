@@ -4,7 +4,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:resonance_network_wallet/features/main/screens/notifications_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
+import 'package:resonance_network_wallet/features/main/screens/wallet_main/wallet_main.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
