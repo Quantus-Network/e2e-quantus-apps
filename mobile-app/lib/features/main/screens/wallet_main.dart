@@ -38,9 +38,9 @@ class _WalletMainState extends ConsumerState<WalletMain> {
   void initState() {
     super.initState();
 
-    if (true) {
+    if (widget.address != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        showSharedAddressActionSheet(context, 'qzmviwoPJDWSHYw9BUwfjBc6gACdZCzho6eNEkEX459zrTdPK');
+        showSharedAddressActionSheet(context, widget.address!);
       });
     }
   }
