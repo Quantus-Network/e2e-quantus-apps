@@ -215,7 +215,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 18),
                   Row(
                     spacing: context.isTablet ? 28 : 0,
                     mainAxisAlignment: context.isTablet

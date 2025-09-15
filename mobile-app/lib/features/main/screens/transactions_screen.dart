@@ -109,8 +109,15 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     _initialize(context, ref);
 
     if (!_isInitialized) {
-      return const ScaffoldBase(
-        child: Center(child: CircularProgressIndicator()),
+      return ScaffoldBase(
+        decorations: [
+          Positioned(
+            bottom: -20,
+            left: context.getHorizontalCenterPosition(251.62),
+            child: const Sphere(variant: 8, size: 251.62),
+          ),
+        ],
+        child: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -131,7 +138,14 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
 
   Widget _buildSimpleScaffold() {
     return ScaffoldBase(
-      screenTitle: ScreenTitle(title: 'Transaction History'),
+      decorations: [
+        Positioned(
+          bottom: -20,
+          left: context.getHorizontalCenterPosition(251.62),
+          child: const Sphere(variant: 8, size: 251.62),
+        ),
+      ],
+      appBar: 'Transaction History',
       child: _buildBody(),
     );
   }
