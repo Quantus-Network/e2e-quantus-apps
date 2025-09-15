@@ -117,7 +117,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
         error: const Color(0xFFFF2D53),
         textError: const Color(0xFFFF5252),
         textPrimary: const Color(0xFFF4F6F9),
-        textSecondary: const Color(0xFF0F0F0F),
+        textSecondary: const Color(0xFF0B0F14),
         inputLabel: const Color(0xFFD4D3E0),
         light: const Color(0xFFE6E6E6),
         circularLoader: Colors.white,

@@ -58,6 +58,7 @@ class _HistorySectionState extends ConsumerState<HistorySection> {
                   child: Center(child: LinearProgressIndicator()),
                 ),
               RecentTransactionsList(
+                backgroundColor: const Color(0x80000000),
                 transactions: allTransactions.take(4).toList(),
                 accountIds: [widget.activeAccount.accountId],
               ),
