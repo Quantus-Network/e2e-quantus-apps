@@ -30,6 +30,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
   final Color checksum;
   final Color checksumDarker;
   final Color darkGray;
+  final Color settingCard;
   final Color buttonGlass;
   final Color buttonDanger;
   final Color buttonSuccess;
@@ -62,6 +63,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     required this.checksum,
     required this.checksumDarker,
     required this.darkGray,
+    required this.settingCard,
     required this.buttonGlass,
     required this.buttonDanger,
     required this.buttonSuccess,
@@ -96,6 +98,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
         checksum: const Color(0xFF16CECE),
         checksumDarker: const Color(0xFF4CEDE7),
         darkGray: const Color(0xFF3D3C44),
+        settingCard: const Color(0x14F4F6F9),
         buttonGlass: const Color(0x14F4F6F9),
         buttonDanger: const Color(0xFFFF1F45),
         buttonSuccess: const Color(0xFF1FFFA7),
@@ -130,6 +133,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
         checksum: const Color(0xFF16CECE),
         checksumDarker: const Color(0xFF4CEDE7),
         darkGray: const Color(0xFF3D3C44),
+        settingCard: const Color(0x14F4F6F9),
         buttonGlass: const Color(0x14F4F6F9),
         buttonDanger: const Color(0xFFFF1F45),
         buttonSuccess: const Color(0xFF1FFFA7),
@@ -165,6 +169,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     Color? buttonGlass,
     Color? buttonGlassAlpha,
     Color? darkGray,
+    Color? settingCard,
     List<Color>? buttonPrimary,
     Color? buttonNeutral,
     Color? buttonDanger,
@@ -195,6 +200,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
       checksum: checksum ?? this.checksum,
       checksumDarker: checksumDarker ?? this.checksumDarker,
       darkGray: darkGray ?? this.darkGray,
+      settingCard: settingCard ?? this.settingCard,
       buttonGlass: buttonGlass ?? this.buttonGlass,
       buttonPrimary: buttonPrimary ?? this.buttonPrimary,
       buttonNeutral: buttonNeutral ?? this.buttonNeutral,
@@ -237,6 +243,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
       checksumDarker:
           Color.lerp(checksumDarker, other.checksumDarker, t) ?? checksumDarker,
       darkGray: Color.lerp(darkGray, other.darkGray, t) ?? darkGray,
+      settingCard: Color.lerp(settingCard, other.settingCard, t) ?? settingCard,
       buttonGlass: Color.lerp(buttonGlass, other.buttonGlass, t) ?? buttonGlass,
       buttonNeutral:
           Color.lerp(buttonNeutral, other.buttonNeutral, t) ?? buttonNeutral,
