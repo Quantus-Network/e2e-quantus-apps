@@ -25,7 +25,7 @@ class Sphere extends StatelessWidget {
       blur: 6.0,
     ),
     2: (
-      gradient: _createGradient(324, [
+      gradient: _createGradient(230, [
         (const Color(0xFFED4CCE), 0.1505),
         (const Color(0xFF0000FF), 0.5254),
         (const Color(0xFF1F1FA3), 0.8209),
@@ -70,7 +70,7 @@ class Sphere extends StatelessWidget {
       blur: 40.0,
     ),
     7: (
-      gradient: _createGradient(47, [
+      gradient: _createGradient(190, [
         (const Color(0xFF0000ff), 0.1342),
         (const Color(0xFFED4CCE), 0.4470),
         (const Color(0xFFFFE91F), 0.8108),
