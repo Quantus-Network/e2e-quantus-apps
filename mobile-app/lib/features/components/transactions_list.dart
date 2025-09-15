@@ -61,9 +61,12 @@ class RecentTransactionsList extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (transactionsToShow.isEmpty)
-              Text(
-                'No transactions yet.',
-                style: context.themeText.smallParagraph,
+               SizedBox(
+                width: double.infinity,
+                child: Text(
+                  'No transactions yet.',
+                  style: context.themeText.smallParagraph,
+                ),
               )
             else ...[
               if (scheduled.isNotEmpty)
@@ -85,7 +88,10 @@ class RecentTransactionsList extends StatelessWidget {
               if (scheduled.isNotEmpty && others.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 12.0),
-                  child: Divider(color: context.themeColors.darkGray, thickness: 1),
+                  child: Divider(
+                    color: context.themeColors.darkGray,
+                    thickness: 1,
+                  ),
                 ),
               if (others.isNotEmpty)
                 ListView.separated(
