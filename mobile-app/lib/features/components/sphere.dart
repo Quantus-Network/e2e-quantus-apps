@@ -87,6 +87,15 @@ class Sphere extends StatelessWidget {
       opacity: 0.4,
       blur: 40.0,
     ),
+     9: (
+      gradient: _createGradient(-3, [
+        (const Color(0xFFFF1F45), 0.2976),
+        (const Color(0xFFED4CCE), 0.6423),
+        (const Color(0xFF0C1014), 0.8577),
+      ]),
+      opacity: 0.4,
+      blur: 40.0,
+    ),
   };
 
   /// Helper function to create a LinearGradient with rotation.
