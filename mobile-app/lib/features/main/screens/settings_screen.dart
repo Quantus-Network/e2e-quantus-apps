@@ -27,11 +27,49 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  String? _accountId;
+  String? _checksum;
+
+  final HumanReadableChecksumService _checksumService =
+      HumanReadableChecksumService();
   final SettingsService _settingsService = SettingsService();
+
+  Future<void> _loadAccountData() async {
+    try {
+      final account = _settingsService.getActiveAccount()!;
+      final checksum = await _checksumService.getHumanReadableName(
+        account.accountId,
+      );
+
+      setState(() {
+        _accountId = account.accountId;
+        _checksum = checksum;
+      });
+    } catch (e) {
+      debugPrint('Error loading account data: $e');
+      if (mounted) {
+        setState(() {});
+      }
+    }
+  }
 
   void _resetAndClearData() {
     _settingsService.clearAll();
     _logout();
+  }
+
+  void _share() {
+    if (_accountId != null && _checksum != null) {
+      final textToShare =
+          'Hey! These are my Quantus account details:\n\nAddress:\n$_accountId\n\nCheckphrase:$_checksum\n\nTo open in the app or to download click the link below:\nhttps://www.quantus.com/account/$_accountId';
+      SharePlus.instance.share(
+        ShareParams(
+          text: textToShare,
+          subject: 'Shared Address',
+          title: 'Shared Address',
+        ),
+      );
+    }
   }
 
   Future<void> _logout() async {
@@ -68,6 +106,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         return ResetConfirmationBottomSheet(onReset: _resetAndClearData);
       },
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAccountData();
   }
 
   @override
@@ -113,8 +157,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             MaterialPageRoute(builder: (context) => const AccountsScreen()),
           );
         }),
-        // const SizedBox(height: 22),
-        // _buildSettingsItem(context, 'Notifications', () {}),
         const SizedBox(height: 22),
         _buildSettingsItem(context, 'Authentication', () {
           Navigator.push(
@@ -157,11 +199,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         _buildSettingsItem(
           context,
           'Invite & Share',
-          () {
-            SharePlus.instance.share(
-              ShareParams(uri: Uri.parse(AppConstants.shareUrl)),
-            );
-          },
+          _share,
           trailing: Icon(
             Icons.share_outlined,
             size: context.themeSize.settingMenuShareIconSize,
