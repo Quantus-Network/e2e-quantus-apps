@@ -7,7 +7,7 @@ import 'package:resonance_network_wallet/features/components/shared_address_acti
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner/qr_scanner_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/account_details.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/action_button.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/error_display.dart';

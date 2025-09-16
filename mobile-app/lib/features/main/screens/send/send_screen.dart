@@ -9,12 +9,14 @@ import 'package:quantus_sdk/generated/resonance/pallets/balances.dart'
     as balances;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
-import 'package:resonance_network_wallet/features/components/base_with_background.dart';
+import 'package:resonance_network_wallet/features/components/button.dart';
+import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
 import 'package:resonance_network_wallet/features/components/recent_address_list.dart';
+import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
-import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
-import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner/qr_scanner_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/send/send_progress/send_progress_overlay.dart';
+import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/send/send_progress_overlay.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
@@ -76,6 +78,25 @@ class SendScreenState extends ConsumerState<SendScreen> {
 
   // Reversible time state
   int _reversibleTimeSeconds = 600; // Default: 10 minutes
+
+  String get getButtonText {
+    if (_hasAddressError || _recipientController.text.isEmpty) {
+      return 'Enter Address';
+    } else if (_amount <= BigInt.zero) {
+      return 'Enter Amount';
+    } else if (_hasAmountError) {
+      return 'Insufficient Balance';
+    } else {
+      return 'Send ${_formattingService.formatBalance(_amount, addSymbol: true)}';
+    }
+  }
+
+  bool get isButtonDisabled =>
+      (_hasAddressError ||
+      _hasAmountError ||
+      _recipientController.text.isEmpty ||
+      _amount <= BigInt.zero ||
+      _isFetchingFee);
 
   @override
   void initState() {
@@ -809,7 +830,20 @@ class SendScreenState extends ConsumerState<SendScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BaseWithBackground(
+    return ScaffoldBase(
+      decorations: [
+        const Positioned(
+          top: 120,
+          left: -30,
+          child: Sphere(variant: 1, size: 144.23),
+        ),
+        Positioned(
+          top: context.containerHalfHeight,
+          right: -40,
+          child: const Sphere(variant: 2, size: 194),
+        ),
+      ],
+      appBar: 'Send',
       child: Consumer(
         builder: (context, ref, child) {
           final balanceAsyncValue = ref.watch(_effectiveMaxBalanceProvider);
@@ -853,147 +887,125 @@ class SendScreenState extends ConsumerState<SendScreen> {
   ) {
     return Column(
       children: [
-        const WalletAppBar(title: 'Send'),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  GestureDetector(
-                    onTap: () async {
-                      final data = await Clipboard.getData('text/plain');
-                      if (data != null && data.text != null) {
-                        _recipientController.text = data.text!;
-                        _lookupIdentity();
-                      }
-                    },
-                    child: _buildIconButton('assets/paste_icon_1.svg'),
+        Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                GestureDetector(
+                  onTap: () async {
+                    final data = await Clipboard.getData('text/plain');
+                    if (data != null && data.text != null) {
+                      _recipientController.text = data.text!;
+                      _lookupIdentity();
+                    }
+                  },
+                  child: _buildIconButton('assets/paste_icon_1.svg'),
+                ),
+                const SizedBox(width: 9),
+                GestureDetector(
+                  onTap: _scanQRCode,
+                  child: _buildIconButton('assets/scan_1.svg'),
+                ),
+                const SizedBox(width: 9),
+                GestureDetector(
+                  onTap: _showRecentAddresses,
+                  child: _buildHistoryIconButton(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.only(left: 5.0),
+                  height: 38,
+                  decoration: BoxDecoration(color: context.themeColors.surface),
+                  child: Row(
+                    children: [
+                      Text('To:', style: context.themeText.smallParagraph),
+                      Container(
+                        width: 1,
+                        height: context.isTablet ? 31 : 17,
+                        color: Colors.white,
+                        margin: const EdgeInsets.symmetric(horizontal: 2),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 9),
-                  GestureDetector(
-                    onTap: _scanQRCode,
-                    child: _buildIconButton('assets/scan_1.svg'),
-                  ),
-                  const SizedBox(width: 9),
-                  GestureDetector(
-                    onTap: _showRecentAddresses,
-                    child: _buildHistoryIconButton(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('To:', style: context.themeText.smallParagraph),
-                  Container(
-                    width: 1,
-                    height: context.isTablet ? 31 : 17,
-                    color: Colors.white,
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        TextField(
-                          controller: _recipientController,
-                          style: context.themeText.detail,
-                          decoration: InputDecoration(
-                            border: InputBorder.none,
-                            enabledBorder: _hasAddressError
-                                ? const OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: Colors.red,
-                                      width: 1,
-                                    ),
-                                  )
-                                : InputBorder.none,
-                            focusedBorder: _hasAddressError
-                                ? const OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: Colors.red,
-                                      width: 1,
-                                    ),
-                                  )
-                                : InputBorder.none,
-                            hintText:
-                                '${AppConstants.tokenSymbol} '
-                                'address',
-                            hintStyle: context.themeText.detail?.copyWith(
-                              color: context.themeColors.textMuted,
-                            ),
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero,
-                            filled: true,
-                            fillColor: Colors.transparent,
-                          ),
-                          autocorrect: false,
-                          enableSuggestions: false,
-                          enableInteractiveSelection: true,
-                          keyboardType: TextInputType.text,
-                          textCapitalization: TextCapitalization.none,
-                          onChanged: (value) {
-                            if (_debounce?.isActive ?? false) {
-                              _debounce?.cancel();
-                            }
-                            _debounce = Timer(
-                              const Duration(milliseconds: 300),
-                              () {
-                                _lookupIdentity();
-                              },
-                            );
-                          },
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CustomTextField(
+                        leftPadding: 0,
+                        controller: _recipientController,
+                        textStyle: context.themeText.detail,
+                        hintText:
+                            '${AppConstants.tokenSymbol} '
+                            'address',
+                        hintStyle: context.themeText.detail?.copyWith(
+                          color: context.themeColors.textMuted,
                         ),
-                        if (_humanReadableCheckphrase.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4.0),
-                            child: InkWell(
-                              onTap: () async {
-                                ClipboardExtensions.copyTextWithSnackbar(
-                                  context,
-                                  _humanReadableCheckphrase,
-                                  title: 'Copied',
-                                  message: 'Check phrase copied to clipboard',
-                                );
-                                HapticFeedback.lightImpact();
-                              },
-                              borderRadius: BorderRadius.circular(4),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      _humanReadableCheckphrase,
-                                      style: context.themeText.detail?.copyWith(
-                                        color: context.themeColors.checksum,
-                                      ),
+                        onChanged: (value) {
+                          if (_debounce?.isActive ?? false) {
+                            _debounce?.cancel();
+                          }
+                          _debounce = Timer(
+                            const Duration(milliseconds: 300),
+                            () {
+                              _lookupIdentity();
+                            },
+                          );
+                        },
+                      ),
+                      if (_humanReadableCheckphrase.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4.0),
+                          child: InkWell(
+                            onTap: () async {
+                              ClipboardExtensions.copyTextWithSnackbar(
+                                context,
+                                _humanReadableCheckphrase,
+                                title: 'Copied',
+                                message: 'Check phrase copied to clipboard',
+                              );
+                              HapticFeedback.lightImpact();
+                            },
+                            borderRadius: BorderRadius.circular(4),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    _humanReadableCheckphrase,
+                                    style: context.themeText.detail?.copyWith(
+                                      color: context.themeColors.checksum,
                                     ),
                                   ),
-                                  const SizedBox(width: 6),
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 1.0),
-                                    child: Icon(
-                                      Icons.copy,
-                                      size: 14,
-                                      color: context.themeColors.checksum
-                                          .useOpacity(0.7),
-                                    ),
+                                ),
+                                const SizedBox(width: 6),
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 1.0),
+                                  child: Icon(
+                                    Icons.copy,
+                                    size: 14,
+                                    color: context.themeColors.checksum
+                                        .useOpacity(0.7),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
-                      ],
-                    ),
+                        ),
+                    ],
                   ),
-                ],
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
+          ],
         ),
         Expanded(
           child: Center(
@@ -1053,162 +1065,112 @@ class SendScreenState extends ConsumerState<SendScreen> {
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Available: '
-                // ignore: lines_longer_than_80_chars
-                '${_formattingService.formatBalance(_maxBalance)}',
-                style: context.themeText.smallParagraph?.copyWith(
-                  color: context.themeColors.checksum,
-                ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Available: '
+              // ignore: lines_longer_than_80_chars
+              '${_formattingService.formatBalance(_maxBalance)}',
+              style: context.themeText.smallParagraph?.copyWith(
+                color: context.themeColors.checksum,
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: ShapeDecoration(
-                  color: Colors.white.useOpacity(0.15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-                child: GestureDetector(
-                  onTap: _setMaxAmount,
-                  child: Text('Max', style: context.themeText.detail),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: GestureDetector(
-            onTap: _showTimePickerModal,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: ShapeDecoration(
-                color: const Color(0xFF313131),
+                color: Colors.white.useOpacity(0.15),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    'Reversible for: ${_formatReversibleTime()}',
-                    style: context.themeText.smallParagraph,
-                  ),
-                  Icon(
-                    Icons.edit,
-                    color: Colors.white70,
-                    size: context.isTablet ? 22 : 14,
-                  ),
-                ],
+              child: GestureDetector(
+                onTap: _setMaxAmount,
+                child: Text('Max', style: context.themeText.detail),
               ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        GestureDetector(
+          onTap: _showTimePickerModal,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: ShapeDecoration(
+              color: const Color(0xFF313131),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  'Reversible for: ${_formatReversibleTime()}',
+                  style: context.themeText.smallParagraph,
+                ),
+                Icon(
+                  Icons.edit,
+                  color: Colors.white70,
+                  size: context.isTablet ? 22 : 14,
+                ),
+              ],
             ),
           ),
         ),
-        const SizedBox(height: 24),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Network fee',
-                    style: context.themeText.detail?.copyWith(
-                      color: context.themeColors.textMuted,
-                      fontWeight: FontWeight.w600,
-                    ),
+        const SizedBox(height: 45),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Network fee',
+                  style: context.themeText.detail?.copyWith(
+                    color: context.themeColors.textMuted,
+                    fontWeight: FontWeight.w600,
                   ),
-                  Row(
-                    children: [
-                      Text(
-                        _formattingService.formatBalance(
-                          _networkFee,
-                          addSymbol: true,
-                        ),
-                        style: context.themeText.detail?.copyWith(
-                          color: context.themeColors.textMuted,
-                          fontWeight: FontWeight.w600,
-                        ),
+                ),
+                Row(
+                  children: [
+                    Text(
+                      _formattingService.formatBalance(
+                        _networkFee,
+                        addSymbol: true,
                       ),
-                      if (_isFetchingFee)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 8.0),
-                          child: SizedBox(
-                            width: 12,
-                            height: 12,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: context.themeColors.circularLoader,
-                            ),
+                      style: context.themeText.detail?.copyWith(
+                        color: context.themeColors.textMuted,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (_isFetchingFee)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8.0),
+                        child: SizedBox(
+                          width: 12,
+                          height: 12,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: context.themeColors.circularLoader,
                           ),
                         ),
-                    ],
-                  ),
-                ],
-              ),
-              _buildIconButton('assets/settings_icon.svg'),
-            ],
-          ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+            _buildIconButton('assets/settings_icon.svg'),
+          ],
         ),
         const SizedBox(height: 24),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: GestureDetector(
-            onTap:
-                (_hasAddressError ||
-                    _hasAmountError ||
-                    _recipientController.text.isEmpty ||
-                    _amount <= BigInt.zero ||
-                    _isFetchingFee)
-                ? null
-                : _showSendConfirmation,
-            child: Opacity(
-              opacity:
-                  (_hasAddressError ||
-                      _hasAmountError ||
-                      _recipientController.text.isEmpty ||
-                      _amount <= BigInt.zero ||
-                      _isFetchingFee)
-                  ? 0.3
-                  : 1.0,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: ShapeDecoration(
-                  color: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                ),
-                child: Text(
-                  (_hasAddressError || _recipientController.text.isEmpty)
-                      ? 'Enter Address'
-                      : (_amount <= BigInt.zero)
-                      ? 'Enter Amount'
-                      : _hasAmountError
-                      ? 'Insufficient Balance'
-                      // ignore: lines_longer_than_80_chars
-                      : 'Send ${_formattingService.formatBalance(_amount, addSymbol: true)}',
-                  textAlign: TextAlign.center,
-                  style: context.themeText.smallTitle?.copyWith(
-                    color: context.themeColors.textSecondary,
-                  ),
-                ),
-              ),
-            ),
-          ),
+        Button(
+          variant: ButtonVariant.neutral,
+          label: getButtonText,
+          onPressed: !isButtonDisabled ? _showSendConfirmation : null,
+          isDisabled: isButtonDisabled,
         ),
         const SizedBox(height: 24),
       ],

@@ -23,7 +23,7 @@ class WalletAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       iconTheme: IconThemeData(color: context.themeColors.light),
       centerTitle: false,
-      titleSpacing: 0,
+      titleSpacing: -16,
       leading: canBePop
           ? IconButton(
               icon: Icon(
