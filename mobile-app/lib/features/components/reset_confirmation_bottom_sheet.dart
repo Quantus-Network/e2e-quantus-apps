@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
@@ -72,8 +71,8 @@ class _ResetConfirmationBottomSheetState
                       _isCheckboxChecked = value ?? false;
                     });
                   },
-                  activeColor: const Color(0xFF1FFFA7),
-                  checkColor: const Color(0xFF1FFFA7),
+                  activeColor: context.themeColors.buttonSuccess,
+                  checkColor: context.themeColors.buttonSuccess,
                   side: const BorderSide(color: Colors.white),
                   title: Text(
                     'I have backed up my recovery phrase',
