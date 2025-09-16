@@ -61,7 +61,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
         floatingBtnHeight: 57.0,
         floatingBtnWidth: 60.0,
         settingMenuIconSize: 11.0,
-        settingMenuShareIconSize: 16.0,
+        settingMenuShareIconSize: 20.0,
         accountListItemHeight: 90.0,
         accountListItemLogoWidth: 36.0,
         appbarIconSize: 18.0,
