@@ -6,6 +6,7 @@ class TransactionUtils {
   /// Priority order: pending -> reversible -> other
   /// Duplicates are removed based on transaction ID
   static List<TransactionEvent> combineAndDeduplicateTransactions({
+    required Set<String> pendingCancellationIds,
     required List<PendingTransactionEvent> pendingTransactions,
     required List<ReversibleTransferEvent> reversibleTransfers,
     required List<TransactionEvent> otherTransfers,
@@ -16,7 +17,14 @@ class TransactionUtils {
     // Add pending transactions first (highest priority)
     for (final transaction in pendingTransactions) {
       if (seenIds.add(transaction.id)) {
-        result.add(transaction);
+        if (transaction.isReversible &&
+            pendingCancellationIds.contains(transaction.id)) {
+          result.add(
+            transaction.copyWith(status: ReversibleTransferStatus.CANCELLED),
+          );
+        } else {
+          result.add(transaction);
+        }
       }
     }
 
@@ -24,7 +32,13 @@ class TransactionUtils {
     for (final transaction in reversibleTransfers) {
       if (transaction.status == ReversibleTransferStatus.SCHEDULED) {
         if (seenIds.add(transaction.id)) {
-          result.add(transaction);
+          if (pendingCancellationIds.contains(transaction.id)) {
+            result.add(
+              transaction.copyWith(status: ReversibleTransferStatus.CANCELLED),
+            );
+          } else {
+            result.add(transaction);
+          }
         }
       }
     }

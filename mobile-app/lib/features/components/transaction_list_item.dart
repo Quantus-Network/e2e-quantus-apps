@@ -131,7 +131,7 @@ class TransactionListItemState extends State<TransactionListItem> {
     String senderAddress = _formatAddress(widget.transaction.from);
     String receiverAddress = _formatAddress(widget.transaction.to);
     if (widget.showFromAndTo) {
-      return 'from $senderAddress to $receiverAddress';
+      return 'from $senderAddress \nto $receiverAddress';
     } else {
       return role == TransactionRole.sender
           ? 'to $receiverAddress'
