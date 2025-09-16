@@ -83,7 +83,6 @@ class _WalletMainState extends ConsumerState<WalletMain> {
           child: const Sphere(variant: 6, size: 252),
         ),
       ],
-      padding: const EdgeInsetsGeometry.symmetric(horizontal: 24.0),
       child: RefreshIndicator(
         onRefresh: () async {
           // Refresh balances with loading indicator

@@ -31,7 +31,7 @@ class ScaffoldBase extends StatelessWidget {
     this.backdropBlur = 12.0,
     this.decorations,
     this.dim = 0.25,
-    this.padding = const EdgeInsets.symmetric(horizontal: 16.0),
+    this.padding = const EdgeInsets.symmetric(horizontal: 24.0),
     required this.child,
   });
 
