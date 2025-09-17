@@ -109,6 +109,34 @@ class ReversibleTransferEvent extends TransactionEvent {
     );
   }
 
+   ReversibleTransferEvent copyWith({
+    String? id,
+    String? from,
+    String? to,
+    BigInt? amount,
+    DateTime? timestamp,
+    String? txId,
+    ReversibleTransferStatus? status,
+    DateTime? scheduledAt,
+    String? extrinsicHash,
+    int? blockNumber,
+    String? blockHash,
+  }) {
+    return ReversibleTransferEvent(
+      id: id ?? this.id,
+      from: from ?? this.from,
+      to: to ?? this.to,
+      amount: amount ?? this.amount,
+      timestamp: timestamp ?? this.timestamp,
+      txId: txId ?? this.txId,
+      status: status ?? this.status,
+      scheduledAt: scheduledAt ?? this.scheduledAt,
+      extrinsicHash: extrinsicHash ?? this.extrinsicHash,
+      blockNumber: blockNumber ?? this.blockNumber,
+      blockHash: blockHash ?? this.blockHash,
+    );
+  }
+
   // guaranteed to be positive or zero
   Duration get remainingTime => scheduledAt.difference(DateTime.now()).positive;
 

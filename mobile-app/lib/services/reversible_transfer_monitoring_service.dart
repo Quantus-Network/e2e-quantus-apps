@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_cancellations_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
 /// Service that monitors reversible transfers approaching execution time
@@ -162,6 +163,9 @@ class ReversibleTransferMonitoringService {
               transfer.extrinsicHash!,
               status,
             );
+        _ref
+            .read(pendingCancellationsProvider.notifier)
+            .removePendingCancellation(transfer.id);
 
         // Also update filtered controllers for affected accounts so
         // active-account views reflect the change immediately

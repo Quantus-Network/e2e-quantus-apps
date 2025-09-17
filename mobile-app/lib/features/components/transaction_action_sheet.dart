@@ -14,6 +14,7 @@ import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_cancellations_provider.dart';
 import 'package:resonance_network_wallet/services/reversible_transfer_monitoring_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
@@ -431,6 +432,9 @@ class _TransactionActionSheetState
               extrinsicHash,
               ReversibleTransferStatus.CANCELLED,
             );
+        ref
+            .read(pendingCancellationsProvider.notifier)
+            .addPendingCancellation(widget.transaction.id);
 
         // Filtered controllers for involved accounts
         final affectedAccounts = <String>{

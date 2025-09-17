@@ -32,6 +32,7 @@ class _HistorySectionState extends ConsumerState<HistorySection> {
         // Combine and deduplicate all transaction types
         final allTransactions =
             TransactionUtils.combineAndDeduplicateTransactions(
+              pendingCancellationIds: combinedData.pendingCancellationIds,
               pendingTransactions: combinedData.pendingTransactions,
               reversibleTransfers: combinedData.reversibleTransfers,
               otherTransfers: combinedData.otherTransfers,

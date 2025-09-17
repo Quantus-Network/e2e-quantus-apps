@@ -260,6 +260,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       data: (combinedData) {
         final allTransactions =
             TransactionUtils.combineAndDeduplicateTransactions(
+              pendingCancellationIds: combinedData.pendingCancellationIds,
               pendingTransactions: combinedData.pendingTransactions,
               reversibleTransfers: combinedData.reversibleTransfers,
               otherTransfers: combinedData.otherTransfers,
