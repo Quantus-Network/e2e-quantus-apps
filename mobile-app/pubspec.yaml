@@ -103,22 +103,12 @@ flutter:
 
 # Add flutter_native_splash configuration section
 flutter_native_splash:
-  # Replace color with background_image
-  # color: "#0E0E0E"
-  background_image: "assets/light_leak_effect_background.jpg"
-  # image: assets/logo.png # You can still add a logo on top if desired
+  image: assets/splash.png
+  color: "#000000"
+  android: true
+  ios: true
 
   # Optional: Configure Android 12 splash screen specific settings
   android_12:
-    # Replace color with background_image
-    # color: "#0E0E0E"
-    background_image: "assets/light_leak_effect_background.jpg"
-    # image: assets/logo.png
-
-  # Optional: Set color for status bar and navigation bar (Android)
-  # color_dark: "#0E0E0E"
-  # status_bar_color_dark: "#0E0E0E" # Match status bar to background
-  # navigation_bar_color_dark: "#0E0E0E" # Match navigation bar to background
-
-  # Optional: Set status bar style for iOS (dark content on light background or vice-versa)
-  # ios_content_mode: "dark"
+    color: "#000000"
+    image: assets/splash.png
