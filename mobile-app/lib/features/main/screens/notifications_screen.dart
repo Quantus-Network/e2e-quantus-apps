@@ -5,6 +5,7 @@ import 'package:resonance_network_wallet/features/components/dropdown_select.dar
 import 'package:resonance_network_wallet/features/components/notification_group.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
@@ -268,14 +269,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                 );
 
                 if (filteredNotifications.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Text(
                       'No notifications',
-                      style: TextStyle(
-                        color: Color(0xFFE6E6E6),
-                        fontSize: 14,
-                        fontFamily: 'Fira Code',
-                      ),
+                      style: context.themeText.paragraph,
                     ),
                   );
                 }

@@ -114,6 +114,8 @@ class TransactionListItemState extends State<TransactionListItem> {
   }
 
   String _formatAddress(String address) {
+    if (context.isTablet) return address;
+    
     return AddressFormattingService.formatAddress(
       address,
       prefix: 5,
@@ -261,11 +263,8 @@ class TransactionListItemState extends State<TransactionListItem> {
                       if (!widget.transaction.isReversibleScheduled)
                         Text(
                           _getTimestampString(),
-                          style: TextStyle(
+                          style: context.themeText.tiny?.copyWith(
                             color: Colors.white.withValues(alpha: 0.60),
-                            fontSize: 11,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w300,
                           ),
                         ),
                     ],

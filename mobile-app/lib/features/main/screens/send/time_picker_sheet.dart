@@ -4,6 +4,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
 class TimePickerSheet extends StatelessWidget {
@@ -29,7 +30,7 @@ class TimePickerSheet extends StatelessWidget {
     var selectedMinutes = reversibleTimeMinutes;
 
     return Container(
-      height: 632,
+      height: MediaQuery.of(context).size.height * 0.75,
       padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 60),
       decoration: const BoxDecoration(
         color: Colors.black,
@@ -51,7 +52,7 @@ class TimePickerSheet extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               SizedBox(
-                width: 249,
+                width: context.themeSize.timePickerSubtitleWidth,
                 child: Text(
                   'Your transaction is reversible during this time period',
                   textAlign: TextAlign.center,

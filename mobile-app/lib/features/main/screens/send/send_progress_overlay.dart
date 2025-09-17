@@ -553,16 +553,15 @@ class SendConfirmationOverlayState
                     ],
                   ),
                 ),
+              const SizedBox(height: 46),
+              // Done Button
+              Button(
+                variant: ButtonVariant.neutral,
+                label: 'Done',
+                onPressed: goHome,
+              ),
             ],
           ),
-          const SizedBox(height: 46),
-
-          // Done Button
-          Button(
-            variant: ButtonVariant.neutral,
-            label: 'Done',
-            onPressed: goHome,
-          )
         ],
       ),
     );

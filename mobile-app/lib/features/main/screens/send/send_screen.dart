@@ -562,7 +562,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
                 children: [
                   Container(
                     padding: const EdgeInsets.only(left: 5.0),
-                    height: 38,
+                    height: context.isTablet ? 42 : 38,
                     decoration: BoxDecoration(
                       color: context.themeColors.surface,
                     ),
@@ -629,7 +629,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
                                     padding: const EdgeInsets.only(top: 1.0),
                                     child: Icon(
                                       Icons.copy,
-                                      size: 14,
+                                      size: context.themeSize.settingMenuShareIconSize,
                                       color: context.themeColors.checksum
                                           .useOpacity(0.7),
                                     ),

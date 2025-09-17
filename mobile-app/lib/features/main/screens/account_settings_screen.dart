@@ -147,7 +147,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
 
   Widget _buildShareSection() {
     return _buildSettingCard(
-      child: GestureDetector(
+      child: InkWell(
         onTap: () {
           showReceiveSheet(context, isReceiving: false);
         },

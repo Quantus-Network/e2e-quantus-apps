@@ -23,6 +23,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
   final double txListItemIconWidth;
   final double txDetailsIconHeight;
   final double txDetailsIconWidth;
+  final double timePickerSubtitleWidth;
 
   const AppSizeTheme({
     required this.logoHeight,
@@ -46,6 +47,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
     required this.txListItemIconWidth,
     required this.txDetailsIconHeight,
     required this.txDetailsIconWidth,
+    required this.timePickerSubtitleWidth,
   });
 
   const AppSizeTheme.defaultTheme()
@@ -71,6 +73,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
         txListItemIconWidth: 21.0,
         txDetailsIconHeight: 43.0,
         txDetailsIconWidth: 51.0,
+        timePickerSubtitleWidth: 249,
       );
 
   const AppSizeTheme.iPad()
@@ -96,6 +99,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
         txListItemIconWidth: 32.0,
         txDetailsIconHeight: 82.0,
         txDetailsIconWidth: 91.0,
+        timePickerSubtitleWidth: 400,
       );
 
   @override
@@ -121,6 +125,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
     double? txListItemIconWidth,
     double? txDetailsIconHeight,
     double? txDetailsIconWidth,
+    double? timePickerSubtitleWidth,
   }) {
     return AppSizeTheme(
       logoHeight: logoHeight ?? this.logoHeight,
@@ -149,6 +154,8 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
       txListItemIconWidth: txListItemIconWidth ?? this.txListItemIconWidth,
       txDetailsIconHeight: txDetailsIconHeight ?? this.txDetailsIconHeight,
       txDetailsIconWidth: txDetailsIconWidth ?? this.txDetailsIconWidth,
+      timePickerSubtitleWidth:
+          timePickerSubtitleWidth ?? this.timePickerSubtitleWidth,
     );
   }
 
@@ -205,6 +212,9 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
       txDetailsIconWidth:
           txDetailsIconWidth +
           (other.txDetailsIconWidth - txDetailsIconWidth) * t,
+      timePickerSubtitleWidth:
+          timePickerSubtitleWidth +
+          (other.timePickerSubtitleWidth - timePickerSubtitleWidth) * t,
     );
   }
 }

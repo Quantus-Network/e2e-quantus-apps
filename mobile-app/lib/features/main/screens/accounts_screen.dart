@@ -151,8 +151,8 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
             children: [
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: context.isTablet ? 20 : 8,
                     vertical: 8,
                   ),
                   height: context.themeSize.accountListItemHeight,
@@ -347,7 +347,9 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
 
           Positioned(
             // calculating the middle point
-            top: (context.themeSize.accountListItemHeight / 2) - (context.themeSize.accountListItemLogoWidth / 2), 
+            top:
+                (context.themeSize.accountListItemHeight / 2) -
+                (context.themeSize.accountListItemLogoWidth / 2),
             left: (context.themeSize.accountListItemLogoWidth / 2) * -1,
             child: AccountGradientImage(
               accountId: account.accountId,
