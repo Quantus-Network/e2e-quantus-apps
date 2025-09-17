@@ -65,7 +65,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
         accountListItemHeight: 110.0,
         accountListItemLogoWidth: 36.0,
         appbarIconSize: 18.0,
-        sendOverlayContainerWidth: 305.0,
+        sendOverlayContainerWidth: double.infinity,
         overlayCloseIconSize: 24.0,
         mnemonicCellDesiredHeight: 31.0,
         txListItemIconWidth: 21.0,

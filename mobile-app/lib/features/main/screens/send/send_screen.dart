@@ -768,46 +768,41 @@ class SendScreenState extends ConsumerState<SendScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 45),
+        const SizedBox(height: 44),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Row(
               children: [
                 Text(
-                  'Network fee',
+                  'Network fee: ',
                   style: context.themeText.detail?.copyWith(
                     color: context.themeColors.textMuted,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                Row(
-                  children: [
-                    Text(
-                      _formattingService.formatBalance(
-                        _networkFee,
-                        addSymbol: true,
-                      ),
-                      style: context.themeText.detail?.copyWith(
-                        color: context.themeColors.textMuted,
-                        fontWeight: FontWeight.w600,
+                Text(
+                  _formattingService.formatBalance(
+                    _networkFee,
+                    addSymbol: true,
+                  ),
+                  style: context.themeText.detail?.copyWith(
+                    color: context.themeColors.textMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (_isFetchingFee)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: SizedBox(
+                      width: 12,
+                      height: 12,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: context.themeColors.circularLoader,
                       ),
                     ),
-                    if (_isFetchingFee)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8.0),
-                        child: SizedBox(
-                          width: 12,
-                          height: 12,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: context.themeColors.circularLoader,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
+                  ),
               ],
             ),
             _buildIconButton('assets/settings_icon.svg'),
