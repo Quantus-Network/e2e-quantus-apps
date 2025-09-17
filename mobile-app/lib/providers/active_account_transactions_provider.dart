@@ -18,6 +18,7 @@ final activeAccountTransactionsProvider =
           if (activeAccount == null) {
             return AsyncValue.data(
               CombinedTransactionsList(
+                pendingCancellationIds: <String>{},
                 pendingTransactions: [],
                 reversibleTransfers: [],
                 otherTransfers: [],
