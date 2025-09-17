@@ -1,56 +1,25 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:quantus_sdk/generated/resonance/pallets/balances.dart'
-    as balances;
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
-import 'package:resonance_network_wallet/features/components/recent_address_list.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/send/recent_addresses.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/send_progress_overlay.dart';
+import 'package:resonance_network_wallet/features/main/screens/send/send_providers.dart';
+import 'package:resonance_network_wallet/features/main/screens/send/time_picker_sheet.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
-
-// Local provider for existential deposit toggle in send screen
-final _existentialDepositToggleProvider = StateProvider<bool>((ref) => true);
-
-// Provider that combines balance with existential deposit toggle
-final _effectiveMaxBalanceProvider = Provider<AsyncValue<BigInt>>((ref) {
-  final existentialDeposit = balances.Constants().existentialDeposit;
-  final balanceAsyncValue = ref.watch(balanceProvider);
-  final includeExistentialDeposit = ref.watch(
-    _existentialDepositToggleProvider,
-  );
-
-  return balanceAsyncValue.when(
-    data: (balance) {
-      if (includeExistentialDeposit) {
-        return AsyncValue.data(
-          balance > existentialDeposit
-              ? balance - existentialDeposit
-              : BigInt.zero,
-        );
-      } else {
-        return AsyncValue.data(balance);
-      }
-    },
-    loading: () => const AsyncValue.loading(),
-    error: (error, stack) => AsyncValue.error(error, stack),
-  );
-});
 
 class SendScreen extends ConsumerStatefulWidget {
   const SendScreen({super.key});
@@ -78,6 +47,10 @@ class SendScreenState extends ConsumerState<SendScreen> {
 
   // Reversible time state
   int _reversibleTimeSeconds = 600; // Default: 10 minutes
+
+  int get _reversibleTimeDays => _reversibleTimeSeconds ~/ 86400;
+  int get _reversibleTimeHours => (_reversibleTimeSeconds % 86400) ~/ 3600;
+  int get _reversibleTimeMinutes => (_reversibleTimeSeconds % 3600) ~/ 60;
 
   String get getButtonText {
     if (_hasAddressError || _recipientController.text.isEmpty) {
@@ -165,7 +138,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
 
   // Method to toggle existential deposit calculation
   void _toggleExistentialDeposit(bool includeExistentialDeposit) {
-    ref.read(_existentialDepositToggleProvider.notifier).state =
+    ref.read(existentialDepositToggleProvider.notifier).state =
         includeExistentialDeposit;
   }
 
@@ -469,10 +442,6 @@ class SendScreenState extends ConsumerState<SendScreen> {
     }
   }
 
-  int get _reversibleTimeDays => _reversibleTimeSeconds ~/ 86400;
-  int get _reversibleTimeHours => (_reversibleTimeSeconds % 86400) ~/ 3600;
-  int get _reversibleTimeMinutes => (_reversibleTimeSeconds % 3600) ~/ 60;
-
   String _formatReversibleTime() {
     final days = _reversibleTimeDays;
     final hours = _reversibleTimeHours;
@@ -480,7 +449,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
 
     if (days > 0) {
       return '$days day${days > 1 ? 's' : ''}, '
-          '$hours hr${hours != 1 ? 's' : ''}, '
+          '$hours hr${hours != 1 ? 's' : ''}, \n'
           '$minutes min${minutes != 1 ? 's' : ''}';
     } else if (hours > 0) {
       return '$hours hr${hours != 1 ? 's' : ''}, '
@@ -488,344 +457,6 @@ class SendScreenState extends ConsumerState<SendScreen> {
     } else {
       return '$minutes min${minutes != 1 ? 's' : ''}';
     }
-  }
-
-  void _showTimePickerModal() {
-    // Set initial values from current state
-    var selectedDays = _reversibleTimeDays;
-    var selectedHours = _reversibleTimeHours;
-    var selectedMinutes = _reversibleTimeMinutes;
-
-    showAppModalBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        height: 632,
-        padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 60),
-        decoration: const BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          children: [
-            // Header
-            const Column(
-              children: [
-                Icon(Icons.schedule, color: Color(0xFF16CECE), size: 29),
-                SizedBox(height: 16),
-                Text(
-                  'Set Reverse Window',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Color(0xFF16CECE),
-                    fontSize: 18,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Your transaction is reversible during this time period',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 40),
-
-            // Time pickers
-            Expanded(
-              child: Row(
-                children: [
-                  // Days
-                  Expanded(
-                    child: Column(
-                      children: [
-                        const Text(
-                          'Days',
-                          style: TextStyle(
-                            color: Color(0xFFD9D9D9),
-                            fontSize: 16,
-                            fontFamily: 'Fira Code',
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: CupertinoPicker(
-                                  scrollController: FixedExtentScrollController(
-                                    initialItem: selectedDays,
-                                  ),
-                                  itemExtent: 40,
-                                  onSelectedItemChanged: (index) =>
-                                      selectedDays = index,
-                                  children: List.generate(
-                                    8,
-                                    (index) => Center(
-                                      child: Text(
-                                        index.toString().padLeft(2, '0'),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 28,
-                                          fontFamily: 'Fira Code',
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const Text(
-                                ':',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 28,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Hours
-                  Expanded(
-                    child: Column(
-                      children: [
-                        const Text(
-                          'Hours',
-                          style: TextStyle(
-                            color: Color(0xFFD9D9D9),
-                            fontSize: 16,
-                            fontFamily: 'Fira Code',
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: CupertinoPicker(
-                                  scrollController: FixedExtentScrollController(
-                                    initialItem: selectedHours,
-                                  ),
-                                  itemExtent: 40,
-                                  onSelectedItemChanged: (index) =>
-                                      selectedHours = index,
-                                  children: List.generate(
-                                    24,
-                                    (index) => Center(
-                                      child: Text(
-                                        index.toString().padLeft(2, '0'),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 28,
-                                          fontFamily: 'Fira Code',
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const Text(
-                                ':',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 28,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Minutes
-                  Expanded(
-                    child: Column(
-                      children: [
-                        const Text(
-                          'Minutes',
-                          style: TextStyle(
-                            color: Color(0xFFD9D9D9),
-                            fontSize: 16,
-                            fontFamily: 'Fira Code',
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Expanded(
-                          child: CupertinoPicker(
-                            scrollController: FixedExtentScrollController(
-                              initialItem: selectedMinutes,
-                            ),
-                            itemExtent: 40,
-                            onSelectedItemChanged: (index) =>
-                                selectedMinutes = index,
-                            children: List.generate(
-                              60,
-                              (index) => Center(
-                                child: Text(
-                                  index.toString().padLeft(2, '0'),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 28,
-                                    fontFamily: 'Fira Code',
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 40),
-
-            // Action buttons
-            Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: ShapeDecoration(
-                        color: const Color(0xFFFF2D53),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      child: const Text(
-                        'Cancel',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 14,
-                          fontFamily: 'Fira Code',
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      final newTimeSeconds =
-                          (selectedDays * 86400) +
-                          (selectedHours * 3600) +
-                          (selectedMinutes * 60);
-                      _setReversibleTimeSeconds(newTimeSeconds);
-                      _saveReversibleTimeSetting(newTimeSeconds);
-                      Navigator.pop(context);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: ShapeDecoration(
-                        color: const Color(0xFF5FE49E),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      child: const Text(
-                        'Set',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 14,
-                          fontFamily: 'Fira Code',
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // NEW: Method to show the recent addresses modal bottom sheet
-  void _showRecentAddresses() async {
-    final activeAccount = _settingsService.getActiveAccount()!;
-
-    showAppModalBottomSheet(
-      // ignore: use_build_context_synchronously
-      context: context,
-      builder: (context) => Container(
-        height:
-            MediaQuery.of(context).size.height *
-            0.8, // Adjustable height for scrollability
-        padding: const EdgeInsets.fromLTRB(35, 16, 35, 16),
-        decoration: const ShapeDecoration(
-          color: Colors.black,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(20),
-            ), // Softer radius for modal
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Top row with close button (replacing empty stack in Figma)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: const Icon(Icons.close, color: Colors.white, size: 24),
-                ),
-              ],
-            ),
-            const SizedBox(height: 26), // Spacing from Figma
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 226,
-                    child: Text(
-                      'Recently Used',
-                      style: context.themeText.largeTag,
-                    ),
-                  ),
-                  const SizedBox(height: 20), // Spacing from Figma
-                  Expanded(
-                    child: RecentAddressList(
-                      currentAddress: activeAccount.accountId,
-                      onAddressSelected: (address) {
-                        _recipientController.text = address;
-                        _lookupIdentity();
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -846,9 +477,9 @@ class SendScreenState extends ConsumerState<SendScreen> {
       appBar: 'Send',
       child: Consumer(
         builder: (context, ref, child) {
-          final balanceAsyncValue = ref.watch(_effectiveMaxBalanceProvider);
+          final balanceAsyncValue = ref.watch(effectiveMaxBalanceProvider);
           final includeExistentialDeposit = ref.watch(
-            _existentialDepositToggleProvider,
+            existentialDepositToggleProvider,
           );
 
           return balanceAsyncValue.when(
@@ -909,101 +540,109 @@ class SendScreenState extends ConsumerState<SendScreen> {
                 ),
                 const SizedBox(width: 9),
                 GestureDetector(
-                  onTap: _showRecentAddresses,
+                  onTap: () {
+                    final activeAccount = _settingsService.getActiveAccount()!;
+
+                    showRecentAddresses(
+                      context,
+                      activeAccount: activeAccount,
+                      recipientController: _recipientController,
+                      lookupIdentity: _lookupIdentity,
+                    );
+                  },
                   child: _buildHistoryIconButton(),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.only(left: 5.0),
-                  height: 38,
-                  decoration: BoxDecoration(color: context.themeColors.surface),
-                  child: Row(
-                    children: [
-                      Text('To:', style: context.themeText.smallParagraph),
-                      Container(
-                        width: 1,
-                        height: context.isTablet ? 31 : 17,
-                        color: Colors.white,
-                        margin: const EdgeInsets.symmetric(horizontal: 2),
-                      ),
-                    ],
+            Container(
+              decoration: BoxDecoration(color: context.themeColors.surface),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.only(left: 5.0),
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: context.themeColors.surface,
+                    ),
+                    child: Row(
+                      children: [
+                        Text('To:', style: context.themeText.smallParagraph),
+                      ],
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CustomTextField(
-                        leftPadding: 0,
-                        controller: _recipientController,
-                        textStyle: context.themeText.detail,
-                        hintText:
-                            '${AppConstants.tokenSymbol} '
-                            'address',
-                        hintStyle: context.themeText.detail?.copyWith(
-                          color: context.themeColors.textMuted,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CustomTextField(
+                          leftPadding: 0,
+                          controller: _recipientController,
+                          textStyle: context.themeText.detail,
+                          hintText:
+                              '${AppConstants.tokenSymbol} '
+                              'address',
+                          hintStyle: context.themeText.detail?.copyWith(
+                            color: context.themeColors.textMuted,
+                          ),
+                          onChanged: (value) {
+                            if (_debounce?.isActive ?? false) {
+                              _debounce?.cancel();
+                            }
+                            _debounce = Timer(
+                              const Duration(milliseconds: 300),
+                              () {
+                                _lookupIdentity();
+                              },
+                            );
+                          },
                         ),
-                        onChanged: (value) {
-                          if (_debounce?.isActive ?? false) {
-                            _debounce?.cancel();
-                          }
-                          _debounce = Timer(
-                            const Duration(milliseconds: 300),
-                            () {
-                              _lookupIdentity();
-                            },
-                          );
-                        },
-                      ),
-                      if (_humanReadableCheckphrase.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4.0),
-                          child: InkWell(
-                            onTap: () async {
-                              ClipboardExtensions.copyTextWithSnackbar(
-                                context,
-                                _humanReadableCheckphrase,
-                                title: 'Copied',
-                                message: 'Check phrase copied to clipboard',
-                              );
-                              HapticFeedback.lightImpact();
-                            },
-                            borderRadius: BorderRadius.circular(4),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    _humanReadableCheckphrase,
-                                    style: context.themeText.detail?.copyWith(
-                                      color: context.themeColors.checksum,
+                        if (_humanReadableCheckphrase.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10.0),
+                            child: InkWell(
+                              onTap: () async {
+                                ClipboardExtensions.copyTextWithSnackbar(
+                                  context,
+                                  _humanReadableCheckphrase,
+                                  title: 'Copied',
+                                  message: 'Check phrase copied to clipboard',
+                                );
+                                HapticFeedback.lightImpact();
+                              },
+                              borderRadius: BorderRadius.circular(4),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      _humanReadableCheckphrase,
+                                      style: context.themeText.detail?.copyWith(
+                                        color: context.themeColors.checksum,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 6),
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 1.0),
-                                  child: Icon(
-                                    Icons.copy,
-                                    size: 14,
-                                    color: context.themeColors.checksum
-                                        .useOpacity(0.7),
+                                  const SizedBox(width: 6),
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 1.0),
+                                    child: Icon(
+                                      Icons.copy,
+                                      size: 14,
+                                      color: context.themeColors.checksum
+                                          .useOpacity(0.7),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -1079,7 +718,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: ShapeDecoration(
-                color: Colors.white.useOpacity(0.15),
+                color: Colors.black,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(4),
                 ),
@@ -1093,7 +732,16 @@ class SendScreenState extends ConsumerState<SendScreen> {
         ),
         const SizedBox(height: 14),
         GestureDetector(
-          onTap: _showTimePickerModal,
+          onTap: () {
+            showTimePickerSheet(
+              context,
+              reversibleTimeDays: _reversibleTimeDays,
+              reversibleTimeHours: _reversibleTimeHours,
+              reversibleTimeMinutes: _reversibleTimeMinutes,
+              setReversibleTimeSeconds: _setReversibleTimeSeconds,
+              saveReversibleTimeSetting: _saveReversibleTimeSetting,
+            );
+          },
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),

@@ -296,7 +296,6 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 0),
               IconButton(
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
@@ -347,7 +346,8 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
           ),
 
           Positioned(
-            top: 26,
+            // calculating the middle point
+            top: (context.themeSize.accountListItemHeight / 2) - (context.themeSize.accountListItemLogoWidth / 2), 
             left: (context.themeSize.accountListItemLogoWidth / 2) * -1,
             child: AccountGradientImage(
               accountId: account.accountId,

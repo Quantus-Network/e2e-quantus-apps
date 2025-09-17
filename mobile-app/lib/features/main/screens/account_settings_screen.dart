@@ -197,13 +197,13 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                 style: context.themeText.smallParagraph,
               ),
             ),
-            IconButton(
-              icon: Icon(
+            InkWell(
+              child: Icon(
                 Icons.copy,
                 color: Colors.white,
                 size: context.isTablet ? 26 : 22,
               ),
-              onPressed: () => ClipboardExtensions.copyTextWithSnackbar(
+              onTap: () => ClipboardExtensions.copyTextWithSnackbar(
                 context,
                 widget.account.accountId,
               ),
