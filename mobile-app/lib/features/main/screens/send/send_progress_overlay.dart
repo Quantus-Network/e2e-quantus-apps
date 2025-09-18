@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
@@ -190,9 +191,9 @@ class SendConfirmationOverlayState
             children: [
               Center(
                 child: SvgPicture.asset(
-                  'assets/send_icon_1.svg',
-                  width: context.isTablet ? 91 : 51,
-                  height: context.isTablet ? 82 : 42,
+                  'assets/transaction/send_icon.svg',
+                  width: context.isTablet ? 101 : 61,
+                  height: context.isTablet ? 92 : 52,
                 ),
               ),
               const SizedBox(height: 17),
@@ -241,29 +242,19 @@ class SendConfirmationOverlayState
                     ),
                   ),
                   const SizedBox(height: 12),
-                  SizedBox(
-                    width: context.isTablet ? null : 274,
-                    child: Text(
-                      widget.recipientName,
-                      textAlign: TextAlign.center,
-                      style: context.themeText.paragraph?.copyWith(
-                        color: context.themeColors.checksum,
-                      ),
+                  Text(
+                    widget.recipientName,
+                    textAlign: TextAlign.center,
+                    style: context.themeText.paragraph?.copyWith(
+                      color: context.themeColors.checksum,
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    context.isTablet
-                        ? widget.recipientAddress
-                        : AddressFormattingService.formatAddress(
-                            widget.recipientAddress,
-                          ),
-                    style: context.themeText.tiny,
-                  ),
+                  Text(widget.recipientAddress, style: context.themeText.tiny),
                 ],
               ),
-              const SizedBox(height: 21),
 
+              if (_isReversible) const SizedBox(height: 21),
               // Reversible time information
               if (_isReversible)
                 Container(
@@ -357,28 +348,10 @@ class SendConfirmationOverlayState
                   ],
                 ),
                 const SizedBox(height: 15),
-                GestureDetector(
-                  onTap: _isSending ? null : _confirmSend,
-                  child: Opacity(
-                    opacity: _isSending ? 0.5 : 1.0,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: ShapeDecoration(
-                        color: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                      ),
-                      child: Text(
-                        'Confirm',
-                        textAlign: TextAlign.center,
-                        style: context.themeText.smallTitle?.copyWith(
-                          color: context.themeColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  ),
+                Button(
+                  variant: ButtonVariant.neutral,
+                  label: 'Confirm',
+                  onPressed: _isSending ? null : _confirmSend,
                 ),
               ],
             ),
@@ -474,9 +447,9 @@ class SendConfirmationOverlayState
             children: [
               Center(
                 child: SvgPicture.asset(
-                  'assets/send_icon_1.svg',
-                  width: context.isTablet ? 91 : 51,
-                  height: context.isTablet ? 82 : 42,
+                  'assets/transaction/send_icon.svg',
+                  width: context.isTablet ? 101 : 61,
+                  height: context.isTablet ? 92 : 52,
                 ),
               ),
               const SizedBox(height: 17),
@@ -528,7 +501,6 @@ class SendConfirmationOverlayState
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   SizedBox(
-                    width: context.isTablet ? null : 274,
                     child: Text(
                       widget.recipientName,
                       textAlign: TextAlign.center,
@@ -538,18 +510,11 @@ class SendConfirmationOverlayState
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    context.isTablet
-                        ? widget.recipientAddress
-                        : AddressFormattingService.formatAddress(
-                            widget.recipientAddress,
-                          ),
-                    style: context.themeText.tiny,
-                  ),
+                  Text(widget.recipientAddress, style: context.themeText.tiny),
                 ],
               ),
-              const SizedBox(height: 14),
 
+              if (_isReversible) const SizedBox(height: 14),
               // Reversible time information
               if (_isReversible)
                 Container(
@@ -588,30 +553,14 @@ class SendConfirmationOverlayState
                     ],
                   ),
                 ),
+              const SizedBox(height: 46),
+              // Done Button
+              Button(
+                variant: ButtonVariant.neutral,
+                label: 'Done',
+                onPressed: goHome,
+              ),
             ],
-          ),
-          const SizedBox(height: 46),
-
-          // Done Button
-          GestureDetector(
-            onTap: goHome,
-            child: Container(
-              width: context.themeSize.sendOverlayContainerWidth,
-              padding: const EdgeInsets.all(16),
-              decoration: ShapeDecoration(
-                color: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(5),
-                ),
-              ),
-              child: Text(
-                'Done',
-                textAlign: TextAlign.center,
-                style: context.themeText.smallTitle?.copyWith(
-                  color: context.themeColors.textSecondary,
-                ),
-              ),
-            ),
           ),
         ],
       ),
@@ -654,7 +603,7 @@ class SendConfirmationOverlayState
                   MediaQuery.of(context).size.height *
                   AppConstants.sendingSheetHeightFraction,
               width: MediaQuery.of(context).size.width,
-              padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               decoration: ShapeDecoration(
                 color: Colors.black,
                 shape: RoundedRectangleBorder(

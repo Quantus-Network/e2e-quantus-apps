@@ -7,7 +7,7 @@ import 'package:resonance_network_wallet/features/components/shared_address_acti
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner/qr_scanner_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/account_details.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/action_button.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/error_display.dart';
@@ -83,7 +83,6 @@ class _WalletMainState extends ConsumerState<WalletMain> {
           child: const Sphere(variant: 6, size: 252),
         ),
       ],
-      padding: const EdgeInsetsGeometry.symmetric(horizontal: 24.0),
       child: RefreshIndicator(
         onRefresh: () async {
           // Refresh balances with loading indicator
@@ -215,7 +214,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 18),
                   Row(
                     spacing: context.isTablet ? 28 : 0,
                     mainAxisAlignment: context.isTablet

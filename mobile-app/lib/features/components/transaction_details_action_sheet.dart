@@ -139,7 +139,7 @@ class _TransactionDetailsActionSheetState
             height:
                 MediaQuery.of(context).size.height *
                 AppConstants.sendingSheetHeightFraction,
-            padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 30),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 30),
             clipBehavior: Clip.antiAlias,
             decoration: const BoxDecoration(
               color: Colors.black,
