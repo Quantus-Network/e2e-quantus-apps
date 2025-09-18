@@ -90,7 +90,7 @@ class RecentTransactionsList extends StatelessWidget {
                 ),
               if (scheduled.isNotEmpty && others.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12.0),
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: Divider(
                     color: context.themeColors.darkGray,
                     thickness: 1,
