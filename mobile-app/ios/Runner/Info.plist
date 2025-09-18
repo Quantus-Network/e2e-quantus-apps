@@ -32,6 +32,8 @@
 		<array>
 			<string>https</string>
 		</array>
+		<key>FlutterDeepLinkingEnabled</key>
+		<false/>
 		<key>NSCameraUsageDescription</key>
 		<string>We need camera access to scan QR codes for sending funds.</string>
 		<key>NSFaceIDUsageDescription</key>

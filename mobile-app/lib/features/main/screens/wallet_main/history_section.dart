@@ -64,7 +64,7 @@ class _HistorySectionState extends ConsumerState<HistorySection> {
                 accountIds: [widget.activeAccount.accountId],
               ),
               Padding(
-                padding: const EdgeInsets.only(top: 12.0, right: 12.0),
+                padding: const EdgeInsets.only(top: 8.0, right: 12.0),
                 child: Align(
                   alignment: Alignment.centerRight,
                   child: InkWell(
