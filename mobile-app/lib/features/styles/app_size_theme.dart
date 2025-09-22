@@ -24,6 +24,9 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
   final double txDetailsIconHeight;
   final double txDetailsIconWidth;
   final double timePickerSubtitleWidth;
+  final double bottomButtonSpacing;
+  final double buttonsHorizontalSpacing;
+  final double infoSheetTitleIcon;
 
   const AppSizeTheme({
     required this.logoHeight,
@@ -48,6 +51,9 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
     required this.txDetailsIconHeight,
     required this.txDetailsIconWidth,
     required this.timePickerSubtitleWidth,
+    required this.bottomButtonSpacing,
+    required this.buttonsHorizontalSpacing,
+    required this.infoSheetTitleIcon,
   });
 
   const AppSizeTheme.defaultTheme()
@@ -74,6 +80,9 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
         txDetailsIconHeight: 43.0,
         txDetailsIconWidth: 51.0,
         timePickerSubtitleWidth: 249,
+        bottomButtonSpacing: 73,
+        buttonsHorizontalSpacing: 36,
+        infoSheetTitleIcon: 25,
       );
 
   const AppSizeTheme.iPad()
@@ -100,6 +109,9 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
         txDetailsIconHeight: 82.0,
         txDetailsIconWidth: 91.0,
         timePickerSubtitleWidth: 400,
+        bottomButtonSpacing: 73,
+        buttonsHorizontalSpacing: 36,
+        infoSheetTitleIcon: 28,
       );
 
   @override
@@ -126,6 +138,9 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
     double? txDetailsIconHeight,
     double? txDetailsIconWidth,
     double? timePickerSubtitleWidth,
+    double? bottomButtonSpacing,
+    double? buttonsHorizontalSpacing,
+    double? infoSheetTitleIcon,
   }) {
     return AppSizeTheme(
       logoHeight: logoHeight ?? this.logoHeight,
@@ -156,6 +171,10 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
       txDetailsIconWidth: txDetailsIconWidth ?? this.txDetailsIconWidth,
       timePickerSubtitleWidth:
           timePickerSubtitleWidth ?? this.timePickerSubtitleWidth,
+      bottomButtonSpacing: bottomButtonSpacing ?? this.bottomButtonSpacing,
+      buttonsHorizontalSpacing:
+          buttonsHorizontalSpacing ?? this.buttonsHorizontalSpacing,
+      infoSheetTitleIcon: infoSheetTitleIcon ?? this.infoSheetTitleIcon,
     );
   }
 
@@ -215,6 +234,15 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
       timePickerSubtitleWidth:
           timePickerSubtitleWidth +
           (other.timePickerSubtitleWidth - timePickerSubtitleWidth) * t,
+      bottomButtonSpacing:
+          bottomButtonSpacing +
+          (other.bottomButtonSpacing - bottomButtonSpacing) * t,
+      buttonsHorizontalSpacing:
+          buttonsHorizontalSpacing +
+          (other.buttonsHorizontalSpacing - buttonsHorizontalSpacing) * t,
+      infoSheetTitleIcon:
+          infoSheetTitleIcon +
+          (other.infoSheetTitleIcon - infoSheetTitleIcon) * t,
     );
   }
 }
