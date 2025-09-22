@@ -85,6 +85,7 @@ flutter:
     - assets/notification/
     - assets/transaction/
     - assets/logo/
+    - assets/high_security/
     - assets/background.png
 
   fonts:
