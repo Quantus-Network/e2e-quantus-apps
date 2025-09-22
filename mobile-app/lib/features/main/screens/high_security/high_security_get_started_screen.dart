@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/features/main/screens/high_security/high_security_wizard.dart';
+import 'package:resonance_network_wallet/features/main/screens/high_security/high_security_guardian_wizard.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
@@ -45,7 +45,7 @@ class HighSecurityGetStartedScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const HighSecurityWizard(),
+                  builder: (context) => const HighSecurityGuardianWizard(),
                 ),
               );
             },
