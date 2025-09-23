@@ -12,14 +12,16 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
-class HighSecurityGuardianWizard extends StatefulWidget {
-  const HighSecurityGuardianWizard({super.key});
+class HighSecuritySafeguardWindowWizard extends StatefulWidget {
+  const HighSecuritySafeguardWindowWizard({super.key});
 
   @override
-  State<HighSecurityGuardianWizard> createState() => _HighSecurityGuardianWizardState();
+  State<HighSecuritySafeguardWindowWizard> createState() =>
+      _HighSecuritySafeguardWindowWizardState();
 }
 
-class _HighSecurityGuardianWizardState extends State<HighSecurityGuardianWizard> {
+class _HighSecuritySafeguardWindowWizardState
+    extends State<HighSecuritySafeguardWindowWizard> {
   final TextEditingController _designatedController = TextEditingController();
 
   Future<void> _scanQRCode() async {
@@ -36,7 +38,6 @@ class _HighSecurityGuardianWizardState extends State<HighSecurityGuardianWizard>
     }
   }
 
-  // ADD THIS LIFECYCLE METHOD
   @override
   void initState() {
     super.initState();
@@ -45,20 +46,18 @@ class _HighSecurityGuardianWizardState extends State<HighSecurityGuardianWizard>
     });
   }
 
-  // ADD THIS LIFECYCLE METHOD
   @override
   void dispose() {
     _designatedController.dispose();
     super.dispose();
   }
 
-
   @override
   Widget build(BuildContext context) {
     final bool isDisabled = _designatedController.text.isEmpty;
 
     return ScaffoldBase(
-      appBar: 'Theft Deterrence',
+      appBar: 'Security Settings',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -153,9 +152,7 @@ class _HighSecurityGuardianWizardState extends State<HighSecurityGuardianWizard>
                   isDisabled: isDisabled,
                   variant: ButtonVariant.neutral,
                   label: 'Next',
-                  onPressed: () {
-                    
-                  },
+                  onPressed: () {},
                 ),
               ),
             ],
