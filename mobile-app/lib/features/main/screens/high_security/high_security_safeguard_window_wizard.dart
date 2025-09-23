@@ -54,7 +54,7 @@ class _HighSecuritySafeguardWindowWizardState
     final bool isDisabled = _designatedController.text.isEmpty;
 
     return ScaffoldBase(
-      appBar: 'Security Settings',
+      appBar: 'Safeguard Window',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
