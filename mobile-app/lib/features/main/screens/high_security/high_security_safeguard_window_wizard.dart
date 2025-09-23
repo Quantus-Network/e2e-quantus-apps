@@ -4,7 +4,7 @@ import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/gradient_text.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/steps.dart';
-import 'package:resonance_network_wallet/features/main/screens/high_security/guardian_account_info_sheet.dart';
+import 'package:resonance_network_wallet/features/main/screens/high_security/high_security_recovery_wizard.dart';
 import 'package:resonance_network_wallet/features/main/screens/high_security/safeguard_window_picker_sheet.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
@@ -21,7 +21,6 @@ class HighSecuritySafeguardWindowWizard extends StatefulWidget {
 
 class _HighSecuritySafeguardWindowWizardState
     extends State<HighSecuritySafeguardWindowWizard> {
-  final TextEditingController _designatedController = TextEditingController();
 
   // Reversible time state
   int _reversibleTimeSeconds = 600; // Default: 10 minutes
@@ -36,23 +35,7 @@ class _HighSecuritySafeguardWindowWizardState
   }
 
   @override
-  void initState() {
-    super.initState();
-    _designatedController.addListener(() {
-      setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _designatedController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final bool isDisabled = _designatedController.text.isEmpty;
-
     return ScaffoldBase(
       appBar: 'Safeguard Window',
       child: Column(
@@ -86,13 +69,7 @@ class _HighSecuritySafeguardWindowWizardState
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Safeguard Window', style: context.themeText.largeTag),
-              InkWell(
-                onTap: () {
-                  showGuardianAccountInfoSheet(context);
-                },
-                child: const Icon(Icons.info_outline),
-              ),
+              Text('Safeguard Window', style: context.themeText.largeTag)
             ],
           ),
           const SizedBox(height: 4),
@@ -125,7 +102,11 @@ class _HighSecuritySafeguardWindowWizardState
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
-                    DatetimeFormattingService.formatReversibleTime(_reversibleTimeDays, _reversibleTimeHours, _reversibleTimeMinutes),
+                    DatetimeFormattingService.formatReversibleTime(
+                      _reversibleTimeDays,
+                      _reversibleTimeHours,
+                      _reversibleTimeMinutes,
+                    ),
                     style: context.themeText.smallParagraph,
                   ),
                   Icon(
@@ -158,10 +139,17 @@ class _HighSecuritySafeguardWindowWizardState
               ),
               Expanded(
                 child: Button(
-                  isDisabled: isDisabled,
                   variant: ButtonVariant.neutral,
                   label: 'Next',
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const HighSecurityRecoveryWizard(),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],

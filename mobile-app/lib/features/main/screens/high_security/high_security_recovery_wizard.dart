@@ -8,22 +8,21 @@ import 'package:resonance_network_wallet/features/components/scaffold_base.dart'
 import 'package:resonance_network_wallet/features/components/steps.dart';
 import 'package:resonance_network_wallet/features/components/wallet_action_button.dart';
 import 'package:resonance_network_wallet/features/main/screens/high_security/guardian_account_info_sheet.dart';
-import 'package:resonance_network_wallet/features/main/screens/high_security/high_security_safeguard_window_wizard.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
-class HighSecurityGuardianWizard extends StatefulWidget {
-  const HighSecurityGuardianWizard({super.key});
+class HighSecurityRecoveryWizard extends StatefulWidget {
+  const HighSecurityRecoveryWizard({super.key});
 
   @override
-  State<HighSecurityGuardianWizard> createState() =>
-      _HighSecurityGuardianWizardState();
+  State<HighSecurityRecoveryWizard> createState() =>
+      _HighSecurityRecoveryWizardState();
 }
 
-class _HighSecurityGuardianWizardState
-    extends State<HighSecurityGuardianWizard> {
+class _HighSecurityRecoveryWizardState
+    extends State<HighSecurityRecoveryWizard> {
   final TextEditingController _designatedController = TextEditingController();
 
   Future<void> _scanQRCode() async {
@@ -59,7 +58,7 @@ class _HighSecurityGuardianWizardState
     final bool isDisabled = _designatedController.text.isEmpty;
 
     return ScaffoldBase(
-      appBar: 'Theft Deterrence',
+      appBar: 'Recovery',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -69,26 +68,29 @@ class _HighSecurityGuardianWizardState
             children: [
               SizedBox(
                 width: 204,
-                child: StepsIndicator(currentStep: 1, totalSteps: AppConstants.highSecurityStepsCount),
+                child: StepsIndicator(
+                  currentStep: 3,
+                  totalSteps: AppConstants.highSecurityStepsCount,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 32),
           GradientText(
-            'THEFT DETERRENCE',
+            'RECOVERY',
             colors: context.themeColors.aquaBlue,
             style: context.themeText.largeTitle,
           ),
           const SizedBox(height: 4),
           Text(
-            'Intercept any transaction or “pull” all funds in the case of theft.',
+            'Plan ahead: designate a beneficiary to inherit your crypto.',
             style: context.themeText.smallParagraph,
           ),
           const SizedBox(height: 38),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Guardian Account', style: context.themeText.largeTag),
+              Text('Recovery Account', style: context.themeText.largeTag),
               InkWell(
                 onTap: () {
                   showGuardianAccountInfoSheet(context);
@@ -99,7 +101,7 @@ class _HighSecurityGuardianWizardState
           ),
           const SizedBox(height: 4),
           Text(
-            'Choose an account that keeps your funds safe if your main wallet is compromised.',
+            'This account can initiate a “pull” of your funds, with a recovery window for your Guardian account to deny it.',
             style: context.themeText.smallParagraph,
           ),
           const SizedBox(height: 13),
@@ -132,7 +134,7 @@ class _HighSecurityGuardianWizardState
           ),
           const SizedBox(height: 13),
           Text(
-            'The harder the Guardian account is to access the higher the security. An address on a cold storage wallet is the most secure.',
+            'This could be: A trusted 3rd party, a beneficiary, multi-sig or executor. It should not be an account only you have access to.',
             style: context.themeText.smallParagraph?.copyWith(
               color: context.themeColors.textMuted,
             ),
@@ -158,8 +160,7 @@ class _HighSecurityGuardianWizardState
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            const HighSecuritySafeguardWindowWizard(),
+                        builder: (context) => const Text('haha'),
                       ),
                     );
                   },
