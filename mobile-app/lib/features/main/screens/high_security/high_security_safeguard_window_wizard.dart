@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/gradient_text.dart';
@@ -9,36 +10,37 @@ import 'package:resonance_network_wallet/features/main/screens/high_security/saf
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/providers/high_security_form_provider.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
-class HighSecuritySafeguardWindowWizard extends StatefulWidget {
+class HighSecuritySafeguardWindowWizard extends ConsumerStatefulWidget {
   const HighSecuritySafeguardWindowWizard({super.key});
 
   @override
-  State<HighSecuritySafeguardWindowWizard> createState() =>
+  ConsumerState<HighSecuritySafeguardWindowWizard> createState() =>
       _HighSecuritySafeguardWindowWizardState();
 }
 
 class _HighSecuritySafeguardWindowWizardState
-    extends State<HighSecuritySafeguardWindowWizard> {
-  final int _secondsInAMonth = 86400 * 30; // 86400 seconds/day * 30 days/month
-
-  int _safeguardTimeSeconds = 10 * 60 * 60; // Default: 10 hours
-
-  /// This is an approximation.
-  int get _safeguardTimeMonths => _safeguardTimeSeconds ~/ _secondsInAMonth;
-  int get _safeguardTimeDays => (_safeguardTimeSeconds % _secondsInAMonth) ~/ 86400;
-  int get _safeguardTimeHours => (_safeguardTimeSeconds % 86400) ~/ 3600;
-
-  void _setSafeguardTimeSeconds(int seconds) {
-    setState(() {
-      _safeguardTimeSeconds = seconds;
-    });
-  }
-
+    extends ConsumerState<HighSecuritySafeguardWindowWizard> {
   @override
   Widget build(BuildContext context) {
-    final bool isDisabled = _safeguardTimeSeconds == 0;
+    final formNotifier = ref.read(highSecurityFormProvider.notifier);
+    final safeguardTimeSeconds = ref
+        .watch(highSecurityFormProvider)
+        .safeguardWindow;
+
+    final int secondsInADay = 86400;
+    final int secondsInAMonth =
+        secondsInADay * 30; // 86400 seconds/day * 30 days/month
+
+    /// This is an approximation.
+    final int safeguardTimeMonths = safeguardTimeSeconds ~/ secondsInAMonth;
+    final int safeguardTimeDays =
+        (safeguardTimeSeconds % secondsInAMonth) ~/ secondsInADay;
+    final int safeguardTimeHours = (safeguardTimeSeconds % secondsInADay) ~/ 3600;
+
+    final bool isDisabled = safeguardTimeSeconds == 0;
 
     return ScaffoldBase(
       appBar: 'Safeguard Window',
@@ -86,10 +88,10 @@ class _HighSecuritySafeguardWindowWizardState
             onTap: () {
               showSafeguardWindowPickerSheet(
                 context,
-                safeguardTimeMonths: _safeguardTimeMonths,
-                safeguardTimeDays: _safeguardTimeDays,
-                safeguardTimeHours: _safeguardTimeHours,
-                setSafeguardTimeSeconds: _setSafeguardTimeSeconds,
+                safeguardTimeMonths: safeguardTimeMonths,
+                safeguardTimeDays: safeguardTimeDays,
+                safeguardTimeHours: safeguardTimeHours,
+                setSafeguardTimeSeconds: formNotifier.updateSafeguardWindow,
               );
             },
             child: Container(
@@ -107,9 +109,9 @@ class _HighSecuritySafeguardWindowWizardState
                 children: [
                   Text(
                     DatetimeFormattingService.formatSafeguardTime(
-                      _safeguardTimeMonths,
-                      _safeguardTimeDays,
-                      _safeguardTimeHours,
+                      safeguardTimeMonths,
+                      safeguardTimeDays,
+                      safeguardTimeHours,
                     ),
                     style: context.themeText.smallParagraph,
                   ),

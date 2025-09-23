@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/main/screens/high_security/high_security_cancel_warning_sheet.dart';
@@ -8,24 +9,70 @@ import 'package:resonance_network_wallet/features/main/screens/high_security/hig
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/providers/high_security_form_provider.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
-class HighSecurityConfirmationSheet extends StatefulWidget {
+class HighSecurityConfirmationSheet extends ConsumerStatefulWidget {
   const HighSecurityConfirmationSheet({super.key});
 
   @override
-  State<HighSecurityConfirmationSheet> createState() =>
+  ConsumerState<HighSecurityConfirmationSheet> createState() =>
       _HighSecurityConfirmationSheetState();
 }
 
 class _HighSecurityConfirmationSheetState
-    extends State<HighSecurityConfirmationSheet> {
-  void _confirmSetup() {
-    showHighSecurityCreatedSheet(context);
+    extends ConsumerState<HighSecurityConfirmationSheet> {
+  final HighSecurityService _highSecurityService = HighSecurityService();
+  final SettingsService _settingsService = SettingsService();
+
+  BigInt? _networkFee;
+  bool _isSubmitting = false;
+
+  void _confirmSetup() async {
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    final formData = ref.read(highSecurityFormProvider);
+    final activeAccount = _settingsService.getActiveAccount()!;
+
+    await _highSecurityService.setupHighSecurityAccount(
+      activeAccount,
+      formData,
+    );
+
+    setState(() {
+      _isSubmitting = false;
+    });
+
+    if (mounted) {
+      showHighSecurityCreatedSheet(context);
+    }
   }
 
   void _cancelSetup() {
     showHighSecurityCancelWarningSheet(context);
+  }
+
+  void _fetchNetworkFee() async {
+    final activeAccount = _settingsService.getActiveAccount()!;
+    final formData = ref.read(highSecurityFormProvider);
+
+    final fee = await _highSecurityService.getHighSecuritySetupFee(
+      activeAccount,
+      formData,
+    );
+
+    setState(() {
+      _networkFee = fee.fee;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    _fetchNetworkFee();
   }
 
   @override
@@ -121,7 +168,7 @@ class _HighSecurityConfirmationSheetState
                   ),
                 ),
                 Text(
-                  '1.23 ${AppConstants.tokenSymbol}',
+                  '${_networkFee ?? 'Fetching...'} ${AppConstants.tokenSymbol}',
                   style: context.themeText.detail?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -130,6 +177,7 @@ class _HighSecurityConfirmationSheetState
             ),
             const SizedBox(height: 13),
             Button(
+              isLoading: _isSubmitting,
               variant: ButtonVariant.primary,
               label: 'Confirm',
               onPressed: () {
@@ -138,6 +186,7 @@ class _HighSecurityConfirmationSheetState
             ),
             const SizedBox(height: 13),
             Button(
+              isDisabled: _isSubmitting,
               variant: ButtonVariant.dangerOutline,
               label: 'Cancel',
               onPressed: () {

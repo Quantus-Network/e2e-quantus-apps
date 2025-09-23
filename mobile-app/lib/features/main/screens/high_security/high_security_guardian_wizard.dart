@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
@@ -13,20 +14,21 @@ import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner_s
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/providers/high_security_form_provider.dart';
 
-class HighSecurityGuardianWizard extends StatefulWidget {
+class HighSecurityGuardianWizard extends ConsumerStatefulWidget {
   const HighSecurityGuardianWizard({super.key});
 
   @override
-  State<HighSecurityGuardianWizard> createState() =>
+  ConsumerState<HighSecurityGuardianWizard> createState() =>
       _HighSecurityGuardianWizardState();
 }
 
 class _HighSecurityGuardianWizardState
-    extends State<HighSecurityGuardianWizard> {
-  final TextEditingController _designatedController = TextEditingController();
-
+    extends ConsumerState<HighSecurityGuardianWizard> {
   Future<void> _scanQRCode() async {
+    final formNotifier = ref.read(highSecurityFormProvider.notifier);
+
     final scannedAddress = await Navigator.push<String>(
       context,
       MaterialPageRoute(
@@ -36,27 +38,26 @@ class _HighSecurityGuardianWizardState
     );
 
     if (scannedAddress != null && mounted) {
-      _designatedController.text = scannedAddress;
+      formNotifier.updateGuardianAddress(scannedAddress);
     }
   }
 
   @override
   void initState() {
     super.initState();
-    _designatedController.addListener(() {
-      setState(() {});
-    });
   }
 
   @override
   void dispose() {
-    _designatedController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool isDisabled = _designatedController.text.isEmpty;
+    final formNotifier = ref.read(highSecurityFormProvider.notifier);
+    final guardianAddress = ref.watch(highSecurityFormProvider).guardianAddress;
+
+    final bool isDisabled = guardianAddress.isEmpty;
 
     return ScaffoldBase(
       appBar: 'Theft Deterrence',
@@ -69,7 +70,10 @@ class _HighSecurityGuardianWizardState
             children: [
               SizedBox(
                 width: 204,
-                child: StepsIndicator(currentStep: 1, totalSteps: AppConstants.highSecurityStepsCount),
+                child: StepsIndicator(
+                  currentStep: 1,
+                  totalSteps: AppConstants.highSecurityStepsCount,
+                ),
               ),
             ],
           ),
@@ -110,7 +114,7 @@ class _HighSecurityGuardianWizardState
                 onTap: () async {
                   final data = await Clipboard.getData('text/plain');
                   if (data != null && data.text != null) {
-                    _designatedController.text = data.text!;
+                    formNotifier.updateGuardianAddress(data.text!);
                   }
                 },
                 child: const WalletActionButton(
@@ -127,7 +131,8 @@ class _HighSecurityGuardianWizardState
           const SizedBox(height: 13),
           CustomTextField(
             variant: TextFieldVariant.secondary,
-            controller: _designatedController,
+            initialValue: guardianAddress,
+            onChanged: formNotifier.updateGuardianAddress,
             hintText: 'Enter address',
           ),
           const SizedBox(height: 13),

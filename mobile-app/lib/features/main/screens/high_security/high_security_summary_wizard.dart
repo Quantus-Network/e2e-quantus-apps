@@ -1,26 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/gradient_text.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/steps.dart';
 import 'package:resonance_network_wallet/features/main/screens/high_security/high_security_confirmation_sheet.dart';
-import 'package:resonance_network_wallet/features/main/screens/high_security/high_security_safeguard_window_wizard.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/providers/high_security_form_provider.dart';
 
-class HighSecuritySummaryWizard extends StatefulWidget {
+class HighSecuritySummaryWizard extends ConsumerStatefulWidget {
   const HighSecuritySummaryWizard({super.key});
 
   @override
-  State<HighSecuritySummaryWizard> createState() =>
+  ConsumerState<HighSecuritySummaryWizard> createState() =>
       _HighSecuritySummaryWizardState();
 }
 
-class _HighSecuritySummaryWizardState extends State<HighSecuritySummaryWizard> {
+class _HighSecuritySummaryWizardState
+    extends ConsumerState<HighSecuritySummaryWizard> {
+  final HumanReadableChecksumService _humanReadableChecksumService =
+      HumanReadableChecksumService();
+
   @override
   Widget build(BuildContext context) {
+    final formData = ref.read(highSecurityFormProvider);
+
+    final guardianChecksumFuture = _humanReadableChecksumService
+        .getHumanReadableName(formData.guardianAddress);
+    final recoveryChecksumFuture = _humanReadableChecksumService
+        .getHumanReadableName(formData.recoveryAddress);
+
     return ScaffoldBase(
       appBar: 'Summary',
       child: Column(
@@ -72,16 +84,18 @@ class _HighSecuritySummaryWizardState extends State<HighSecuritySummaryWizard> {
           const SizedBox(height: 19),
           SummaryCard(
             type: SummaryType.guardian,
-            checksum: 'Grain-Red-Flash-Hyper-Cloud',
-            address:
-                '5FEUm MJ6w5 36upW fhFcK n61jN UniW3 norvT ULjwj MhbfN cs4N',
+            checksumFuture: guardianChecksumFuture,
+            address: AddressFormattingService.splitIntoChunks(
+              formData.guardianAddress,
+            ).join(' '),
           ),
           const SizedBox(height: 19),
           SummaryCard(
             type: SummaryType.recovery,
-            checksum: 'Chase-Balance-Jump-Glass-Glare',
-            address:
-                'qzm8R aoLd5 uuR8K rA6AP P1M3d hgm3E H8fL3 zu4hQ PT5Da kPU7',
+            checksumFuture: recoveryChecksumFuture,
+            address: AddressFormattingService.splitIntoChunks(
+              formData.guardianAddress,
+            ).join(' '),
           ),
           const Expanded(child: SizedBox()),
           Row(
@@ -113,27 +127,28 @@ class _HighSecuritySummaryWizardState extends State<HighSecuritySummaryWizard> {
   }
 }
 
-enum SummaryType {
-  guardian,
-  recovery
-}
+enum SummaryType { guardian, recovery }
 
 class SummaryCard extends StatelessWidget {
   final SummaryType type;
-  final String checksum;
+  final Future<String> checksumFuture;
   final String address;
 
   const SummaryCard({
     super.key,
     required this.type,
-    required this.checksum,
+    required this.checksumFuture,
     required this.address,
   });
 
   @override
   Widget build(BuildContext context) {
-    final String label = type == SummaryType.guardian ? 'GUARDIAN ACCOUNT:': 'RECOVERY ACCOUNT:';
-    final Color checksumColor = type == SummaryType.guardian ? context.themeColors.yellow : context.themeColors.buttonDanger;
+    final String label = type == SummaryType.guardian
+        ? 'GUARDIAN ACCOUNT:'
+        : 'RECOVERY ACCOUNT:';
+    final Color checksumColor = type == SummaryType.guardian
+        ? context.themeColors.yellow
+        : context.themeColors.buttonDanger;
 
     return Container(
       width: double.infinity,
@@ -147,11 +162,24 @@ class SummaryCard extends StatelessWidget {
         spacing: 2,
         children: [
           Text(label, style: context.themeText.detail),
-          Text(
-            checksum,
-            style: context.themeText.smallParagraph?.copyWith(
-              color: checksumColor,
-            ),
+          FutureBuilder(
+            future: checksumFuture,
+            builder: (context, snapshot) {
+              String text = 'Loading checksum...';
+
+              if (snapshot.error != null) {
+                text = 'Failed loading checksum: ${snapshot.error}';
+              } else if (snapshot.hasData) {
+                text = snapshot.data!;
+              }
+
+              return Text(
+                text,
+                style: context.themeText.smallParagraph?.copyWith(
+                  color: checksumColor,
+                ),
+              );
+            },
           ),
           SizedBox(
             width: 220,
