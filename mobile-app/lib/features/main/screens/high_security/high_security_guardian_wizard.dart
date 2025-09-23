@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
 import 'package:resonance_network_wallet/features/components/gradient_text.dart';
@@ -7,6 +8,7 @@ import 'package:resonance_network_wallet/features/components/scaffold_base.dart'
 import 'package:resonance_network_wallet/features/components/steps.dart';
 import 'package:resonance_network_wallet/features/components/wallet_action_button.dart';
 import 'package:resonance_network_wallet/features/main/screens/high_security/guardian_account_info_sheet.dart';
+import 'package:resonance_network_wallet/features/main/screens/high_security/high_security_safeguard_window_wizard.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
@@ -16,10 +18,12 @@ class HighSecurityGuardianWizard extends StatefulWidget {
   const HighSecurityGuardianWizard({super.key});
 
   @override
-  State<HighSecurityGuardianWizard> createState() => _HighSecurityGuardianWizardState();
+  State<HighSecurityGuardianWizard> createState() =>
+      _HighSecurityGuardianWizardState();
 }
 
-class _HighSecurityGuardianWizardState extends State<HighSecurityGuardianWizard> {
+class _HighSecurityGuardianWizardState
+    extends State<HighSecurityGuardianWizard> {
   final TextEditingController _designatedController = TextEditingController();
 
   Future<void> _scanQRCode() async {
@@ -52,7 +56,6 @@ class _HighSecurityGuardianWizardState extends State<HighSecurityGuardianWizard>
     super.dispose();
   }
 
-
   @override
   Widget build(BuildContext context) {
     final bool isDisabled = _designatedController.text.isEmpty;
@@ -68,7 +71,7 @@ class _HighSecurityGuardianWizardState extends State<HighSecurityGuardianWizard>
             children: [
               SizedBox(
                 width: 204,
-                child: StepsIndicator(currentStep: 1, totalSteps: 4),
+                child: StepsIndicator(currentStep: 1, totalSteps: AppConstants.highSecurityStepsCount),
               ),
             ],
           ),
@@ -154,7 +157,13 @@ class _HighSecurityGuardianWizardState extends State<HighSecurityGuardianWizard>
                   variant: ButtonVariant.neutral,
                   label: 'Next',
                   onPressed: () {
-                    
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const HighSecuritySafeguardWindowWizard(),
+                      ),
+                    );
                   },
                 ),
               ),

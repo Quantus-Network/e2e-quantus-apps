@@ -442,23 +442,6 @@ class SendScreenState extends ConsumerState<SendScreen> {
     }
   }
 
-  String _formatReversibleTime() {
-    final days = _reversibleTimeDays;
-    final hours = _reversibleTimeHours;
-    final minutes = _reversibleTimeMinutes;
-
-    if (days > 0) {
-      return '$days day${days > 1 ? 's' : ''}, '
-          '$hours hr${hours != 1 ? 's' : ''}, \n'
-          '$minutes min${minutes != 1 ? 's' : ''}';
-    } else if (hours > 0) {
-      return '$hours hr${hours != 1 ? 's' : ''}, '
-          '$minutes min${minutes != 1 ? 's' : ''}';
-    } else {
-      return '$minutes min${minutes != 1 ? 's' : ''}';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
@@ -762,7 +745,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
-                  'Reversible for: ${_formatReversibleTime()}',
+                  'Reversible for: ${DatetimeFormattingService.formatReversibleTime(_reversibleTimeDays, _reversibleTimeHours, _reversibleTimeMinutes)}',
                   style: context.themeText.smallParagraph,
                 ),
                 Icon(
@@ -811,7 +794,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
                   ),
               ],
             ),
-            const WalletActionButton(assetPath: 'assets/settings_icon.svg')
+            const WalletActionButton(assetPath: 'assets/settings_icon.svg'),
           ],
         ),
         const SizedBox(height: 24),

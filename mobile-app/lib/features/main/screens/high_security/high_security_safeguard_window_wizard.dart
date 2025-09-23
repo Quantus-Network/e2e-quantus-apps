@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
-import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
 import 'package:resonance_network_wallet/features/components/gradient_text.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/steps.dart';
-import 'package:resonance_network_wallet/features/components/wallet_action_button.dart';
 import 'package:resonance_network_wallet/features/main/screens/high_security/guardian_account_info_sheet.dart';
-import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/high_security/safeguard_window_picker_sheet.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class HighSecuritySafeguardWindowWizard extends StatefulWidget {
   const HighSecuritySafeguardWindowWizard({super.key});
@@ -24,18 +23,16 @@ class _HighSecuritySafeguardWindowWizardState
     extends State<HighSecuritySafeguardWindowWizard> {
   final TextEditingController _designatedController = TextEditingController();
 
-  Future<void> _scanQRCode() async {
-    final scannedAddress = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const QRScannerScreen(),
-        fullscreenDialog: true,
-      ),
-    );
+  // Reversible time state
+  int _reversibleTimeSeconds = 600; // Default: 10 minutes
+  int get _reversibleTimeDays => _reversibleTimeSeconds ~/ 86400;
+  int get _reversibleTimeHours => (_reversibleTimeSeconds % 86400) ~/ 3600;
+  int get _reversibleTimeMinutes => (_reversibleTimeSeconds % 3600) ~/ 60;
 
-    if (scannedAddress != null && mounted) {
-      _designatedController.text = scannedAddress;
-    }
+  void _setReversibleTimeSeconds(int seconds) {
+    setState(() {
+      _reversibleTimeSeconds = seconds;
+    });
   }
 
   @override
@@ -67,26 +64,29 @@ class _HighSecuritySafeguardWindowWizardState
             children: [
               SizedBox(
                 width: 204,
-                child: StepsIndicator(currentStep: 1, totalSteps: 4),
+                child: StepsIndicator(
+                  currentStep: 2,
+                  totalSteps: AppConstants.highSecurityStepsCount,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 32),
           GradientText(
-            'THEFT DETERRENCE',
+            'SAFEGUARD WINDOW',
             colors: context.themeColors.aquaBlue,
             style: context.themeText.largeTitle,
           ),
           const SizedBox(height: 4),
           Text(
-            'Intercept any transaction or “pull” all funds in the case of theft. ',
+            'The time window in which the Guardian  can deny or intercept a transaction.',
             style: context.themeText.smallParagraph,
           ),
           const SizedBox(height: 38),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Guardian Account', style: context.themeText.largeTag),
+              Text('Safeguard Window', style: context.themeText.largeTag),
               InkWell(
                 onTap: () {
                   showGuardianAccountInfoSheet(context);
@@ -97,40 +97,49 @@ class _HighSecuritySafeguardWindowWizardState
           ),
           const SizedBox(height: 4),
           Text(
-            'Choose an account that keeps your funds safe if your main wallet is compromised.',
+            'Set how long the Guardian account has to act once a transaction is initiated.',
             style: context.themeText.smallParagraph,
           ),
           const SizedBox(height: 13),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              GestureDetector(
-                onTap: () async {
-                  final data = await Clipboard.getData('text/plain');
-                  if (data != null && data.text != null) {
-                    _designatedController.text = data.text!;
-                  }
-                },
-                child: const WalletActionButton(
-                  assetPath: 'assets/paste_icon_1.svg',
+          GestureDetector(
+            onTap: () {
+              showSafeguardWindowPickerSheet(
+                context,
+                reversibleTimeDays: _reversibleTimeDays,
+                reversibleTimeHours: _reversibleTimeHours,
+                reversibleTimeMinutes: _reversibleTimeMinutes,
+                setReversibleTimeSeconds: _setReversibleTimeSeconds,
+              );
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: ShapeDecoration(
+                color: const Color(0xFF313131),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
                 ),
               ),
-              const SizedBox(width: 12),
-              GestureDetector(
-                onTap: _scanQRCode,
-                child: const WalletActionButton(assetPath: 'assets/scan_1.svg'),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    DatetimeFormattingService.formatReversibleTime(_reversibleTimeDays, _reversibleTimeHours, _reversibleTimeMinutes),
+                    style: context.themeText.smallParagraph,
+                  ),
+                  Icon(
+                    Icons.edit,
+                    color: Colors.white70,
+                    size: context.isTablet ? 22 : 14,
+                  ),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 13),
-          CustomTextField(
-            variant: TextFieldVariant.secondary,
-            controller: _designatedController,
-            hintText: 'Enter address',
+            ),
           ),
           const SizedBox(height: 13),
           Text(
-            'The harder the Guardian account is to access the higher the security. An address on a cold storage wallet is the most secure.',
+            'Allow a reasonable window for your Guardian account to respond in an emergency.',
             style: context.themeText.smallParagraph?.copyWith(
               color: context.themeColors.textMuted,
             ),
