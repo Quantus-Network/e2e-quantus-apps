@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/features/components/scaffold_base.dart'
 import 'package:resonance_network_wallet/features/components/steps.dart';
 import 'package:resonance_network_wallet/features/components/wallet_action_button.dart';
 import 'package:resonance_network_wallet/features/main/screens/high_security/guardian_account_info_sheet.dart';
+import 'package:resonance_network_wallet/features/main/screens/high_security/high_security_summary_wizard.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
@@ -160,7 +161,7 @@ class _HighSecurityRecoveryWizardState
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const Text('haha'),
+                        builder: (context) => const HighSecuritySummaryWizard(),
                       ),
                     );
                   },

@@ -81,7 +81,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
         txDetailsIconWidth: 51.0,
         timePickerSubtitleWidth: 249,
         bottomButtonSpacing: 73,
-        buttonsHorizontalSpacing: 36,
+        buttonsHorizontalSpacing: 28,
         infoSheetTitleIcon: 25,
       );
 
@@ -110,7 +110,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
         txDetailsIconWidth: 91.0,
         timePickerSubtitleWidth: 400,
         bottomButtonSpacing: 73,
-        buttonsHorizontalSpacing: 36,
+        buttonsHorizontalSpacing: 28,
         infoSheetTitleIcon: 28,
       );
 

@@ -26,6 +26,9 @@ class AppConstants {
   static const String mnemonicKey = 'mnemonic';
   static const String accountIdKey = 'account_id';
 
+  // Account setting route name
+  static const String accountSettingsRouteName = 'account-settings';
+
   // Reversible time settings
   static const int defaultReversibleTimeSeconds = 600; // 10 minutes
 
@@ -36,5 +39,5 @@ class AppConstants {
   // Default sheet height in percentage of screen height
   static const double sendingSheetHeightFraction = 0.72;
 
-  static const int highSecurityStepsCount = 6;
+  static const int highSecurityStepsCount = 4;
 }

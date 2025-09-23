@@ -8,24 +8,24 @@ import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
 class SafeguardWindowPickerSheet extends StatelessWidget {
-  final int reversibleTimeDays;
-  final int reversibleTimeHours;
-  final int reversibleTimeMinutes;
-  final Function(int) setReversibleTimeSeconds;
+  final int safeguardTimeMonths;
+  final int safeguardTimeDays;
+  final int safeguardTimeHours;
+  final Function(int) setSafeguardTimeSeconds;
 
   const SafeguardWindowPickerSheet({
     super.key,
-    required this.reversibleTimeDays,
-    required this.reversibleTimeHours,
-    required this.reversibleTimeMinutes,
-    required this.setReversibleTimeSeconds,
+    required this.safeguardTimeMonths,
+    required this.safeguardTimeDays,
+    required this.safeguardTimeHours,
+    required this.setSafeguardTimeSeconds,
   });
 
   @override
   Widget build(BuildContext context) {
-    var selectedDays = reversibleTimeDays;
-    var selectedHours = reversibleTimeHours;
-    var selectedMinutes = reversibleTimeMinutes;
+    var selectedMonths = safeguardTimeMonths;
+    var selectedDays = safeguardTimeDays;
+    var selectedHours = safeguardTimeHours;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.75,
@@ -66,6 +66,57 @@ class SafeguardWindowPickerSheet extends StatelessWidget {
           Expanded(
             child: Row(
               children: [
+                // Months
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text(
+                        'Months',
+                        style: context.themeText.largeTag?.copyWith(
+                          color: context.themeColors.textMuted,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: CupertinoPicker(
+                                scrollController: FixedExtentScrollController(
+                                  initialItem: selectedMonths,
+                                ),
+                                itemExtent: 40,
+                                onSelectedItemChanged: (index) =>
+                                    selectedMonths = index,
+                                children: List.generate(
+                                  13,
+                                  (index) => Center(
+                                    child: Text(
+                                      index.toString().padLeft(2, '0'),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 28,
+                                        fontFamily: 'Fira Code',
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const Text(
+                              ':',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 28,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 // Days
                 Expanded(
                   child: Column(
@@ -89,7 +140,7 @@ class SafeguardWindowPickerSheet extends StatelessWidget {
                                 onSelectedItemChanged: (index) =>
                                     selectedDays = index,
                                 children: List.generate(
-                                  8,
+                                  30,
                                   (index) => Center(
                                     child: Text(
                                       index.toString().padLeft(2, '0'),
@@ -129,66 +180,15 @@ class SafeguardWindowPickerSheet extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Expanded(
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: CupertinoPicker(
-                                scrollController: FixedExtentScrollController(
-                                  initialItem: selectedHours,
-                                ),
-                                itemExtent: 40,
-                                onSelectedItemChanged: (index) =>
-                                    selectedHours = index,
-                                children: List.generate(
-                                  24,
-                                  (index) => Center(
-                                    child: Text(
-                                      index.toString().padLeft(2, '0'),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 28,
-                                        fontFamily: 'Fira Code',
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const Text(
-                              ':',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Minutes
-                Expanded(
-                  child: Column(
-                    children: [
-                      Text(
-                        'Minutes',
-                        style: context.themeText.largeTag?.copyWith(
-                          color: context.themeColors.textMuted,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Expanded(
                         child: CupertinoPicker(
                           scrollController: FixedExtentScrollController(
-                            initialItem: selectedMinutes,
+                            initialItem: selectedHours,
                           ),
                           itemExtent: 40,
                           onSelectedItemChanged: (index) =>
-                              selectedMinutes = index,
+                              selectedHours = index,
                           children: List.generate(
-                            60,
+                            24,
                             (index) => Center(
                               child: Text(
                                 index.toString().padLeft(2, '0'),
@@ -238,12 +238,14 @@ class SafeguardWindowPickerSheet extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                   onPressed: () {
+                    final int secondsInAMonth =
+                        86400 * 30; // 86400 seconds/day * 30 days/month
                     final newTimeSeconds =
+                        (selectedMonths * secondsInAMonth) +
                         (selectedDays * 86400) +
-                        (selectedHours * 3600) +
-                        (selectedMinutes * 60);
+                        (selectedHours * 3600);
 
-                    setReversibleTimeSeconds(newTimeSeconds);
+                    setSafeguardTimeSeconds(newTimeSeconds);
                     Navigator.pop(context);
                   },
                 ),
@@ -259,18 +261,20 @@ class SafeguardWindowPickerSheet extends StatelessWidget {
 
 void showSafeguardWindowPickerSheet(
   BuildContext context, {
-  required int reversibleTimeDays,
-  required int reversibleTimeHours,
-  required int reversibleTimeMinutes,
-  required Function(int) setReversibleTimeSeconds,
+  required int safeguardTimeMonths,
+  required int safeguardTimeDays,
+  required int safeguardTimeHours,
+
+  required Function(int) setSafeguardTimeSeconds,
 }) {
   showAppModalBottomSheet(
     context: context,
     builder: (context) => SafeguardWindowPickerSheet(
-      reversibleTimeDays: reversibleTimeDays,
-      reversibleTimeHours: reversibleTimeHours,
-      reversibleTimeMinutes: reversibleTimeMinutes,
-      setReversibleTimeSeconds: setReversibleTimeSeconds,
+      safeguardTimeMonths: safeguardTimeMonths,
+      safeguardTimeDays: safeguardTimeDays,
+      safeguardTimeHours: safeguardTimeHours,
+
+      setSafeguardTimeSeconds: setSafeguardTimeSeconds,
     ),
   );
 }

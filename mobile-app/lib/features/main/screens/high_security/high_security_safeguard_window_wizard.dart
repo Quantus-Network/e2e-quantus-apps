@@ -21,21 +21,25 @@ class HighSecuritySafeguardWindowWizard extends StatefulWidget {
 
 class _HighSecuritySafeguardWindowWizardState
     extends State<HighSecuritySafeguardWindowWizard> {
+  final int _secondsInAMonth = 86400 * 30; // 86400 seconds/day * 30 days/month
 
-  // Reversible time state
-  int _reversibleTimeSeconds = 600; // Default: 10 minutes
-  int get _reversibleTimeDays => _reversibleTimeSeconds ~/ 86400;
-  int get _reversibleTimeHours => (_reversibleTimeSeconds % 86400) ~/ 3600;
-  int get _reversibleTimeMinutes => (_reversibleTimeSeconds % 3600) ~/ 60;
+  int _safeguardTimeSeconds = 10 * 60 * 60; // Default: 10 hours
 
-  void _setReversibleTimeSeconds(int seconds) {
+  /// This is an approximation.
+  int get _safeguardTimeMonths => _safeguardTimeSeconds ~/ _secondsInAMonth;
+  int get _safeguardTimeDays => (_safeguardTimeSeconds % _secondsInAMonth) ~/ 86400;
+  int get _safeguardTimeHours => (_safeguardTimeSeconds % 86400) ~/ 3600;
+
+  void _setSafeguardTimeSeconds(int seconds) {
     setState(() {
-      _reversibleTimeSeconds = seconds;
+      _safeguardTimeSeconds = seconds;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool isDisabled = _safeguardTimeSeconds == 0;
+
     return ScaffoldBase(
       appBar: 'Safeguard Window',
       child: Column(
@@ -69,7 +73,7 @@ class _HighSecuritySafeguardWindowWizardState
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Safeguard Window', style: context.themeText.largeTag)
+              Text('Safeguard Window', style: context.themeText.largeTag),
             ],
           ),
           const SizedBox(height: 4),
@@ -82,10 +86,10 @@ class _HighSecuritySafeguardWindowWizardState
             onTap: () {
               showSafeguardWindowPickerSheet(
                 context,
-                reversibleTimeDays: _reversibleTimeDays,
-                reversibleTimeHours: _reversibleTimeHours,
-                reversibleTimeMinutes: _reversibleTimeMinutes,
-                setReversibleTimeSeconds: _setReversibleTimeSeconds,
+                safeguardTimeMonths: _safeguardTimeMonths,
+                safeguardTimeDays: _safeguardTimeDays,
+                safeguardTimeHours: _safeguardTimeHours,
+                setSafeguardTimeSeconds: _setSafeguardTimeSeconds,
               );
             },
             child: Container(
@@ -102,10 +106,10 @@ class _HighSecuritySafeguardWindowWizardState
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
-                    DatetimeFormattingService.formatReversibleTime(
-                      _reversibleTimeDays,
-                      _reversibleTimeHours,
-                      _reversibleTimeMinutes,
+                    DatetimeFormattingService.formatSafeguardTime(
+                      _safeguardTimeMonths,
+                      _safeguardTimeDays,
+                      _safeguardTimeHours,
                     ),
                     style: context.themeText.smallParagraph,
                   ),
@@ -139,6 +143,7 @@ class _HighSecuritySafeguardWindowWizardState
               ),
               Expanded(
                 child: Button(
+                  isDisabled: isDisabled,
                   variant: ButtonVariant.neutral,
                   label: 'Next',
                   onPressed: () {

@@ -13,7 +13,7 @@ class StepsIndicator extends StatelessWidget {
     required this.currentStep,
     required this.totalSteps,
 
-  }) : assert(currentStep >= 1 && currentStep < totalSteps - 1);
+  }) : assert(currentStep >= 1 && currentStep <= totalSteps );
 
   @override
   Widget build(BuildContext context) {
