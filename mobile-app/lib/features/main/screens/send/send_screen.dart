@@ -629,7 +629,9 @@ class SendScreenState extends ConsumerState<SendScreen> {
                                     padding: const EdgeInsets.only(top: 1.0),
                                     child: Icon(
                                       Icons.copy,
-                                      size: context.themeSize.settingMenuShareIconSize,
+                                      size: context
+                                          .themeSize
+                                          .settingMenuShareIconSize,
                                       color: context.themeColors.checksum
                                           .useOpacity(0.7),
                                     ),
@@ -815,7 +817,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
           onPressed: !isButtonDisabled ? _showSendConfirmation : null,
           isDisabled: isButtonDisabled,
         ),
-         SizedBox(height: context.themeSize.bottomButtonSpacing),
+        SizedBox(height: context.themeSize.bottomButtonSpacing),
       ],
     );
   }
