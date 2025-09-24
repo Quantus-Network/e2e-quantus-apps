@@ -44,6 +44,32 @@ class DatetimeFormattingService {
     return '${_formatPast(difference)} $timeString';
   }
 
+  static String formatReversibleTime(int days, int hours, int minutes) {
+    if (days > 0) {
+      return '$days day${days > 1 ? 's' : ''}, '
+          '$hours hr${hours != 1 ? 's' : ''}, \n'
+          '$minutes min${minutes != 1 ? 's' : ''}';
+    } else if (hours > 0) {
+      return '$hours hr${hours != 1 ? 's' : ''}, '
+          '$minutes min${minutes != 1 ? 's' : ''}';
+    } else {
+      return '$minutes min${minutes != 1 ? 's' : ''}';
+    }
+  }
+
+  static String formatSafeguardTime(int months, int days, int hours) {
+    if (months > 0) {
+      return '$months month${months > 1 ? 's' : ''}, '
+          '$days day${days != 1 ? 's' : ''}, \n'
+          '$hours hr${hours != 1 ? 's' : ''}';
+    } else if (days > 0) {
+      return '$days day${days != 1 ? 's' : ''}, '
+          '$hours hr${hours != 1 ? 's' : ''}';
+    } else {
+      return '$hours hr${hours != 1 ? 's' : ''}';
+    }
+  }
+
   static FormattedDuration formatDuration(Duration duration) {
     if (duration.isNegative) {
       return const FormattedDuration(

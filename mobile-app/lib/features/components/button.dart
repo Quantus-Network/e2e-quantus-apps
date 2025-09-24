@@ -3,8 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
-enum ButtonVariant { transparent, neutral, primary, success, danger, glass }
-
+enum ButtonVariant {
+  transparent,
+  neutral,
+  primary,
+  success,
+  danger,
+  glass,
+  dangerOutline,
+}
 
 class Button extends StatelessWidget {
   final String label;
@@ -34,6 +41,8 @@ class Button extends StatelessWidget {
     switch (variant) {
       case ButtonVariant.neutral:
         return context.themeColors.textSecondary;
+      case ButtonVariant.dangerOutline:
+        return context.themeColors.buttonDanger;
       default:
         return null;
     }
@@ -139,6 +148,25 @@ class Button extends StatelessWidget {
         );
         break;
 
+      case ButtonVariant.dangerOutline:
+        buttonWidget = Container(
+          width: width,
+          padding: padding,
+          decoration: ShapeDecoration(
+            color: disabled
+                ? context.themeColors.buttonDisabled
+                : Colors.transparent,
+            shape: RoundedRectangleBorder(
+              side: isDisabled
+                  ? BorderSide.none
+                  : BorderSide(color: context.themeColors.buttonDanger),
+              borderRadius: BorderRadius.circular(buttonRadius),
+            ),
+          ),
+          child: buttonContent,
+        );
+        break;
+
       case ButtonVariant.success:
         buttonWidget = Container(
           width: width,
@@ -168,9 +196,7 @@ class Button extends StatelessWidget {
                     ? context.themeColors.buttonDisabled
                     : context.themeColors.buttonGlass,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(
-                    buttonRadius,
-                  ),
+                  borderRadius: BorderRadius.circular(buttonRadius),
                 ),
               ),
               child: buttonContent,

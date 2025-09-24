@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/components/wallet_action_button.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/recent_addresses.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/send_progress_overlay.dart';
@@ -442,23 +442,6 @@ class SendScreenState extends ConsumerState<SendScreen> {
     }
   }
 
-  String _formatReversibleTime() {
-    final days = _reversibleTimeDays;
-    final hours = _reversibleTimeHours;
-    final minutes = _reversibleTimeMinutes;
-
-    if (days > 0) {
-      return '$days day${days > 1 ? 's' : ''}, '
-          '$hours hr${hours != 1 ? 's' : ''}, \n'
-          '$minutes min${minutes != 1 ? 's' : ''}';
-    } else if (hours > 0) {
-      return '$hours hr${hours != 1 ? 's' : ''}, '
-          '$minutes min${minutes != 1 ? 's' : ''}';
-    } else {
-      return '$minutes min${minutes != 1 ? 's' : ''}';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
@@ -531,12 +514,16 @@ class SendScreenState extends ConsumerState<SendScreen> {
                       _lookupIdentity();
                     }
                   },
-                  child: _buildIconButton('assets/paste_icon_1.svg'),
+                  child: const WalletActionButton(
+                    assetPath: 'assets/paste_icon_1.svg',
+                  ),
                 ),
                 const SizedBox(width: 9),
                 GestureDetector(
                   onTap: _scanQRCode,
-                  child: _buildIconButton('assets/scan_1.svg'),
+                  child: const WalletActionButton(
+                    assetPath: 'assets/scan_1.svg',
+                  ),
                 ),
                 const SizedBox(width: 9),
                 GestureDetector(
@@ -629,7 +616,9 @@ class SendScreenState extends ConsumerState<SendScreen> {
                                     padding: const EdgeInsets.only(top: 1.0),
                                     child: Icon(
                                       Icons.copy,
-                                      size: context.themeSize.settingMenuShareIconSize,
+                                      size: context
+                                          .themeSize
+                                          .settingMenuShareIconSize,
                                       color: context.themeColors.checksum
                                           .useOpacity(0.7),
                                     ),
@@ -756,7 +745,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
-                  'Reversible for: ${_formatReversibleTime()}',
+                  'Reversible for: ${DatetimeFormattingService.formatReversibleTime(_reversibleTimeDays, _reversibleTimeHours, _reversibleTimeMinutes)}',
                   style: context.themeText.smallParagraph,
                 ),
                 Icon(
@@ -805,7 +794,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
                   ),
               ],
             ),
-            _buildIconButton('assets/settings_icon.svg'),
+            const WalletActionButton(assetPath: 'assets/settings_icon.svg'),
           ],
         ),
         const SizedBox(height: 24),
@@ -817,21 +806,6 @@ class SendScreenState extends ConsumerState<SendScreen> {
         ),
         const SizedBox(height: 24),
       ],
-    );
-  }
-
-  Widget _buildIconButton(String assetPath) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: ShapeDecoration(
-        color: Colors.white.useOpacity(0.15),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-      ),
-      child: SvgPicture.asset(
-        assetPath,
-        width: context.themeSize.mainMenuIconSize,
-        height: context.themeSize.mainMenuIconSize,
-      ),
     );
   }
 
