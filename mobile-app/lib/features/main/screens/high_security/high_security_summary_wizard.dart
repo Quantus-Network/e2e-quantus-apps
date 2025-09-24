@@ -30,8 +30,6 @@ class _HighSecuritySummaryWizardState
 
     final guardianChecksumFuture = _humanReadableChecksumService
         .getHumanReadableName(formData.guardianAddress);
-    final recoveryChecksumFuture = _humanReadableChecksumService
-        .getHumanReadableName(formData.recoveryAddress);
 
     return ScaffoldBase(
       appBar: 'Summary',
@@ -85,14 +83,6 @@ class _HighSecuritySummaryWizardState
           SummaryCard(
             type: SummaryType.guardian,
             checksumFuture: guardianChecksumFuture,
-            address: AddressFormattingService.splitIntoChunks(
-              formData.guardianAddress,
-            ).join(' '),
-          ),
-          const SizedBox(height: 19),
-          SummaryCard(
-            type: SummaryType.recovery,
-            checksumFuture: recoveryChecksumFuture,
             address: AddressFormattingService.splitIntoChunks(
               formData.guardianAddress,
             ).join(' '),

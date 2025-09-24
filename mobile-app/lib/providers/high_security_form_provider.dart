@@ -7,10 +7,6 @@ class HighSecurityFormNotifier extends StateNotifier<HighSecurityForm> {
     state = state.copyWith(guardianAddress: address);
   }
 
-  void updateRecoveryAddress(String address) {
-    state = state.copyWith(recoveryAddress: address);
-  }
-
   void updateSafeguardWindow(int window) {
     state = state.copyWith(safeguardWindow: window);
   }

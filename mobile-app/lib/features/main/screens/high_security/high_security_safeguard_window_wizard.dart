@@ -5,7 +5,7 @@ import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/gradient_text.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/steps.dart';
-import 'package:resonance_network_wallet/features/main/screens/high_security/high_security_recovery_wizard.dart';
+import 'package:resonance_network_wallet/features/main/screens/high_security/high_security_summary_wizard.dart';
 import 'package:resonance_network_wallet/features/main/screens/high_security/safeguard_window_picker_sheet.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
@@ -153,7 +153,7 @@ class _HighSecuritySafeguardWindowWizardState
                       context,
                       MaterialPageRoute(
                         builder: (context) =>
-                            const HighSecurityRecoveryWizard(),
+                            const HighSecuritySummaryWizard(),
                       ),
                     );
                   },

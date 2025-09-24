@@ -157,7 +157,9 @@ class Button extends StatelessWidget {
                 ? context.themeColors.buttonDisabled
                 : Colors.transparent,
             shape: RoundedRectangleBorder(
-              side: BorderSide(color: context.themeColors.buttonDanger),
+              side: isDisabled
+                  ? BorderSide.none
+                  : BorderSide(color: context.themeColors.buttonDanger),
               borderRadius: BorderRadius.circular(buttonRadius),
             ),
           ),
