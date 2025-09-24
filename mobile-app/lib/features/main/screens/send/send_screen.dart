@@ -815,7 +815,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
           onPressed: !isButtonDisabled ? _showSendConfirmation : null,
           isDisabled: isButtonDisabled,
         ),
-        const SizedBox(height: 24),
+         SizedBox(height: context.themeSize.bottomButtonSpacing),
       ],
     );
   }
