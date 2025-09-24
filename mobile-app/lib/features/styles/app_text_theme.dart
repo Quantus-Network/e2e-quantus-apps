@@ -14,6 +14,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
   final TextStyle? timer;
   final TextStyle? detail;
   final TextStyle? tiny;
+  final TextStyle? extraTiny;
 
   const AppTextTheme({
     this.lockTitle,
@@ -28,6 +29,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
     this.timer,
     this.detail,
     this.tiny,
+    this.extraTiny,
   });
 
   const AppTextTheme.defaultTheme()
@@ -99,6 +101,14 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
           fontFamily: 'Fira Code',
           fontStyle: FontStyle.normal,
           decoration: TextDecoration.none,
+        ),
+        extraTiny: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w400,
+          fontFamily: 'Fira Code',
+          fontStyle: FontStyle.normal,
+          decoration: TextDecoration.none,
+          height: 0
         ),
       );
 
@@ -176,6 +186,14 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
           fontStyle: FontStyle.normal,
           decoration: TextDecoration.none,
         ),
+         extraTiny: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          fontFamily: 'Fira Code',
+          fontStyle: FontStyle.normal,
+          decoration: TextDecoration.none,
+          height: 0
+        ),
       );
 
   @override
@@ -192,6 +210,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
     TextStyle? timer,
     TextStyle? detail,
     TextStyle? tiny,
+    TextStyle? extraTiny,
   }) {
     return AppTextTheme(
       lockTitle: lockTitle ?? this.lockTitle,
@@ -206,6 +225,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
       timer: timer ?? this.timer,
       detail: detail ?? this.detail,
       tiny: tiny ?? this.tiny,
+      extraTiny: extraTiny ?? this.extraTiny,
     );
   }
 
@@ -229,6 +249,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
       timer: TextStyle.lerp(timer, other.timer, t),
       detail: TextStyle.lerp(detail, other.detail, t),
       tiny: TextStyle.lerp(tiny, other.tiny, t),
+      extraTiny: TextStyle.lerp(extraTiny, other.extraTiny, t),
     );
   }
 }
