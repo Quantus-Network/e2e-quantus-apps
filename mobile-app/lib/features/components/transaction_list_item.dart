@@ -115,7 +115,7 @@ class TransactionListItemState extends State<TransactionListItem> {
 
   String _formatAddress(String address) {
     if (context.isTablet) return address;
-    
+
     return AddressFormattingService.formatAddress(
       address,
       prefix: 5,
@@ -221,12 +221,15 @@ class TransactionListItemState extends State<TransactionListItem> {
                     width: context.themeSize.txListItemIconWidth,
                   )
                 else
-                  SvgPicture.asset(
-                    role == TransactionRole.sender
-                        ? 'assets/transaction/send_icon.svg'
-                        : 'assets/transaction/receive_icon.svg',
-                    width: context.themeSize.txListItemIconWidth,
-                  ),
+                  role == TransactionRole.sender
+                      ? Image.asset(
+                          'assets/transaction/send_icon.png',
+                          width: context.themeSize.txListItemIconWidth,
+                        )
+                      : SvgPicture.asset(
+                          'assets/transaction/receive_icon.svg',
+                          width: context.themeSize.txListItemIconWidth,
+                        ),
                 const SizedBox(width: 11),
                 Expanded(
                   child: Column(
