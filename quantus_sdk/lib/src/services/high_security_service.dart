@@ -8,6 +8,7 @@ class HighSecurityService {
   factory HighSecurityService() => _instance;
   HighSecurityService._internal();
 
+  // ignore: unused_field
   final SubstrateService _substrateService = SubstrateService();
 
   Future<void> setupHighSecurityAccount(
