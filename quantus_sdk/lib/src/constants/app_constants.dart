@@ -39,5 +39,5 @@ class AppConstants {
   // Default sheet height in percentage of screen height
   static const double sendingSheetHeightFraction = 0.72;
 
-  static const int highSecurityStepsCount = 4;
+  static const int highSecurityStepsCount = 3;
 }

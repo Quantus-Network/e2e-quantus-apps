@@ -43,7 +43,7 @@ class _HighSecuritySummaryWizardState
               SizedBox(
                 width: 204,
                 child: StepsIndicator(
-                  currentStep: 4,
+                  currentStep: 3,
                   totalSteps: AppConstants.highSecurityStepsCount,
                 ),
               ),

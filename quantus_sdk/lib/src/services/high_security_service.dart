@@ -12,7 +12,7 @@ class HighSecurityService {
 
   Future<void> setupHighSecurityAccount(
     Account account,
-    HighSecurityForm formData,
+    HighSecurityData formData,
   ) async {
     try {
       await Future.delayed(const Duration(seconds: 2));
@@ -27,7 +27,7 @@ class HighSecurityService {
 
   Future<ExtrinsicFeeData> getHighSecuritySetupFee(
     Account account,
-    HighSecurityForm formData,
+    HighSecurityData formData,
   ) async {
     try {
       await Future.delayed(const Duration(seconds: 2));
@@ -51,7 +51,7 @@ class HighSecurityService {
     }
   }
 
-  void getHighSecuritySetupCall(HighSecurityForm formData) {
+  void getHighSecuritySetupCall(HighSecurityData formData) {
     throw Exception('No Implementation');
   }
 }

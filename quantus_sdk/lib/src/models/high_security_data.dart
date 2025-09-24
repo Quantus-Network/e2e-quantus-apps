@@ -1,17 +1,17 @@
-class HighSecurityForm {
+class HighSecurityData {
   final String guardianAddress;
   final int safeguardWindow;
 
-  const HighSecurityForm({
+  const HighSecurityData({
     this.guardianAddress = '',
     this.safeguardWindow = 10 * 60 * 60, // 10 hours in seconds
   });
 
-  HighSecurityForm copyWith({
+  HighSecurityData copyWith({
     String? guardianAddress,
     int? safeguardWindow,
   }) {
-    return HighSecurityForm(
+    return HighSecurityData(
       guardianAddress: guardianAddress ?? this.guardianAddress,
       safeguardWindow: safeguardWindow ?? this.safeguardWindow,
     );
