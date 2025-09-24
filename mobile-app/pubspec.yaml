@@ -86,6 +86,8 @@ flutter:
     - assets/transaction/
     - assets/logo/
     - assets/background.png
+    - assets/send_btn_decoration.png
+    - assets/receive_btn_decoration.png
 
   fonts:
     - family: Fira Code

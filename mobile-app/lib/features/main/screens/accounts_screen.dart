@@ -73,6 +73,8 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
             label: 'Create New Account',
             onPressed: _isCreatingAccount ? null : _createNewAccount,
           ),
+
+           SizedBox(height: context.themeSize.bottomButtonSpacing)
         ],
       ),
     );

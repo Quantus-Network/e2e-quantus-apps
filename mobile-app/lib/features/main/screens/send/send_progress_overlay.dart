@@ -190,8 +190,8 @@ class SendConfirmationOverlayState
           Column(
             children: [
               Center(
-                child: SvgPicture.asset(
-                  'assets/transaction/send_icon.svg',
+                child: Image.asset(
+                  'assets/transaction/send_icon.png',
                   width: context.isTablet ? 101 : 61,
                   height: context.isTablet ? 92 : 52,
                 ),
@@ -446,8 +446,8 @@ class SendConfirmationOverlayState
           Column(
             children: [
               Center(
-                child: SvgPicture.asset(
-                  'assets/transaction/send_icon.svg',
+                child: Image.asset(
+                  'assets/transaction/send_icon.png',
                   width: context.isTablet ? 101 : 61,
                   height: context.isTablet ? 92 : 52,
                 ),

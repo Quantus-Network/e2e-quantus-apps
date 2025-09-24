@@ -216,52 +216,20 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                   ),
                   const SizedBox(height: 18),
                   Row(
-                    spacing: context.isTablet ? 28 : 0,
-                    mainAxisAlignment: context.isTablet
-                        ? MainAxisAlignment.center
-                        : MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       ActionButton(
-                        iconWidget: SvgPicture.asset(
-                          'assets/transaction/send_icon.svg',
-                          width: 19,
-                        ),
-                        label: 'SEND',
-                        borderColor: const Color(0xFF16CECE),
+                        type: ActionType.send,
                         onPressed: () {
                           Navigator.pushNamed(context, '/send');
                         },
                       ),
+                      const SizedBox(width: 33),
                       ActionButton(
-                        iconWidget: SvgPicture.asset(
-                          'assets/transaction/receive_icon.svg',
-                          width: 19,
-                        ),
-                        label: 'RECEIVE',
-                        borderColor: const Color(0xFFED4CCE),
+                        type: ActionType.receive,
                         onPressed: () {
                           showReceiveSheet(context);
                         },
-                      ),
-                      ActionButton(
-                        iconWidget: SvgPicture.asset(
-                          'assets/transaction/swap_icon.svg',
-                          width: 19,
-                        ),
-                        label: 'SWAP',
-                        borderColor: const Color(0xFF0AD4F6),
-                        onPressed: () {},
-                        disabled: true,
-                      ),
-                      ActionButton(
-                        iconWidget: SvgPicture.asset(
-                          'assets/transaction/bridge_icon.svg',
-                          width: 19,
-                        ),
-                        label: 'BRIDGE',
-                        borderColor: const Color(0xFF0AD4F6),
-                        onPressed: () {},
-                        disabled: true,
                       ),
                     ],
                   ),
