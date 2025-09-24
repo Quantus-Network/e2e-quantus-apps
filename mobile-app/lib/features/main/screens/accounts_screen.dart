@@ -157,7 +157,6 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                     horizontal: context.isTablet ? 20 : 8,
                     vertical: 8,
                   ),
-                  height: context.themeSize.accountListItemHeight,
                   decoration: ShapeDecoration(
                     color: isActive
                         ? context.themeColors.surfaceActive
@@ -193,7 +192,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                   children: [
                                     Text(
                                       account.name,
-                                      style: context.themeText.smallParagraph
+                                      style: context.themeText.paragraph
                                           ?.copyWith(
                                             color: isActive
                                                 ? Colors.black
@@ -204,8 +203,8 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                       humanChecksum,
                                       style: context.themeText.detail?.copyWith(
                                         color: isActive
-                                            ? context.themeColors.checksumDarker
-                                            : context.themeColors.checksum,
+                                            ? context.themeColors.checksum
+                                            : context.themeColors.checksumDarker,
                                       ),
                                     ),
                                     Row(
@@ -217,7 +216,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                               : AddressFormattingService.formatAddress(
                                                   account.accountId,
                                                 ),
-                                          style: context.themeText.tiny
+                                          style: context.themeText.detail
                                               ?.copyWith(
                                                 color: isActive
                                                     ? context
@@ -258,7 +257,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                             TextSpan(
                                               text: _formattingService
                                                   .formatBalance(balance),
-                                              style: context.themeText.detail
+                                              style: context.themeText.smallParagraph
                                                   ?.copyWith(
                                                     color: isActive
                                                         ? context
@@ -272,7 +271,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                             TextSpan(
                                               text:
                                                   ' ${AppConstants.tokenSymbol}',
-                                              style: context.themeText.tiny
+                                              style: context.themeText.detail
                                                   ?.copyWith(
                                                     color: isActive
                                                         ? context
