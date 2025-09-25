@@ -667,7 +667,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 LimitedBox(
-                  maxWidth: MediaQuery.of(context).size.width * 0.8,
+                  maxWidth: MediaQuery.of(context).size.width * 0.75,
                   child: IntrinsicWidth(
                     child: TextField(
                       controller: _amountController,
