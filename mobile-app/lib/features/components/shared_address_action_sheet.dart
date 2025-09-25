@@ -128,7 +128,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
                           return SizedBox(
-                            height: 14,
+                            height: 18,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
