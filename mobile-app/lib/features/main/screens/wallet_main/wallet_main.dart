@@ -70,7 +70,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
 
      if (hasError || noAccount) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        showErrorDisplaySheet(context, activeAccountAsync!);
+        showErrorDisplaySheet(context, activeAccountAsync);
       });
     }
 
