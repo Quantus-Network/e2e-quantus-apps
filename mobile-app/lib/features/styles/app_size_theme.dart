@@ -76,7 +76,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
         txDetailsIconHeight: 43.0,
         txDetailsIconWidth: 51.0,
         timePickerSubtitleWidth: 249,
-        bottomButtonSpacing: 52,
+        bottomButtonSpacing: 16,
       );
 
   const AppSizeTheme.iPad()
@@ -103,7 +103,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
         txDetailsIconHeight: 82.0,
         txDetailsIconWidth: 91.0,
         timePickerSubtitleWidth: 400,
-        bottomButtonSpacing: 52,
+        bottomButtonSpacing: 16,
       );
 
   @override
