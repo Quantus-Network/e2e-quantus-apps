@@ -13,8 +13,13 @@ import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
 class ErrorDisplay extends ConsumerStatefulWidget {
   final AsyncValue<Account?> activeAccountAsync;
+  final Function(bool) setIsErrorSheetDisplayed;
 
-  const ErrorDisplay({super.key, required this.activeAccountAsync});
+  const ErrorDisplay({
+    super.key,
+    required this.activeAccountAsync,
+    required this.setIsErrorSheetDisplayed,
+  });
 
   @override
   ConsumerState<ErrorDisplay> createState() => _ErrorDisplayState();
@@ -57,12 +62,15 @@ class _ErrorDisplayState extends ConsumerState<ErrorDisplay> {
             ),
             const Spacer(),
             Button(
-              variant: ButtonVariant.neutral,
+              variant: ButtonVariant.glassOutline,
               label: 'Retry',
               onPressed: () {
+                widget.setIsErrorSheetDisplayed(false);
+
                 ref.invalidate(activeAccountProvider);
                 ref.invalidate(balanceProvider);
                 ref.invalidate(activeAccountTransactionsProvider);
+                
                 Navigator.pop(context);
               },
             ),
@@ -75,9 +83,10 @@ class _ErrorDisplayState extends ConsumerState<ErrorDisplay> {
 }
 
 void showErrorDisplaySheet(
-  BuildContext context,
-  AsyncValue<Account?> activeAccountAsync,
-) {
+  BuildContext context, {
+  required AsyncValue<Account?> activeAccountAsync,
+  required Function(bool) setIsErrorSheetDisplayed,
+}) {
   showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,
@@ -110,7 +119,10 @@ void showErrorDisplaySheet(
             filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
             child: Container(
               color: Colors.black.useOpacity(0.3),
-              child: ErrorDisplay(activeAccountAsync: activeAccountAsync),
+              child: ErrorDisplay(
+                activeAccountAsync: activeAccountAsync,
+                setIsErrorSheetDisplayed: setIsErrorSheetDisplayed,
+              ),
             ),
           ),
         ),

@@ -33,6 +33,7 @@ class WalletMain extends ConsumerStatefulWidget {
 class _WalletMainState extends ConsumerState<WalletMain> {
   final NumberFormattingService _formattingService = NumberFormattingService();
   final ScrollController _scrollController = ScrollController();
+  bool _isErrorSheetDisplayed = false;
 
   @override
   void initState() {
@@ -49,6 +50,10 @@ class _WalletMainState extends ConsumerState<WalletMain> {
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void setIsErrorSheetDisplayed(bool value) {
+    _isErrorSheetDisplayed = value;
   }
 
   @override
@@ -68,9 +73,15 @@ class _WalletMainState extends ConsumerState<WalletMain> {
 
     print('error: $hasError, noAccount: $noAccount');
 
-     if (hasError || noAccount) {
+    if ((hasError || noAccount) && !_isErrorSheetDisplayed) {
+      setIsErrorSheetDisplayed(true);
+
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        showErrorDisplaySheet(context, activeAccountAsync);
+        showErrorDisplaySheet(
+          context,
+          activeAccountAsync: activeAccountAsync,
+          setIsErrorSheetDisplayed: setIsErrorSheetDisplayed,
+        );
       });
     }
 
