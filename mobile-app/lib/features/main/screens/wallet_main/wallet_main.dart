@@ -68,8 +68,10 @@ class _WalletMainState extends ConsumerState<WalletMain> {
 
     print('error: $hasError, noAccount: $noAccount');
 
-    if (hasError || noAccount) {
-      return ErrorDisplay(activeAccountAsync: activeAccountAsync);
+     if (hasError || noAccount) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        showErrorDisplaySheet(context, activeAccountAsync!);
+      });
     }
 
     final activeAccount = activeAccountAsync.value!;
@@ -205,10 +207,14 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                         loading: () => CircularProgressIndicator(
                           color: context.themeColors.circularLoader,
                         ),
-                        error: (err, stack) => Text(
-                          'Error',
-                          style: TextStyle(
-                            color: context.themeColors.textError,
+                        error: (err, stack) => SizedBox(
+                          width: 250,
+                          child: Text(
+                            textAlign: TextAlign.center,
+                            err.toString(),
+                            style: context.themeText.detail?.copyWith(
+                              color: context.themeColors.textError,
+                            ),
                           ),
                         ),
                       ),
