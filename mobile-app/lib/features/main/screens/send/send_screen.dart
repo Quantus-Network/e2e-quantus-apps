@@ -8,6 +8,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/features/components/segmented_control.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner_screen.dart';
@@ -20,6 +21,13 @@ import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+
+enum SendMode { immediate, reversible }
+
+extension SendModeExtension on SendMode {
+  bool get isImmediate => this == SendMode.immediate;
+  bool get isReversible => this == SendMode.reversible;
+}
 
 class SendScreen extends ConsumerStatefulWidget {
   const SendScreen({super.key});
@@ -42,6 +50,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
   bool _hasAddressError = false;
   bool _hasAmountError = false;
   String _humanReadableCheckphrase = '';
+  SendMode _sendMode = SendMode.reversible;
   Timer? _debounce;
   int? _blockHeight;
 
@@ -409,7 +418,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
               recipientName: _humanReadableCheckphrase,
               recipientAddress: _recipientController.text,
               fee: _networkFee,
-              reversibleTimeSeconds: _reversibleTimeSeconds,
+              reversibleTimeSeconds: _sendMode.isReversible ? _reversibleTimeSeconds : 0,
               blockHeight: _blockHeight ?? 0,
               onClose: () => Navigator.pop(context),
             ),
@@ -451,14 +460,14 @@ class SendScreenState extends ConsumerState<SendScreen> {
     final minutes = _reversibleTimeMinutes;
 
     if (days > 0) {
-      return '$days day${days > 1 ? 's' : ''}, '
-          '$hours hr${hours != 1 ? 's' : ''}, \n'
-          '$minutes min${minutes != 1 ? 's' : ''}';
+      return '${days}d, '
+          '${hours}h, '
+          '${minutes}m';
     } else if (hours > 0) {
-      return '$hours hr${hours != 1 ? 's' : ''}, '
-          '$minutes min${minutes != 1 ? 's' : ''}';
+      return '${hours}h, '
+          '${minutes}m';
     } else {
-      return '$minutes min${minutes != 1 ? 's' : ''}';
+      return '${minutes}m';
     }
   }
 
@@ -736,44 +745,62 @@ class SendScreenState extends ConsumerState<SendScreen> {
           ],
         ),
         const SizedBox(height: 14),
-        GestureDetector(
-          onTap: () {
-            showTimePickerSheet(
-              context,
-              reversibleTimeDays: _reversibleTimeDays,
-              reversibleTimeHours: _reversibleTimeHours,
-              reversibleTimeMinutes: _reversibleTimeMinutes,
-              setReversibleTimeSeconds: _setReversibleTimeSeconds,
-              saveReversibleTimeSetting: _saveReversibleTimeSetting,
-            );
+        SegmentedControl<SendMode>(
+          widthMode: SegmentWidthMode.custom,
+          selectedValue: _sendMode,
+          onSelectionChanged: (value) {
+            setState(() {
+              _sendMode = value;
+            });
           },
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: ShapeDecoration(
-              color: const Color(0xFF313131),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
+          items: [
+            SegmentedControlItem(
+              value: SendMode.reversible,
+              child: InkWell(
+                onTap: _sendMode == SendMode.reversible
+                    ? () {
+                        showTimePickerSheet(
+                          context,
+                          reversibleTimeDays: _reversibleTimeDays,
+                          reversibleTimeHours: _reversibleTimeHours,
+                          reversibleTimeMinutes: _reversibleTimeMinutes,
+                          setReversibleTimeSeconds: _setReversibleTimeSeconds,
+                          saveReversibleTimeSetting: _saveReversibleTimeSetting,
+                        );
+                      }
+                    : null,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10.0,
+                    vertical: 8.0,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Send in: ${_formatReversibleTime()}',
+                        style: context.themeText.smallParagraph,
+                      ),
+                      if (_sendMode.isReversible)
+                        Icon(
+                          Icons.edit,
+                          color: const Color(0x75000000),
+                          size: context.isTablet ? 22 : 14,
+                        ),
+                    ],
+                  ),
+                ),
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  'Reversible for: ${_formatReversibleTime()}',
-                  style: context.themeText.smallParagraph,
-                ),
-                Icon(
-                  Icons.edit,
-                  color: Colors.white70,
-                  size: context.isTablet ? 22 : 14,
-                ),
-              ],
+            SegmentedControlItem(
+              customWidth: 76.0,
+              value: SendMode.immediate,
+              child: Text('Now', style: context.themeText.smallParagraph),
             ),
-          ),
+          ],
         ),
-        const SizedBox(height: 44),
+        const SizedBox(height: 37),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -813,7 +840,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
             _buildIconButton('assets/settings_icon.svg'),
           ],
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 10),
         Button(
           variant: ButtonVariant.neutral,
           label: getButtonText,
