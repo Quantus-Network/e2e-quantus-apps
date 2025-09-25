@@ -314,7 +314,7 @@ class SendConfirmationOverlayState
                 ),
               ),
             ),
-
+          const Spacer(),
           // Network fee and confirm button
           SizedBox(
             width: context.themeSize.sendOverlayContainerWidth,
@@ -356,6 +356,7 @@ class SendConfirmationOverlayState
               ],
             ),
           ),
+          SizedBox(height: context.themeSize.bottomButtonSpacing),
         ],
       ),
     );
@@ -553,15 +554,17 @@ class SendConfirmationOverlayState
                     ],
                   ),
                 ),
-              const SizedBox(height: 46),
-              // Done Button
-              Button(
-                variant: ButtonVariant.neutral,
-                label: 'Done',
-                onPressed: goHome,
-              ),
             ],
           ),
+
+          const Spacer(),
+          // Done Button
+          Button(
+            variant: ButtonVariant.neutral,
+            label: 'Done',
+            onPressed: goHome,
+          ),
+          SizedBox(height: context.themeSize.bottomButtonSpacing),
         ],
       ),
     );

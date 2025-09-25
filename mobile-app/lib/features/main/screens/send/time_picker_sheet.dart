@@ -220,14 +220,11 @@ class TimePickerSheet extends StatelessWidget {
               Expanded(
                 child: Button(
                   variant: ButtonVariant.neutral,
-                  label: 'Now',
+                  label: 'Cancel',
                   textStyle: context.themeText.paragraph?.copyWith(
-                    color: context.themeColors.textSecondary,
                     fontWeight: FontWeight.w600,
                   ),
                   onPressed: () {
-                    setReversibleTimeSeconds(0);
-                    saveReversibleTimeSetting(0);
                     Navigator.pop(context);
                   },
                 ),
@@ -255,19 +252,7 @@ class TimePickerSheet extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 35),
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              textAlign: TextAlign.center,
-              style: context.themeText.paragraph?.copyWith(
-                color: context.themeColors.error,
-                fontWeight: FontWeight.w600,
-                decoration: TextDecoration.underline,
-              ),
-            ),
-          ),
+          SizedBox(height: context.themeSize.bottomButtonSpacing),
         ],
       ),
     );
