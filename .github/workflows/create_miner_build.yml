@@ -45,8 +45,8 @@ jobs:
           GIT_TERMINAL_PROMPT: 0
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
 
-      - name: Build macOS release
-        run: flutter build macos --release
+      - name: Build macOS release (no codesign)
+        run: flutter build macos --release --no-codesign
         working-directory: ./miner-app
 
       - name: Code sign macOS App (hardened runtime)
