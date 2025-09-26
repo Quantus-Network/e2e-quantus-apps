@@ -7,6 +7,30 @@ class ReversibleTimer extends StatelessWidget {
 
   const ReversibleTimer({super.key, required this.remainingTime});
 
+  String getFirstTimeCol(FormattedDuration time) {
+    if (time.days != null) {
+      return '${time.days!}d';
+    } else {
+      return '${time.hours}h';
+    }
+  }
+
+  String getSecondTimeCol(FormattedDuration time) {
+    if (time.days != null) {
+      return '${time.hours}h';
+    } else {
+      return '${time.minutes}m';
+    }
+  }
+
+  String getThirdTimeCol(FormattedDuration time) {
+    if (time.days != null) {
+      return '${time.minutes}m';
+    } else {
+      return '${time.seconds}s';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final time = DatetimeFormattingService.formatDuration(remainingTime);
@@ -20,7 +44,7 @@ class ReversibleTimer extends StatelessWidget {
         spacing: 18,
         children: [
           Text(
-            time.hours,
+            getFirstTimeCol(time),
             textAlign: TextAlign.center,
             style: context.themeText.timer,
           ),
@@ -30,7 +54,7 @@ class ReversibleTimer extends StatelessWidget {
             style: context.themeText.timer,
           ),
           Text(
-            time.minutes,
+            getSecondTimeCol(time),
             textAlign: TextAlign.center,
             style: context.themeText.timer,
           ),
@@ -40,7 +64,7 @@ class ReversibleTimer extends StatelessWidget {
             style: context.themeText.timer,
           ),
           Text(
-            time.seconds,
+            getThirdTimeCol(time),
             textAlign: TextAlign.center,
             style: context.themeText.timer,
           ),

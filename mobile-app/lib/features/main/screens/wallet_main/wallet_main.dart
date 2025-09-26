@@ -10,7 +10,6 @@ import 'package:resonance_network_wallet/features/main/screens/receive_screen.da
 import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/account_details.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/action_button.dart';
-import 'package:resonance_network_wallet/features/main/screens/wallet_main/error_display.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/history_section.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
@@ -61,15 +60,6 @@ class _WalletMainState extends ConsumerState<WalletMain> {
 
     if (activeAccountAsync.isLoading) {
       return _createLoadingDisplay(context);
-    }
-
-    final hasError = activeAccountAsync.hasError;
-    final noAccount = activeAccountAsync.value == null;
-
-    print('error: $hasError, noAccount: $noAccount');
-
-    if (hasError || noAccount) {
-      return ErrorDisplay(activeAccountAsync: activeAccountAsync);
     }
 
     final activeAccount = activeAccountAsync.value!;
@@ -205,10 +195,14 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                         loading: () => CircularProgressIndicator(
                           color: context.themeColors.circularLoader,
                         ),
-                        error: (err, stack) => Text(
-                          'Error',
-                          style: TextStyle(
-                            color: context.themeColors.textError,
+                        error: (err, stack) => SizedBox(
+                          width: 250,
+                          child: Text(
+                            textAlign: TextAlign.center,
+                            err.toString(),
+                            style: context.themeText.detail?.copyWith(
+                              color: context.themeColors.textError,
+                            ),
                           ),
                         ),
                       ),

@@ -99,7 +99,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
     return SafeArea(
       bottom: false,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         decoration: ShapeDecoration(
           color: context.themeColors.background,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),

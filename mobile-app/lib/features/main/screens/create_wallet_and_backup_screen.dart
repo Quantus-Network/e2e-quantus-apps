@@ -384,7 +384,7 @@ void showRecoveryPhraseSheet(
                       const SizedBox(height: 35),
                       Button(
                         label: 'Close',
-                        variant: ButtonVariant.neutral,
+                        variant: ButtonVariant.glassOutline,
                         onPressed: () {
                           Navigator.of(context).pop();
                         },

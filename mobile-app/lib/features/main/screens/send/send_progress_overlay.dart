@@ -560,7 +560,7 @@ class SendConfirmationOverlayState
           const Spacer(),
           // Done Button
           Button(
-            variant: ButtonVariant.neutral,
+            variant: ButtonVariant.glassOutline,
             label: 'Done',
             onPressed: goHome,
           ),
