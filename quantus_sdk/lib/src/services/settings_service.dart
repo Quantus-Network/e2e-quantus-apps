@@ -11,10 +11,12 @@ class SettingsService {
 
   late SharedPreferences _prefs;
   final _secureStorage = const FlutterSecureStorage();
-  bool _initialized = false;
 
   // New keys for multi-account support
-  static const String _accountsKey = 'accounts';
+  static const String _accountsKey = 'accounts_v2';
+  
+  // ignore: unused_field
+  static const String _oldAccountsKey = 'accounts';
   static const String _activeAccountIndexKey = 'active_account_index';
 
   // Local authentication keys
@@ -22,10 +24,11 @@ class SettingsService {
   static const String _lastSuccessfulAuthKey = 'last_successful_auth';
 
   Future<void> initialize() async {
-    if (!_initialized) {
-      _prefs = await SharedPreferences.getInstance();
-      _initialized = true;
-    }
+    // Always (re)bind the SharedPreferences instance. This ensures tests that
+    // call SharedPreferences.setMockInitialValues({}) before initialize()
+    // get a clean, isolated preferences store even if the service singleton
+    // was created earlier in the process.
+    _prefs = await SharedPreferences.getInstance();
   }
 
   // --- Multi-Account Methods ---
@@ -208,10 +211,51 @@ class SettingsService {
     return _prefs.getBool(_isLocalAuthEnabledKey) ?? false;
   }
 
+  // --- Migration Methods ---
+
+  /// Check if old accounts exist in legacy storage
+  bool hasOldAccounts() {
+    final oldAccountsJson = _prefs.getString(_oldAccountsKey);
+    if (oldAccountsJson != null) {
+      try {
+        final decoded = jsonDecode(oldAccountsJson) as List<dynamic>;
+        return decoded.isNotEmpty;
+      } catch (e) {
+        // If we can't decode, assume no valid old accounts
+        return false;
+      }
+    }
+    return false;
+  }
+
+  /// Get old accounts from legacy storage
+  List<Account> getOldAccounts() {
+    final oldAccountsJson = _prefs.getString(_oldAccountsKey);
+    if (oldAccountsJson != null) {
+      try {
+        final decoded = jsonDecode(oldAccountsJson) as List<dynamic>;
+        return decoded.map((e) => Account.fromJson(e)).toList();
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
+  }
+
+  /// Remove old accounts from legacy storage after successful migration
+  Future<void> clearOldAccounts() async {
+    await _prefs.remove(_oldAccountsKey);
+  }
+
+  /// Set old accounts data (for debugging/testing)
+  Future<void> setOldAccountsData(String jsonData) async {
+    await _prefs.setString(_oldAccountsKey, jsonData);
+
+  }
   // Test-only helper to reset initialization between tests
   void resetForTest() {
     assert(() {
-      _initialized = false;
+      // _initialized = false;
       return true;
     }());
   }

@@ -5,8 +5,8 @@ import 'package:quantus_sdk/src/services/settings_service.dart';
 
 import 'src/rust/frb_generated.dart';
 
-export 'generated/resonance/pallets/balances.dart';
-export 'generated/resonance/types/quantus_runtime/runtime_call.dart';
+export 'generated/schrodinger/pallets/balances.dart';
+export 'generated/schrodinger/types/quantus_runtime/runtime_call.dart';
 export 'src/constants/app_constants.dart';
 export 'src/extensions/color_extensions.dart';
 export 'src/extensions/decimal_input_filter.dart';
@@ -37,6 +37,7 @@ export 'src/services/recent_addresses_service.dart';
 export 'src/services/recovery_service.dart';
 export 'src/services/reversible_transfers_service.dart';
 export 'src/services/settings_service.dart';
+export 'src/services/migration_service.dart';
 export 'src/services/substrate_service.dart';
 
 class QuantusSdk {

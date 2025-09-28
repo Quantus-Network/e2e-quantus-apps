@@ -15,26 +15,52 @@ class WalletInitializer extends StatefulWidget {
 class WalletInitializerState extends State<WalletInitializer> {
   bool _loading = true;
   bool _walletExists = false;
+  bool _needsMigration = false;
+  List<MigrationAccountData>? _migrationData;
   final SettingsService _settingsService = SettingsService();
+  late final MigrationService _migrationService;
 
   @override
   void initState() {
     super.initState();
-    _checkWalletExists();
+    _migrationService = MigrationService(_settingsService, HdWalletService());
+    _checkWalletAndMigration();
   }
 
-  Future<void> _checkWalletExists() async {
+  Future<void> _checkWalletAndMigration() async {
     final hasWallet = await _settingsService.getHasWallet();
+    final needsMigration = _migrationService.needsMigration();
 
-    setState(() {
-      _walletExists = hasWallet;
-      _loading = false;
-    });
+    if (needsMigration) {
+      try {
+        final migrationData = await _migrationService.getMigrationData();
+        setState(() {
+          _needsMigration = true;
+          _migrationData = migrationData;
+          _loading = false;
+        });
+      } catch (e) {
+        // If migration data can't be loaded, continue without migration
+        setState(() {
+          _walletExists = hasWallet;
+          _loading = false;
+        });
+      }
+    } else {
+      setState(() {
+        _walletExists = hasWallet;
+        _loading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_needsMigration && _migrationData != null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
