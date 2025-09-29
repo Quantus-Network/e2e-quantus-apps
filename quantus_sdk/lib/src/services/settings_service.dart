@@ -14,7 +14,8 @@ class SettingsService {
 
   // New keys for multi-account support
   static const String _accountsKey = 'accounts_v2';
-  
+  static const String _accountsToMigrateKey = 'accounts_to_migrate';
+
   // ignore: unused_field
   static const String _oldAccountsKey = 'accounts';
   static const String _activeAccountIndexKey = 'active_account_index';
@@ -40,11 +41,15 @@ class SettingsService {
       return decoded.map((e) => Account.fromJson(e)).toList()
         ..sort((a, b) => a.index.compareTo(b.index));
     }
-        // Migration for existing single-account users
+    // Migration for existing single-account users
     final oldAccountId = _prefs.getString('account_id');
     if (oldAccountId != null) {
       final oldWalletName = _prefs.getString('wallet_name') ?? 'Account 1';
-      final account = Account(index: 0, name: oldWalletName, accountId: oldAccountId);
+      final account = Account(
+        index: 0,
+        name: oldWalletName,
+        accountId: oldAccountId,
+      );
       await saveAccounts([account]);
       await setActiveAccount(account);
       // Clean up old keys after migration
@@ -54,7 +59,6 @@ class SettingsService {
     }
 
     return [];
-
   }
 
   Future<void> saveAccounts(List<Account> accounts) async {
@@ -62,6 +66,29 @@ class SettingsService {
         .map((a) => a.toJson())
         .toList();
     await _prefs.setString(_accountsKey, jsonEncode(jsonData));
+  }
+
+  // --- Accounts To Migrate (for deferred upload) ---
+  Future<void> setAccountsToMigrate(List<Account> accounts) async {
+    final List<Map<String, dynamic>> jsonData = accounts
+        .map((a) => a.toJson())
+        .toList();
+    await _prefs.setString(_accountsToMigrateKey, jsonEncode(jsonData));
+  }
+
+  List<Account> getAccountsToMigrate() {
+    final jsonStr = _prefs.getString(_accountsToMigrateKey);
+    if (jsonStr == null) return [];
+    try {
+      final decoded = jsonDecode(jsonStr) as List<dynamic>;
+      return decoded.map((e) => Account.fromJson(e)).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> clearAccountsToMigrate() async {
+    await _prefs.remove(_accountsToMigrateKey);
   }
 
   Future<void> addAccount(Account account) async {
@@ -249,9 +276,12 @@ class SettingsService {
 
   /// Set old accounts data (for debugging/testing)
   Future<void> setOldAccountsData(String jsonData) async {
+    print('removing accounts data');
+    await _prefs.remove(_accountsKey);
+    print('setting old accounts data - reload app after this');
     await _prefs.setString(_oldAccountsKey, jsonData);
-
   }
+
   // Test-only helper to reset initialization between tests
   void resetForTest() {
     assert(() {

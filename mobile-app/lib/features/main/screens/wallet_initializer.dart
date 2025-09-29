@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/migration_dialog.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/utils/env_utils.dart';
 
 class WalletInitializer extends StatefulWidget {
   final String? address;
@@ -34,10 +36,26 @@ class WalletInitializerState extends State<WalletInitializer> {
     if (needsMigration) {
       try {
         final migrationData = await _migrationService.getMigrationData();
+
+        for (final data in migrationData) {
+          print(
+            'MIGRATION: \nold index: ${data.oldAccount.index} \nold name: ${data.oldAccount.name} \nold accountId: ${data.oldAccount.accountId} \nnew accountId: ${data.newAccountId}',
+          );
+        }
         setState(() {
           _needsMigration = true;
           _migrationData = migrationData;
           _loading = false;
+        });
+
+        // Show migration dialog
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          MigrationDialog.show(
+            context: context,
+            migrationData: _migrationData!,
+            onMigrate: _performMigration,
+            onTryLater: _tryLater,
+          );
         });
       } catch (e) {
         // If migration data can't be loaded, continue without migration
@@ -54,14 +72,89 @@ class WalletInitializerState extends State<WalletInitializer> {
     }
   }
 
+  Future<void> _performMigration() async {
+    if (_migrationData == null) return;
+
+    try {
+      // First, upload migration data to Supabase
+      await _uploadMigrationDataToSupabase(_migrationData!);
+
+      // Then perform the actual migration
+      await _migrationService.performMigration(_migrationData!);
+
+      // Migration completed successfully. Update state to show the main app.
+      setState(() {
+        _needsMigration = false;
+        _walletExists = true;
+        _loading = false;
+      });
+    } catch (e) {
+      print('migration error: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _tryLater() async {
+    // Persist the old accounts so we can retry upload later from settings
+    final oldAccounts = _settingsService.getOldAccounts();
+    await _settingsService.setAccountsToMigrate(oldAccounts);
+
+    // Proceed with local migration immediately
+    if (_migrationData != null) {
+      await _migrationService.performMigration(_migrationData!);
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _needsMigration = false;
+      _walletExists = true;
+      _loading = false;
+    });
+  }
+
+  Future<void> _uploadMigrationDataToSupabase(
+    List<MigrationAccountData> migrationData,
+  ) async {
+    print('_uploadMigrationDataToSupabase');
+    final supabase = EnvUtils.supabaseClient;
+
+    try {
+      // Prepare the data for insertion
+      final dataToInsert = migrationData
+          .map(
+            (data) => {
+              'old_account_id': data.oldAccount.accountId,
+              'new_account_id': data.newAccountId,
+              'public_key_hex': data.publicKeyHex,
+            },
+          )
+          .toList();
+
+      print('uploading data to supabase: $dataToInsert');
+
+      // Insert all records at once
+      await supabase.from('account_id_mappings').insert(dataToInsert);
+
+      print(
+        'Successfully uploaded ${migrationData.length} migration records to Supabase',
+      );
+    } catch (e) {
+      print('Failed to upload migration data to Supabase: $e');
+      // Re-throw the error so it gets caught by the caller
+      rethrow;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    if (_needsMigration && _migrationData != null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    // If migration is needed, render a neutral background (no spinner) while
+    // the bottom sheet is presented, to avoid a loading indicator behind it.
+    if (_needsMigration) {
+      return const Scaffold(body: SizedBox.shrink());
     }
 
     if (_walletExists) {
