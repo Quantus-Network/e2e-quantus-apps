@@ -180,7 +180,7 @@ class _AccountDetailsState extends State<AccountDetails> {
                               
                               return Text(
                                 snapshot.data!,
-                                style: context.themeText.detail?.copyWith(
+                                style: context.themeText.tiny?.copyWith(
                                   color: context.themeColors.checksum,
                                 ),
                               );

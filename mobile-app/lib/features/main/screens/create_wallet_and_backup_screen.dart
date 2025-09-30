@@ -168,67 +168,69 @@ class CreateWalletAndBackupScreenState
             child: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 25.0),
-                    Focus(
-                      child: CustomTextField(
-                        controller: _accountName,
-                        labelText: 'ACCOUNT NAME',
-                        icon: !_isEditing ? const Icon(Icons.edit) : null,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 25.0),
+                      Focus(
+                        child: CustomTextField(
+                          controller: _accountName,
+                          labelText: 'ACCOUNT NAME',
+                          icon: !_isEditing ? const Icon(Icons.edit) : null,
+                        ),
+                        onFocusChange: (value) {
+                          setState(() {
+                            _isEditing = value;
+                          });
+                        },
                       ),
-                      onFocusChange: (value) {
-                        setState(() {
-                          _isEditing = value;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 25.0),
-                    CardInfo(
-                      text: _isLoading ? 'Loading checksum...' : _checksum,
-                      icon: const Icon(Icons.info_outline),
-                      label: 'ACCOUNT CHECKPHRASE',
-                      onPressed: () {},
-                      textColor: context.themeColors.checksumDarker,
-                    ),
-                    const SizedBox(height: 25.0),
-                    CardInfo(
-                      text: _isLoading
-                          ? 'Loading address...'
-                          : AddressFormattingService.splitIntoChunks(
-                              _address,
-                            ).join(' '),
-                      icon: const Icon(Icons.copy),
-                      onPressed: () {
-                        ClipboardExtensions.copyTextWithSnackbar(context, _address);
-                      },
-                      label: 'ACCOUNT ADDRESS',
-                    ),
-                    const SizedBox(height: 25.0),
-                    CardInfo(
-                      text: 'Show Recovery Phrase',
-                      icon: const Icon(Icons.chevron_right),
-                      onPressed: () {
-                        showRecoveryPhraseSheet(
-                          context,
-                          words,
-                          _isLoading,
-                          _error,
-                          _mnemonic,
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 32),
-                    Button(
-                      variant: ButtonVariant.primary,
-                      label: 'Create Wallet',
-                      textStyle: context.themeText.smallTitle,
-                      onPressed: _saveWalletAndBackup,
-                      isLoading: _isLoading,
-                      isDisabled: !canContinue,
-                    ),
-                  ],
+                      const SizedBox(height: 25.0),
+                      CardInfo(
+                        text: _isLoading ? 'Loading checksum...' : _checksum,
+                        icon: const Icon(Icons.info_outline),
+                        label: 'ACCOUNT CHECKPHRASE',
+                        onPressed: () {},
+                        textColor: context.themeColors.checksumDarker,
+                      ),
+                      const SizedBox(height: 25.0),
+                      CardInfo(
+                        text: _isLoading
+                            ? 'Loading address...'
+                            : AddressFormattingService.splitIntoChunks(
+                                _address,
+                              ).join(' '),
+                        icon: const Icon(Icons.copy),
+                        onPressed: () {
+                          ClipboardExtensions.copyTextWithSnackbar(context, _address);
+                        },
+                        label: 'ACCOUNT ADDRESS',
+                      ),
+                      const SizedBox(height: 25.0),
+                      CardInfo(
+                        text: 'Show Recovery Phrase',
+                        icon: const Icon(Icons.chevron_right),
+                        onPressed: () {
+                          showRecoveryPhraseSheet(
+                            context,
+                            words,
+                            _isLoading,
+                            _error,
+                            _mnemonic,
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 32),
+                      Button(
+                        variant: ButtonVariant.primary,
+                        label: 'Create Wallet',
+                        textStyle: context.themeText.smallTitle,
+                        onPressed: _saveWalletAndBackup,
+                        isLoading: _isLoading,
+                        isDisabled: !canContinue,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -293,7 +295,7 @@ void showRecoveryPhraseSheet(
                   child: Container(color: Colors.black.useOpacity(0.3)),
                 ),
                 Container(
-                  height: MediaQuery.of(context).size.height * 0.75,
+                  height: MediaQuery.of(context).size.height * 0.85,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 25,
                     vertical: 20,

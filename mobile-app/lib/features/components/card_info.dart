@@ -32,11 +32,9 @@ class CardInfo extends StatelessWidget {
           if (label != null) ...[Label(label!), const SizedBox(height: 4)],
           Container(
             width: double.infinity,
-            padding: EdgeInsets.only(
-              top: verticalPadding,
-              left: 10,
-              right: 18,
-              bottom: verticalPadding,
+            padding: EdgeInsets.symmetric(
+              vertical: verticalPadding,
+              horizontal: 10,
             ),
             decoration: BoxDecoration(color: context.themeColors.buttonGlass),
             child: Row(
@@ -48,7 +46,7 @@ class CardInfo extends StatelessWidget {
                   width: context.isTablet ? 660 : 251,
                   child: Text(
                     text,
-                    style: context.themeText.smallParagraph?.copyWith(
+                    style: context.themeText.tag?.copyWith(
                       color: textColor,
                     ),
                   ),

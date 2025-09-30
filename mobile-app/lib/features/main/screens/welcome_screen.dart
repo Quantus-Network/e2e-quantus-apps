@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/features/main/screens/create_wallet_and
 import 'package:resonance_network_wallet/features/main/screens/import_wallet_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -40,7 +41,7 @@ class WelcomeScreen extends StatelessWidget {
       ],
       child: Column(
         children: [
-          const SizedBox(height: 77.5),
+          SizedBox(height: context.isSmallHeight ? 47.5 : 77.5),
           Text(
             'Welcome to',
             textAlign: TextAlign.center,
@@ -77,7 +78,7 @@ class WelcomeScreen extends StatelessWidget {
               style: context.themeText.paragraph,
             ),
           ),
-          const SizedBox(height: 104.5),
+          SizedBox(height: context.isSmallHeight ? 64.5 : 104.5),
           Button(
             variant: ButtonVariant.primary,
             label: 'Create New Wallet',

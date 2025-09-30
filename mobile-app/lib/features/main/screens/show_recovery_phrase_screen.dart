@@ -54,7 +54,10 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
                   const SizedBox(height: 18),
                   _buildCopyToClipboard(),
                   const SizedBox(height: 30),
-                  if (!_isRevealed) _buildWarning(),
+                  if (!_isRevealed) ...[
+                    _buildWarning(),
+                    const SizedBox(height: 24),
+                  ],
                 ],
               ),
             ),
