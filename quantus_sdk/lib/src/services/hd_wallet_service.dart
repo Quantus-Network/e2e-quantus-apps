@@ -3,11 +3,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
 // We define the following 5 levels in BIP32 path:
-// m / purpose' / coin_type' / account' / change / address_index
-// For Quantus purpose is 189189
-// coin type should be 0 for native
-// account is the account index - 0, 1, 2, 3...
-// change and address index should remain at 0
+// m / 44' / coin_type' / account' / change / address_index
 
 // Bip44 describes account discovery from seed phrase - it keeps looking by increasing acocunt index, for accounts with activity.
 // It defines the max allowed account gap as 20, if there's 20 addresses in a row where there's no activity, it assumes the highest index has been reached.
@@ -17,20 +13,20 @@ import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 class HdWalletService {
   Uint8List _deriveHDWallet({
     required Uint8List seed,
-    int purpose = 189189,
-    int coinType = 0,
     int account = 0,
     int change = 0,
     int addressIndex = 0,
   }) {
+    // m/44'/189189'/0'/0/0
     final derivationPath =
-        "m/$purpose'/$coinType'/$account'/$change/$addressIndex";
+        "m/44'/189189'/$account'/$change/$addressIndex";
+    print('derivationPath: $derivationPath');
     final derivedSeed = crypto.deriveHdPath(seed: seed, path: derivationPath);
     return derivedSeed;
   }
 
-  Uint8List _derivedSeedAtIndex(Uint8List seed, int index, {int coinType = 0}) {
-    return _deriveHDWallet(seed: seed, account: index, coinType: coinType);
+  Uint8List _derivedSeedAtIndex(Uint8List seed, int index) {
+    return _deriveHDWallet(seed: seed, account: index);
   }
 
   Keypair keyPairAtIndex(String mnemonic, int index) {
