@@ -31,7 +31,7 @@ class Button extends StatelessWidget {
     this.onPressed,
     this.isLoading = false,
     this.width = double.infinity,
-    this.padding = const EdgeInsets.all(16),
+    this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     this.textStyle,
     this.variant = ButtonVariant.glass,
     this.isDisabled = false,
