@@ -47,34 +47,6 @@ class TransactionUtils {
     for (final transaction in otherTransfers) {
       if (seenIds.add(transaction.id)) {
         result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
-        result.add(transaction);
       }
     }
 
