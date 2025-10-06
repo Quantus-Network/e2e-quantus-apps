@@ -154,6 +154,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     final accountsAsync = ref.watch(accountsProvider);
 
     return ScaffoldBase(
+      extendBodyBehingNavBar: true,
       decorations: [
         Positioned(
           bottom: -20,
@@ -283,31 +284,41 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                 ).notifier,
               )
               .loadingRefresh(),
-          child: CustomScrollView(
-            controller: _scrollController,
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              if (allTransactions.isNotEmpty)
-                SliverToBoxAdapter(
-                  child: RecentTransactionsList(
-                    backgroundColor: const Color(0x0d0c1014),
-                    transactions: allTransactions,
-                    accountIds: accountIds,
+          child: ShaderMask(
+            shaderCallback: (Rect bounds) {
+              return const LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.center,
+                colors: [Colors.transparent, Colors.white],
+                stops: [0.0, 0.5], 
+              ).createShader(bounds);
+            },
+            blendMode: BlendMode.dstIn,
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                if (allTransactions.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: RecentTransactionsList(
+                      backgroundColor: const Color(0x0d0c1014),
+                      transactions: allTransactions,
+                      accountIds: accountIds,
+                    ),
                   ),
-                ),
-              if (paginationState.isFetching && allTransactions.isEmpty)
-                const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-              if (paginationState.hasMore && paginationState.isFetching)
-                const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.all(8),
+                if (paginationState.isFetching && allTransactions.isEmpty)
+                  const SliverFillRemaining(
                     child: Center(child: CircularProgressIndicator()),
                   ),
-                ),
-              const SliverToBoxAdapter(child: SizedBox(height: 100)),
-            ],
+                if (paginationState.hasMore && paginationState.isFetching)
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                  ),
+              ],
+            ),
           ),
         );
       },
