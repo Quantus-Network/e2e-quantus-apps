@@ -44,7 +44,7 @@ class TimePickerSheet extends StatelessWidget {
               SvgPicture.asset('assets/hourglass.svg', width: 29),
               const SizedBox(height: 16),
               Text(
-                'Set Reverse Window',
+                'Set Reversible Window',
                 textAlign: TextAlign.center,
                 style: context.themeText.smallTitle?.copyWith(
                   color: context.themeColors.checksum,
@@ -54,7 +54,7 @@ class TimePickerSheet extends StatelessWidget {
               SizedBox(
                 width: context.themeSize.timePickerSubtitleWidth,
                 child: Text(
-                  'Your transaction is reversible during this time period',
+                  'You can reverse your transaction during this time period',
                   textAlign: TextAlign.center,
                   style: context.themeText.detail,
                 ),
