@@ -789,9 +789,15 @@ class SendScreenState extends ConsumerState<SendScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
-                        'Revert for: ${_formatReversibleTime()}',
-                        style: context.themeText.smallParagraph,
+                      Row(
+                        spacing: 10,
+                        children: [
+                          SvgPicture.asset('assets/set_reversible.svg'),
+                          Text(
+                            _formatReversibleTime(),
+                            style: context.themeText.smallParagraph,
+                          ),
+                        ],
                       ),
                       if (_sendMode.isReversible)
                         Icon(
