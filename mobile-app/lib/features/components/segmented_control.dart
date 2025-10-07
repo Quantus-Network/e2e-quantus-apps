@@ -28,7 +28,7 @@ class SegmentedControl<T> extends StatefulWidget {
     this.borderRadius = 100.0,
     this.padding = const EdgeInsets.symmetric(horizontal: 6.0, vertical: 4.0),
     this.animationDuration = const Duration(milliseconds: 200),
-    this.height = 42.0,
+    this.height = 52.0,
     this.widthMode = SegmentWidthMode.equal,
     this.minSegmentWidth,
     this.maxSegmentWidth,

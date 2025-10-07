@@ -22,12 +22,14 @@ class ScaffoldBase extends StatelessWidget {
   final double backdropBlur;
   final double dim;
   final bool extendBodyBehingAppBar;
+  final bool extendBodyBehingNavBar;
 
   const ScaffoldBase({
     super.key,
     this.appBar,
     this.screenTitle,
     this.extendBodyBehingAppBar = true,
+    this.extendBodyBehingNavBar = false,
     this.backdropBlur = 12.0,
     this.decorations,
     this.dim = 0.25,
@@ -55,6 +57,7 @@ class ScaffoldBase extends StatelessWidget {
               sigmaY: backdropBlur,
             ),
             child: SafeArea(
+              bottom: !extendBodyBehingNavBar,
               child: Padding(
                 padding: padding,
                 child: Column(

@@ -263,57 +263,57 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                               }
                             });
 
-                            return Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              spacing: 7,
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    snapshot.data!,
-                                    style: context.themeText.paragraph,
-                                    textAlign: TextAlign.center,
+                            return InkWell(
+                              onTap: _copyChecksum,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                spacing: 7,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      snapshot.data!,
+                                      style: context.themeText.paragraph,
+                                      textAlign: TextAlign.center,
+                                    ),
                                   ),
-                                ),
-                                InkWell(
-                                  onTap: _copyChecksum,
-                                  child: SvgPicture.asset(
+                                  SvgPicture.asset(
                                     'assets/copy_icon.svg',
                                     width: context.isTablet ? 24 : 16,
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             );
                           }
                         },
                       ),
                       const SizedBox(height: 26),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        spacing: 8,
-                        children: [
-                          Container(
-                            width: context.isTablet ? 386 : 271,
-                            padding: const EdgeInsets.all(10),
-                            decoration: ShapeDecoration(
-                              color: Colors.white.withValues(alpha: 0.15),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(4),
+                      InkWell(
+                        onTap: _copyAddress,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          spacing: 8,
+                          children: [
+                            Container(
+                              width: context.isTablet ? 386 : 271,
+                              padding: const EdgeInsets.all(10),
+                              decoration: ShapeDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                              child: Text(
+                                '${_splittedAddress?.join(" ")}',
+                                textAlign: TextAlign.left,
+                                style: context.themeText.smallParagraph,
                               ),
                             ),
-                            child: Text(
-                              '${_splittedAddress?.join(" ")}',
-                              textAlign: TextAlign.left,
-                              style: context.themeText.smallParagraph,
-                            ),
-                          ),
-                          InkWell(
-                            onTap: _copyAddress,
-                            child: SvgPicture.asset(
+                            SvgPicture.asset(
                               'assets/copy_icon.svg',
                               width: context.isTablet ? 24 : 16,
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ),

@@ -558,12 +558,12 @@ class SendScreenState extends ConsumerState<SendScreen> {
                   },
                   child: _buildIconButton('assets/paste_icon_1.svg'),
                 ),
-                const SizedBox(width: 9),
+                const SizedBox(width: 11.5),
                 GestureDetector(
                   onTap: _scanQRCode,
                   child: _buildIconButton('assets/scan_1.svg'),
                 ),
-                const SizedBox(width: 9),
+                const SizedBox(width: 11.5),
                 GestureDetector(
                   onTap: () {
                     showRecentAddresses(
@@ -789,9 +789,15 @@ class SendScreenState extends ConsumerState<SendScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
-                        'Revert for: ${_formatReversibleTime()}',
-                        style: context.themeText.smallParagraph,
+                      Row(
+                        spacing: 10,
+                        children: [
+                          SvgPicture.asset('assets/set_reversible.svg'),
+                          Text(
+                            _formatReversibleTime(),
+                            style: context.themeText.smallParagraph,
+                          ),
+                        ],
                       ),
                       if (_sendMode.isReversible)
                         Icon(
@@ -848,7 +854,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
                   ),
               ],
             ),
-            _buildIconButton('assets/settings_icon.svg'),
+            // _buildIconButton('assets/settings_icon.svg'),
           ],
         ),
         const SizedBox(height: 10),
