@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/features/main/screens/transactions_scre
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/wallet_main.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
+import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
@@ -109,6 +110,7 @@ class _NavbarState extends ConsumerState<Navbar> {
   int _selectedIndex = 0;
   final bool _notificationTestDisabled = false; // Flag for notifications
   final TelemetryService _telemetry = TelemetryService();
+  final ReferralService _referralService = ReferralService();
 
   final List<NavItem> _navItems = [
     NavItem(
@@ -137,6 +139,13 @@ class _NavbarState extends ConsumerState<Navbar> {
       'Notifications',
     ),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    _referralService.promptOrSubmitReferral(context, mounted);
+  }
 
   void _onItemTapped(int index) {
     final newIndex = index > 2 ? index - 1 : index;
@@ -211,12 +220,8 @@ class _NavbarState extends ConsumerState<Navbar> {
           mainAxisSize: MainAxisSize.min,
           children: [
             isSelected
-                ? SvgPicture.asset(
-                    item.onIcon,
-                  )
-                : SvgPicture.asset(
-                    item.offIcon,
-                  ),
+                ? SvgPicture.asset(item.onIcon)
+                : SvgPicture.asset(item.offIcon),
           ],
         ),
       ),

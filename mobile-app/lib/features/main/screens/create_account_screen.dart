@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/features/components/scaffold_base.dart'
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 
@@ -23,6 +24,7 @@ class CreateAccountScreen extends ConsumerStatefulWidget {
 
 class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
   final AccountsService _accountsService = AccountsService();
+  final ReferralService _referralService = ReferralService();
   final HumanReadableChecksumService _checksumService =
       HumanReadableChecksumService();
   final TextEditingController _nameController = TextEditingController();
@@ -108,6 +110,8 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
       _isCreating = true;
     });
     try {
+      
+
       if (_isEditMode) {
         await _accountsService.updateAccountName(
           _provisionalAccount,
@@ -120,11 +124,13 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         final accountToSave = _provisionalAccount.copyWith(
           name: _nameController.text,
         );
+        await _referralService.submitAddressToBackend(accountToSave.accountId);
         await _accountsService.addAccount(accountToSave);
         // Invalidate the accounts provider to reload the entire list
         ref.invalidate(accountsProvider);
         TelemetryService().sendEvent('create_account');
       }
+
       if (mounted) {
         Navigator.of(context).pop(true); // Return true to indicate success
       }

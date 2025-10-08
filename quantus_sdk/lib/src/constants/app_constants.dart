@@ -3,12 +3,17 @@ class AppConstants {
   static const String appName = 'Quantus Wallet';
   static const String tokenSymbol = 'QU'; // fetch this from chain eventually
   static const String shareUrl = 'https://linktr.ee/quantusnetwork';
+  static const String websiteBaseUrl = 'https://www.quantus.com';
 
   // static const String rpcEndpoint = 'ws://127.0.0.1:9944'; // local testing
   // static const String graphQlEndpoint = 'http://127.0.0.1:4350'; // local testing
 
   static const String rpcEndpoint = 'https://quantu.se';
   static const String graphQlEndpoint = 'https://quantu.se';
+  
+  // static const String taskMasterEndpoint = 'http://10.0.2.2:3000/api'; // local test android use special ip
+  static const String taskMasterEndpoint = 'http://localhost:3000/api'; // local test ios can use localhost
+
   static const String explorerEndpoint = 'https://explorer.quantus.com';
   static const String helpAndSupportUrl = 'https://t.me/quantustechsupport';
   static const String termsOfServiceUrl =
@@ -31,6 +36,9 @@ class AppConstants {
   static const String hasWalletKey = 'has_wallet';
   static const String mnemonicKey = 'mnemonic';
   static const String accountIdKey = 'account_id';
+  static const String hasCheckReferralKey = 'referral_check';
+  static const String hasSubmitReferralKey = 'referral_submit';
+  static const String referralCodeKey = 'referral_code';
 
   // Reversible time settings
   static const int defaultReversibleTimeSeconds = 600; // 10 minutes
