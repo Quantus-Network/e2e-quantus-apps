@@ -16,6 +16,7 @@ class ReferralService {
   final _addressEndpoint = Uri.parse(
     '${AppConstants.taskMasterEndpoint}/addresses',
   );
+  final _mainAccountIndex = 1;
   final SettingsService _settingsService = SettingsService();
 
   Future<void> checkReferralOnInstall() async {
@@ -51,31 +52,46 @@ class ReferralService {
     }
   }
 
+  Future<void> setCheckReferralStatus(bool status) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setBool(AppConstants.hasCheckReferralKey, status);
+  }
+
   Map<String, String> _parseReferrer(String referrer) {
     Map<String, String> params = {};
 
-    try {
-      Uri uri = Uri.parse('?$referrer');
-      params = Map.from(uri.queryParameters);
-    } catch (e) {
-      // Manual parsing if URI parsing fails
-      List<String> pairs = referrer.split('&');
-      for (String pair in pairs) {
-        List<String> keyValue = pair.split('=');
-        if (keyValue.length == 2) {
-          params[keyValue[0]] = Uri.decodeComponent(keyValue[1]);
-        }
-      }
-    }
+    Uri uri = Uri.parse('?$referrer');
+    params = Map.from(uri.queryParameters);
 
     return params;
+  }
+
+  Future<bool> checkHasReferral() async {
+    final account = await _settingsService.getAccount(_mainAccountIndex);
+    if (account == null) return false;
+
+    final getReferralByRefereeUri = Uri.parse(
+      '${AppConstants.taskMasterEndpoint}/referrals/${account.accountId}',
+    );
+    final http.Response response = await http.get(
+      getReferralByRefereeUri,
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Referral http request failed with status: ${response.statusCode}. Body: ${response.body}',
+      );
+    }
+
+    return true;
   }
 
   Future<void> submitReferralToBackend({String? referral}) async {
     final prefs = await SharedPreferences.getInstance();
 
-    bool hasSubmitRefferalCode =
-        prefs.getBool(AppConstants.hasSubmitReferralKey) ?? false;
+    bool hasSubmitRefferalCode = await checkHasReferral();
     if (hasSubmitRefferalCode) return;
 
     final referralCode =
@@ -109,8 +125,6 @@ class ReferralService {
         'Referral http request failed with status: ${response.statusCode}. Body: ${response.body}',
       );
     }
-
-    await prefs.setBool(AppConstants.hasSubmitReferralKey, true);
   }
 
   Future<void> submitAddressToBackend(String address) async {
@@ -136,7 +150,7 @@ class ReferralService {
     final prefs = await SharedPreferences.getInstance();
 
     bool hasChecked = prefs.getBool(AppConstants.hasCheckReferralKey) ?? false;
-    bool hasSubmit = prefs.getBool(AppConstants.hasSubmitReferralKey) ?? false;
+    bool hasSubmit = await checkHasReferral();
     bool hasReferralCode =
         prefs.getString(AppConstants.referralCodeKey) != null;
 

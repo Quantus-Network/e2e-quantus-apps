@@ -37,7 +37,6 @@ class AppConstants {
   static const String mnemonicKey = 'mnemonic';
   static const String accountIdKey = 'account_id';
   static const String hasCheckReferralKey = 'referral_check';
-  static const String hasSubmitReferralKey = 'referral_submit';
   static const String referralCodeKey = 'referral_code';
 
   // Reversible time settings
