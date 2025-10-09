@@ -16,7 +16,7 @@ class ReferralService {
   final _addressEndpoint = Uri.parse(
     '${AppConstants.taskMasterEndpoint}/addresses',
   );
-  final _mainAccountIndex = 1;
+  final _mainAccountIndex = 0;
   final SettingsService _settingsService = SettingsService();
 
   Future<void> checkReferralOnInstall() async {
