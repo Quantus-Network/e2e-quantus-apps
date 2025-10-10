@@ -61,7 +61,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   void _share() {
     if (_accountId != null && _checksum != null) {
       final textToShare =
-          'Hey! These are my Quantus account details:\n\nAddress:\n$_accountId\n\nCheckphrase:$_checksum\n\nTo open in the app or to download click the link below:\nhttps://www.quantus.com/account/$_accountId';
+          'Hey! These are my Quantus account details:\n\nAddress:\n$_accountId\n\nCheckphrase:$_checksum\n\nTo open in the app or to download click the link below:\n${AppConstants.websiteBaseUrl}/account/$_accountId';
       SharePlus.instance.share(
         ShareParams(
           text: textToShare,

@@ -4,8 +4,10 @@ import 'package:resonance_network_wallet/features/main/screens/authentication_wr
 import 'package:resonance_network_wallet/features/main/screens/send/send_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_theme.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
+import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_navigator_observer.dart';
-import 'package:resonance_network_wallet/services/deep_link_service.dart'; 
+import 'package:resonance_network_wallet/services/deep_link_service.dart';
+import 'dart:io' show Platform;
 
 // This ensures it's a single, persistent key for the entire app lifecycle.
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -18,12 +20,16 @@ class ResonanceWalletApp extends ConsumerStatefulWidget {
 }
 
 class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
+  final ReferralService _referralService = ReferralService();
+
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(deepLinkServiceProvider).init(navigatorKey);
+
+      if (Platform.isAndroid) _referralService.checkReferralOnInstall();
     });
   }
 

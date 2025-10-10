@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/features/components/label.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
 class CustomTextField extends StatelessWidget {
@@ -12,7 +13,7 @@ class CustomTextField extends StatelessWidget {
   final bool obscureText;
   final ValueChanged<String>? onChanged;
   final TextEditingController? controller;
-  final bool hasError;
+  final String? errorMsg;
   final double? leftPadding;
 
   const CustomTextField({
@@ -24,7 +25,7 @@ class CustomTextField extends StatelessWidget {
     this.hintStyle,
     this.icon,
     this.obscureText = false,
-    this.hasError = false,
+    this.errorMsg,
     this.onChanged,
     this.leftPadding,
     this.controller,
@@ -62,12 +63,12 @@ class CustomTextField extends StatelessWidget {
                 style: textStyle ?? context.themeText.smallTitle,
                 decoration: InputDecoration(
                   isDense: true, // Reduces vertical padding
-                  enabledBorder: hasError
+                  enabledBorder: errorMsg != null
                       ? const OutlineInputBorder(
                           borderSide: BorderSide(color: Colors.red, width: 1),
                         )
                       : InputBorder.none,
-                  focusedBorder: hasError
+                  focusedBorder: errorMsg != null
                       ? const OutlineInputBorder(
                           borderSide: BorderSide(color: Colors.red, width: 1),
                         )
@@ -85,6 +86,16 @@ class CustomTextField extends StatelessWidget {
               ),
             ],
           ),
+
+          if (errorMsg != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              errorMsg!,
+              style: context.themeText.tiny?.copyWith(
+                color: context.themeColors.textError,
+              ),
+            ),
+          ],
         ],
       ),
     );

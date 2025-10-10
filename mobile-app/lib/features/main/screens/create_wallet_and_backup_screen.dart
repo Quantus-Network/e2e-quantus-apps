@@ -16,6 +16,7 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 
@@ -37,6 +38,7 @@ class CreateWalletAndBackupScreenState
   final SettingsService _settingsService = SettingsService();
   final AccountsService _accountsService = AccountsService();
   final HdWalletService _hdWalletService = HdWalletService();
+  final ReferralService _referralService = ReferralService();
 
   final _accountName = TextEditingController();
   // Remove _accounts field since we're using provider
@@ -48,7 +50,7 @@ class CreateWalletAndBackupScreenState
   void initState() {
     super.initState();
     _generateMnemonic();
-    _accountName.text = 'Account 1';  // Default; updated in build via provider
+    _accountName.text = 'Account 1'; // Default; updated in build via provider
   }
 
   Future<void> _generateMnemonic() async {
@@ -103,9 +105,12 @@ class CreateWalletAndBackupScreenState
 
     try {
       await _settingsService.setMnemonic(_mnemonic);
-      final asyncAccounts = ref.read(accountsProvider);  // Gets notifier state
-      final accounts = asyncAccounts.value ?? <Account>[];  // Extract data or empty list
+
+      final asyncAccounts = ref.read(accountsProvider); // Gets notifier state
+      final accounts =
+          asyncAccounts.value ?? <Account>[]; // Extract data or empty list
       if (accounts.isEmpty) {
+        await _referralService.submitAddressToBackend(_address);
         await _accountsService.addAccount(
           Account(index: 0, name: _accountName.value.text, accountId: _address),
         );
@@ -202,7 +207,10 @@ class CreateWalletAndBackupScreenState
                               ).join(' '),
                         icon: const Icon(Icons.copy),
                         onPressed: () {
-                          ClipboardExtensions.copyTextWithSnackbar(context, _address);
+                          ClipboardExtensions.copyTextWithSnackbar(
+                            context,
+                            _address,
+                          );
                         },
                         label: 'ACCOUNT ADDRESS',
                       ),
