@@ -6,7 +6,7 @@ import 'package:resonance_network_wallet/shared/extensions/media_query_data_exte
 
 class CardInfo extends StatelessWidget {
   final String text;
-  final Icon icon;
+  final Icon? icon;
   final String? label;
   final VoidCallback? onPressed;
   final Color? textColor;
@@ -14,7 +14,7 @@ class CardInfo extends StatelessWidget {
   const CardInfo({
     super.key,
     required this.text,
-    required this.icon,
+    this.icon,
     this.label,
     this.onPressed,
     this.textColor,
@@ -51,7 +51,7 @@ class CardInfo extends StatelessWidget {
                     ),
                   ),
                 ),
-                icon,
+                if (icon != null) icon!,
               ],
             ),
           ),
