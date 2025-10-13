@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:play_install_referrer/play_install_referrer.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/submit_referral_action_sheet.dart';
+import 'package:resonance_network_wallet/models/referral_data.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
@@ -18,6 +19,8 @@ class ReferralService {
   );
   final _mainAccountIndex = 0;
   final SettingsService _settingsService = SettingsService();
+  final HumanReadableChecksumService _checksumService =
+      HumanReadableChecksumService();
 
   Future<void> checkReferralOnInstall() async {
     final prefs = await SharedPreferences.getInstance();
@@ -67,31 +70,34 @@ class ReferralService {
     return params;
   }
 
-  Future<bool> checkHasReferral() async {
+  Future<ReferralData?> getReferralData() async {
     final account = await _settingsService.getAccount(_mainAccountIndex);
-    if (account == null) return false;
+    if (account == null) return null;
 
     final getReferralByRefereeUri = Uri.parse(
       '${AppConstants.taskMasterEndpoint}/referrals/${account.accountId}',
     );
-    final http.Response response = await http.get(
-      getReferralByRefereeUri,
-      headers: {'Content-Type': 'application/json'},
-    );
 
-    if (response.statusCode != 200) {
-      throw Exception(
-        'Referral http request failed with status: ${response.statusCode}. Body: ${response.body}',
+    try {
+      final http.Response response = await http.get(
+        getReferralByRefereeUri,
+        headers: {'Content-Type': 'application/json'},
       );
-    }
 
-    return true;
+      print(response.body);
+      if (response.statusCode != 200) return null;
+
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return ReferralData.fromJson(json);
+    } catch (e) {
+      return null;
+    }
   }
 
   Future<void> submitReferralToBackend({String? referral}) async {
     final prefs = await SharedPreferences.getInstance();
 
-    bool hasSubmitRefferalCode = await checkHasReferral();
+    bool hasSubmitRefferalCode = await getReferralData() != null;
     if (hasSubmitRefferalCode) return;
 
     final referralCode =
@@ -130,16 +136,14 @@ class ReferralService {
   Future<void> submitAddressToBackend(String address) async {
     final Map<String, dynamic> requestBody = {'quan_address': address};
 
-    final http.Response response = await http.post(
-      _addressEndpoint,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(requestBody),
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception(
-        'Address http request failed with status: ${response.statusCode}. Body: ${response.body}',
+    try {
+      await http.post(
+        _addressEndpoint,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(requestBody),
       );
+    } catch (e) {
+      print('Failed saving address to database: $e');
     }
   }
 
@@ -150,7 +154,7 @@ class ReferralService {
     final prefs = await SharedPreferences.getInstance();
 
     bool hasChecked = prefs.getBool(AppConstants.hasCheckReferralKey) ?? false;
-    bool hasSubmit = await checkHasReferral();
+    bool hasSubmit = await getReferralData() != null;
     bool hasReferralCode =
         prefs.getString(AppConstants.referralCodeKey) != null;
 
@@ -168,10 +172,17 @@ class ReferralService {
   }
 
   String generateReferralLink(String referralCode) {
-    return '${AppConstants.websiteBaseUrl}/invite/$referralCode';
+    return '${AppConstants.websiteBaseUrl}/invite?referralCode=$referralCode';
   }
 
-  Future<void> shareReferralLink(String referralCode) async {
+  Future<void> shareReferralLink() async {
+    final account = await _settingsService.getAccount(_mainAccountIndex);
+    if (account == null) return;
+
+    final referralCode = await _checksumService.getHumanReadableName(
+      account.accountId,
+    );
+
     String link = generateReferralLink(referralCode);
     String message =
         'Join me on Quantus Wallet! Use my referral code: $referralCode\n\n$link';

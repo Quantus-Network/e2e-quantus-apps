@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/features/components/snackbar_helper.dar
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/authentication_settings_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/referral_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/show_recovery_phrase_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
@@ -15,8 +16,8 @@ import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
+import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -27,31 +28,8 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  String? _accountId;
-  String? _checksum;
-
-  final HumanReadableChecksumService _checksumService =
-      HumanReadableChecksumService();
   final SettingsService _settingsService = SettingsService();
-
-  Future<void> _loadAccountData() async {
-    try {
-      final account = (await _settingsService.getActiveAccount())!;
-      final checksum = await _checksumService.getHumanReadableName(
-        account.accountId,
-      );
-
-      setState(() {
-        _accountId = account.accountId;
-        _checksum = checksum;
-      });
-    } catch (e) {
-      debugPrint('Error loading account data: $e');
-      if (mounted) {
-        setState(() {});
-      }
-    }
-  }
+  final ReferralService _referralService = ReferralService();
 
   void _resetAndClearData() {
     _settingsService.clearAll();
@@ -59,17 +37,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _share() {
-    if (_accountId != null && _checksum != null) {
-      final textToShare =
-          'Hey! These are my Quantus account details:\n\nAddress:\n$_accountId\n\nCheckphrase:$_checksum\n\nTo open in the app or to download click the link below:\n${AppConstants.websiteBaseUrl}/account/$_accountId';
-      SharePlus.instance.share(
-        ShareParams(
-          text: textToShare,
-          subject: 'Shared Address',
-          title: 'Shared Address',
-        ),
-      );
-    }
+    _referralService.shareReferralLink();
   }
 
   Future<void> _logout() async {
@@ -117,12 +85,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         return ResetConfirmationBottomSheet(onReset: _resetAndClearData);
       },
     );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _loadAccountData();
   }
 
   @override
@@ -188,6 +150,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             context,
             MaterialPageRoute(
               builder: (context) => const ShowRecoveryPhraseScreen(),
+            ),
+          );
+        }),
+        const SizedBox(height: 22),
+         _buildSettingsItem(context, 'Referral', () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ReferralScreen(),
             ),
           );
         }),
