@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/label.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
@@ -15,6 +16,7 @@ class CustomTextField extends StatelessWidget {
   final TextEditingController? controller;
   final String? errorMsg;
   final double? leftPadding;
+  final bool? disabled;
 
   const CustomTextField({
     super.key,
@@ -29,6 +31,7 @@ class CustomTextField extends StatelessWidget {
     this.onChanged,
     this.leftPadding,
     this.controller,
+    this.disabled = false,
   }) : assert(
          initialValue == null || controller == null,
          'Cannot provide both an initialValue and a controller.',
@@ -57,6 +60,7 @@ class CustomTextField extends StatelessWidget {
               TextFormField(
                 controller: controller,
                 initialValue: initialValue,
+                enabled: disabled != true,
                 onChanged: onChanged,
                 obscureText: obscureText,
                 // Styling for the text inside the input field
@@ -81,7 +85,11 @@ class CustomTextField extends StatelessWidget {
                   ), // Removes default padding
                   hintText: hintText,
                   // Style for the hint text when the field is empty
-                  hintStyle: hintStyle ?? context.themeText.smallTitle,
+                  hintStyle:
+                      hintStyle ??
+                      context.themeText.smallTitle?.copyWith(
+                        color: context.themeColors.textPrimary.useOpacity(0.5),
+                      ),
                 ),
               ),
             ],

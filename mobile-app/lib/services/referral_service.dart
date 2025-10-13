@@ -4,7 +4,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:play_install_referrer/play_install_referrer.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/submit_referral_action_sheet.dart';
+import 'package:resonance_network_wallet/features/components/referral_and_reward_action_sheet.dart';
 import 'package:resonance_network_wallet/models/referral_data.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
@@ -59,6 +59,15 @@ class ReferralService {
     final prefs = await SharedPreferences.getInstance();
 
     await prefs.setBool(AppConstants.hasCheckReferralKey, status);
+  }
+
+  Future<void> optInRewardProgram() async {
+    final account = await _settingsService.getAccount(_mainAccountIndex);
+    if (account == null) {
+       throw Exception(
+        'Failed joining reward program, no active account detected!',
+      );
+    }
   }
 
   Map<String, String> _parseReferrer(String referrer) {
@@ -155,19 +164,20 @@ class ReferralService {
 
     bool hasChecked = prefs.getBool(AppConstants.hasCheckReferralKey) ?? false;
     bool hasSubmit = await getReferralData() != null;
-    bool hasReferralCode =
-        prefs.getString(AppConstants.referralCodeKey) != null;
+    String? referralCode = prefs.getString(AppConstants.referralCodeKey);
 
-    if (!hasChecked) {
+    if (!hasChecked && mounted) {
       await prefs.setBool(AppConstants.hasCheckReferralKey, true);
 
       // ignore: use_build_context_synchronously
-      if (mounted) showSubmitReferralActionSheet(context);
+      showReferralAndRewardActionSheet(context);
     } else if (Platform.isAndroid &&
         hasChecked &&
-        hasReferralCode &&
-        !hasSubmit) {
-      await submitReferralToBackend();
+        referralCode != null &&
+        !hasSubmit &&
+        mounted) {
+      // ignore: use_build_context_synchronously
+      showReferralAndRewardActionSheet(context, referralCode: referralCode);
     }
   }
 

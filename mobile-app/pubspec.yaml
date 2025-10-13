@@ -92,6 +92,7 @@ flutter:
     - assets/background.png
     - assets/send_btn_decoration.png
     - assets/receive_btn_decoration.png
+    - assets/quantum_cat_magician.png
 
   fonts:
     - family: Fira Code
