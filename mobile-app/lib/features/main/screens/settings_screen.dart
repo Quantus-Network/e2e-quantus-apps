@@ -139,6 +139,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ],
                 const SizedBox(height: 22),
                 _buildResetButton(context),
+                const SizedBox(height: 22),
               ],
             ),
           ),
@@ -180,12 +181,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           );
         }),
         const SizedBox(height: 22),
-         _buildSettingsItem(context, 'Referral', () {
+        _buildSettingsItem(context, 'Referral', () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const ReferralScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const ReferralScreen()),
           );
         }),
         const SizedBox(height: 22),
