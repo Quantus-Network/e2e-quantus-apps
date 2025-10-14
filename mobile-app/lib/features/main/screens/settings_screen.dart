@@ -18,6 +18,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -35,7 +36,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     try {
       final service = TaskmasterService();
       final sessionKey = await service.loginWithAccount1();
-      print('sessionKey: $sessionKey');
       final me = await service.me(sessionKey);
       if (!mounted) return;
       showTopSnackBar(
@@ -62,8 +62,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _logout();
   }
 
-  void _share() {
-    _referralService.shareReferralLink();
+  Future<void> _share() async {
+    final params = await _referralService.getShareLinkParameters();
+    SharePlus.instance.share(params);
   }
 
   Future<void> _logout() async {
@@ -117,6 +118,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     return ScaffoldBase(
       screenTitle: ScreenTitle(title: 'Wallet Settings'),
+      extendBodyBehindAppBar: true,
+      extendBodyBehindNavBar: true,
       decorations: [
         Positioned(
           bottom: -20,
@@ -133,10 +136,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 const SizedBox(height: 35),
                 _buildInformationList(context),
                 const SizedBox(height: 42),
-                if (AppConstants.globalDebug) ...[
-                  _buildDebugButton(context),
-                  const SizedBox(height: 22),
-                ],
                 const SizedBox(height: 22),
                 _buildResetButton(context),
                 const SizedBox(height: 22),
@@ -274,72 +273,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
     );
-  }
-
-  Widget _buildDebugButton(BuildContext context) {
-    return GestureDetector(
-      onTap: _createDebugOldAccounts,
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(
-          vertical: context.isTablet ? 16 : 12,
-          horizontal: 18,
-        ),
-        decoration: ShapeDecoration(
-          color: Colors.black,
-          shape: RoundedRectangleBorder(
-            side: const BorderSide(width: 1, color: Colors.orange),
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              'Debug: Create Old Accounts',
-              style: context.themeText.smallParagraph?.copyWith(
-                color: Colors.orange,
-              ),
-            ),
-            Icon(
-              Icons.bug_report,
-              size: context.themeSize.settingMenuIconSize,
-              color: Colors.orange,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _createDebugOldAccounts() async {
-    try {
-      final migrationService = MigrationService(
-        _settingsService,
-        HdWalletService(),
-      );
-      await migrationService.createDebugOldAccounts();
-
-      if (mounted) {
-        showTopSnackBar(
-          context,
-          title: 'Debug',
-          message:
-              'Created debug old accounts with indices 0 and 1. Restart app to see migration dialog.',
-          icon: buildSuccessIcon(),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        showTopSnackBar(
-          context,
-          title: 'Error',
-          message: 'Failed to create debug accounts: ${e.toString()}',
-          icon: buildErrorIcon(),
-        );
-      }
-    }
   }
 
   Widget _buildResetButton(BuildContext context) {
