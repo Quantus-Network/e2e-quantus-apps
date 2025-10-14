@@ -236,7 +236,7 @@ class _ReferralAndRewardActionSheetState
         SizedBox(
           width: context.isTablet ? 465 : null,
           child: Button(
-            label: 'Submit',
+            label: 'Next',
             isLoading: _isSubmitting,
             variant: ButtonVariant.primary,
             onPressed: () {
