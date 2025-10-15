@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
+import 'package:resonance_network_wallet/features/components/referral_and_reward_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/reset_confirmation_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/authentication_settings_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/referral_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/show_recovery_phrase_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
@@ -32,41 +32,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final SettingsService _settingsService = SettingsService();
   final ReferralService _referralService = ReferralService();
 
-  Future<void> _testLogin() async {
-    try {
-      // testing miner stats
-      // final acct = await SettingsService().getAccount(0);
-      // final minerStats = await TaskmasterService().getMinerStats(
-      //   'qznJ4dHSXqWw112iqxU3F8ZLV7kvTB7myut9r2DKnYfnrggEA',
-      //   // acct!.accountId,
-      // );
-
-      final service = TaskmasterService();
-      final accessToken = await service.loginWithAccount1();
-      final me = await service.me(accessToken);
-      print('me $me');
-      print('Address ${me['data']['quan_address']}');
-
-      if (!mounted) return;
-      showTopSnackBar(
-        context,
-        title: 'Logged in',
-        message: 'Address ${me['data']['quan_address']}',
-        icon: buildSuccessIcon(),
-      );
-    } catch (e, s) {
-      print('error: $e');
-      print('error stack: $s');
-      if (!mounted) return;
-      showTopSnackBar(
-        context,
-        title: 'Error',
-        message: 'Login failed: $e',
-        icon: buildErrorIcon(),
-      );
-    }
-  }
-
   void _resetAndClearData() {
     _settingsService.clearAll();
     _logout();
@@ -79,7 +44,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _logout() async {
     try {
-      await _settingsService.clearAll(); // Clears prefs and secure storage
+      await SubstrateService().logout();
       ref
           .read(pendingTransactionsProvider.notifier)
           .clear(); // Clear specific notifier
@@ -191,18 +156,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         }),
         const SizedBox(height: 22),
         _buildSettingsItem(context, 'Referral', () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const ReferralScreen()),
-          );
+          showReferralAndRewardActionSheet(context);
         }),
-        const SizedBox(height: 22),
-        _buildSettingsItem(
-          context,
-          'Test Login',
-          _testLogin,
-          trailing: const Icon(Icons.login),
-        ),
       ],
     );
   }

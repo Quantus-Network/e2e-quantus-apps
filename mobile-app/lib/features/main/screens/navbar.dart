@@ -101,8 +101,9 @@ class NavbarItem extends StatelessWidget {
 
 class Navbar extends ConsumerStatefulWidget {
   final String? address;
+  final bool showReferralOnLaunch;
 
-  const Navbar({super.key, this.address});
+  const Navbar({super.key, this.address, this.showReferralOnLaunch = false});
 
   @override
   ConsumerState<Navbar> createState() => _NavbarState();
@@ -112,8 +113,6 @@ class _NavbarState extends ConsumerState<Navbar> {
   int _selectedIndex = 0;
   final bool _notificationTestDisabled = false; // Flag for notifications
   final TelemetryService _telemetry = TelemetryService();
-  final ReferralService _referralService = ReferralService();
-  final SettingsService _settingsService = SettingsService();
 
   final List<NavItem> _navItems = [
     NavItem(
@@ -147,7 +146,13 @@ class _NavbarState extends ConsumerState<Navbar> {
   void initState() {
     super.initState();
 
-    _showReferralActionSheet(context, mounted);
+    if (widget.showReferralOnLaunch) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          showReferralActionSheet(context, mounted);
+        }
+      });
+    }
   }
 
   void _onItemTapped(int index) {
@@ -288,7 +293,7 @@ class _NavbarState extends ConsumerState<Navbar> {
     );
   }
 
-  Future<void> _showReferralActionSheet(
+  Future<void> showReferralActionSheet(
     BuildContext context,
     bool mounted,
   ) async {
@@ -296,16 +301,7 @@ class _NavbarState extends ConsumerState<Navbar> {
       return;
     }
 
-    bool referralDataAlreadyExists =
-        await _referralService.getReferralData() != null;
-    bool referralCheckCompleted = _settingsService.referralCheckCompleted();
-
-    if (referralDataAlreadyExists || referralCheckCompleted) {
-      return;
-    }
-
-    _settingsService.setReferralCheckCompleted();
-    String? referralCode = _referralService.getReferralCode();
+    String? referralCode = ReferralService().getReferralCode();
 
     // ignore: use_build_context_synchronously
     showReferralAndRewardActionSheet(context, referralCode: referralCode);
