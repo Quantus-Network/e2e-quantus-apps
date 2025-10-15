@@ -118,9 +118,7 @@ class CreateWalletAndBackupScreenState
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
 
-      if (mounted) {
-        _settingsService.clearReferralCheckCompletedFlag();
-        
+      if (mounted) {        
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
