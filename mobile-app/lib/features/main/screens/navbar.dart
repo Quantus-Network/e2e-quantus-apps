@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/referral_and_reward_action_sheet.dart';
 import 'package:resonance_network_wallet/features/main/screens/notifications_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/settings_screen.dart';
@@ -112,6 +113,7 @@ class _NavbarState extends ConsumerState<Navbar> {
   final bool _notificationTestDisabled = false; // Flag for notifications
   final TelemetryService _telemetry = TelemetryService();
   final ReferralService _referralService = ReferralService();
+  final SettingsService _settingsService = SettingsService();
 
   final List<NavItem> _navItems = [
     NavItem(
@@ -145,7 +147,7 @@ class _NavbarState extends ConsumerState<Navbar> {
   void initState() {
     super.initState();
 
-    showReferralActionSheet(context, mounted);
+    _showReferralActionSheet(context, mounted);
   }
 
   void _onItemTapped(int index) {
@@ -286,7 +288,7 @@ class _NavbarState extends ConsumerState<Navbar> {
     );
   }
 
-  Future<void> showReferralActionSheet(
+  Future<void> _showReferralActionSheet(
     BuildContext context,
     bool mounted,
   ) async {
@@ -296,12 +298,14 @@ class _NavbarState extends ConsumerState<Navbar> {
 
     bool referralDataAlreadyExists =
         await _referralService.getReferralData() != null;
+    bool referralCheckCompleted = _settingsService.referralCheckCompleted();
 
-    if (referralDataAlreadyExists) {
+    if (referralDataAlreadyExists || referralCheckCompleted) {
       return;
     }
 
-    String? referralCode = ReferralService().getReferralCode();
+    _settingsService.setReferralCheckCompleted();
+    String? referralCode = _referralService.getReferralCode();
 
     // ignore: use_build_context_synchronously
     showReferralAndRewardActionSheet(context, referralCode: referralCode);
