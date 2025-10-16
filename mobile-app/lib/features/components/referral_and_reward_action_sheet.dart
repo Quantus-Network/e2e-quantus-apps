@@ -29,15 +29,19 @@ class _ReferralAndRewardActionSheetState
   final ReferralService _referralService = ReferralService();
   final _referralCodeController = TextEditingController();
 
+  String? _checksum;
   bool _isRewardProgram = false;
   bool _isLastPromo = false;
   bool _isSubmitting = false;
   bool _isDisabled = true;
+  bool _isLoading = true;
   String? _errorMsg;
 
   @override
   void initState() {
     super.initState();
+
+    _loadReferralData();
 
     _referralCodeController.addListener(() {
       setState(() {
@@ -102,6 +106,20 @@ class _ReferralAndRewardActionSheetState
     }
   }
 
+  Future<void> _loadReferralData() async {
+    final referraldata = await _referralService.getReferralData();
+
+    if (referraldata != null) {
+      _checksum = await HumanReadableChecksumService().getHumanReadableName(
+        referraldata.referrerAddress,
+      );
+    }
+
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
@@ -130,7 +148,12 @@ class _ReferralAndRewardActionSheetState
   }
 
   Widget _buildSheetContent(BuildContext context) {
-    if (_isRewardProgram) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    } else if (_checksum != null) {
+      print(_checksum);
+      return _buildReferralSubmittedInfo(context, _checksum!);
+    } else if (_isRewardProgram) {
       return _buildRewardProgram(context);
     } else if (widget.referralCode != null) {
       return _buildPrefilledReferralForm(context, widget.referralCode!);
@@ -253,7 +276,7 @@ class _ReferralAndRewardActionSheetState
         ),
         const SizedBox(height: 22),
         CustomTextField(
-          initialValue: widget.referralCode,
+          initialValue: referralCode,
           fillColor: context.themeColors.background,
           errorMsg: _errorMsg,
           textStyle: context.themeText.paragraph?.copyWith(
@@ -281,6 +304,59 @@ class _ReferralAndRewardActionSheetState
           ),
         ),
         SizedBox(height: context.themeSize.bottomButtonSpacing),
+      ],
+    );
+  }
+
+  Widget _buildReferralSubmittedInfo(
+    BuildContext context,
+    String referralCode,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(7),
+          decoration: ShapeDecoration(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(100),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              InkWell(
+                onTap: _isSubmitting ? null : _closeSheet,
+                child: Icon(Icons.close, size: context.isTablet ? 28 : 24),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 22),
+        Text(
+          'Your submitted referral code:',
+          style: context.themeText.mediumTitle?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 22),
+        CustomTextField(
+          initialValue: referralCode,
+          fillColor: context.themeColors.background,
+          errorMsg: _errorMsg,
+          textStyle: context.themeText.paragraph?.copyWith(
+            color: context.themeColors.yellow,
+          ),
+          disabled: true,
+        ),
+        const SizedBox(height: 24),
+        Text(
+          'Your referrer and you get points because you submitted the referral code.',
+          style: context.themeText.smallParagraph?.copyWith(
+            color: context.themeColors.inputLabel.useOpacity(0.8),
+          ),
+        ),
       ],
     );
   }
