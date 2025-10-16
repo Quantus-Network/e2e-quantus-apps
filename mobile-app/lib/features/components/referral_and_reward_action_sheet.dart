@@ -287,7 +287,6 @@ class _ReferralAndRewardActionSheetState
             isLoading: _isSubmitting,
             variant: ButtonVariant.glassOutline,
             onPressed: _handleSkipReferral,
-            },
           ),
         ),
 
