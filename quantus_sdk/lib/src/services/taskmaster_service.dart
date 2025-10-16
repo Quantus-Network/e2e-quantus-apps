@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:convert/convert.dart' as convert_hex;
 import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/models/account_stats.dart';
 import 'package:quantus_sdk/src/models/miner_stats.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
@@ -287,6 +288,32 @@ class TaskmasterService {
       );
     } catch (e, stackTrace) {
       print('Error fetching miner stats: $e');
+      print(stackTrace);
+      rethrow;
+    }
+  }
+
+  Future<AccountStats> getAccountStats(Account account) async {
+    final Uri uri = Uri.parse(
+      '${AppConstants.taskMasterEndpoint}/addresses/${account.accountId}/stats',
+    );
+
+    try {
+      final http.Response response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'HTTP request failed with status: ${response.statusCode}. Body: ${response.body}',
+        );
+      }
+
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return AccountStats.fromJson(json);
+    } catch (e, stackTrace) {
+      print('Error fetching address stats: $e');
       print(stackTrace);
       rethrow;
     }
