@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:resonance_network_wallet/features/components/referral_and_reward_action_sheet.dart';
-import 'package:resonance_network_wallet/features/main/screens/notifications_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/quests_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/wallet_main.dart';
@@ -110,7 +110,6 @@ class Navbar extends ConsumerStatefulWidget {
 
 class _NavbarState extends ConsumerState<Navbar> {
   int _selectedIndex = 0;
-  final bool _notificationTestDisabled = false; // Flag for notifications
   final TelemetryService _telemetry = TelemetryService();
 
   final List<NavItem> _navItems = [
@@ -135,9 +134,9 @@ class _NavbarState extends ConsumerState<Navbar> {
       'Settings',
     ),
     NavItem(
-      'assets/navbar/notifications_icon_off.svg',
-      'assets/navbar/notifications_icon_on.svg',
-      'Notifications',
+      'assets/navbar/qcat_navbar_icon.png',
+      'assets/navbar/qcat_navbar_icon.png',
+      'Quests',
     ),
   ];
 
@@ -193,29 +192,6 @@ class _NavbarState extends ConsumerState<Navbar> {
       );
     }
 
-    // Notification item with test flag
-    if (index == 4 && _notificationTestDisabled) {
-      return SizedBox(
-        height: context.themeSize.navbarItemHeight,
-        width: context.themeSize.navbarItemWidth,
-        child: InkWell(
-          onTap: null,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SvgPicture.asset(
-                'assets/navbar/notifications_icon_off.svg',
-                colorFilter: const ColorFilter.mode(
-                  Colors.blueGrey,
-                  BlendMode.srcIn,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     return InkWell(
       onTap: () {
         _onItemTapped(index);
@@ -227,8 +203,12 @@ class _NavbarState extends ConsumerState<Navbar> {
           mainAxisSize: MainAxisSize.min,
           children: [
             isSelected
-                ? SvgPicture.asset(item.onIcon)
-                : SvgPicture.asset(item.offIcon),
+                ? (item.onIcon.endsWith('.png') 
+                    ? Image.asset(item.onIcon, width: 26, height: 26)
+                    : SvgPicture.asset(item.onIcon))
+                : (item.offIcon.endsWith('.png')
+                    ? Image.asset(item.offIcon, width: 26, height: 26)
+                    : SvgPicture.asset(item.offIcon)),
           ],
         ),
       ),
@@ -242,7 +222,7 @@ class _NavbarState extends ConsumerState<Navbar> {
         WalletMain(address: widget.address),
         const TransactionsScreen(),
         const SettingsScreen(),
-        const NotificationsScreen(),
+        const QuestsScreen(),
       ],
     );
   }
