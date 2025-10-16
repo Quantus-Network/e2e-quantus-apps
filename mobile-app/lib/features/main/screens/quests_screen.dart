@@ -82,6 +82,10 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
     _loadParticipationStatus();
   }
 
+  void refreshData() {
+    ref.invalidate(accountsStatsProvider);
+  }
+
   @override
   Widget build(BuildContext context) {
     final statsAsync = ref.watch(accountsStatsProvider);
@@ -122,6 +126,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
                   showReferralAndRewardActionSheet(
                     context,
                     directlyShowRewardProgram: true,
+                    currentNavbarIndex: 3,
                   );
                 },
               ),
