@@ -7,11 +7,17 @@ import 'package:resonance_network_wallet/models/referral_data.dart';
 import 'package:share_plus/share_plus.dart';
 
 class ReferralService {
+  static final ReferralService _instance = ReferralService._internal();
+  factory ReferralService() => _instance;
+  ReferralService._internal();
+
   final _mainAccountIndex = 0;
   final SettingsService _settingsService = SettingsService();
   final HumanReadableChecksumService _checksumService =
       HumanReadableChecksumService();
   final TaskmasterService _taskmasterService = TaskmasterService();
+
+  bool? _rewardProgramParticipationCache;
 
   // This fetches any available referral code from the google play store and stores
   // it in settings if found.
@@ -49,6 +55,8 @@ class ReferralService {
     final account = await getMainAccount();
 
     await _taskmasterService.optInRewardProgram(account);
+    
+    _rewardProgramParticipationCache = true;
   }
 
   Map<String, String> _parseReferrer(String referrer) {
@@ -87,11 +95,16 @@ class ReferralService {
   }
 
   Future<bool> getRewardProgramParticiation() async {
+    if (_rewardProgramParticipationCache != null) {
+      return _rewardProgramParticipationCache!;
+    }
+
     final account = await getMainAccount();
     final hasOptedIn = await _taskmasterService.getRewardProgramParticipation(
       account,
     );
 
+    _rewardProgramParticipationCache = hasOptedIn;
     return hasOptedIn;
   }
 
