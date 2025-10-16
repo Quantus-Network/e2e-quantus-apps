@@ -108,8 +108,9 @@ class TaskmasterService {
   factory TaskmasterService() => _instance;
   TaskmasterService._internal();
 
-  final SettingsService _settings = SettingsService();
+  final SettingsService _settingsService = SettingsService();
   final HdWalletService _hd = HdWalletService();
+  final _mainAccountIndex = 0;
   String? _accessToken;
   String? get accessToken => _accessToken;
   bool get isLoggedIn => _accessToken != null;
@@ -118,7 +119,7 @@ class TaskmasterService {
       TaskMasterAuthClient(AppConstants.taskMasterEndpoint);
 
   Future<String> loginWithAccount1() async {
-    final mnemonic = await _settings.getMnemonic();
+    final mnemonic = await _settingsService.getMnemonic();
     if (mnemonic == null) {
       throw Exception('Mnemonic not found.');
     }
@@ -191,7 +192,8 @@ class TaskmasterService {
     }
   }
 
-  Future<void> optInRewardProgram(Account activeAccount) async {
+  Future<void> optInRewardProgram() async {
+    final activeAccount = await getMainAccount();
     final rewardProgramEndpoint = Uri.parse(
       '${AppConstants.taskMasterEndpoint}/addresses/${activeAccount.accountId}/reward-program',
     );
@@ -216,7 +218,14 @@ class TaskmasterService {
     }
   }
 
-  Future<bool> getRewardProgramParticipation(Account activeAccount) async {
+  Future<Account> getMainAccount() async {
+    final account = await _settingsService.getAccount(_mainAccountIndex);
+    return account!;
+  }
+
+  Future<bool> getRewardProgramParticipation() async {
+    final activeAccount = await getMainAccount();
+    print('getRewardProgramParticipation ${activeAccount.accountId}');
     final rewardProgramEndpoint = Uri.parse(
       '${AppConstants.taskMasterEndpoint}/addresses/${activeAccount.accountId}/reward-program',
     );
@@ -226,6 +235,14 @@ class TaskmasterService {
         rewardProgramEndpoint,
         headers: {'Content-Type': 'application/json'},
       );
+
+      if (response.statusCode == 404) {
+        final Map<String, dynamic> responseBody = jsonDecode(response.body);
+        if (responseBody['error']?.toLowerCase() == 'address not found') {
+          print('user not enrolled in reward program');
+          return false;
+        }
+      }
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -249,12 +266,13 @@ class TaskmasterService {
     }
   }
 
-  Future<void> submitAddress(String address) async {
-    print('submitAddress $address - just log in');
+  Future<void> submitAddress() async {
     await ensureIsLoggedIn();
   }
 
-  Future<MinerStats> getMinerStats(String minerAddress) async {
+  Future<MinerStats> getMinerStats() async {
+    final minerAddress = getMainAccount();
+    // TODO also add account index -1 (base acct) for older miners
     final Uri uri = Uri.parse('${AppConstants.graphQlEndpoint}/graphql');
     final Map<String, dynamic> requestBody = {
       'query': _minerStatsQuery,
@@ -304,7 +322,8 @@ class TaskmasterService {
     }
   }
 
-  Future<AccountStats> getAccountStats(Account account) async {
+  Future<AccountStats> getAccountStats() async {
+    final account = await getMainAccount();
     final Uri uri = Uri.parse(
       '${AppConstants.taskMasterEndpoint}/addresses/${account.accountId}/stats',
     );

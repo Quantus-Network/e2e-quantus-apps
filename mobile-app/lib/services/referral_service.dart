@@ -7,11 +7,6 @@ import 'package:resonance_network_wallet/models/referral_data.dart';
 import 'package:share_plus/share_plus.dart';
 
 class ReferralService {
-  static final ReferralService _instance = ReferralService._internal();
-  factory ReferralService() => _instance;
-  ReferralService._internal();
-
-  final _mainAccountIndex = 0;
   final SettingsService _settingsService = SettingsService();
   final HumanReadableChecksumService _checksumService =
       HumanReadableChecksumService();
@@ -52,10 +47,7 @@ class ReferralService {
   }
 
   Future<void> optInRewardProgram() async {
-    final account = await getMainAccount();
-
-    await _taskmasterService.optInRewardProgram(account);
-    
+    await _taskmasterService.optInRewardProgram();
     _rewardProgramParticipationCache = true;
   }
 
@@ -103,10 +95,7 @@ class ReferralService {
       return _rewardProgramParticipationCache!;
     }
 
-    final account = await getMainAccount();
-    final hasOptedIn = await _taskmasterService.getRewardProgramParticipation(
-      account,
-    );
+    final hasOptedIn = await _taskmasterService.getRewardProgramParticipation();
 
     _rewardProgramParticipationCache = hasOptedIn;
     return hasOptedIn;
@@ -116,8 +105,8 @@ class ReferralService {
     await _taskmasterService.submitReferral(referral);
   }
 
-  Future<void> submitAddressToBackend(String address) async {
-    await _taskmasterService.submitAddress(address);
+  Future<void> submitAddressToBackend() async {
+    await _taskmasterService.submitAddress();
   }
 
   String generateReferralLink(String referralCode) {
@@ -125,9 +114,8 @@ class ReferralService {
   }
 
   Future<Account> getMainAccount() async {
-    final account = await _settingsService.getAccount(_mainAccountIndex);
-
-    return account!;
+    final account = await _taskmasterService.getMainAccount();
+    return account;
   }
 
   Future<String> getMyInviteCode() async {
