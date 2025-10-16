@@ -77,7 +77,6 @@ class ReferralService {
         headers: {'Content-Type': 'application/json'},
       );
 
-      print(response.body);
       if (response.statusCode != 200) return null;
 
       final json = jsonDecode(response.body) as Map<String, dynamic>;
