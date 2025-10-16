@@ -79,12 +79,18 @@ class _ReferralAndRewardActionSheetState
     });
 
     try {
+      final isRewardProgramParticipant = await _referralService
+          .getRewardProgramParticiation();
       await _referralService.submitReferralToBackend(referral: referralCode);
 
-      setState(() {
-        _isSubmitting = false;
-        _isRewardProgram = true;
-      });
+      if (isRewardProgramParticipant) {
+        _closeSheet();
+      } else {
+        setState(() {
+          _isSubmitting = false;
+          _isRewardProgram = true;
+        });
+      }
     } catch (e) {
       print('Failed submitting referral code: $e');
 
@@ -115,7 +121,8 @@ class _ReferralAndRewardActionSheetState
           context,
           MaterialPageRoute(
             settings: const RouteSettings(name: 'navbar'),
-            builder: (context) => const Navbar(initialIndex: 3), // index of quests screen
+            builder: (context) =>
+                const Navbar(initialIndex: 3), // index of quests screen
           ),
           (route) => false,
         );

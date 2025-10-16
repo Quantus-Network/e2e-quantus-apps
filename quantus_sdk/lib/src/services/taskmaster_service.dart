@@ -222,25 +222,32 @@ class TaskmasterService {
       '${AppConstants.taskMasterEndpoint}/addresses/${activeAccount.accountId}/reward-program',
     );
 
-    final http.Response response = await http.get(
-      rewardProgramEndpoint,
-      headers: {'Content-Type': 'application/json'},
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception(
-        'Reward Program http request failed with status: ${response.statusCode}. Body: ${response.body}',
+    try {
+      final http.Response response = await http.get(
+        rewardProgramEndpoint,
+        headers: {'Content-Type': 'application/json'},
       );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Reward Program http request failed with status: ${response.statusCode}. Body: ${response.body}',
+        );
+      }
+
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+      if (responseBody['error'] != null) {
+        throw Exception('HTTP error: ${responseBody['error']}');
+      }
+
+      final bool data = responseBody['data'];
+
+      return data;
+    } catch (e, stackTrace) {
+      print('Error fetching miner stats: $e');
+      print(stackTrace);
+
+      return false;
     }
-
-    final Map<String, dynamic> responseBody = jsonDecode(response.body);
-    if (responseBody['error'] != null) {
-      throw Exception('HTTP error: ${responseBody['error']}');
-    }
-
-    final bool data = responseBody['data'];
-
-    return data;
   }
 
   Future<void> submitAddress(String address) async {
