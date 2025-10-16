@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
@@ -203,12 +205,38 @@ class _NavbarState extends ConsumerState<Navbar> {
           mainAxisSize: MainAxisSize.min,
           children: [
             isSelected
-                ? (item.onIcon.endsWith('.png') 
-                    ? Image.asset(item.onIcon, width: 26, height: 26)
-                    : SvgPicture.asset(item.onIcon))
+                ? (item.onIcon.endsWith('.png')
+                      ? Stack(
+                          children: [
+                            // Shadow
+                            Transform.translate(
+                              offset: const Offset(0, 3),
+                              child: ImageFiltered(
+                                imageFilter: ImageFilter.blur(
+                                  sigmaX: 4,
+                                  sigmaY: 4,
+                                ),
+                                child: ColorFiltered(
+                                  colorFilter: const ColorFilter.mode(
+                                    Color(0xFFA74CED),
+                                    BlendMode.srcIn, 
+                                  ),
+                                  child: Image.asset(
+                                    item.offIcon,
+                                    width: 26,
+                                    height: 26,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // Original image
+                            Image.asset(item.offIcon, width: 26, height: 26),
+                          ],
+                        )
+                      : SvgPicture.asset(item.onIcon))
                 : (item.offIcon.endsWith('.png')
-                    ? Image.asset(item.offIcon, width: 26, height: 26)
-                    : SvgPicture.asset(item.offIcon)),
+                      ? Image.asset(item.offIcon, width: 26, height: 26)
+                      : SvgPicture.asset(item.offIcon)),
           ],
         ),
       ),
