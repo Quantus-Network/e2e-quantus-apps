@@ -3,12 +3,12 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:video_player/video_player.dart';
 
-class StoryVideoPlayer extends StatefulWidget {
+class QuestsPromoVideo extends StatefulWidget {
   final bool isSubmitting;
   final VoidCallback closeSheet;
   final Function(bool isFinalVideo) setIsFinalVideo;
 
-  const StoryVideoPlayer({
+  const QuestsPromoVideo({
     super.key,
     required this.closeSheet,
     required this.isSubmitting,
@@ -16,10 +16,11 @@ class StoryVideoPlayer extends StatefulWidget {
   });
 
   @override
-  State<StoryVideoPlayer> createState() => _StoryVideoPlayerState();
+  State<QuestsPromoVideo> createState() => _QuestsPromoVideoState();
 }
 
-class _StoryVideoPlayerState extends State<StoryVideoPlayer> {
+class _QuestsPromoVideoState extends State<QuestsPromoVideo> {
+  final SettingsService _settingsService = SettingsService();
   late VideoPlayerController _controller;
   int _currentStoryIndex = 0;
 
@@ -32,12 +33,16 @@ class _StoryVideoPlayerState extends State<StoryVideoPlayer> {
   @override
   void initState() {
     super.initState();
+
+    setState(() {
+      _currentStoryIndex = _settingsService.hasWatchedQuestsPromo() ? 2 : 0;
+    });
+
     _initializeVideo(_currentStoryIndex);
   }
 
   Future<void> _initializeVideo(int index) async {
     if (index < 0 || index >= _storyVideos.length) return;
-
 
     _controller = VideoPlayerController.asset(_storyVideos[index]);
 

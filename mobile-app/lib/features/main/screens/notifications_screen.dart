@@ -176,6 +176,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
+      appBar: 'Notifications',
       decorations: [
         Positioned(
           left: context.getHorizontalCenterPosition(252),
@@ -186,24 +187,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              InkWell(
-                onTap: () => Navigator.pop(context),
-                child: const Icon(
-                  Icons.arrow_back_ios,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Text(
-                'Notifications',
-                style: context.themeText.smallTitle,
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
           Consumer(
             builder: (context, ref, child) {
               final accountsAsync = ref.watch(accountsProvider);

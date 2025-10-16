@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
@@ -101,8 +103,9 @@ class NavbarItem extends StatelessWidget {
 class Navbar extends ConsumerStatefulWidget {
   final String? address;
   final bool showReferralOnLaunch;
+  final int initialIndex;
 
-  const Navbar({super.key, this.address, this.showReferralOnLaunch = false});
+  const Navbar({super.key, this.address, this.showReferralOnLaunch = false, this.initialIndex = 0});
 
   @override
   ConsumerState<Navbar> createState() => _NavbarState();
@@ -110,6 +113,7 @@ class Navbar extends ConsumerStatefulWidget {
 
 class _NavbarState extends ConsumerState<Navbar> {
   int _selectedIndex = 0;
+  final ReferralService _referralService = ReferralService();
   final TelemetryService _telemetry = TelemetryService();
 
   final List<NavItem> _navItems = [
@@ -144,6 +148,10 @@ class _NavbarState extends ConsumerState<Navbar> {
   void initState() {
     super.initState();
 
+    setState(() {
+      _selectedIndex = widget.initialIndex;
+    });
+
     if (widget.showReferralOnLaunch) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -153,16 +161,24 @@ class _NavbarState extends ConsumerState<Navbar> {
     }
   }
 
-  void _onItemTapped(int index) {
+  void _onItemTapped(int index) async {
+    final isRewardProgramParticipant = await _referralService
+        .getRewardProgramParticiation();
+
     final newIndex = index > 2 ? index - 1 : index;
 
-    // Track tab navigation centrally
-    final toLabel = _labelForIndex(newIndex);
-    _telemetry.trackScreenView('tab:$toLabel');
+    if (newIndex == 3 && !isRewardProgramParticipant) {
+      // ignore: use_build_context_synchronously
+      if (mounted) showReferralAndRewardActionSheet(context, directlyShowRewardProgram: true);
+    } else {
+      // Track tab navigation centrally
+      final toLabel = _labelForIndex(newIndex);
+      _telemetry.trackScreenView('tab:$toLabel');
 
-    setState(() {
-      _selectedIndex = newIndex;
-    });
+      setState(() {
+        _selectedIndex = newIndex;
+      });
+    }
   }
 
   String _labelForIndex(int index) {
@@ -203,12 +219,38 @@ class _NavbarState extends ConsumerState<Navbar> {
           mainAxisSize: MainAxisSize.min,
           children: [
             isSelected
-                ? (item.onIcon.endsWith('.png') 
-                    ? Image.asset(item.onIcon, width: 26, height: 26)
-                    : SvgPicture.asset(item.onIcon))
+                ? (item.onIcon.endsWith('.png')
+                      ? Stack(
+                          children: [
+                            // Shadow
+                            Transform.translate(
+                              offset: const Offset(0, 3),
+                              child: ImageFiltered(
+                                imageFilter: ImageFilter.blur(
+                                  sigmaX: 4,
+                                  sigmaY: 4,
+                                ),
+                                child: ColorFiltered(
+                                  colorFilter: const ColorFilter.mode(
+                                    Color(0xFFA74CED),
+                                    BlendMode.srcIn,
+                                  ),
+                                  child: Image.asset(
+                                    item.offIcon,
+                                    width: 26,
+                                    height: 26,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // Original image
+                            Image.asset(item.offIcon, width: 26, height: 26),
+                          ],
+                        )
+                      : SvgPicture.asset(item.onIcon))
                 : (item.offIcon.endsWith('.png')
-                    ? Image.asset(item.offIcon, width: 26, height: 26)
-                    : SvgPicture.asset(item.offIcon)),
+                      ? Image.asset(item.offIcon, width: 26, height: 26)
+                      : SvgPicture.asset(item.offIcon)),
           ],
         ),
       ),

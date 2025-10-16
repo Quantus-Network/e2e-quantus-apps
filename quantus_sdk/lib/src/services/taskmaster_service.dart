@@ -170,9 +170,7 @@ class TaskmasterService {
   }
 
   // Submit a referral code
-  Future<void> submitReferral(
-    String referralCode,
-  ) async {
+  Future<void> submitReferral(String referralCode) async {
     print('submitReferral $referralCode');
     final Map<String, dynamic> requestBody = {
       'referral_code': referralCode.toLowerCase(),
@@ -215,6 +213,39 @@ class TaskmasterService {
       throw Exception(
         'Referral http request failed with status: ${response.statusCode}. Body: ${response.body}',
       );
+    }
+  }
+
+  Future<bool> getRewardProgramParticipation(Account activeAccount) async {
+    final rewardProgramEndpoint = Uri.parse(
+      '${AppConstants.taskMasterEndpoint}/addresses/${activeAccount.accountId}/reward-program',
+    );
+
+    try {
+      final http.Response response = await http.get(
+        rewardProgramEndpoint,
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Reward Program http request failed with status: ${response.statusCode}. Body: ${response.body}',
+        );
+      }
+
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+      if (responseBody['error'] != null) {
+        throw Exception('HTTP error: ${responseBody['error']}');
+      }
+
+      final bool data = responseBody['data'];
+
+      return data;
+    } catch (e, stackTrace) {
+      print('Error fetching miner stats: $e');
+      print(stackTrace);
+
+      return false;
     }
   }
 
@@ -268,6 +299,32 @@ class TaskmasterService {
       );
     } catch (e, stackTrace) {
       print('Error fetching miner stats: $e');
+      print(stackTrace);
+      rethrow;
+    }
+  }
+
+  Future<AccountStats> getAccountStats(Account account) async {
+    final Uri uri = Uri.parse(
+      '${AppConstants.taskMasterEndpoint}/addresses/${account.accountId}/stats',
+    );
+
+    try {
+      final http.Response response = await http.get(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'HTTP request failed with status: ${response.statusCode}. Body: ${response.body}',
+        );
+      }
+
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return AccountStats.fromJson(json);
+    } catch (e, stackTrace) {
+      print('Error fetching address stats: $e');
       print(stackTrace);
       rethrow;
     }

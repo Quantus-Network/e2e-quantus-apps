@@ -6,7 +6,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
-import 'package:resonance_network_wallet/features/components/story_video_player.dart';
+import 'package:resonance_network_wallet/features/components/quests_promo_video.dart';
+import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
@@ -15,8 +16,13 @@ import 'package:resonance_network_wallet/shared/extensions/media_query_data_exte
 
 class ReferralAndRewardActionSheet extends StatefulWidget {
   final String? referralCode;
+  final bool? directlyShowRewardProgram;
 
-  const ReferralAndRewardActionSheet({super.key, this.referralCode});
+  const ReferralAndRewardActionSheet({
+    super.key,
+    this.referralCode,
+    this.directlyShowRewardProgram,
+  });
 
   @override
   State<ReferralAndRewardActionSheet> createState() =>
@@ -25,18 +31,27 @@ class ReferralAndRewardActionSheet extends StatefulWidget {
 
 class _ReferralAndRewardActionSheetState
     extends State<ReferralAndRewardActionSheet> {
+  final SettingsService _settingsService = SettingsService();
   final ReferralService _referralService = ReferralService();
   final _referralCodeController = TextEditingController();
 
+  String? _checksum;
   bool _isRewardProgram = false;
   bool _isLastPromo = false;
   bool _isSubmitting = false;
   bool _isDisabled = true;
+  bool _isLoading = true;
   String? _errorMsg;
 
   @override
   void initState() {
     super.initState();
+
+    setState(() {
+      _isRewardProgram = widget.directlyShowRewardProgram ?? false;
+    });
+
+    _loadReferralData();
 
     _referralCodeController.addListener(() {
       setState(() {
@@ -47,6 +62,8 @@ class _ReferralAndRewardActionSheetState
   }
 
   void _setIsFinalVideo(bool value) {
+    if (value) _settingsService.setQuestsPromoWatched();
+
     setState(() {
       _isLastPromo = value;
     });
@@ -62,12 +79,18 @@ class _ReferralAndRewardActionSheetState
     });
 
     try {
+      final isRewardProgramParticipant = await _referralService
+          .getRewardProgramParticiation();
       await _referralService.submitReferralToBackend(referral: referralCode);
 
-      setState(() {
-        _isSubmitting = false;
-        _isRewardProgram = true;
-      });
+      if (isRewardProgramParticipant) {
+        _closeSheet();
+      } else {
+        setState(() {
+          _isSubmitting = false;
+          _isRewardProgram = true;
+        });
+      }
     } catch (e) {
       print('Failed submitting referral code: $e');
 
@@ -78,7 +101,7 @@ class _ReferralAndRewardActionSheetState
     }
   }
 
-  Future<void> _handleOptIn() async {
+  Future<void> _handleOptIn(BuildContext context) async {
     setState(() {
       _isSubmitting = true;
     });
@@ -91,12 +114,39 @@ class _ReferralAndRewardActionSheetState
       });
 
       _closeSheet();
+
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          // ignore: use_build_context_synchronously
+          context,
+          MaterialPageRoute(
+            settings: const RouteSettings(name: 'navbar'),
+            builder: (context) =>
+                const Navbar(initialIndex: 3), // index of quests screen
+          ),
+          (route) => false,
+        );
+      }
     } catch (e) {
       print('Failed opting in reward program: $e');
       setState(() {
         _isSubmitting = false;
       });
     }
+  }
+
+  Future<void> _loadReferralData() async {
+    final referraldata = await _referralService.getReferralData();
+
+    if (referraldata != null) {
+      _checksum = await HumanReadableChecksumService().getHumanReadableName(
+        referraldata.referrerAddress,
+      );
+    }
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
@@ -127,7 +177,12 @@ class _ReferralAndRewardActionSheetState
   }
 
   Widget _buildSheetContent(BuildContext context) {
-    if (_isRewardProgram) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    } else if (_checksum != null) {
+      print(_checksum);
+      return _buildReferralSubmittedInfo(context, _checksum!);
+    } else if (_isRewardProgram) {
       return _buildRewardProgram(context);
     } else if (widget.referralCode != null) {
       return _buildPrefilledReferralForm(context, widget.referralCode!);
@@ -211,6 +266,21 @@ class _ReferralAndRewardActionSheetState
             },
           ),
         ),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: context.isTablet ? 465 : null,
+          child: Button(
+            label: 'Skip',
+            isLoading: _isSubmitting,
+            variant: ButtonVariant.glassOutline,
+            onPressed: () {
+              setState(() {
+                _isRewardProgram = true;
+              });
+            },
+          ),
+        ),
+
         SizedBox(height: context.themeSize.bottomButtonSpacing),
       ],
     );
@@ -250,7 +320,7 @@ class _ReferralAndRewardActionSheetState
         ),
         const SizedBox(height: 22),
         CustomTextField(
-          initialValue: widget.referralCode,
+          initialValue: referralCode,
           fillColor: context.themeColors.background,
           errorMsg: _errorMsg,
           textStyle: context.themeText.paragraph?.copyWith(
@@ -282,6 +352,59 @@ class _ReferralAndRewardActionSheetState
     );
   }
 
+  Widget _buildReferralSubmittedInfo(
+    BuildContext context,
+    String referralCode,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(7),
+          decoration: ShapeDecoration(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(100),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              InkWell(
+                onTap: _isSubmitting ? null : _closeSheet,
+                child: Icon(Icons.close, size: context.isTablet ? 28 : 24),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 22),
+        Text(
+          'Your submitted referral code:',
+          style: context.themeText.mediumTitle?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 22),
+        CustomTextField(
+          initialValue: referralCode,
+          fillColor: context.themeColors.background,
+          errorMsg: _errorMsg,
+          textStyle: context.themeText.paragraph?.copyWith(
+            color: context.themeColors.yellow,
+          ),
+          disabled: true,
+        ),
+        const SizedBox(height: 24),
+        Text(
+          'Your referrer and you get points because you submitted the referral code.',
+          style: context.themeText.smallParagraph?.copyWith(
+            color: context.themeColors.inputLabel.useOpacity(0.8),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildRewardProgram(BuildContext context) {
     return Stack(
       children: [
@@ -289,7 +412,7 @@ class _ReferralAndRewardActionSheetState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 90),
-            StoryVideoPlayer(
+            QuestsPromoVideo(
               isSubmitting: _isSubmitting,
               closeSheet: _closeSheet,
               setIsFinalVideo: _setIsFinalVideo,
@@ -309,7 +432,9 @@ class _ReferralAndRewardActionSheetState
                       label: "I'm In",
                       isLoading: _isSubmitting,
                       variant: ButtonVariant.primary,
-                      onPressed: _handleOptIn,
+                      onPressed: () {
+                        _handleOptIn(context);
+                      },
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -335,6 +460,7 @@ class _ReferralAndRewardActionSheetState
 void showReferralAndRewardActionSheet(
   BuildContext context, {
   String? referralCode,
+  bool? directlyShowRewardProgram,
 }) {
   showModalBottomSheet(
     context: context,
@@ -366,7 +492,10 @@ void showReferralAndRewardActionSheet(
             filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
             child: Container(
               color: Colors.black.useOpacity(0.3),
-              child: ReferralAndRewardActionSheet(referralCode: referralCode),
+              child: ReferralAndRewardActionSheet(
+                referralCode: referralCode,
+                directlyShowRewardProgram: directlyShowRewardProgram,
+              ),
             ),
           ),
         ),
