@@ -6,7 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
-import 'package:resonance_network_wallet/features/components/story_video_player.dart';
+import 'package:resonance_network_wallet/features/components/quests_promo_video.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
@@ -25,6 +25,7 @@ class ReferralAndRewardActionSheet extends StatefulWidget {
 
 class _ReferralAndRewardActionSheetState
     extends State<ReferralAndRewardActionSheet> {
+  final SettingsService _settingsService = SettingsService();
   final ReferralService _referralService = ReferralService();
   final _referralCodeController = TextEditingController();
 
@@ -47,6 +48,8 @@ class _ReferralAndRewardActionSheetState
   }
 
   void _setIsFinalVideo(bool value) {
+    if (value) _settingsService.setQuestsPromoWatched();
+
     setState(() {
       _isLastPromo = value;
     });
@@ -289,7 +292,7 @@ class _ReferralAndRewardActionSheetState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 90),
-            StoryVideoPlayer(
+            QuestsPromoVideo(
               isSubmitting: _isSubmitting,
               closeSheet: _closeSheet,
               setIsFinalVideo: _setIsFinalVideo,

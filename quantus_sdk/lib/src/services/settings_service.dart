@@ -27,6 +27,7 @@ class SettingsService {
   // referral status
   static const String hasCheckedReferralKey = 'referral_check';
   static const String referralCodeKey = 'referral_code';
+  static const String hasWatchedQuestsPromoKey = 'quests_promo';
 
   Future<void> initialize() async {
     // Always (re)bind the SharedPreferences instance. This ensures tests that
@@ -312,5 +313,17 @@ class SettingsService {
 
   void setReferralCode(String code) {
     _prefs.setString(referralCodeKey, code);
+  }
+
+  bool hasWatchedQuestsPromo() {
+    return _prefs.getBool(hasWatchedQuestsPromoKey) ?? false;
+  }
+
+  void setQuestsPromoWatched() {
+    _prefs.setBool(hasWatchedQuestsPromoKey, true);
+  }
+
+  void clearQuestsPromoWatchedFlag() {
+    _prefs.remove(hasWatchedQuestsPromoKey);
   }
 }
