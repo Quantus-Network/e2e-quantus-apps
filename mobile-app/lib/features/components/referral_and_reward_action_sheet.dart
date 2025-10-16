@@ -125,8 +125,7 @@ class _ReferralAndRewardActionSheetState
           context,
           MaterialPageRoute(
             settings: const RouteSettings(name: 'navbar'),
-            builder: (context) =>
-                Navbar(initialIndex: widget.currentNavbarIndex ?? 3),
+            builder: (context) => const Navbar(initialIndex: 3),
           ),
           (route) => false,
         );
