@@ -95,9 +95,6 @@ class TaskmasterService {
   final _referralEndpoint = Uri.parse(
     '${AppConstants.taskMasterEndpoint}/referrals',
   );
-  final _addressEndpoint = Uri.parse(
-    '${AppConstants.taskMasterEndpoint}/addresses',
-  );
   final String _minerStatsQuery = r'''
     query MinerStats($id: String!) {
       minerStats(where: {id_eq: $id}) {
@@ -176,14 +173,10 @@ class TaskmasterService {
   // Submit a referral code
   Future<void> submitReferral(
     String referralCode,
-    Account activeAccount,
   ) async {
-    print(
-      'submit referral $referralCode for ${activeAccount.name} ${activeAccount.accountId}',
-    );
+    print('submitReferral $referralCode');
     final Map<String, dynamic> requestBody = {
       'referral_code': referralCode.toLowerCase(),
-      'referee_address': activeAccount.accountId,
     };
 
     await ensureIsLoggedIn();
@@ -227,20 +220,8 @@ class TaskmasterService {
   }
 
   Future<void> submitAddress(String address) async {
-    print('submitAddress $address');
-    final Map<String, dynamic> requestBody = {'quan_address': address};
-
+    print('submitAddress $address - just log in');
     await ensureIsLoggedIn();
-
-    try {
-      await http.post(
-        _addressEndpoint,
-        headers: {'Content-Type': 'application/json', ...getAuthHeaders()},
-        body: jsonEncode(requestBody),
-      );
-    } catch (e) {
-      print('Failed saving address to database: $e');
-    }
   }
 
   Future<MinerStats> getMinerStats(String minerAddress) async {
