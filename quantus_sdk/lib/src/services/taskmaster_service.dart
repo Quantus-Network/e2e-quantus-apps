@@ -280,7 +280,7 @@ class TaskmasterService {
     );
 
     try {
-      final http.Response response = await http.post(
+      final http.Response response = await http.get(
         uri,
         headers: {'Content-Type': 'application/json'},
       );

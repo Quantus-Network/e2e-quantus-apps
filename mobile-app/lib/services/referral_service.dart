@@ -46,12 +46,7 @@ class ReferralService {
   }
 
   Future<void> optInRewardProgram() async {
-    final account = await _settingsService.getAccount(_mainAccountIndex);
-    if (account == null) {
-      throw Exception(
-        'Failed joining reward program, no active account detected!',
-      );
-    }
+    final account = await getMainAccount();
 
     await _taskmasterService.optInRewardProgram(account);
   }
@@ -66,10 +61,10 @@ class ReferralService {
   }
 
   Future<ReferralData?> getReferralData() async {
-    final account = await _settingsService.getAccount(_mainAccountIndex);
+    final account = await getMainAccount();
 
     final getReferralByRefereeUri = Uri.parse(
-      '${AppConstants.taskMasterEndpoint}/referrals/${account!.accountId}',
+      '${AppConstants.taskMasterEndpoint}/referrals/${account.accountId}',
     );
 
     try {
@@ -103,16 +98,27 @@ class ReferralService {
     return '${AppConstants.websiteBaseUrl}/invite?referralCode=$referralCode';
   }
 
-  Future<ShareParams> getShareLinkParameters() async {
+  Future<Account> getMainAccount() async {
     final account = await _settingsService.getAccount(_mainAccountIndex);
 
+    return account!;
+  }
+
+  Future<String> getMyInviteCode() async {
+    final account = await getMainAccount();
     final referralCode = await _checksumService.getHumanReadableName(
-      account!.accountId,
+      account.accountId,
     );
+
+    return referralCode;
+  }
+
+  Future<ShareParams> getShareLinkParameters() async {
+    final referralCode = await getMyInviteCode();
 
     String link = generateReferralLink(referralCode);
     String message =
-        'Join me on Quantus Wallet! Use my referral code: $referralCode\n\n$link';
+        'Join me on Quantum Future! Use my referral link so we both earn points: \n$link';
 
     return ShareParams(
       text: message,
