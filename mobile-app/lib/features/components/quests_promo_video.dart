@@ -20,6 +20,7 @@ class QuestsPromoVideo extends StatefulWidget {
 }
 
 class _QuestsPromoVideoState extends State<QuestsPromoVideo> {
+  final SettingsService _settingsService = SettingsService();
   late VideoPlayerController _controller;
   int _currentStoryIndex = 0;
 
@@ -32,12 +33,16 @@ class _QuestsPromoVideoState extends State<QuestsPromoVideo> {
   @override
   void initState() {
     super.initState();
+
+    setState(() {
+      _currentStoryIndex = _settingsService.hasWatchedQuestsPromo() ? 2 : 0;
+    });
+
     _initializeVideo(_currentStoryIndex);
   }
 
   Future<void> _initializeVideo(int index) async {
     if (index < 0 || index >= _storyVideos.length) return;
-
 
     _controller = VideoPlayerController.asset(_storyVideos[index]);
 

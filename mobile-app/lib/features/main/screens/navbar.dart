@@ -103,8 +103,9 @@ class NavbarItem extends StatelessWidget {
 class Navbar extends ConsumerStatefulWidget {
   final String? address;
   final bool showReferralOnLaunch;
+  final int initialIndex;
 
-  const Navbar({super.key, this.address, this.showReferralOnLaunch = false});
+  const Navbar({super.key, this.address, this.showReferralOnLaunch = false, this.initialIndex = 0});
 
   @override
   ConsumerState<Navbar> createState() => _NavbarState();
@@ -112,6 +113,7 @@ class Navbar extends ConsumerStatefulWidget {
 
 class _NavbarState extends ConsumerState<Navbar> {
   int _selectedIndex = 0;
+  final ReferralService _referralService = ReferralService();
   final TelemetryService _telemetry = TelemetryService();
 
   final List<NavItem> _navItems = [
@@ -146,6 +148,10 @@ class _NavbarState extends ConsumerState<Navbar> {
   void initState() {
     super.initState();
 
+    setState(() {
+      _selectedIndex = widget.initialIndex;
+    });
+
     if (widget.showReferralOnLaunch) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -155,16 +161,24 @@ class _NavbarState extends ConsumerState<Navbar> {
     }
   }
 
-  void _onItemTapped(int index) {
+  void _onItemTapped(int index) async {
+    final isRewardProgramParticipant = await _referralService
+        .getRewardProgramParticiation();
+
     final newIndex = index > 2 ? index - 1 : index;
 
-    // Track tab navigation centrally
-    final toLabel = _labelForIndex(newIndex);
-    _telemetry.trackScreenView('tab:$toLabel');
+    if (newIndex == 3 && !isRewardProgramParticipant) {
+      // ignore: use_build_context_synchronously
+      if (mounted) showReferralAndRewardActionSheet(context, directlyShowRewardProgram: true);
+    } else {
+      // Track tab navigation centrally
+      final toLabel = _labelForIndex(newIndex);
+      _telemetry.trackScreenView('tab:$toLabel');
 
-    setState(() {
-      _selectedIndex = newIndex;
-    });
+      setState(() {
+        _selectedIndex = newIndex;
+      });
+    }
   }
 
   String _labelForIndex(int index) {
@@ -219,7 +233,7 @@ class _NavbarState extends ConsumerState<Navbar> {
                                 child: ColorFiltered(
                                   colorFilter: const ColorFilter.mode(
                                     Color(0xFFA74CED),
-                                    BlendMode.srcIn, 
+                                    BlendMode.srcIn,
                                   ),
                                   child: Image.asset(
                                     item.offIcon,

@@ -171,9 +171,7 @@ class TaskmasterService {
   }
 
   // Submit a referral code
-  Future<void> submitReferral(
-    String referralCode,
-  ) async {
+  Future<void> submitReferral(String referralCode) async {
     print('submitReferral $referralCode');
     final Map<String, dynamic> requestBody = {
       'referral_code': referralCode.toLowerCase(),
@@ -217,6 +215,32 @@ class TaskmasterService {
         'Referral http request failed with status: ${response.statusCode}. Body: ${response.body}',
       );
     }
+  }
+
+  Future<bool> getRewardProgramParticipation(Account activeAccount) async {
+    final rewardProgramEndpoint = Uri.parse(
+      '${AppConstants.taskMasterEndpoint}/addresses/${activeAccount.accountId}/reward-program',
+    );
+
+    final http.Response response = await http.get(
+      rewardProgramEndpoint,
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Reward Program http request failed with status: ${response.statusCode}. Body: ${response.body}',
+      );
+    }
+
+    final Map<String, dynamic> responseBody = jsonDecode(response.body);
+    if (responseBody['error'] != null) {
+      throw Exception('HTTP error: ${responseBody['error']}');
+    }
+
+    final bool data = responseBody['data'];
+
+    return data;
   }
 
   Future<void> submitAddress(String address) async {

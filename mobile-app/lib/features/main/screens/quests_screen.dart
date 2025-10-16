@@ -108,10 +108,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
                                 child: Column(
                                   children: [
                                     const SizedBox(height: 163),
-                                    ..._buildAccountStats(
-                                      context,
-                                      statsAsync.value,
-                                    ),
+                                    ..._buildAccountStats(context, statsAsync),
                                     const SizedBox(height: 16),
                                     Text.rich(
                                       TextSpan(
@@ -211,21 +208,38 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
     );
   }
 
-  List<Widget> _buildAccountStats(BuildContext context, AccountStats? stats) {
-    final referrals = stats?.referralCount;
-    final sends = stats?.sendCount;
-    final reversals = stats?.reversalCount;
-    final mining = stats?.miningCount;
-
-    return [
-      _buildStatCard(context, 'Referrals:', referrals),
-      const SizedBox(height: 9),
-      _buildStatCard(context, 'Sends:', sends),
-      const SizedBox(height: 9),
-      _buildStatCard(context, 'Reversals:', reversals),
-      const SizedBox(height: 9),
-      _buildStatCard(context, 'Mining:', mining),
-    ];
+  List<Widget> _buildAccountStats(
+    BuildContext context,
+    AsyncValue<AccountStats> statsAsync,
+  ) {
+    return statsAsync.when(
+      data: (stats) => [
+        _buildStatCard(context, 'Referrals:', stats.referralCount),
+        const SizedBox(height: 9),
+        _buildStatCard(context, 'Sends:', stats.sendCount),
+        const SizedBox(height: 9),
+        _buildStatCard(context, 'Reversals:', stats.reversalCount),
+        const SizedBox(height: 9),
+        _buildStatCard(context, 'Mining:', stats.miningCount),
+      ],
+      loading: () => [
+        _buildStatCard(context, 'Referrals:', null),
+        const SizedBox(height: 9),
+        _buildStatCard(context, 'Sends:', null),
+        const SizedBox(height: 9),
+        _buildStatCard(context, 'Reversals:', null),
+        const SizedBox(height: 9),
+        _buildStatCard(context, 'Mining:', null),
+      ],
+      error: (error, stack) => [
+        Text(
+          'Error loading account: ${error.toString()}',
+          style: context.themeText.detail?.copyWith(
+            color: context.themeColors.textError,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildStatCard(BuildContext context, String title, int? stat) {
