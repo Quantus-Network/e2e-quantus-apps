@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/features/components/basic_card.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/quests_promo_video.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/features/components/loading_text_animation.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
@@ -13,6 +14,7 @@ import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_stats_providers.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -147,9 +149,12 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
     // Show videos for users who haven't opted in to the reward program
     if (_isLoadingParticipation) {
       return ScaffoldBase(
-        screenTitle: ScreenTitle(title: 'Quests'),
-        child: const Center(
-          child: CircularProgressIndicator(color: Color(0xFF0CE6ED)),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            spacing: 12,
+            children: [_buildQuestTitle(), const LoadingTextAnimation()],
+          ),
         ),
       );
     }
@@ -248,7 +253,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
                               Expanded(
                                 child: Column(
                                   children: [
-                                    const SizedBox(height: 163),
+                                     SizedBox(height:  context.isSmallHeight? 132: 163),
                                     ..._buildAccountStats(context, statsAsync),
                                     const SizedBox(height: 16),
                                     Text.rich(
@@ -288,7 +293,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
                             ],
                           ),
                         ),
-                        const SizedBox(height: 40),
+                         SizedBox(height: context.isSmallHeight ? 18: 40),
                         Text(
                           'Click to Copy Referral Code',
                           style: context.themeText.smallParagraph,
@@ -327,18 +332,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
                   ),
                   Padding(
                     padding: const EdgeInsets.only(top: 40),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      spacing: 11,
-                      children: [
-                        Image.asset(
-                          'assets/navbar/qcat_navbar_icon.png',
-                          width: 82,
-                        ),
-                        Image.asset('assets/qq-logo.png', width: 226.35),
-                      ],
-                    ),
+                    child: _buildQuestTitle(),
                   ),
                 ],
               ),
@@ -346,6 +340,18 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildQuestTitle() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.center,
+      spacing: 11,
+      children: [
+        Image.asset('assets/navbar/qcat_navbar_icon.png', width: 82),
+        Image.asset('assets/qq-logo.png', width: 226.35),
+      ],
     );
   }
 
@@ -409,7 +415,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
   Widget _buildDecoration() {
     return Container(
       width: 85,
-      height: 462,
+      height: context.isSmallHeight ? 380: 462,
       decoration: const ShapeDecoration(
         gradient: LinearGradient(
           begin: Alignment(0.03, -1.00),
