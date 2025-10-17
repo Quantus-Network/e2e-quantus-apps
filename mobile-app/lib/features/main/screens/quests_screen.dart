@@ -382,7 +382,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
       ],
       error: (error, stack) => [
         Text(
-          'Error loading account: ${error.toString()}',
+          'Error fetching account stats.',
           style: context.themeText.detail?.copyWith(
             color: context.themeColors.textError,
           ),
