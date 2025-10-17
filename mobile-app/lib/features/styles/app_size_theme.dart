@@ -85,7 +85,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
         mainMenuHeight: 30,
         mainMenuWidth: 30,
         mainMenuIconSize: 29.0,
-        navbarHeight: 3.0,
+        navbarHeight: 87.0,
         navbarItemHeight: 40,
         navbarItemWidth: 48,
         navbarIconWidth: 32,
