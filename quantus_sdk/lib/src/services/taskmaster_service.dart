@@ -5,6 +5,33 @@ import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
+class TokenInfo {
+  final String accessToken;
+  final DateTime expiresAt;
+  final DateTime issuedAt;
+
+  TokenInfo({
+    required this.accessToken,
+    required this.expiresAt,
+    required this.issuedAt,
+  });
+
+  bool get isExpired => DateTime.now().isAfter(expiresAt);
+  bool get isNearExpiry => DateTime.now().add(const Duration(minutes: 30)).isAfter(expiresAt);
+
+  Map<String, dynamic> toJson() => {
+    'accessToken': accessToken,
+    'expiresAt': expiresAt.toIso8601String(),
+    'issuedAt': issuedAt.toIso8601String(),
+  };
+
+  factory TokenInfo.fromJson(Map<String, dynamic> json) => TokenInfo(
+    accessToken: json['accessToken'],
+    expiresAt: DateTime.parse(json['expiresAt']),
+    issuedAt: DateTime.parse(json['issuedAt']),
+  );
+}
+
 class TaskMasterAuthClient {
   final String taskMasterEndpointUrl;
   final http.Client _client;
@@ -35,6 +62,7 @@ class TaskMasterAuthClient {
     required String publicKeyHex,
     required String signatureHex,
   }) async {
+    print('verify $tempSessionId ');
     final r = await _client.post(
       Uri.parse('$taskMasterEndpointUrl/auth/verify'),
       headers: {'content-type': 'application/json'},
@@ -110,12 +138,16 @@ class TaskmasterService {
   final SettingsService _settingsService = SettingsService();
   final HdWalletService _hd = HdWalletService();
   final _mainAccountIndex = 0;
-  String? _accessToken;
-  String? get accessToken => _accessToken;
-  bool get isLoggedIn => _accessToken != null;
+  TokenInfo? _tokenInfo;
+  String? get accessToken => _tokenInfo?.accessToken;
+  bool get isLoggedIn => _tokenInfo != null && !_tokenInfo!.isExpired;
 
   TaskMasterAuthClient get _client =>
       TaskMasterAuthClient(AppConstants.taskMasterEndpoint);
+
+  void _clearToken() {
+    _tokenInfo = null;
+  }
 
   Future<String> getOldMiningAccountId() async {
     final mnemonic = await _settingsService.getMnemonic();
@@ -128,7 +160,7 @@ class TaskmasterService {
     return rawKeyPair.ss58Address;
   }
 
-  Future<String> loginWithAccount1() async {
+  Future<TokenInfo> loginWithAccount1() async {
     final mnemonic = await _settingsService.getMnemonic();
     if (mnemonic == null) {
       throw Exception('Mnemonic not found.');
@@ -142,10 +174,19 @@ class TaskmasterService {
       return convert_hex.hex.encode(sig);
     }
 
-    return _client.login(
+    final accessToken = await _client.login(
       ss58Address: ss58Address,
       publicKeyHex: publicKeyHex,
       signHex: signHex,
+    );
+
+    final now = DateTime.now();
+    final expiresAt = now.add(const Duration(hours: 24));
+    
+    return TokenInfo(
+      accessToken: accessToken,
+      expiresAt: expiresAt,
+      issuedAt: now,
     );
   }
 
@@ -157,25 +198,29 @@ class TaskmasterService {
     return _client.getAuthHeaders(accessToken);
   }
 
-  // Makes sure account is logged in
   Future<bool> ensureIsLoggedIn() async {
-    if (_accessToken != null) {
-      try {
-        // ignore: unused_local_variable
-        final meResult = await me(_accessToken!);
+    print('ensureIsLoggedIn');
+
+    if (_tokenInfo != null && !_tokenInfo!.isExpired) {
+      if (_tokenInfo!.isNearExpiry) {
+        try {
+          _tokenInfo = await loginWithAccount1();
+          return true;
+        } catch (error) {
+          print('Token refresh failed: $error');
+          _clearToken();
+        }
+      } else {
+        print('is logged in by token expiry');
         return true;
-      } catch (error) {
-        print('ensureIsLoggedIn error: $error');
-        _accessToken = null;
       }
     }
 
     try {
-      _accessToken = await loginWithAccount1();
-
+      _tokenInfo = await loginWithAccount1();
       return true;
     } catch (error) {
-      print('ensureIsLoggedIn login error $error');
+      print('Login failed: $error');
       return false;
     }
   }
@@ -366,6 +411,6 @@ class TaskmasterService {
   }
 
   Future<void> logout() async {
-    _accessToken = null;
+    _clearToken();
   }
 }
