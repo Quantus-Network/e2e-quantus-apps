@@ -257,13 +257,28 @@ class MinerProcess {
       );
     }
 
+    // Read the rewards address from the file
+    String rewardsAddress;
+    try {
+      if (!await rewardsPath.exists()) {
+        throw Exception('Rewards address file not found: ${rewardsPath.path}');
+      }
+      rewardsAddress = await rewardsPath.readAsString();
+      rewardsAddress = rewardsAddress.trim(); // Remove any whitespace/newlines
+      print('DEBUG: Read rewards address from file: $rewardsAddress');
+    } catch (e) {
+      throw Exception(
+        'Failed to read rewards address from file ${rewardsPath.path}: $e',
+      );
+    }
+
     final List<String> args = [
       '--base-path',
       basePath,
       '--node-key-file',
       identityPath.path,
       '--rewards-address',
-      rewardsPath.path,
+      rewardsAddress,
       '--validator',
       '--chain',
       'schrodinger',
@@ -275,6 +290,7 @@ class MinerProcess {
       'QuantusMinerGUI',
       '--external-miner-url',
       'http://127.0.0.1:$externalMinerPort',
+      '--enable-peer-sharing',
     ];
 
     print('DEBUG: Executing command:\n ${bin.path} ${args.join(' ')}');
