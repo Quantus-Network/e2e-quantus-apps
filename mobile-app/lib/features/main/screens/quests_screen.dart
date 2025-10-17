@@ -253,7 +253,9 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
                               Expanded(
                                 child: Column(
                                   children: [
-                                     SizedBox(height:  context.isSmallHeight? 132: 163),
+                                    SizedBox(
+                                      height: context.isSmallHeight ? 132 : 163,
+                                    ),
                                     ..._buildAccountStats(context, statsAsync),
                                     const SizedBox(height: 16),
                                     Text.rich(
@@ -293,7 +295,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
                             ],
                           ),
                         ),
-                         SizedBox(height: context.isSmallHeight ? 18: 40),
+                        SizedBox(height: context.isSmallHeight ? 18 : 40),
                         Text(
                           'Click to Copy Referral Code',
                           style: context.themeText.smallParagraph,
@@ -380,10 +382,16 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
       ],
       error: (error, stack) => [
         Text(
-          'Error loading account: ${error.toString()}',
+          'Error fetching account stats.',
           style: context.themeText.detail?.copyWith(
             color: context.themeColors.textError,
           ),
+        ),
+        const SizedBox(height: 12),
+        Button(
+          variant: ButtonVariant.neutral,
+          label: 'Try again',
+          onPressed: refreshData,
         ),
       ],
     );
@@ -415,7 +423,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
   Widget _buildDecoration() {
     return Container(
       width: 85,
-      height: context.isSmallHeight ? 380: 462,
+      height: context.isSmallHeight ? 380 : 462,
       decoration: const ShapeDecoration(
         gradient: LinearGradient(
           begin: Alignment(0.03, -1.00),
