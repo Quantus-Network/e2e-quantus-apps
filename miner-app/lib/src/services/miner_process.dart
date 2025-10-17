@@ -11,7 +11,7 @@ import './prometheus_service.dart';
 class LogEntry {
   final String message;
   final DateTime timestamp;
-  final String source; // 'node', 'external-miner', 'error'
+  final String source; // 'node', 'quantus-miner', 'error'
 
   LogEntry({
     required this.message,
@@ -104,14 +104,14 @@ class MinerProcess {
       'DEBUG: Starting external miner on port $externalMinerPort with $minerCores cores...',
     );
     print(
-      'DEBUG: External miner command: ${externalMinerBin.path} --port $externalMinerPort --num-cores $minerCores',
+      'DEBUG: External miner command: ${externalMinerBin.path} --port $externalMinerPort --workers $minerCores',
     );
 
     try {
       _externalMinerProcess = await Process.start(externalMinerBin.path, [
         '--port',
         externalMinerPort.toString(),
-        '--num-cores',
+        '--workers',
         minerCores.toString(),
       ]);
       print(
@@ -130,7 +130,7 @@ class MinerProcess {
           final logEntry = LogEntry(
             message: line,
             timestamp: DateTime.now(),
-            source: 'external-miner',
+            source: 'quantus-miner',
           );
           _logsController.add(logEntry);
           print('[ext-miner] $line');
@@ -143,7 +143,7 @@ class MinerProcess {
           final logEntry = LogEntry(
             message: line,
             timestamp: DateTime.now(),
-            source: 'external-miner-error',
+            source: 'quantus-miner-error',
           );
           _logsController.add(logEntry);
           print('[ext-miner-err] $line');
@@ -266,7 +266,7 @@ class MinerProcess {
       rewardsPath.path,
       '--validator',
       '--chain',
-      'live_resonance',
+      'schrodinger',
       '--port',
       '30333',
       '--prometheus-port',

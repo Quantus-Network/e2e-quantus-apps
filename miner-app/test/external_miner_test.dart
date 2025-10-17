@@ -6,7 +6,7 @@ void main() {
     test('should get external miner binary file path', () async {
       final path = await BinaryManager.getExternalMinerBinaryFilePath();
       expect(path, isNotNull);
-      expect(path, contains('external-miner'));
+      expect(path, contains('quantus-miner'));
       expect(path, contains('.quantus'));
     });
 
@@ -22,7 +22,7 @@ void main() {
 
       expect(nodePath, isNot(equals(minerPath)));
       expect(nodePath, contains('quantus-node'));
-      expect(minerPath, contains('external-miner'));
+      expect(minerPath, contains('quantus-miner'));
     });
   });
 }

@@ -6,7 +6,7 @@ import 'package:path/path.dart' as p;
 class ExternalMinerManager {
   static const _repoOwner = 'Quantus-Network';
   static const _repoName = 'quantus-miner';
-  static const _binary = 'external-miner';
+  static const _binary = 'quantus-miner';
 
   static Future<String> getExternalMinerBinaryFilePath() async {
     final cacheDir = await _getCacheDir();
