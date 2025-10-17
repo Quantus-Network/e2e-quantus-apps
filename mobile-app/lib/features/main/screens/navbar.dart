@@ -34,10 +34,12 @@ class BottomNavPainter extends CustomPainter {
     required this.isTablet,
   });
 
-  double get offset => isTablet ? 130 : 80;
-
   @override
   void paint(Canvas canvas, Size size) {
+    final dipWidth = 140.0;
+    final offset = dipWidth / 2;
+    final dipHeight = 26.0;
+
     Paint paint = Paint()
       ..color = background
       ..style = PaintingStyle.fill;
@@ -49,7 +51,7 @@ class BottomNavPainter extends CustomPainter {
     path.lineTo(size.width, size.height);
     path.lineTo(size.width, 0);
     path.lineTo((size.width * 1 / 2) + offset, 0);
-    path.lineTo((size.width * 1 / 2), size.height / 2);
+    path.lineTo((size.width * 1 / 2), dipHeight);
     path.lineTo((size.width * 1 / 2) - offset, 0);
     path.lineTo(0, 0);
 
@@ -219,7 +221,10 @@ class _NavbarState extends ConsumerState<Navbar> {
           onTap: () {
             Navigator.pushNamed(context, '/send');
           },
-          child: SvgPicture.asset(item.onIcon),
+          child: Transform.translate(
+            offset: const Offset(1, -2),
+            child: SvgPicture.asset(item.onIcon),
+          ),
         ),
       );
     }
@@ -291,6 +296,29 @@ class _NavbarState extends ConsumerState<Navbar> {
       height: context.themeSize.navbarHeight,
       child: Stack(
         children: [
+          // Shadow
+          Transform.translate(
+            offset: const Offset(0, -3),
+            child: ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
+              child: ColorFiltered(
+                colorFilter: const ColorFilter.mode(
+                  Color(0x19FFFFFF),
+                  BlendMode.srcIn,
+                ),
+                child: CustomPaint(
+                  size: Size(
+                    MediaQuery.of(context).size.width,
+                    context.themeSize.navbarHeight,
+                  ),
+                  painter: BottomNavPainter(
+                    background: context.themeColors.navbarBg,
+                    isTablet: context.isTablet,
+                  ),
+                ),
+              ),
+            ),
+          ),
           CustomPaint(
             size: Size(
               MediaQuery.of(context).size.width,
@@ -307,7 +335,7 @@ class _NavbarState extends ConsumerState<Navbar> {
             children: _navItems.asMap().entries.map((entry) {
               int index = entry.key;
               NavItem item = entry.value;
-          
+
               return _buildNavItem(index, item);
             }).toList(),
           ),
