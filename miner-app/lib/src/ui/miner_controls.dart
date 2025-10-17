@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../services/binary_manager.dart';
 import '../services/miner_process.dart';
+import '../../main.dart'; // Import for GlobalMinerManager
 // PrometheusService import might not be needed here anymore if hashrate is exclusively from MinerProcess
 // import '../services/prometheus_service.dart';
 
@@ -126,7 +127,18 @@ class _MinerControlsState extends State<MinerControls> {
       }
     } else {
       print('Stopping mining');
-      _proc!.stop();
+
+      try {
+        _proc!.stop();
+        // Wait a moment for graceful shutdown
+        await Future.delayed(const Duration(seconds: 1));
+      } catch (e) {
+        print('Error during graceful stop: $e');
+      }
+
+      // Use GlobalMinerManager for comprehensive cleanup
+      await GlobalMinerManager.cleanup();
+
       // _poll?.cancel(); // _poll removed
       _proc = null;
       // Notify parent that miner process is stopped
@@ -148,7 +160,22 @@ class _MinerControlsState extends State<MinerControls> {
   @override
   void dispose() {
     // _poll?.cancel(); // _poll removed
-    _proc?.stop();
+    if (_proc != null) {
+      print('MinerControls: disposing, force stopping miner process');
+
+      try {
+        _proc!.forceStop();
+      } catch (e) {
+        print(
+          'MinerControls: Error force stopping miner process in dispose: $e',
+        );
+      }
+
+      // Use GlobalMinerManager for comprehensive cleanup
+      GlobalMinerManager.cleanup();
+
+      _proc = null;
+    }
     super.dispose();
   }
 

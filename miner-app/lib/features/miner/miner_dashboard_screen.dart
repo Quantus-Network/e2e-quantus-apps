@@ -7,6 +7,7 @@ import 'package:quantus_miner/src/services/mining_stats_service.dart'; // Import
 import 'package:quantus_miner/src/ui/logs_widget.dart'; // Import LogsWidget
 import 'package:quantus_miner/src/ui/miner_controls.dart'; // Import MinerControls
 import 'package:quantus_sdk/quantus_sdk.dart'; // Assuming quantus_sdk exports necessary components
+import '../../main.dart'; // Import for GlobalMinerManager
 
 // Remove explicit imports for internal SDK files
 // import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
@@ -47,6 +48,17 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
   @override
   void dispose() {
     _miningStatsService.stopMonitoring();
+
+    // Clean up global miner process
+    if (_currentMinerProcess != null) {
+      try {
+        _currentMinerProcess!.forceStop();
+      } catch (e) {
+        print('MinerDashboard: Error stopping miner process on dispose: $e');
+      }
+    }
+    GlobalMinerManager.cleanup();
+
     super.dispose();
   }
 
@@ -69,6 +81,9 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
     }
     // Connect miner process to mining stats service for real hashrate
     _miningStatsService.setMinerProcess(minerProcess);
+
+    // Register with global app lifecycle for cleanup
+    GlobalMinerManager.setMinerProcess(minerProcess);
   }
 
   Future<void> _fetchWalletBalance() async {

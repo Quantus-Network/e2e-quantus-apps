@@ -44,6 +44,23 @@ class MinerProcess {
   double? get currentHashrate => _currentHashrate;
   final int externalMinerPort;
 
+  // Public getters for process PIDs (for cleanup tracking)
+  int? get nodeProcessPid {
+    try {
+      return _nodeProcess.pid;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  int? get externalMinerProcessPid {
+    try {
+      return _externalMinerProcess?.pid;
+    } catch (e) {
+      return null;
+    }
+  }
+
   // Stream for logs
   final _logsController = StreamController<LogEntry>.broadcast();
   Stream<LogEntry> get logsStream => _logsController.stream;
@@ -422,19 +439,172 @@ class MinerProcess {
     _currentHashrate = null;
     onMetricsUpdate?.call(false, null, null, _currentHashrate);
 
-    try {
-      _nodeProcess.kill();
-    } catch (e) {
-      print('MinerProcess: Error killing node process: $e');
+    // Kill external miner process first
+    if (_externalMinerProcess != null) {
+      try {
+        print(
+          'MinerProcess: Attempting to kill external miner process (PID: ${_externalMinerProcess!.pid})',
+        );
+
+        // Try graceful termination first
+        _externalMinerProcess!.kill(ProcessSignal.sigterm);
+
+        // Wait briefly for graceful shutdown
+        Future.delayed(const Duration(seconds: 2)).then((_) async {
+          // Check if process is still running and force kill if necessary
+          try {
+            final result = await Process.run('kill', [
+              '-0',
+              _externalMinerProcess!.pid.toString(),
+            ]);
+            if (result.exitCode == 0) {
+              print(
+                'MinerProcess: External miner still running, force killing...',
+              );
+              _externalMinerProcess!.kill(ProcessSignal.sigkill);
+            }
+          } catch (e) {
+            // Process is already dead, which is what we want
+            print('MinerProcess: External miner process already terminated');
+          }
+        });
+      } catch (e) {
+        print('MinerProcess: Error killing external miner process: $e');
+        // Try force kill as backup
+        try {
+          _externalMinerProcess!.kill(ProcessSignal.sigkill);
+        } catch (e2) {
+          print(
+            'MinerProcess: Error force killing external miner process: $e2',
+          );
+        }
+      }
     }
 
+    // Kill node process
     try {
-      _externalMinerProcess?.kill();
+      print(
+        'MinerProcess: Attempting to kill node process (PID: ${_nodeProcess.pid})',
+      );
+
+      // Try graceful termination first
+      _nodeProcess.kill(ProcessSignal.sigterm);
+
+      // Wait briefly for graceful shutdown
+      Future.delayed(const Duration(seconds: 2)).then((_) async {
+        // Check if process is still running and force kill if necessary
+        try {
+          final result = await Process.run('kill', [
+            '-0',
+            _nodeProcess.pid.toString(),
+          ]);
+          if (result.exitCode == 0) {
+            print('MinerProcess: Node process still running, force killing...');
+            _nodeProcess.kill(ProcessSignal.sigkill);
+          }
+        } catch (e) {
+          // Process is already dead, which is what we want
+          print('MinerProcess: Node process already terminated');
+        }
+      });
     } catch (e) {
-      print('MinerProcess: Error killing external miner process: $e');
+      print('MinerProcess: Error killing node process: $e');
+      // Try force kill as backup
+      try {
+        _nodeProcess.kill(ProcessSignal.sigkill);
+      } catch (e2) {
+        print('MinerProcess: Error force killing node process: $e2');
+      }
     }
 
     // Close the logs stream
-    _logsController.close();
+    if (!_logsController.isClosed) {
+      _logsController.close();
+    }
+  }
+
+  /// Force stop both processes immediately with SIGKILL
+  void forceStop() {
+    print('MinerProcess: forceStop() called. Force killing processes.');
+    _syncStatusTimer?.cancel();
+    _currentHashrate = null;
+    onMetricsUpdate?.call(false, null, null, _currentHashrate);
+
+    final List<Future<void>> killFutures = [];
+
+    // Force kill external miner
+    if (_externalMinerProcess != null) {
+      final minerPid = _externalMinerProcess!.pid;
+      killFutures.add(_forceKillProcess(minerPid, 'external miner'));
+      try {
+        _externalMinerProcess!.kill(ProcessSignal.sigkill);
+      } catch (e) {
+        print('MinerProcess: Error force killing external miner process: $e');
+      }
+      _externalMinerProcess = null;
+    }
+
+    // Force kill node process
+    try {
+      final nodePid = _nodeProcess.pid;
+      killFutures.add(_forceKillProcess(nodePid, 'node'));
+      _nodeProcess.kill(ProcessSignal.sigkill);
+    } catch (e) {
+      print('MinerProcess: Error force killing node process: $e');
+    }
+
+    // Wait for all kills to complete (with timeout)
+    Future.wait(killFutures).timeout(
+      const Duration(seconds: 5),
+      onTimeout: () {
+        print('MinerProcess: Force kill operations timed out');
+        return [];
+      },
+    );
+
+    // Close the logs stream
+    if (!_logsController.isClosed) {
+      _logsController.close();
+    }
+  }
+
+  /// Helper method to force kill a process by PID with verification
+  Future<void> _forceKillProcess(int pid, String processName) async {
+    try {
+      print('MinerProcess: Force killing $processName process (PID: $pid)');
+
+      // First try SIGKILL via kill command for better reliability
+      final killResult = await Process.run('kill', ['-9', pid.toString()]);
+
+      if (killResult.exitCode == 0) {
+        print(
+          'MinerProcess: Successfully force killed $processName (PID: $pid)',
+        );
+      } else {
+        print(
+          'MinerProcess: kill command failed for $processName (PID: $pid), exit code: ${killResult.exitCode}',
+        );
+      }
+
+      // Wait a moment then verify the process is dead
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      final checkResult = await Process.run('kill', ['-0', pid.toString()]);
+      if (checkResult.exitCode != 0) {
+        print('MinerProcess: Verified $processName (PID: $pid) is terminated');
+      } else {
+        print(
+          'MinerProcess: WARNING - $processName (PID: $pid) may still be running',
+        );
+        // Try pkill as last resort
+        await Process.run('pkill', [
+          '-9',
+          '-f',
+          processName.contains('miner') ? 'quantus-miner' : 'quantus-node',
+        ]);
+      }
+    } catch (e) {
+      print('MinerProcess: Error in _forceKillProcess for $processName: $e');
+    }
   }
 }
