@@ -49,8 +49,6 @@ class GlobalMinerManager {
       // Kill all quantus processes
       await Process.run('pkill', ['-9', '-f', 'quantus-node']);
       await Process.run('pkill', ['-9', '-f', 'quantus-miner']);
-      await Process.run('pkill', ['-9', 'quantus-node']);
-      await Process.run('pkill', ['-9', 'quantus-miner']);
 
       print('GlobalMinerManager: Cleanup commands executed');
     } catch (e) {
