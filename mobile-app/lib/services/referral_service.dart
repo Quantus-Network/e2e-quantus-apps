@@ -16,7 +16,7 @@ class ReferralService {
   final TaskmasterService _taskmasterService = TaskmasterService();
 
   bool? _rewardProgramParticipationCache;
-  String? _referralDataCache;
+  String? _referralDataCache = AppConstants.referralCheckIdleCode; // Indicate not fetching anything yet as __blank__
 
   // This fetches any available referral code from the google play store and stores
   // it in settings if found.
@@ -64,8 +64,8 @@ class ReferralService {
   }
 
   Future<String?> getReferralData() async {
-    if (_referralDataCache != null) {
-      return _referralDataCache!;
+    if (_referralDataCache != AppConstants.referralCheckIdleCode) {
+      return _referralDataCache;
     }
 
     final account = await getMainAccount();
@@ -81,6 +81,7 @@ class ReferralService {
       print('getReferralData response: ${response.body}');
 
       if (response.statusCode != 200) {
+        _referralDataCache = null;
         return null;
       }
 
@@ -98,7 +99,7 @@ class ReferralService {
 
   void invalidateCache() {
     _rewardProgramParticipationCache = null;
-    _referralDataCache = null;
+    _referralDataCache = AppConstants.referralCheckIdleCode;
   }
 
   Future<bool> getRewardProgramParticiation() async {

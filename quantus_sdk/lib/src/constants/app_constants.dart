@@ -19,10 +19,8 @@ class AppConstants {
 
   static const String explorerEndpoint = 'https://explorer.quantus.com';
   static const String helpAndSupportUrl = 'https://t.me/quantustechsupport';
-  static const String termsOfServiceUrl =
-      'https://quantus.com/terms-and-privacy.html';
-  static const String tutorialsAndGuidesUrl =
-      'https://github.com/Quantus-Network/chain';
+  static const String termsOfServiceUrl = 'https://quantus.com/terms-and-privacy.html';
+  static const String tutorialsAndGuidesUrl = 'https://github.com/Quantus-Network/chain';
   static const String communityUrl = 'https://t.me/quantusnetwork';
   static const String faucetBotUrl = 'https://t.me/QuantusFaucetBot';
 
@@ -39,6 +37,9 @@ class AppConstants {
   static const String hasWalletKey = 'has_wallet';
   static const String mnemonicKey = 'mnemonic';
   static const String accountIdKey = 'account_id';
+
+  // Referral check cache idle code
+  static const String referralCheckIdleCode = '__blank__';
 
   // Reversible time settings
   static const int defaultReversibleTimeSeconds = 600; // 10 minutes
