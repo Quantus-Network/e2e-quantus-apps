@@ -158,6 +158,7 @@ class _NavbarState extends ConsumerState<Navbar> {
     super.initState();
 
     _referralService.getRewardProgramParticiation();
+    _referralService.getReferralData();
 
     setState(() {
       _selectedIndex = widget.initialIndex;

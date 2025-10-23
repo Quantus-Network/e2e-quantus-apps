@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/card_info.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
@@ -51,13 +50,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
   }
 
   Future<void> _loadReferralData() async {
-    final referraldata = await _referralService.getReferralData();
-
-    if (referraldata != null) {
-      _checksum = await HumanReadableChecksumService().getHumanReadableName(
-        referraldata.referrerAddress,
-      );
-    }
+   await _referralService.getReferralData();
 
     setState(() {
       _loading = false;

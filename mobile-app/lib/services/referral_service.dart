@@ -12,11 +12,11 @@ class ReferralService {
   ReferralService._internal();
 
   final SettingsService _settingsService = SettingsService();
-  final HumanReadableChecksumService _checksumService =
-      HumanReadableChecksumService();
+  final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
   final TaskmasterService _taskmasterService = TaskmasterService();
 
   bool? _rewardProgramParticipationCache;
+  String? _referralDataCache;
 
   // This fetches any available referral code from the google play store and stores
   // it in settings if found.
@@ -26,8 +26,7 @@ class ReferralService {
     if (hasChecked) return;
 
     try {
-      ReferrerDetails referrerDetails =
-          await PlayInstallReferrer.installReferrer;
+      ReferrerDetails referrerDetails = await PlayInstallReferrer.installReferrer;
       String? referrerString = referrerDetails.installReferrer;
 
       print('Raw Install Referrer: $referrerString');
@@ -64,12 +63,14 @@ class ReferralService {
     return params;
   }
 
-  Future<ReferralData?> getReferralData() async {
+  Future<String?> getReferralData() async {
+    if (_referralDataCache != null) {
+      return _referralDataCache!;
+    }
+
     final account = await getMainAccount();
 
-    final getReferralByRefereeUri = Uri.parse(
-      '${AppConstants.taskMasterEndpoint}/referrals/${account.accountId}',
-    );
+    final getReferralByRefereeUri = Uri.parse('${AppConstants.taskMasterEndpoint}/referrals/${account.accountId}');
 
     try {
       final http.Response response = await http.get(
@@ -84,14 +85,20 @@ class ReferralService {
       }
 
       final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return ReferralData.fromJson(json);
+      final referralData = ReferralData.fromJson(json);
+
+      final referralCode = await _checksumService.getHumanReadableName(referralData.referrerAddress);
+      _referralDataCache = referralCode;
+
+      return referralCode;
     } catch (e) {
       return null;
     }
   }
 
-  void invalidateRewardProgramCache() {
+  void invalidateCache() {
     _rewardProgramParticipationCache = null;
+    _referralDataCache = null;
   }
 
   Future<bool> getRewardProgramParticiation() async {
@@ -107,6 +114,7 @@ class ReferralService {
 
   Future<void> submitReferralToBackend({required String referral}) async {
     await _taskmasterService.submitReferral(referral);
+    _referralDataCache = referral;
   }
 
   Future<void> submitAddressToBackend() async {
@@ -124,9 +132,7 @@ class ReferralService {
 
   Future<String> getMyInviteCode() async {
     final account = await getMainAccount();
-    final referralCode = await _checksumService.getHumanReadableName(
-      account.accountId,
-    );
+    final referralCode = await _checksumService.getHumanReadableName(account.accountId);
 
     return referralCode;
   }
@@ -135,14 +141,9 @@ class ReferralService {
     final referralCode = await getMyInviteCode();
 
     String link = generateReferralLink(referralCode);
-    String message =
-        'Join me on Quantum Future! Use my referral link so we both earn points: \n$link';
+    String message = 'Join me on Quantum Future! Use my referral link so we both earn points: \n$link';
 
-    return ShareParams(
-      text: message,
-      subject: 'Invite Link',
-      title: 'Invite Link',
-    );
+    return ShareParams(text: message, subject: 'Invite Link', title: 'Invite Link');
   }
 
   String? getReferralCode() {
