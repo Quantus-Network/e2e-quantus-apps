@@ -38,9 +38,6 @@ class AppConstants {
   static const String mnemonicKey = 'mnemonic';
   static const String accountIdKey = 'account_id';
 
-  // Referral check cache idle code
-  static const String referralCheckIdleCode = '__blank__';
-
   // Reversible time settings
   static const int defaultReversibleTimeSeconds = 600; // 10 minutes
 

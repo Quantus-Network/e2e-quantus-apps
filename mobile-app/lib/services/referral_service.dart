@@ -16,7 +16,8 @@ class ReferralService {
   final TaskmasterService _taskmasterService = TaskmasterService();
 
   bool? _rewardProgramParticipationCache;
-  String? _referralDataCache = AppConstants.referralCheckIdleCode; // Indicate not fetching anything yet as __blank__
+  bool _hasCheckedReferralData = false;
+  String? _referralDataCache;
 
   // This fetches any available referral code from the google play store and stores
   // it in settings if found.
@@ -64,12 +65,11 @@ class ReferralService {
   }
 
   Future<String?> getReferralData() async {
-    if (_referralDataCache != AppConstants.referralCheckIdleCode) {
+    if (_hasCheckedReferralData) {
       return _referralDataCache;
     }
 
     final account = await getMainAccount();
-
     final getReferralByRefereeUri = Uri.parse('${AppConstants.taskMasterEndpoint}/referrals/${account.accountId}');
 
     try {
@@ -80,8 +80,13 @@ class ReferralService {
 
       print('getReferralData response: ${response.body}');
 
-      if (response.statusCode != 200) {
-        _referralDataCache = null;
+      // If account doesn't have referrer, it will return 404 code.
+      // Therefore we can confidently say it has been checked successfully. 
+      // We don't have to check it anymore.
+      if (response.statusCode == 404) {
+        _hasCheckedReferralData = true;
+        return null;
+      } else if (response.statusCode != 200) {
         return null;
       }
 
@@ -90,6 +95,7 @@ class ReferralService {
 
       final referralCode = await _checksumService.getHumanReadableName(referralData.referrerAddress);
       _referralDataCache = referralCode;
+      _hasCheckedReferralData = true;
 
       return referralCode;
     } catch (e) {
@@ -99,7 +105,8 @@ class ReferralService {
 
   void invalidateCache() {
     _rewardProgramParticipationCache = null;
-    _referralDataCache = AppConstants.referralCheckIdleCode;
+    _hasCheckedReferralData = false;
+    _referralDataCache = null;
   }
 
   Future<bool> getRewardProgramParticiation() async {
