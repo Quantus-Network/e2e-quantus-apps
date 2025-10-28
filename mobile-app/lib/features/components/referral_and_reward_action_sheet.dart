@@ -364,7 +364,7 @@ class _ReferralAndRewardActionSheetState extends State<ReferralAndRewardActionSh
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 90),
+            if (!context.isSmallHeight) const SizedBox(height: 90),
             QuestsPromoVideo(
               isSubmitting: _isSubmitting,
               closeSheet: _closeSheet,
