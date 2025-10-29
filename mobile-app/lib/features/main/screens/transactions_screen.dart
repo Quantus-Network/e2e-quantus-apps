@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:resonance_network_wallet/features/components/dropdown_select.dart';
+import 'package:resonance_network_wallet/features/components/select.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
@@ -159,7 +158,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
               if (accounts.isEmpty) {
                 return Text('No accounts found.', style: context.themeText.smallParagraph);
               }
-              return _buildAccountDropdown();
+              return _buildAccountSelect();
             },
             loading: () => const CircularProgressIndicator(),
             error: (e, st) => Text('Error loading accounts.', style: TextStyle(color: context.themeColors.textError)),
@@ -172,18 +171,17 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     );
   }
 
-  Widget _buildAccountDropdown() {
+  Widget _buildAccountSelect() {
     final accounts = ref.read(accountsProvider).value!;
     final allAccountsSelected = _selectedAccountIds != null && _selectedAccountIds!.length == accounts.length;
 
-    return DropdownSelect<String>(
+    return Select<String>(
       initialValue: allAccountsSelected ? '_all_' : _selectedAccountIds?.firstOrNull,
       items: [
         Item<String>(value: '_all_', label: 'All Accounts'),
         ...accounts.map((account) => Item<String>(value: account.accountId, label: account.name)),
       ],
-      onChanged: (selectedItem) {
-        if (selectedItem == null) return;
+      onSelect: (selectedItem) {
         final newSelectedIds = selectedItem.value == '_all_'
             ? accounts.map((a) => a.accountId).toList()
             : [selectedItem.value];
