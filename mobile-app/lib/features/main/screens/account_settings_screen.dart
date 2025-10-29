@@ -60,7 +60,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         children: [
           Positioned(
             left: context.getHorizontalCenterPosition(
-              (context.isTablet ? 80.0 : 60.0) + 32,
+              (context.isTablet ? 80.0 : 60.0) + 48,
             ),
             child: AccountGradientImage(
               accountId: widget.account.accountId,
@@ -131,6 +131,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
               style: context.themeText.smallParagraph?.copyWith(
                 color: context.themeColors.checksum,
               ),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 5),
             Text(
