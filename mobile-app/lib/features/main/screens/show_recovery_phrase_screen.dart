@@ -4,6 +4,7 @@ import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/mnemonic_grid.dart';
 import 'package:resonance_network_wallet/features/components/reveal_overlay.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
@@ -41,7 +42,7 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
-      appBar: 'Your Recovery Phrase',
+      appBar: const WalletAppBar(title:'Your Recovery Phrase'),
       child: Column(
         children: [
           Expanded(

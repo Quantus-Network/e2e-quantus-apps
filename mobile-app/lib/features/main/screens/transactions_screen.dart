@@ -5,6 +5,7 @@ import 'package:resonance_network_wallet/features/components/scaffold_base.dart'
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
@@ -131,7 +132,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           child: const Sphere(variant: 8, size: 251.62),
         ),
       ],
-      appBar: 'Transaction History',
+      appBar: const WalletAppBar(title: 'Transaction History'),
       child: _buildBody(),
     );
   }
@@ -148,7 +149,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           child: const Sphere(variant: 8, size: 251.62),
         ),
       ],
-      screenTitle: ScreenTitle(title: 'Transaction History'),
+      appBar: const WalletAppBar.simple(title: 'Transaction History'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

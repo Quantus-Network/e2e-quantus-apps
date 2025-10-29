@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/features/components/card_info.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
@@ -179,7 +180,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         ),
       ],
       backdropBlur: 32,
-      appBar: _isEditMode ? 'Edit Account' : 'Create New Account',
+      appBar:  WalletAppBar(title: _isEditMode ? 'Edit Account' : 'Create New Account'),
       child: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(

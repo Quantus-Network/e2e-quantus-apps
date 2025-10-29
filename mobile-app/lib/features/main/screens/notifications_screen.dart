@@ -5,6 +5,7 @@ import 'package:resonance_network_wallet/features/components/select.dart';
 import 'package:resonance_network_wallet/features/components/notification_group.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
@@ -176,7 +177,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
-      appBar: 'Notifications',
+      appBar: const WalletAppBar(title:'Notifications'),
       decorations: [
         Positioned(
           left: context.getHorizontalCenterPosition(252),

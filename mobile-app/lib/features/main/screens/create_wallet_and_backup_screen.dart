@@ -11,6 +11,7 @@ import 'package:resonance_network_wallet/features/components/mnemonic_grid.dart'
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
@@ -166,7 +167,7 @@ class CreateWalletAndBackupScreenState
         _accountName.text = 'Account ${accounts.length + 1}';
 
         return ScaffoldBase(
-          appBar: 'Create New Wallet',
+          appBar: const WalletAppBar(title:'Create New Wallet'),
           decorations: [
             const Positioned(
               right: -32.0,
@@ -252,11 +253,11 @@ class CreateWalletAndBackupScreenState
         );
       },
       loading: () => const ScaffoldBase(
-        appBar: 'Creating Wallet...',
+        appBar: WalletAppBar(title:'Creating Wallet...'),
         child: Center(child: CircularProgressIndicator()),
       ),
       error: (error, stack) => ScaffoldBase(
-        appBar: 'Error',
+        appBar: const WalletAppBar(title:'Error'),
         child: Center(child: Text('Failed to load accounts: $error')),
       ),
     );

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/network_status_banner.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/notifications_screen.dart';
@@ -63,9 +63,44 @@ class _WalletMainState extends ConsumerState<WalletMain> {
         if (activeAccount == null) {
           return const Center(child: Text('No active account. Please log in.')); // Safe empty state
         }
-        return ScaffoldBase(
+        return ScaffoldBase.refreshable(
+          appBar: WalletAppBar.custom(
+            titleWidget: Row(
+              children: [
+                SvgPicture.asset('assets/logo/logo.svg', height: context.isTablet ? 45 : 25),
+                const SizedBox(width: 9.0),
+                SvgPicture.asset('assets/logo/logo-name.svg', height: context.isTablet ? 35.6 : 15.6),
+              ],
+            ),
+            actions: [
+              InkWell(
+                child: Image.asset('assets/notification/notification_top_icon.png', width: 26, height: 26),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation, secondaryAnimation) => const NotificationsScreen(),
+                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                        const begin = Offset(1.0, 0.0);
+                        const end = Offset.zero;
+                        const curve = Curves.easeInOut;
+                        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                        return SlideTransition(position: animation.drive(tween), child: child);
+                      },
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 16.0),
+              InkWell(
+                child: SvgPicture.asset('assets/wallet_icon.svg', width: 26, height: 26),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const AccountsScreen()));
+                },
+              ),
+            ],
+          ),
           dim: 0,
-          padding: EdgeInsets.zero,
           decorations: [
             Positioned(
               left: context.getHorizontalCenterPosition(252),
@@ -73,180 +108,101 @@ class _WalletMainState extends ConsumerState<WalletMain> {
               child: const Sphere(variant: 6, size: 252),
             ),
           ],
-          child: RefreshIndicator(
-            onRefresh: () async {
-              // Refresh balances with loading indicator
-              final activeAccount = ref.read(activeAccountProvider).value;
-              if (activeAccount != null) {
-                ref.invalidate(balanceProviderFamily);
-                // Trigger a loading refresh on the filtered controller
-                // used by active transactions
-                await ref
-                    .read(
-                      filteredPaginationControllerProviderFamily(
-                        AccountIdListCache.get([activeAccount.accountId]),
-                      ).notifier,
-                    )
-                    .loadingRefresh();
-              }
-              ref.invalidate(balanceProviderRaw);
-              // Invalidate combined active account provider to recompute
-              ref.invalidate(activeAccountTransactionsProvider);
-            },
-            color: const Color(0xFF0CE6ED),
-            backgroundColor: Colors.black,
-            child: CustomScrollView(
-              controller: _scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 31.0),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                SvgPicture.asset('assets/logo/logo.svg', height: context.isTablet ? 45 : 25),
-                                const SizedBox(width: 9.0),
-                                SvgPicture.asset('assets/logo/logo-name.svg', height: context.isTablet ? 35.6 : 15.6),
-                              ],
-                            ),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                InkWell(
-                                  child: Image.asset(
-                                    'assets/notification/notification_top_icon.png',
-                                    width: 26,
-                                    height: 26,
-                                  ),
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      PageRouteBuilder(
-                                        pageBuilder: (context, animation, secondaryAnimation) =>
-                                            const NotificationsScreen(),
-                                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                          const begin = Offset(1.0, 0.0);
-                                          const end = Offset.zero;
-                                          const curve = Curves.easeInOut;
-                                          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                                          return SlideTransition(position: animation.drive(tween), child: child);
-                                        },
-                                      ),
-                                    );
-                                  },
-                                ),
-                                const SizedBox(width: 16.0),
-                                InkWell(
-                                  child: SvgPicture.asset('assets/wallet_icon.svg', width: 26, height: 26),
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => const AccountsScreen()),
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
-                          ],
+          scrollController: _scrollController,
+          onRefresh: () async {
+            // Refresh balances with loading indicator
+            final activeAccount = ref.read(activeAccountProvider).value;
+            if (activeAccount != null) {
+              ref.invalidate(balanceProviderFamily);
+              // Trigger a loading refresh on the filtered controller
+              // used by active transactions
+              await ref
+                  .read(
+                    filteredPaginationControllerProviderFamily(
+                      AccountIdListCache.get([activeAccount.accountId]),
+                    ).notifier,
+                  )
+                  .loadingRefresh();
+            }
+            ref.invalidate(balanceProviderRaw);
+            // Invalidate combined active account provider to recompute
+            ref.invalidate(activeAccountTransactionsProvider);
+          },
+          slivers: [
+            SliverToBoxAdapter(
+              child: Column(
+                children: [
+                  const SizedBox(height: 24),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      AccountDetails(activeAccount: activeAccount),
+                      const SizedBox(height: 20),
+                      balanceAsync.when(
+                        data: (balance) => Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: _formattingService.formatBalance(balance),
+                                style: context.themeText.extraLargeTitle?.copyWith(color: context.themeColors.light),
+                              ),
+                              TextSpan(
+                                text: ' ${AppConstants.tokenSymbol}',
+                                style: context.themeText.smallTitle?.copyWith(color: context.themeColors.light),
+                              ),
+                            ],
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 24),
-                      ],
-                    ),
-                  ),
-                ),
-                const SliverToBoxAdapter(child: NetworkStatusBanner()),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Column(
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            AccountDetails(activeAccount: activeAccount),
-                            const SizedBox(height: 20),
-                            balanceAsync.when(
-                              data: (balance) => Text.rich(
-                                TextSpan(
-                                  children: [
-                                    TextSpan(
-                                      text: _formattingService.formatBalance(balance),
-                                      style: context.themeText.extraLargeTitle?.copyWith(
-                                        color: context.themeColors.light,
-                                      ),
-                                    ),
-                                    TextSpan(
-                                      text: ' ${AppConstants.tokenSymbol}',
-                                      style: context.themeText.smallTitle?.copyWith(color: context.themeColors.light),
-                                    ),
-                                  ],
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              loading: () => Row(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Skeleton(width: 200, height: 36),
-                                  Text(
-                                    ' ${AppConstants.tokenSymbol}',
-                                    style: context.themeText.smallTitle?.copyWith(color: context.themeColors.light),
-                                  ),
-                                ],
-                              ),
-                              error: (err, stack) => SizedBox(
-                                width: 250,
-                                child: Text(
-                                  textAlign: TextAlign.center,
-                                  'Error loading balance',
-                                  style: context.themeText.detail?.copyWith(color: context.themeColors.textError),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 18),
-                        Row(
+                        loading: () => Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            ActionButton(
-                              type: ActionType.send,
-                              onPressed: () {
-                                Navigator.pushNamed(context, '/send');
-                              },
-                            ),
-                            const SizedBox(width: 33),
-                            ActionButton(
-                              type: ActionType.receive,
-                              onPressed: () {
-                                showReceiveSheet(context);
-                              },
+                            const Skeleton(width: 200, height: 36),
+                            Text(
+                              ' ${AppConstants.tokenSymbol}',
+                              style: context.themeText.smallTitle?.copyWith(color: context.themeColors.light),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 30),
-                      ],
-                    ),
+                        error: (err, stack) => SizedBox(
+                          width: 250,
+                          child: Text(
+                            textAlign: TextAlign.center,
+                            'Error loading balance',
+                            style: context.themeText.detail?.copyWith(color: context.themeColors.textError),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: HistorySection(
-                      allTransactionsAsync: activeAccountTransactionsAsync,
-                      activeAccount: activeAccount,
-                    ),
+                  const SizedBox(height: 18),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ActionButton(
+                        type: ActionType.send,
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/send');
+                        },
+                      ),
+                      const SizedBox(width: 33),
+                      ActionButton(
+                        type: ActionType.receive,
+                        onPressed: () {
+                          showReceiveSheet(context);
+                        },
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 30),
+                ],
+              ),
             ),
-          ),
+            SliverToBoxAdapter(
+              child: HistorySection(allTransactionsAsync: activeAccountTransactionsAsync, activeAccount: activeAccount),
+            ),
+          ],
         );
       },
       loading: () => const ScaffoldBase(
