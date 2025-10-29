@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/get_started.dart';
-import 'package:resonance_network_wallet/features/components/skeleton.dart';
+import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
@@ -128,11 +128,15 @@ class _HistorySectionState extends ConsumerState<HistorySection> {
   }
 
   Widget _buildLoader() {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.start,
-      spacing: 16,
-      children: [Skeleton(height: 30, width: 120), Skeleton(height: 30), Skeleton(height: 30), Skeleton(height: 30)],
+    return Column(
+      children: [
+        const TransactionSkeleton(),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Divider(color: context.themeColors.darkGray, thickness: 1),
+        ),
+        const TransactionSkeleton(),
+      ],
     );
   }
 }
