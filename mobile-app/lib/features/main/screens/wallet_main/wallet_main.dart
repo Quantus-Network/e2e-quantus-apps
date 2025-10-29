@@ -193,7 +193,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Skeleton(width: 60, height: 26),
+                                  const Skeleton(width: 200, height: 36),
                                   Text(
                                     ' ${AppConstants.tokenSymbol}',
                                     style: context.themeText.smallTitle?.copyWith(color: context.themeColors.light),
