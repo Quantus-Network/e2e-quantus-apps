@@ -5,6 +5,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/network_status_banner.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
+import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
@@ -55,14 +56,12 @@ class _WalletMainState extends ConsumerState<WalletMain> {
   Widget build(BuildContext context) {
     final activeAccountAsync = ref.watch(activeAccountProvider);
     final balanceAsync = ref.watch(balanceProvider);
-    final activeAccountTransactionsAsync = ref.watch(
-      activeAccountTransactionsProvider,
-    );
+    final activeAccountTransactionsAsync = ref.watch(activeAccountTransactionsProvider);
 
     return activeAccountAsync.when(
       data: (activeAccount) {
         if (activeAccount == null) {
-          return const Center(child: Text('No active account. Please log in.'));  // Safe empty state
+          return const Center(child: Text('No active account. Please log in.')); // Safe empty state
         }
         return ScaffoldBase(
           dim: 0,
@@ -104,159 +103,145 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24.0),
                     child: Column(
-                    children: [
-                      const SizedBox(height: 31.0),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              SvgPicture.asset(
-                                'assets/logo/logo.svg',
-                                height: context.isTablet ? 45 : 25,
-                              ),
-                              const SizedBox(width: 9.0),
-                              SvgPicture.asset(
-                                'assets/logo/logo-name.svg',
-                                height: context.isTablet ? 35.6 : 15.6,
-                              ),
-                            ],
-                          ),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              InkWell(
-                                child: Image.asset(
-                                  'assets/notification/notification_top_icon.png',
-                                  width: 26,
-                                  height: 26,
+                      children: [
+                        const SizedBox(height: 31.0),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                SvgPicture.asset('assets/logo/logo.svg', height: context.isTablet ? 45 : 25),
+                                const SizedBox(width: 9.0),
+                                SvgPicture.asset('assets/logo/logo-name.svg', height: context.isTablet ? 35.6 : 15.6),
+                              ],
+                            ),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                InkWell(
+                                  child: Image.asset(
+                                    'assets/notification/notification_top_icon.png',
+                                    width: 26,
+                                    height: 26,
+                                  ),
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      PageRouteBuilder(
+                                        pageBuilder: (context, animation, secondaryAnimation) =>
+                                            const NotificationsScreen(),
+                                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                          const begin = Offset(1.0, 0.0);
+                                          const end = Offset.zero;
+                                          const curve = Curves.easeInOut;
+                                          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                                          return SlideTransition(position: animation.drive(tween), child: child);
+                                        },
+                                      ),
+                                    );
+                                  },
                                 ),
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    PageRouteBuilder(
-                                      pageBuilder: (context, animation, secondaryAnimation) =>
-                                          const NotificationsScreen(),
-                                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                        const begin = Offset(1.0, 0.0);
-                                        const end = Offset.zero;
-                                        const curve = Curves.easeInOut;
-                                        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                                        return SlideTransition(
-                                          position: animation.drive(tween),
-                                          child: child,
-                                        );
-                                      },
-                                    ),
-                                  );
-                                },
-                              ),
-                              const SizedBox(width: 16.0),
-                              InkWell(
-                                child: SvgPicture.asset(
-                                  'assets/wallet_icon.svg',
-                                  width: 26,
-                                  height: 26,
+                                const SizedBox(width: 16.0),
+                                InkWell(
+                                  child: SvgPicture.asset('assets/wallet_icon.svg', width: 26, height: 26),
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => const AccountsScreen()),
+                                    );
+                                  },
                                 ),
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const AccountsScreen(),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
-                const SliverToBoxAdapter(
-                  child: NetworkStatusBanner(),
-                ),
+                const SliverToBoxAdapter(child: NetworkStatusBanner()),
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24.0),
                     child: Column(
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          AccountDetails(activeAccount: activeAccount),
-                          const SizedBox(height: 20),
-                          balanceAsync.when(
-                            data: (balance) => Text.rich(
-                              TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: _formattingService.formatBalance(balance),
-                                    style: context.themeText.extraLargeTitle
-                                        ?.copyWith(
-                                          color: context.themeColors.light,
-                                        ),
-                                  ),
-                                  TextSpan(
-                                    text: ' ${AppConstants.tokenSymbol}',
-                                    style: context.themeText.smallTitle?.copyWith(
-                                      color: context.themeColors.light,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            AccountDetails(activeAccount: activeAccount),
+                            const SizedBox(height: 20),
+                            balanceAsync.when(
+                              data: (balance) => Text.rich(
+                                TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: _formattingService.formatBalance(balance),
+                                      style: context.themeText.extraLargeTitle?.copyWith(
+                                        color: context.themeColors.light,
+                                      ),
                                     ),
+                                    TextSpan(
+                                      text: ' ${AppConstants.tokenSymbol}',
+                                      style: context.themeText.smallTitle?.copyWith(color: context.themeColors.light),
+                                    ),
+                                  ],
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              loading: () => Row(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Skeleton(width: 60, height: 26),
+                                  Text(
+                                    ' ${AppConstants.tokenSymbol}',
+                                    style: context.themeText.smallTitle?.copyWith(color: context.themeColors.light),
                                   ),
                                 ],
                               ),
-                              textAlign: TextAlign.center,
-                            ),
-                            loading: () => CircularProgressIndicator(
-                              color: context.themeColors.circularLoader,
-                            ),
-                            error: (err, stack) => SizedBox(
-                              width: 250,
-                              child: Text(
-                                textAlign: TextAlign.center,
-                                'Error loading balance',
-                                style: context.themeText.detail?.copyWith(
-                                  color: context.themeColors.textError,
+                              error: (err, stack) => SizedBox(
+                                width: 250,
+                                child: Text(
+                                  textAlign: TextAlign.center,
+                                  'Error loading balance',
+                                  style: context.themeText.detail?.copyWith(color: context.themeColors.textError),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 18),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ActionButton(
-                            type: ActionType.send,
-                            onPressed: () {
-                              Navigator.pushNamed(context, '/send');
-                            },
-                          ),
-                          const SizedBox(width: 33),
-                          ActionButton(
-                            type: ActionType.receive,
-                            onPressed: () {
-                              showReceiveSheet(context);
-                            },
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 30),
-                    ],
-                  ),
+                          ],
+                        ),
+                        const SizedBox(height: 18),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ActionButton(
+                              type: ActionType.send,
+                              onPressed: () {
+                                Navigator.pushNamed(context, '/send');
+                              },
+                            ),
+                            const SizedBox(width: 33),
+                            ActionButton(
+                              type: ActionType.receive,
+                              onPressed: () {
+                                showReceiveSheet(context);
+                              },
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 30),
+                      ],
+                    ),
                   ),
                 ),
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24.0),
                     child: HistorySection(
-                    allTransactionsAsync: activeAccountTransactionsAsync,
-                    activeAccount: activeAccount,
-                  ),
+                      allTransactionsAsync: activeAccountTransactionsAsync,
+                      activeAccount: activeAccount,
+                    ),
                   ),
                 ),
               ],
@@ -265,23 +250,16 @@ class _WalletMainState extends ConsumerState<WalletMain> {
         );
       },
       loading: () => const ScaffoldBase(
-        child: Center(
-          child: CircularProgressIndicator(
-            color: Color(0xFF0CE6ED),
-          ),
-        ),
+        child: Center(child: CircularProgressIndicator(color: Color(0xFF0CE6ED))),
       ),
       error: (error, stack) => ScaffoldBase(
         child: Center(
           child: Text(
             'Error loading account: ${error.toString()}',
-            style: context.themeText.detail?.copyWith(
-              color: context.themeColors.textError,
-            ),
+            style: context.themeText.detail?.copyWith(color: context.themeColors.textError),
           ),
         ),
       ),
     );
   }
-
 }

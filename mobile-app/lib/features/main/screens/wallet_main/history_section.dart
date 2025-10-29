@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/get_started.dart';
+import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
@@ -15,11 +16,7 @@ class HistorySection extends ConsumerStatefulWidget {
   final AsyncValue<CombinedTransactionsList> allTransactionsAsync;
   final Account activeAccount;
 
-  const HistorySection({
-    super.key,
-    required this.allTransactionsAsync,
-    required this.activeAccount,
-  });
+  const HistorySection({super.key, required this.allTransactionsAsync, required this.activeAccount});
 
   @override
   ConsumerState<HistorySection> createState() => _HistorySectionState();
@@ -31,13 +28,12 @@ class _HistorySectionState extends ConsumerState<HistorySection> {
     return widget.allTransactionsAsync.when(
       data: (combinedData) {
         // Combine and deduplicate all transaction types
-        final allTransactions =
-            TransactionUtils.combineAndDeduplicateTransactions(
-              pendingCancellationIds: combinedData.pendingCancellationIds,
-              pendingTransactions: combinedData.pendingTransactions,
-              reversibleTransfers: combinedData.reversibleTransfers,
-              otherTransfers: combinedData.otherTransfers,
-            );
+        final allTransactions = TransactionUtils.combineAndDeduplicateTransactions(
+          pendingCancellationIds: combinedData.pendingCancellationIds,
+          pendingTransactions: combinedData.pendingTransactions,
+          reversibleTransfers: combinedData.reversibleTransfers,
+          otherTransfers: combinedData.otherTransfers,
+        );
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,9 +45,7 @@ class _HistorySectionState extends ConsumerState<HistorySection> {
                 padding: const EdgeInsets.only(left: 10.0, bottom: 10.0),
                 child: Text(
                   'Recent Transactions',
-                  style: context.themeText.smallParagraph?.copyWith(
-                    color: context.themeColors.light,
-                  ),
+                  style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.light),
                 ),
               ),
               if (widget.allTransactionsAsync.isRefreshing)
@@ -100,14 +94,7 @@ class _HistorySectionState extends ConsumerState<HistorySection> {
           color: Colors.black.withAlpha(64),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
         ),
-        child: const Center(
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 40.0),
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0CE6ED)),
-            ),
-          ),
-        ),
+        child: Padding(padding: const EdgeInsets.symmetric(vertical: 16.0), child: _buildLoader()),
       ),
       error: (error, stack) => Container(
         width: double.infinity,
@@ -122,9 +109,7 @@ class _HistorySectionState extends ConsumerState<HistorySection> {
             children: [
               Text(
                 error.toString(),
-                style: context.themeText.detail?.copyWith(
-                  color: context.themeColors.textError,
-                ),
+                style: context.themeText.detail?.copyWith(color: context.themeColors.textError),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -139,6 +124,15 @@ class _HistorySectionState extends ConsumerState<HistorySection> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildLoader() {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.start,
+      spacing: 16,
+      children: [Skeleton(height: 30, width: 120), Skeleton(height: 30), Skeleton(height: 30), Skeleton(height: 30)],
     );
   }
 }
