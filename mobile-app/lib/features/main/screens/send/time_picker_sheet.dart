@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
@@ -46,9 +47,7 @@ class TimePickerSheet extends StatelessWidget {
               Text(
                 'Set Reversible Window',
                 textAlign: TextAlign.center,
-                style: context.themeText.smallTitle?.copyWith(
-                  color: context.themeColors.checksum,
-                ),
+                style: context.themeText.smallTitle?.copyWith(color: context.themeColors.checksum),
               ),
               const SizedBox(height: 4),
               SizedBox(
@@ -72,24 +71,19 @@ class TimePickerSheet extends StatelessWidget {
                 Expanded(
                   child: Column(
                     children: [
-                      Text(
-                        'Days',
-                        style: context.themeText.largeTag?.copyWith(
-                          color: context.themeColors.textMuted,
-                        ),
-                      ),
+                      Text('Days', style: context.themeText.largeTag?.copyWith(color: context.themeColors.textMuted)),
                       const SizedBox(height: 8),
                       Expanded(
                         child: Row(
                           children: [
                             Expanded(
                               child: CupertinoPicker(
-                                scrollController: FixedExtentScrollController(
-                                  initialItem: selectedDays,
-                                ),
+                                scrollController: FixedExtentScrollController(initialItem: selectedDays),
                                 itemExtent: 40,
-                                onSelectedItemChanged: (index) =>
-                                    selectedDays = index,
+                                onSelectedItemChanged: (index) {
+                                  HapticFeedback.lightImpact();
+                                  selectedDays = index;
+                                },
                                 children: List.generate(
                                   8,
                                   (index) => Center(
@@ -106,13 +100,7 @@ class TimePickerSheet extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            const Text(
-                              ':',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                              ),
-                            ),
+                            const Text(':', style: TextStyle(color: Colors.white, fontSize: 28)),
                           ],
                         ),
                       ),
@@ -123,24 +111,19 @@ class TimePickerSheet extends StatelessWidget {
                 Expanded(
                   child: Column(
                     children: [
-                      Text(
-                        'Hours',
-                        style: context.themeText.largeTag?.copyWith(
-                          color: context.themeColors.textMuted,
-                        ),
-                      ),
+                      Text('Hours', style: context.themeText.largeTag?.copyWith(color: context.themeColors.textMuted)),
                       const SizedBox(height: 8),
                       Expanded(
                         child: Row(
                           children: [
                             Expanded(
                               child: CupertinoPicker(
-                                scrollController: FixedExtentScrollController(
-                                  initialItem: selectedHours,
-                                ),
+                                scrollController: FixedExtentScrollController(initialItem: selectedHours),
                                 itemExtent: 40,
-                                onSelectedItemChanged: (index) =>
-                                    selectedHours = index,
+                                onSelectedItemChanged: (index) {
+                                  HapticFeedback.lightImpact();
+                                  selectedHours = index;
+                                },
                                 children: List.generate(
                                   24,
                                   (index) => Center(
@@ -157,13 +140,7 @@ class TimePickerSheet extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            const Text(
-                              ':',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                              ),
-                            ),
+                            const Text(':', style: TextStyle(color: Colors.white, fontSize: 28)),
                           ],
                         ),
                       ),
@@ -176,19 +153,17 @@ class TimePickerSheet extends StatelessWidget {
                     children: [
                       Text(
                         'Minutes',
-                        style: context.themeText.largeTag?.copyWith(
-                          color: context.themeColors.textMuted,
-                        ),
+                        style: context.themeText.largeTag?.copyWith(color: context.themeColors.textMuted),
                       ),
                       const SizedBox(height: 8),
                       Expanded(
                         child: CupertinoPicker(
-                          scrollController: FixedExtentScrollController(
-                            initialItem: selectedMinutes,
-                          ),
+                          scrollController: FixedExtentScrollController(initialItem: selectedMinutes),
                           itemExtent: 40,
-                          onSelectedItemChanged: (index) =>
-                              selectedMinutes = index,
+                          onSelectedItemChanged: (index) {
+                            HapticFeedback.lightImpact();
+                            selectedMinutes = index;
+                          },
                           children: List.generate(
                             60,
                             (index) => Center(
@@ -221,9 +196,7 @@ class TimePickerSheet extends StatelessWidget {
                 child: Button(
                   variant: ButtonVariant.neutral,
                   label: 'Cancel',
-                  textStyle: context.themeText.paragraph?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  textStyle: context.themeText.paragraph?.copyWith(fontWeight: FontWeight.w600),
                   onPressed: () {
                     Navigator.pop(context);
                   },
@@ -239,10 +212,7 @@ class TimePickerSheet extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                   onPressed: () {
-                    final newTimeSeconds =
-                        (selectedDays * 86400) +
-                        (selectedHours * 3600) +
-                        (selectedMinutes * 60);
+                    final newTimeSeconds = (selectedDays * 86400) + (selectedHours * 3600) + (selectedMinutes * 60);
 
                     setReversibleTimeSeconds(newTimeSeconds);
                     saveReversibleTimeSetting(newTimeSeconds);
