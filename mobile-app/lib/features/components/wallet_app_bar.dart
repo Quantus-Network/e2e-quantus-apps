@@ -1,99 +1,110 @@
 import 'package:flutter/material.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
-import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 
-class WalletAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final String? title;
-  final VoidCallback? onBack;
-  final List<Widget>? actions;
-  final Widget? leadingWidget;
-  final Widget? titleWidget;
-  final bool _isSimple;
-  final bool _isCustomWidget;
+abstract class WalletAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const WalletAppBar._({super.key});
+  factory WalletAppBar({Key? key, required String title, VoidCallback? onBack, List<Widget>? actions}) =>
+      _StandardWalletAppBar(key: key, title: title, onBack: onBack, actions: actions);
 
-  const WalletAppBar({super.key, required this.title, this.onBack, this.actions})
-    : _isSimple = false,
-      _isCustomWidget = false,
-      leadingWidget = null,
-      titleWidget = null;
+  factory WalletAppBar.simple({Key? key, required String title}) => _SimpleWalletAppBar(key: key, title: title);
 
-  const WalletAppBar.simple({super.key, required this.title})
-    : onBack = null,
-      actions = null,
-      _isSimple = true,
-      _isCustomWidget = false,
-      leadingWidget = null,
-      titleWidget = null;
-
-  const WalletAppBar.custom({super.key, required this.titleWidget, this.leadingWidget, this.actions})
-    : title = null,
-      onBack = null,
-      _isSimple = false,
-      _isCustomWidget = true;
+  factory WalletAppBar.custom({Key? key, required Widget titleWidget, Widget? leadingWidget, List<Widget>? actions}) =>
+      _CustomWalletAppBar(key: key, titleWidget: titleWidget, leadingWidget: leadingWidget, actions: actions);
 
   @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+}
+
+class _SimpleWalletAppBar extends WalletAppBar {
+  final String title;
+  const _SimpleWalletAppBar({Key? key, required this.title}) : super._(key: key);
+  @override
   Widget build(BuildContext context) {
-    if (_isSimple) {
-      return AppBar(
-        automaticallyImplyLeading: false,
-        centerTitle: false,
-        leading: const SizedBox(),
-        leadingWidth: 9,
-        title: Text(title!, style: context.themeText.smallTitle),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      );
-    }
+    return _baseAppBar(
+      context,
+      title: Text(title, style: context.themeText.smallTitle),
+      leading: const SizedBox(),
+      leadingWidth: 9,
+    );
+  }
+}
 
-    if (_isCustomWidget) {
-      final topPadding = 24.0;
+class _CustomWalletAppBar extends WalletAppBar {
+  final Widget titleWidget;
+  final Widget? leadingWidget;
+  final List<Widget>? actions;
+  const _CustomWalletAppBar({Key? key, required this.titleWidget, this.leadingWidget, this.actions})
+    : super._(key: key);
+  @override
+  Widget build(BuildContext context) {
+    const topPadding = 24.0;
+    return _baseAppBar(
+      context,
+      title: Padding(
+        padding: const EdgeInsets.only(top: topPadding),
+        child: titleWidget,
+      ),
+      leading: leadingWidget ?? const SizedBox(),
+      leadingWidth: 9,
+      actions: (actions ?? const [])
+          .map(
+            (w) => Padding(
+              padding: const EdgeInsets.only(top: topPadding),
+              child: w,
+            ),
+          )
+          .toList(),
+    );
+  }
+}
 
-      return AppBar(
-        iconTheme: IconThemeData(color: context.themeColors.light),
-        centerTitle: false,
-        automaticallyImplyLeading: false,
-        leading: const SizedBox(),
-        leadingWidth: 9,
-        actionsPadding: const EdgeInsets.only(right: 24),
-        title: Padding(
-          padding: EdgeInsetsGeometry.only(top: topPadding),
-          child: titleWidget,
-        ),
-        actions: actions!.map((widget) {
-          return Padding(
-            padding: EdgeInsetsGeometry.only(top: topPadding),
-            child: widget,
-          );
-        }).toList(),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      );
-    }
-
-    final bool canBePop = Navigator.canPop(context) || onBack != null;
-    final onHandleBack = onBack ?? () => Navigator.of(context).pop();
-
-    return AppBar(
-      iconTheme: IconThemeData(color: context.themeColors.light),
-      centerTitle: false,
+class _StandardWalletAppBar extends WalletAppBar {
+  final String title;
+  final VoidCallback? onBack;
+  final List<Widget>? actions;
+  const _StandardWalletAppBar({Key? key, required this.title, this.onBack, this.actions}) : super._(key: key);
+  @override
+  Widget build(BuildContext context) {
+    final canBePop = Navigator.canPop(context) || onBack != null;
+    final handleBack = onBack ?? () => Navigator.of(context).pop();
+    return _baseAppBar(
+      context,
       titleSpacing: -16,
       leading: canBePop
           ? IconButton(
               icon: Icon(Icons.arrow_back_ios, size: context.themeSize.appbarIconSize),
-              onPressed: onHandleBack,
+              onPressed: handleBack,
             )
           : null,
       title: GestureDetector(
-        onTap: canBePop ? onHandleBack : null,
-        child: Text(title!, style: context.themeText.detail),
+        onTap: canBePop ? handleBack : null,
+        child: Text(title, style: context.themeText.detail),
       ),
       actions: actions,
-      backgroundColor: Colors.transparent,
-      elevation: 0,
     );
   }
+}
 
-  @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+AppBar _baseAppBar(
+  BuildContext context, {
+  Widget? title,
+  Widget? leading,
+  List<Widget>? actions,
+  double? leadingWidth,
+  double? titleSpacing,
+}) {
+  return AppBar(
+    iconTheme: IconThemeData(color: context.themeColors.light),
+    centerTitle: false,
+    automaticallyImplyLeading: false,
+    backgroundColor: Colors.transparent,
+    elevation: 0,
+    leading: leading,
+    leadingWidth: leadingWidth,
+    title: title,
+    titleSpacing: titleSpacing,
+    actions: actions,
+  );
 }
