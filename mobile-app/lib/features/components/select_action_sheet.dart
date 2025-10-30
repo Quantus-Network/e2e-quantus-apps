@@ -32,7 +32,6 @@ class _SelectActionSheetState<T> extends State<SelectActionSheet<T>> {
                 Navigator.pop(context);
               },
               child: Container(
-                width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Text(item.label, style: context.themeText.paragraph?.copyWith(color: context.themeColors.light)),
               ),
