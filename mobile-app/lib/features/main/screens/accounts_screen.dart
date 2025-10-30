@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/features/components/account_gradient_im
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/account_settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
@@ -63,7 +64,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
           child: Sphere(variant: 7, size: 240.681),
         ),
       ],
-      appBar: 'Your Accounts',
+      appBar:  WalletAppBar(title:  'Your Accounts'),
       child: Column(
         children: [
           Expanded(child: _buildAccountsList()),

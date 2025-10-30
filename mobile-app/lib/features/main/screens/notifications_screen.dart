@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/dropdown_select.dart';
+import 'package:resonance_network_wallet/features/components/select.dart';
 import 'package:resonance_network_wallet/features/components/notification_group.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
@@ -176,7 +177,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
-      appBar: 'Notifications',
+      appBar: WalletAppBar(title:'Notifications'),
       decorations: [
         Positioned(
           left: context.getHorizontalCenterPosition(252),
@@ -298,7 +299,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         _selectedAccountIds != null &&
         _selectedAccountIds!.length == accounts.length;
 
-    return DropdownSelect<String>(
+    return Select<String>(
       initialValue: allAccountsSelected
           ? '_all_'
           : _selectedAccountIds?.firstOrNull,
@@ -309,8 +310,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               Item<String>(value: account.accountId, label: account.name),
         ),
       ],
-      onChanged: (selectedItem) {
-        if (selectedItem == null) return;
+      onSelect: (selectedItem) {
         final newSelectedIds = selectedItem.value == '_all_'
             ? accounts.map((a) => a.accountId).toList()
             : [selectedItem.value];

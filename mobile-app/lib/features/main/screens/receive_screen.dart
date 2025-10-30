@@ -29,8 +29,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
   Future<String>? _checksumFuture;
   List<String>? _splittedAddress;
 
-  final HumanReadableChecksumService _checksumService =
-      HumanReadableChecksumService();
+  final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
   final SettingsService _settingsService = SettingsService();
 
   @override
@@ -45,12 +44,8 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
       setState(() {
         _accountName = account.name;
         _accountId = account.accountId;
-        _checksumFuture = _checksumService.getHumanReadableName(
-          account.accountId,
-        );
-        _splittedAddress = AddressFormattingService.splitIntoChunks(
-          account.accountId,
-        );
+        _checksumFuture = _checksumService.getHumanReadableName(account.accountId);
+        _splittedAddress = AddressFormattingService.splitIntoChunks(account.accountId);
       });
     } catch (e) {
       debugPrint('Error loading account data: $e');
@@ -68,11 +63,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
 
   void _copyChecksum() {
     if (_checksum != null) {
-      ClipboardExtensions.copyTextWithSnackbar(
-        context,
-        _checksum!,
-        message: 'Checkphrase copied to clipboard',
-      );
+      ClipboardExtensions.copyTextWithSnackbar(context, _checksum!, message: 'Checkphrase copied to clipboard');
     }
   }
 
@@ -80,13 +71,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
     if (_accountId != null && _checksum != null) {
       final textToShare =
           'Hey! These are my Quantus account details:\n\nAddress:\n$_accountId\n\nCheckphrase:$_checksum\n\nTo open in the app or to download click the link below:\n${AppConstants.websiteBaseUrl}/account?id=$_accountId';
-      SharePlus.instance.share(
-        ShareParams(
-          text: textToShare,
-          subject: 'Shared Address',
-          title: 'Shared Address',
-        ),
-      );
+      SharePlus.instance.share(ShareParams(text: textToShare, subject: 'Shared Address', title: 'Shared Address'));
     }
   }
 
@@ -121,20 +106,13 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(7),
-                  decoration: ShapeDecoration(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(100),
-                    ),
-                  ),
+                  decoration: ShapeDecoration(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100))),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       InkWell(
                         onTap: _closeSheet,
-                        child: Icon(
-                          Icons.close,
-                          size: context.isTablet ? 28 : 24,
-                        ),
+                        child: Icon(Icons.close, size: context.isTablet ? 28 : 24),
                       ),
                     ],
                   ),
@@ -144,10 +122,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      SvgPicture.asset(
-                        'assets/transaction/receive_icon.svg',
-                        width: context.isTablet ? 67 : 37,
-                      ),
+                      SvgPicture.asset('assets/transaction/receive_icon.svg', width: context.isTablet ? 67 : 37),
                       const SizedBox(width: 7),
                       Text('RECEIVE', style: context.themeText.largeTitle),
                     ],
@@ -155,28 +130,20 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                   SizedBox(height: context.isTablet ? 36 : 28),
                 ],
                 if (_accountId == null)
-                  const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
-                  )
+                  const Center(child: CircularProgressIndicator(color: Colors.white))
                 else ...[
                   Container(
                     width: context.isTablet ? 277 : 227,
                     height: context.isTablet ? 277 : 227,
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
                     child: QrImageView(
                       data: _accountId!,
                       version: QrVersions.auto,
                       size: 260.0,
                       padding: EdgeInsets.zero,
                       backgroundColor: Colors.white,
-                      eyeStyle: const QrEyeStyle(
-                        eyeShape: QrEyeShape.square,
-                        color: Colors.black,
-                      ),
+                      eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: Colors.black),
                       dataModuleStyle: const QrDataModuleStyle(
                         dataModuleShape: QrDataModuleShape.square,
                         color: Colors.black,
@@ -193,11 +160,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                         width: context.isTablet ? 32.0 : 24.0,
                         height: context.isTablet ? 32.0 : 24.0,
                       ),
-                      Text(
-                        _accountName ?? '',
-                        textAlign: TextAlign.center,
-                        style: context.themeText.smallTitle,
-                      ),
+                      Text(_accountName ?? '', textAlign: TextAlign.center, style: context.themeText.smallTitle),
                     ],
                   ),
                   const SizedBox(height: 26),
@@ -207,8 +170,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                       FutureBuilder<String?>(
                         future: _checksumFuture,
                         builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
                             return SizedBox(
                               height: 14,
                               child: Row(
@@ -217,16 +179,12 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                                   const SizedBox(
                                     width: 12,
                                     height: 12,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white54,
-                                    ),
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54),
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
                                     'Loading checkphrase...',
-                                    style: context.themeText.paragraph
-                                        ?.copyWith(color: Colors.white54),
+                                    style: context.themeText.paragraph?.copyWith(color: Colors.white54),
                                   ),
                                 ],
                               ),
@@ -276,10 +234,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                                       textAlign: TextAlign.center,
                                     ),
                                   ),
-                                  SvgPicture.asset(
-                                    'assets/copy_icon.svg',
-                                    width: context.isTablet ? 24 : 16,
-                                  ),
+                                  SvgPicture.asset('assets/copy_icon.svg', width: context.isTablet ? 24 : 16),
                                 ],
                               ),
                             );
@@ -298,9 +253,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                               padding: const EdgeInsets.all(10),
                               decoration: ShapeDecoration(
                                 color: Colors.white.withValues(alpha: 0.15),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                               ),
                               child: Text(
                                 '${_splittedAddress?.join(" ")}',
@@ -308,10 +261,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                                 style: context.themeText.smallParagraph,
                               ),
                             ),
-                            SvgPicture.asset(
-                              'assets/copy_icon.svg',
-                              width: context.isTablet ? 24 : 16,
-                            ),
+                            SvgPicture.asset('assets/copy_icon.svg', width: context.isTablet ? 24 : 16),
                           ],
                         ),
                       ),
@@ -320,13 +270,9 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                   const SizedBox(height: 26),
                   SizedBox(
                     width: context.isTablet ? 465 : 305,
-                    child: Button(
-                      label: 'Share Wallet',
-                      variant: ButtonVariant.primary,
-                      onPressed: _share,
-                    ),
+                    child: Button(label: 'Share Wallet', variant: ButtonVariant.primary, onPressed: _share),
                   ),
-                  const SizedBox(height: 80),
+                  SizedBox(height: context.isSmallHeight ? 40 : 80),
                 ],
               ],
             ),
@@ -354,11 +300,7 @@ void showReceiveSheet(BuildContext context, {bool isReceiving = true}) {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black,
-                  const Color(0xFF312E6E).useOpacity(0.4),
-                  Colors.black,
-                ],
+                colors: [Colors.black, const Color(0xFF312E6E).useOpacity(0.4), Colors.black],
               ),
             ),
           ),
@@ -369,10 +311,7 @@ void showReceiveSheet(BuildContext context, {bool isReceiving = true}) {
           right: 0,
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-            child: Container(
-              color: Colors.black.useOpacity(0.3),
-              child: const ReceiveSheet(isReceiving: false),
-            ),
+            child: Container(color: Colors.black.useOpacity(0.3), child: const ReceiveSheet(isReceiving: false)),
           ),
         ),
       ],

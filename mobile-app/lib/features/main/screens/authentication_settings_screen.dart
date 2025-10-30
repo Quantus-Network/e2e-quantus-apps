@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
@@ -155,7 +156,7 @@ class _AuthenticationSettingsScreenState
           child: const Sphere(variant: 2, size: 194),
         ),
       ],
-      appBar: 'Authentication Settings',
+      appBar: WalletAppBar(title:'Authentication Settings'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

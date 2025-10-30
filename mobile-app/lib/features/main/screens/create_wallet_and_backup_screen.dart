@@ -11,6 +11,7 @@ import 'package:resonance_network_wallet/features/components/mnemonic_grid.dart'
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
@@ -24,12 +25,10 @@ class CreateWalletAndBackupScreen extends ConsumerStatefulWidget {
   const CreateWalletAndBackupScreen({super.key});
 
   @override
-  CreateWalletAndBackupScreenState createState() =>
-      CreateWalletAndBackupScreenState();
+  CreateWalletAndBackupScreenState createState() => CreateWalletAndBackupScreenState();
 }
 
-class CreateWalletAndBackupScreenState
-    extends ConsumerState<CreateWalletAndBackupScreen> {
+class CreateWalletAndBackupScreenState extends ConsumerState<CreateWalletAndBackupScreen> {
   String _mnemonic = '';
   bool _isLoading = true;
   bool _isSubmitting = false;
@@ -70,9 +69,7 @@ class CreateWalletAndBackupScreenState
       _address = _hdWalletService
           .keyPairAtIndex(_mnemonic, 0) // Assuming index 0 for new account
           .ss58Address;
-      _checksum = await HumanReadableChecksumService().getHumanReadableName(
-        _address,
-      );
+      _checksum = await HumanReadableChecksumService().getHumanReadableName(_address);
 
       if (mounted) {
         setState(() {
@@ -95,11 +92,7 @@ class CreateWalletAndBackupScreenState
     if (_mnemonic.isEmpty) {
       debugPrint('Cannot save wallet, mnemonic is empty.');
       if (mounted) {
-        showTopSnackBar(
-          context,
-          title: 'Error',
-          message: 'Recovery phrase not generated.',
-        );
+        showTopSnackBar(context, title: 'Error', message: 'Recovery phrase not generated.');
       }
       return;
     }
@@ -112,12 +105,9 @@ class CreateWalletAndBackupScreenState
       await _settingsService.setMnemonic(_mnemonic);
 
       final asyncAccounts = ref.read(accountsProvider); // Gets notifier state
-      final accounts =
-          asyncAccounts.value ?? <Account>[]; // Extract data or empty list
+      final accounts = asyncAccounts.value ?? <Account>[]; // Extract data or empty list
       if (accounts.isEmpty) {
-        await _accountsService.addAccount(
-          Account(index: 0, name: _accountName.value.text, accountId: _address),
-        );
+        await _accountsService.addAccount(Account(index: 0, name: _accountName.value.text, accountId: _address));
         await _referralService.submitAddressToBackend();
       }
       ref.invalidate(accountsProvider);
@@ -136,11 +126,7 @@ class CreateWalletAndBackupScreenState
     } catch (e) {
       debugPrint('Error saving wallet: $e');
       if (mounted) {
-        showTopSnackBar(
-          context,
-          title: 'Error',
-          message: 'Error saving wallet: $e',
-        );
+        showTopSnackBar(context, title: 'Error', message: 'Error saving wallet: $e');
       }
     } finally {
       if (mounted) {
@@ -166,14 +152,8 @@ class CreateWalletAndBackupScreenState
         _accountName.text = 'Account ${accounts.length + 1}';
 
         return ScaffoldBase(
-          appBar: 'Create New Wallet',
-          decorations: [
-            const Positioned(
-              right: -32.0,
-              bottom: 120.0,
-              child: Sphere(variant: 1, size: 321.0),
-            ),
-          ],
+          appBar: WalletAppBar(title: 'Create New Wallet'),
+          decorations: [const Positioned(right: -32.0, bottom: 120.0, child: Sphere(variant: 1, size: 321.0))],
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
             child: SafeArea(
@@ -208,15 +188,10 @@ class CreateWalletAndBackupScreenState
                       CardInfo(
                         text: _isLoading
                             ? 'Loading address...'
-                            : AddressFormattingService.splitIntoChunks(
-                                _address,
-                              ).join(' '),
+                            : AddressFormattingService.splitIntoChunks(_address).join(' '),
                         icon: const Icon(Icons.copy),
                         onPressed: () {
-                          ClipboardExtensions.copyTextWithSnackbar(
-                            context,
-                            _address,
-                          );
+                          ClipboardExtensions.copyTextWithSnackbar(context, _address);
                         },
                         label: 'ACCOUNT ADDRESS',
                       ),
@@ -225,13 +200,7 @@ class CreateWalletAndBackupScreenState
                         text: 'Show Recovery Phrase',
                         icon: const Icon(Icons.chevron_right),
                         onPressed: () {
-                          showRecoveryPhraseSheet(
-                            context,
-                            words,
-                            _isLoading,
-                            _error,
-                            _mnemonic,
-                          );
+                          showRecoveryPhraseSheet(context, words, _isLoading, _error, _mnemonic);
                         },
                       ),
                       const SizedBox(height: 32),
@@ -251,12 +220,12 @@ class CreateWalletAndBackupScreenState
           ),
         );
       },
-      loading: () => const ScaffoldBase(
-        appBar: 'Creating Wallet...',
-        child: Center(child: CircularProgressIndicator()),
+      loading: () => ScaffoldBase(
+        appBar: WalletAppBar(title: 'Creating Wallet...'),
+        child: const Center(child: CircularProgressIndicator()),
       ),
       error: (error, stack) => ScaffoldBase(
-        appBar: 'Error',
+        appBar: WalletAppBar(title: 'Error'),
         child: Center(child: Text('Failed to load accounts: $error')),
       ),
     );
@@ -264,13 +233,7 @@ class CreateWalletAndBackupScreenState
 }
 
 // Helper function to show the recovery phrase sheet
-void showRecoveryPhraseSheet(
-  BuildContext context,
-  List<String> words,
-  bool isLoading,
-  String? error,
-  String mnemonic,
-) {
+void showRecoveryPhraseSheet(BuildContext context, List<String> words, bool isLoading, String? error, String mnemonic) {
   final TelemetryService telemetry = TelemetryService();
 
   showModalBottomSheet(
@@ -288,11 +251,7 @@ void showRecoveryPhraseSheet(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black,
-                  const Color(0xFF312E6E).useOpacity(0.4),
-                  Colors.black,
-                ],
+                colors: [Colors.black, const Color(0xFF312E6E).useOpacity(0.4), Colors.black],
               ),
             ),
           ),
@@ -310,10 +269,7 @@ void showRecoveryPhraseSheet(
                 ),
                 Container(
                   height: MediaQuery.of(context).size.height * 0.85,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 25,
-                    vertical: 20,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
                   decoration: const BoxDecoration(color: Colors.black),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.start,
@@ -323,10 +279,7 @@ void showRecoveryPhraseSheet(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           IconButton(
-                            icon: Icon(
-                              Icons.close,
-                              size: context.themeSize.overlayCloseIconSize,
-                            ),
+                            icon: Icon(Icons.close, size: context.themeSize.overlayCloseIconSize),
                             onPressed: () => Navigator.of(context).pop(),
                           ),
                         ],
@@ -342,9 +295,7 @@ void showRecoveryPhraseSheet(
                         'location. This is the only way to recover your '
                         'wallet',
                         textAlign: TextAlign.start,
-                        style: context.themeText.smallParagraph?.copyWith(
-                          color: context.themeColors.textMuted,
-                        ),
+                        style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.textMuted),
                       ),
                       const SizedBox(height: 21),
                       if (isLoading)
@@ -352,28 +303,18 @@ void showRecoveryPhraseSheet(
                           padding: const EdgeInsets.symmetric(vertical: 50.0),
                           child: Column(
                             children: [
-                              CircularProgressIndicator(
-                                color: context.themeColors.circularLoader,
-                              ),
+                              CircularProgressIndicator(color: context.themeColors.circularLoader),
                               const SizedBox(height: 16),
-                              const Text(
-                                'Generating secure phrase...',
-                                style: TextStyle(color: Colors.white70),
-                              ),
+                              const Text('Generating secure phrase...', style: TextStyle(color: Colors.white70)),
                             ],
                           ),
                         )
                       else if (error != null)
                         Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 50.0,
-                            horizontal: 20,
-                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 50.0, horizontal: 20),
                           child: Text(
                             error,
-                            style: context.themeText.paragraph?.copyWith(
-                              color: context.themeColors.textError,
-                            ),
+                            style: context.themeText.paragraph?.copyWith(color: context.themeColors.textError),
                             textAlign: TextAlign.center,
                           ),
                         )
@@ -391,9 +332,7 @@ void showRecoveryPhraseSheet(
                                 title: 'Copied!',
                                 message: 'Recovery phrase copied to clipboard',
                               );
-                              telemetry.sendEvent(
-                                'onboarding_copy_recovery_phrase',
-                              );
+                              telemetry.sendEvent('onboarding_copy_recovery_phrase');
                             },
                             child: Opacity(
                               opacity: 0.8,
@@ -401,16 +340,9 @@ void showRecoveryPhraseSheet(
                                 mainAxisSize: MainAxisSize.min,
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(
-                                    Icons.copy,
-                                    color: Colors.white,
-                                    size: 24,
-                                  ),
+                                  const Icon(Icons.copy, color: Colors.white, size: 24),
                                   const SizedBox(width: 8),
-                                  Text(
-                                    'Copy to Clipboard',
-                                    style: context.themeText.smallParagraph,
-                                  ),
+                                  Text('Copy to Clipboard', style: context.themeText.smallParagraph),
                                 ],
                               ),
                             ),

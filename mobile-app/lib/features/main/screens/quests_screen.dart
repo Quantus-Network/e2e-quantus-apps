@@ -301,22 +301,26 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
                           style: context.themeText.smallParagraph,
                         ),
                         const SizedBox(height: 8),
-                        InkWell(
-                          onTap: _copyReferralCode,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 21,
-                              vertical: 11,
-                            ),
-                            decoration: ShapeDecoration(
-                              color: context.themeColors.background,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(4),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: InkWell(
+                            onTap: _copyReferralCode,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 21,
+                                vertical: 11,
                               ),
-                            ),
-                            child: Text(
-                              _referralCode ?? 'Loading...',
-                              style: context.themeText.paragraph,
+                              decoration: ShapeDecoration(
+                                color: context.themeColors.background,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                              child: Text(
+                                _referralCode ?? 'Loading...',
+                                style: context.themeText.paragraph,
+                                textAlign: TextAlign.center,
+                              ),
                             ),
                           ),
                         ),

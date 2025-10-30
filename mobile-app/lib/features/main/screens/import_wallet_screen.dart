@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
@@ -124,7 +125,7 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
-      appBar: 'Import Wallet',
+      appBar: WalletAppBar(title:'Import Wallet'),
       decorations: [
         const Positioned(
           bottom: 140,

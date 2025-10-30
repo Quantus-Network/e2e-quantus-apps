@@ -4,6 +4,7 @@ import 'package:resonance_network_wallet/features/components/card_info.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
@@ -72,7 +73,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
-      appBar: 'Referral',
+      appBar: WalletAppBar(title:'Referral'),
       decorations: [
         const Positioned(left: -80, top: 150, child: Sphere(variant: 7, size: 248)),
         const Positioned(right: -50, bottom: 100, child: Sphere(variant: 2, size: 194)),

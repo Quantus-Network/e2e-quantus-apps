@@ -6,6 +6,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
@@ -55,12 +56,12 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           child: const Sphere(variant: 2, size: 194),
         ),
       ],
-      appBar: 'Account Settings',
+      appBar: WalletAppBar(title: 'Account Settings'),
       child: Stack(
         children: [
           Positioned(
             left: context.getHorizontalCenterPosition(
-              (context.isTablet ? 80.0 : 60.0) + 32,
+              (context.isTablet ? 80.0 : 60.0) + 48,
             ),
             child: AccountGradientImage(
               accountId: widget.account.accountId,
@@ -131,6 +132,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
               style: context.themeText.smallParagraph?.copyWith(
                 color: context.themeColors.checksum,
               ),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 5),
             Text(

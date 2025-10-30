@@ -584,6 +584,7 @@ class SendConfirmationOverlayState
         content = _buildCompleteState();
         break;
     }
+    final effectiveSheetHeightFraction = context.isSmallHeight ? 0.9 : AppConstants.sendingSheetHeightFraction;
 
     return PopScope(
       canPop: false,
@@ -604,9 +605,9 @@ class SendConfirmationOverlayState
             Container(
               height:
                   MediaQuery.of(context).size.height *
-                  AppConstants.sendingSheetHeightFraction,
+                  effectiveSheetHeightFraction,
               width: MediaQuery.of(context).size.width,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
               decoration: ShapeDecoration(
                 color: Colors.black,
                 shape: RoundedRectangleBorder(

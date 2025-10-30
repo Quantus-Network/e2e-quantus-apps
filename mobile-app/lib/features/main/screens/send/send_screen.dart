@@ -11,6 +11,7 @@ import 'package:resonance_network_wallet/features/components/scaffold_base.dart'
 import 'package:resonance_network_wallet/features/components/segmented_control.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/recent_addresses.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/send_progress_overlay.dart';
@@ -499,7 +500,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
           child: const Sphere(variant: 2, size: 194),
         ),
       ],
-      appBar: 'Send',
+      appBar: WalletAppBar(title: 'Send'),
       child: Consumer(
         builder: (context, ref, child) {
           final balanceAsyncValue = ref.watch(effectiveMaxBalanceProvider);
