@@ -177,7 +177,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
-      appBar: const WalletAppBar(title:'Notifications'),
+      appBar: WalletAppBar(title:'Notifications'),
       decorations: [
         Positioned(
           left: context.getHorizontalCenterPosition(252),

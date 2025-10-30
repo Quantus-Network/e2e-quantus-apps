@@ -64,7 +64,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
           child: Sphere(variant: 7, size: 240.681),
         ),
       ],
-      appBar:  const WalletAppBar(title:  'Your Accounts'),
+      appBar:  WalletAppBar(title:  'Your Accounts'),
       child: Column(
         children: [
           Expanded(child: _buildAccountsList()),

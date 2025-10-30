@@ -42,7 +42,7 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
-      appBar: const WalletAppBar(title:'Your Recovery Phrase'),
+      appBar: WalletAppBar(title:'Your Recovery Phrase'),
       child: Column(
         children: [
           Expanded(

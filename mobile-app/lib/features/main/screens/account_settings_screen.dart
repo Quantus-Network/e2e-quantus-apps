@@ -56,7 +56,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           child: const Sphere(variant: 2, size: 194),
         ),
       ],
-      appBar: const WalletAppBar(title: 'Account Settings'),
+      appBar: WalletAppBar(title: 'Account Settings'),
       child: Stack(
         children: [
           Positioned(

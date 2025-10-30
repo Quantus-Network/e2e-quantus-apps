@@ -19,7 +19,7 @@ abstract class WalletAppBar extends StatelessWidget implements PreferredSizeWidg
 
 class _SimpleWalletAppBar extends WalletAppBar {
   final String title;
-  const _SimpleWalletAppBar({Key? key, required this.title}) : super._(key: key);
+  const _SimpleWalletAppBar({super.key, required this.title}) : super._();
   @override
   Widget build(BuildContext context) {
     return _baseAppBar(
@@ -35,8 +35,7 @@ class _CustomWalletAppBar extends WalletAppBar {
   final Widget titleWidget;
   final Widget? leadingWidget;
   final List<Widget>? actions;
-  const _CustomWalletAppBar({Key? key, required this.titleWidget, this.leadingWidget, this.actions})
-    : super._(key: key);
+  const _CustomWalletAppBar({super.key, required this.titleWidget, this.leadingWidget, this.actions}) : super._();
   @override
   Widget build(BuildContext context) {
     const topPadding = 24.0;
@@ -48,6 +47,7 @@ class _CustomWalletAppBar extends WalletAppBar {
       ),
       leading: leadingWidget ?? const SizedBox(),
       leadingWidth: 9,
+      actionsPadding: const EdgeInsets.only(right: 24),
       actions: (actions ?? const [])
           .map(
             (w) => Padding(
@@ -64,7 +64,7 @@ class _StandardWalletAppBar extends WalletAppBar {
   final String title;
   final VoidCallback? onBack;
   final List<Widget>? actions;
-  const _StandardWalletAppBar({Key? key, required this.title, this.onBack, this.actions}) : super._(key: key);
+  const _StandardWalletAppBar({super.key, required this.title, this.onBack, this.actions}) : super._();
   @override
   Widget build(BuildContext context) {
     final canBePop = Navigator.canPop(context) || onBack != null;
@@ -92,6 +92,7 @@ AppBar _baseAppBar(
   Widget? title,
   Widget? leading,
   List<Widget>? actions,
+  EdgeInsetsGeometry? actionsPadding,
   double? leadingWidth,
   double? titleSpacing,
 }) {
@@ -105,6 +106,7 @@ AppBar _baseAppBar(
     leadingWidth: leadingWidth,
     title: title,
     titleSpacing: titleSpacing,
+    actionsPadding: actionsPadding,
     actions: actions,
   );
 }

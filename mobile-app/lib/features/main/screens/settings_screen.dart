@@ -88,7 +88,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
-      appBar: const WalletAppBar.simple(title: 'Wallet Settings'),
+      appBar: WalletAppBar.simple(title: 'Wallet Settings'),
       extendBodyBehindAppBar: true,
       extendBodyBehindNavBar: true,
       decorations: [

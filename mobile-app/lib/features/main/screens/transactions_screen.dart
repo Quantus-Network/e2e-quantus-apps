@@ -132,7 +132,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           child: const Sphere(variant: 8, size: 251.62),
         ),
       ],
-      appBar: const WalletAppBar(title: 'Transaction History'),
+      appBar: WalletAppBar(title: 'Transaction History'),
       child: _buildBody(),
     );
   }
@@ -149,7 +149,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           child: const Sphere(variant: 8, size: 251.62),
         ),
       ],
-      appBar: const WalletAppBar.simple(title: 'Transaction History'),
+      appBar: WalletAppBar.simple(title: 'Transaction History'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

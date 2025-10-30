@@ -500,7 +500,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
           child: const Sphere(variant: 2, size: 194),
         ),
       ],
-      appBar: const WalletAppBar(title: 'Send'),
+      appBar: WalletAppBar(title: 'Send'),
       child: Consumer(
         builder: (context, ref, child) {
           final balanceAsyncValue = ref.watch(effectiveMaxBalanceProvider);

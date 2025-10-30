@@ -125,7 +125,7 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
-      appBar: const WalletAppBar(title:'Import Wallet'),
+      appBar: WalletAppBar(title:'Import Wallet'),
       decorations: [
         const Positioned(
           bottom: 140,

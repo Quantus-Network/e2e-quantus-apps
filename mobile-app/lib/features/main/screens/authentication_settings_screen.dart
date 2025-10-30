@@ -156,7 +156,7 @@ class _AuthenticationSettingsScreenState
           child: const Sphere(variant: 2, size: 194),
         ),
       ],
-      appBar: const WalletAppBar(title:'Authentication Settings'),
+      appBar: WalletAppBar(title:'Authentication Settings'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
