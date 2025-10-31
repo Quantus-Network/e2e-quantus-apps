@@ -5,8 +5,8 @@ class AppConstants {
   static const String shareUrl = 'https://linktr.ee/quantusnetwork';
   static const String websiteBaseUrl = 'https://www.quantus.com';
 
-  // static const String rpcEndpoint = 'ws://127.0.0.1:9944'; // local testing
-  // static const String graphQlEndpoint = 'http://127.0.0.1:4350'; // local testing
+  // static const List<String> rpcEndpoints = ['ws://127.0.0.1:9944']; // local testing
+  // static const List<String> graphQlEndpoints = ['http://127.0.0.1:4350']; // local testing
 
   static const List<String> rpcEndpoints = [
     'https://quantu.se',
