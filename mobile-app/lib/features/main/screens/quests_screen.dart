@@ -114,6 +114,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> with WidgetsBinding
 
     try {
       await _referralService.optInRewardProgram();
+      ref.invalidate(optInPositionProvider);
 
       setState(() {
         _isSubmitting = false;
