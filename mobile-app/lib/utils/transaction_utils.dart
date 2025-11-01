@@ -1,4 +1,5 @@
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/models/transaction_role.dart';
 
 /// Utility functions for handling transactions
 class TransactionUtils {
@@ -17,11 +18,8 @@ class TransactionUtils {
     // Add pending transactions first (highest priority)
     for (final transaction in pendingTransactions) {
       if (seenIds.add(transaction.id)) {
-        if (transaction.isReversible &&
-            pendingCancellationIds.contains(transaction.id)) {
-          result.add(
-            transaction.copyWith(status: ReversibleTransferStatus.CANCELLED),
-          );
+        if (transaction.isReversible && pendingCancellationIds.contains(transaction.id)) {
+          result.add(transaction.copyWith(status: ReversibleTransferStatus.CANCELLED));
         } else {
           result.add(transaction);
         }
@@ -33,9 +31,7 @@ class TransactionUtils {
       if (transaction.status == ReversibleTransferStatus.SCHEDULED) {
         if (seenIds.add(transaction.id)) {
           if (pendingCancellationIds.contains(transaction.id)) {
-            result.add(
-              transaction.copyWith(status: ReversibleTransferStatus.CANCELLED),
-            );
+            result.add(transaction.copyWith(status: ReversibleTransferStatus.CANCELLED));
           } else {
             result.add(transaction);
           }
@@ -51,5 +47,18 @@ class TransactionUtils {
     }
 
     return result;
+  }
+
+  static TransactionRole getTransactionRole(TransactionEvent transaction, List<String> accountIds) {
+    final isFrom = accountIds.contains(transaction.from);
+    final isTo = accountIds.contains(transaction.to);
+
+    if (isFrom && isTo) {
+      return TransactionRole.both;
+    } else if (isFrom) {
+      return TransactionRole.sender;
+    } else {
+      return TransactionRole.receiver;
+    }
   }
 }

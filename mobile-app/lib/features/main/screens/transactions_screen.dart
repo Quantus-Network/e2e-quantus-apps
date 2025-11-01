@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/select.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
@@ -17,8 +18,9 @@ import 'package:resonance_network_wallet/utils/transaction_utils.dart';
 class TransactionsScreen extends ConsumerStatefulWidget {
   final bool showAccountFilter;
   final String? fixedAccountId; // if set, hide filter popdown
+  final TransactionEvent? transaction;
 
-  const TransactionsScreen({super.key, this.showAccountFilter = true, this.fixedAccountId});
+  const TransactionsScreen({super.key, this.showAccountFilter = true, this.fixedAccountId, this.transaction});
 
   @override
   ConsumerState<TransactionsScreen> createState() => _TransactionsScreenState();
@@ -60,6 +62,14 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             ref
                 .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get(accountIds)).notifier)
                 .loadingRefresh();
+
+            if (widget.transaction != null) {
+              showTransactionActionSheet(
+                context,
+                transaction: widget.transaction!,
+                role: TransactionUtils.getTransactionRole(widget.transaction!, accountIds),
+              );
+            }
           });
         }
       },

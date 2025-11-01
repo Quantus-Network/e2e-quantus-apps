@@ -1,11 +1,9 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
-import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class NotificationsSettingsScreen extends StatefulWidget {
   const NotificationsSettingsScreen({super.key});
@@ -20,7 +18,7 @@ class _NotificationsSettingsScreenState extends State<NotificationsSettingsScree
   bool _isReceivedTokensNotificationEnabled = false;
   bool _isRecoveryTimerEndingNotificationEnabled = false;
   bool _isReversibleTransactionsNotificationEnabled = false;
-  bool _isUpdateFromQuantusNotificationEnabled = false;
+  // bool _isUpdateFromQuantusNotificationEnabled = false;
 
   @override
   void initState() {
@@ -57,11 +55,11 @@ class _NotificationsSettingsScreenState extends State<NotificationsSettingsScree
     });
   }
 
-  void _toggleUpdateFromQuantusNotification(bool enable) {
-    setState(() {
-      _isUpdateFromQuantusNotificationEnabled = enable;
-    });
-  }
+  // void _toggleUpdateFromQuantusNotification(bool enable) {
+  //   setState(() {
+  //     _isUpdateFromQuantusNotificationEnabled = enable;
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -140,13 +138,13 @@ class _NotificationsSettingsScreenState extends State<NotificationsSettingsScree
               value: _isReversibleTransactionsNotificationEnabled,
               onChanged: _toggleReversibleTransactionsNotification,
             ),
-            const SizedBox(height: 12),
-            _buildNotificationToggle(
-              context,
-              label: 'Update From Quantus',
-              value: _isUpdateFromQuantusNotificationEnabled,
-              onChanged: _toggleUpdateFromQuantusNotification,
-            ),
+            // const SizedBox(height: 12),
+            // _buildNotificationToggle(
+            //   context,
+            //   label: 'Update From Quantus',
+            //   value: _isUpdateFromQuantusNotificationEnabled,
+            //   onChanged: _toggleUpdateFromQuantusNotification,
+            // ),
           ],
         ],
       ),

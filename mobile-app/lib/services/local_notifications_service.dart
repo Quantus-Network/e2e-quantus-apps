@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
@@ -11,10 +12,7 @@ class LocalNotificationsService {
   final _notificationPlugin = FlutterLocalNotificationsPlugin();
   bool _isInitialized = false;
 
-  // Stream controller to broadcast deserialized event objects
   final StreamController<TransactionEvent?> _onNotificationClick = StreamController<TransactionEvent?>.broadcast();
-  // Public stream for the UI to listen to
-  Stream<TransactionEvent?> get onNotificationClick => _onNotificationClick.stream;
 
   // Helper function to serialize the payload
   String? _serializePayload(TransactionEvent event) {
@@ -106,6 +104,17 @@ class LocalNotificationsService {
     final String? payload = event != null ? _serializePayload(event) : null;
 
     return _notificationPlugin.show(id, title, body, _notificationDetails(), payload: payload);
+  }
+
+  void setupNotificationsClickListener(GlobalKey<NavigatorState> navigatorKey) {
+    _onNotificationClick.stream.listen((TransactionEvent? event) {
+      if (event != null) {
+        print('Notification tapped ${event.id}');
+
+        print('Navigating to tx detail...');
+        navigatorKey.currentState?.pushNamed('/transactions', arguments: event);
+      }
+    });
   }
 
   void dispose() {
