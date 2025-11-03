@@ -5,6 +5,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/app_initializer.dart';
 import 'package:resonance_network_wallet/app_lifecycle_manager.dart';
 import 'package:resonance_network_wallet/features/main/screens/app.dart';
+import 'package:resonance_network_wallet/services/local_notifications_service.dart';
 import 'package:resonance_network_wallet/utils/env_utils.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:telemetrydecksdk/telemetrydecksdk.dart';
@@ -18,8 +19,8 @@ void main() async {
     url: EnvUtils.supabaseUrl,
     anonKey: EnvUtils.supabaseKey,
   );
-
   await QuantusSdk.init();
+  await LocalNotificationsService().init();
   Telemetrydecksdk.start(
     const TelemetryManagerConfiguration(
       appID: '098B4397-8426-4054-B379-0E4C53D2CA63',

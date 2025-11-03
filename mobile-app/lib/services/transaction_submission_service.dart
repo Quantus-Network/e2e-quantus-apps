@@ -10,6 +10,7 @@ import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
@@ -47,8 +48,7 @@ class TransactionSubmissionService {
     // retry
 
     // ignore: prefer_function_declarations_over_variables
-    final submissionBuilder = () =>
-        BalancesService().balanceTransfer(account, targetAddress, amount);
+    final submissionBuilder = () => BalancesService().balanceTransfer(account, targetAddress, amount);
 
     TelemetryService().sendEvent('send_transfer');
 
@@ -81,13 +81,12 @@ class TransactionSubmissionService {
     // Define the builder function that creates fresh submissions on each retry
 
     // ignore: prefer_function_declarations_over_variables
-    final submissionBuilder = () =>
-        ReversibleTransfersService().scheduleReversibleTransferWithDelaySeconds(
-          account: account,
-          recipientAddress: recipientAddress,
-          amount: amount,
-          delaySeconds: delaySeconds,
-        );
+    final submissionBuilder = () => ReversibleTransfersService().scheduleReversibleTransferWithDelaySeconds(
+      account: account,
+      recipientAddress: recipientAddress,
+      amount: amount,
+      delaySeconds: delaySeconds,
+    );
 
     TelemetryService().sendEvent('send_reversible');
 
@@ -131,13 +130,7 @@ class TransactionSubmissionService {
   }) async {
     // Start the submission process in the background
     // This allows the UI to continue immediately
-    unawaited(
-      _submitAndTrackBackground(
-        submissionBuilder,
-        pendingTx,
-        maxRetries: maxRetries,
-      ),
-    );
+    unawaited(_submitAndTrackBackground(submissionBuilder, pendingTx, maxRetries: maxRetries));
   }
 
   /// Background submission with retry logic - runs asynchronously
@@ -148,9 +141,7 @@ class TransactionSubmissionService {
     int attempt = 1,
   }) async {
     try {
-      print(
-        'Submitting transaction attempt $attempt/$maxRetries: ${pendingTx.id}',
-      );
+      print('Submitting transaction attempt $attempt/$maxRetries: ${pendingTx.id}');
 
       // Build a fresh submission for this attempt (gets fresh nonce,
       // block headers, etc.)
@@ -163,26 +154,17 @@ class TransactionSubmissionService {
       final newState = TransactionState.pending;
       // Update state for all non-retry cases
       print('updating tx ${pendingTx.amount} to $newState');
-      _ref
-          .read(pendingTransactionsProvider.notifier)
-          .updateState(pendingTx.id, newState, error: pendingTx.error);
+      _ref.read(pendingTransactionsProvider.notifier).updateState(pendingTx.id, newState, error: pendingTx.error);
 
       _startSearchingForBroadcastTransaction(pendingTx);
     } catch (e, stackTrace) {
       print('Failed submitting transaction attempt $attempt: $e');
 
       if (attempt < maxRetries) {
-        print(
-          'Retrying due to submission error, attempt ${attempt + 1}/$maxRetries',
-        );
+        print('Retrying due to submission error, attempt ${attempt + 1}/$maxRetries');
         // Brief delay before retry
         await Future.delayed(const Duration(seconds: 2));
-        await _submitAndTrackBackground(
-          submissionBuilder,
-          pendingTx,
-          maxRetries: maxRetries,
-          attempt: attempt + 1,
-        );
+        await _submitAndTrackBackground(submissionBuilder, pendingTx, maxRetries: maxRetries, attempt: attempt + 1);
       } else {
         print('Failed to submit transaction after $maxRetries attempts: $e');
         print('Stack trace: $stackTrace');
@@ -206,9 +188,7 @@ class TransactionSubmissionService {
   }
 
   /// Starts searching for a broadcast transaction in blockchain history
-  void _startSearchingForBroadcastTransaction(
-    PendingTransactionEvent pendingTx,
-  ) {
+  void _startSearchingForBroadcastTransaction(PendingTransactionEvent pendingTx) {
     print('Starting broadcast search for transaction: ${pendingTx.id}');
 
     if (pendingTx.blockNumber == 0) {
@@ -243,9 +223,7 @@ class TransactionSubmissionService {
   }
 
   /// Searches for a broadcast transaction in blockchain history
-  Future<void> _searchForBroadcastTransaction(
-    PendingTransactionEvent pendingTx,
-  ) async {
+  Future<void> _searchForBroadcastTransaction(PendingTransactionEvent pendingTx) async {
     try {
       print(
         'Searching blockchain history for broadcast transaction:'
@@ -269,18 +247,24 @@ class TransactionSubmissionService {
         _stopSearchingForBroadcastTransaction(pendingTx.id);
 
         // Trigger silent refresh of history to include the new transaction
-        _triggerSilentHistoryRefresh(
-          affectedAccountIds: {pendingTx.from, pendingTx.to},
-        );
+        _triggerSilentHistoryRefresh(affectedAccountIds: {pendingTx.from, pendingTx.to});
 
         // Update to inHistory state
         _ref
             .read(pendingTransactionsProvider.notifier)
-            .updateState(
-              pendingTx.id,
-              TransactionState.inHistory,
-              blockHash: result.blockHash,
-            );
+            .updateState(pendingTx.id, TransactionState.inHistory, blockHash: result.blockHash);
+
+        final accountName =
+            _ref.read(accountsProvider).value?.firstWhere((account) => account.accountId == pendingTx.from).name ??
+            'Undefined';
+
+        if (result is TransferEvent) {
+          _ref.read(notificationProvider.notifier).addTokenSent(accountName: accountName, transactionData: result);
+        } else if (result is ReversibleTransferEvent) {
+          _ref
+              .read(notificationProvider.notifier)
+              .addReversibleTransactionReminder(accountName: accountName, transactionData: result);
+        }
 
         // Remove after a short delay to show completion
         Timer(const Duration(seconds: 2), () {
@@ -314,11 +298,7 @@ class TransactionSubmissionService {
 
       for (final accountId in targets) {
         _ref
-            .read(
-              filteredPaginationControllerProviderFamily(
-                AccountIdListCache.get([accountId]),
-              ).notifier,
-            )
+            .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get([accountId])).notifier)
             .silentRefresh();
       }
 
@@ -339,12 +319,11 @@ class TransactionSubmissionService {
 }
 
 // Provider for the service
-final transactionSubmissionServiceProvider =
-    Provider<TransactionSubmissionService>((ref) {
-      final service = TransactionSubmissionService(ref);
+final transactionSubmissionServiceProvider = Provider<TransactionSubmissionService>((ref) {
+  final service = TransactionSubmissionService(ref);
 
-      // Clean up when provider is disposed
-      ref.onDispose(() => service.dispose());
+  // Clean up when provider is disposed
+  ref.onDispose(() => service.dispose());
 
-      return service;
-    });
+  return service;
+});

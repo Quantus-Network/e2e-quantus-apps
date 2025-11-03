@@ -17,8 +17,7 @@ class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
-  ConsumerState<NotificationsScreen> createState() =>
-      _NotificationsScreenState();
+  ConsumerState<NotificationsScreen> createState() => _NotificationsScreenState();
 }
 
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
@@ -123,20 +122,22 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     final notifier = ref.read(notificationProvider.notifier);
 
     // Create sample transaction data for demonstration
-    final transactionData = TransactionData(
-      id: 'tx_${DateTime.now().millisecondsSinceEpoch}',
+    final transactionData = PendingTransactionEvent(
+      tempId: 'tx_${DateTime.now().millisecondsSinceEpoch}',
       from: accountId,
       to: 'recipient_address',
       amount: BigInt.from(1000000), // 1 QNT
       fee: BigInt.from(10000), // 0.01 QNT
       error: 'Insufficient balance',
       timestamp: DateTime.now(),
-      state: TransactionState.failed,
+      blockNumber: 1,
+      delaySeconds: 0,
+      isReversible: false,
+      transactionState: TransactionState.failed,
     );
 
     notifier.addTransactionFailed(
       accountName: accountName,
-      transactionId: transactionData.id,
       errorMessage: 'Transaction failed due to insufficient balance',
       transactionData: transactionData,
     );
@@ -164,20 +165,29 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     final activeAccount = ref.read(activeAccountProvider).value;
     final accountName = activeAccount?.name ?? 'Unknown';
 
-    final executionTime = DateTime.now().add(const Duration(hours: 2));
-
     final notifier = ref.read(notificationProvider.notifier);
     notifier.addReversibleTransactionReminder(
       accountName: accountName,
-      transactionId: 'reversible_${DateTime.now().millisecondsSinceEpoch}',
-      executionTime: executionTime,
+      transactionData: ReversibleTransferEvent(
+        id: 'revtx_123456',
+        from: '0xABCDEF1234567890',
+        to: '0xFEDCBA0987654321',
+        amount: BigInt.from(2500000000000000000),
+        timestamp: DateTime.now(),
+        txId: '0xtransaction123abc',
+        status: ReversibleTransferStatus.SCHEDULED,
+        scheduledAt: DateTime.now().add(const Duration(minutes: 15)),
+        extrinsicHash: '0xextrinsichash123',
+        blockNumber: 123456,
+        blockHash: '0xblockhash987654321',
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
-      appBar: WalletAppBar(title:'Notifications'),
+      appBar: WalletAppBar(title: 'Notifications'),
       decorations: [
         Positioned(
           left: context.getHorizontalCenterPosition(252),
@@ -194,18 +204,12 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               return accountsAsync.when(
                 data: (accounts) {
                   if (accounts.isEmpty) {
-                    return const Text(
-                      'No accounts found.',
-                      style: TextStyle(color: Colors.white70),
-                    );
+                    return const Text('No accounts found.', style: TextStyle(color: Colors.white70));
                   }
                   return _buildAccountDropdown(accounts);
                 },
                 loading: () => const CircularProgressIndicator(),
-                error: (e, st) => const Text(
-                  'Error loading accounts.',
-                  style: TextStyle(color: Colors.red),
-                ),
+                error: (e, st) => const Text('Error loading accounts.', style: TextStyle(color: Colors.red)),
               );
             },
           ),
@@ -224,22 +228,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   child: Column(
                     spacing: 8,
                     children: [
-                      ElevatedButton(
-                        onPressed: _addNotification,
-                        child: const Text('Add Test Notifications'),
-                      ),
+                      ElevatedButton(onPressed: _addNotification, child: const Text('Add Test Notifications')),
                       ElevatedButton(
                         onPressed: _addTransactionFailed,
                         child: const Text('Simulate Transaction Failed'),
                       ),
-                      ElevatedButton(
-                        onPressed: _addBalanceAlert,
-                        child: const Text('Simulate Balance Alert'),
-                      ),
-                      ElevatedButton(
-                        onPressed: _addAccountSuccess,
-                        child: const Text('Simulate Account Added'),
-                      ),
+                      ElevatedButton(onPressed: _addBalanceAlert, child: const Text('Simulate Balance Alert')),
+                      ElevatedButton(onPressed: _addAccountSuccess, child: const Text('Simulate Account Added')),
                       ElevatedButton(
                         onPressed: _addReversibleReminder,
                         child: const Text('Simulate Reversible Reminder'),
@@ -254,9 +249,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             builder: (context, ref, child) {
               final featureFlags = ref.watch(featureFlagsProvider);
               final enableTestButtons = featureFlags.isEnabled('test_buttons');
-              return enableTestButtons
-                  ? const SizedBox(height: 24)
-                  : const SizedBox.shrink();
+              return enableTestButtons ? const SizedBox(height: 24) : const SizedBox.shrink();
             },
           ),
           const SizedBox(height: 24),
@@ -265,26 +258,16 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             child: Consumer(
               builder: (context, ref, child) {
                 final allNotifications = ref.watch(notificationProvider);
-                final filteredNotifications = _filterNotificationsByAccounts(
-                  allNotifications,
-                );
+                final filteredNotifications = _filterNotificationsByAccounts(allNotifications);
 
                 if (filteredNotifications.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'No notifications',
-                      style: context.themeText.paragraph,
-                    ),
-                  );
+                  return Center(child: Text('No notifications', style: context.themeText.paragraph));
                 }
 
                 return NotificationGroup(
                   notifications: filteredNotifications,
-                  onDismissAll: () =>
-                      ref.read(notificationProvider.notifier).clearAll(),
-                  onDismissSingle: (id) => ref
-                      .read(notificationProvider.notifier)
-                      .removeNotification(id),
+                  onDismissAll: () => ref.read(notificationProvider.notifier).clearAll(),
+                  onDismissSingle: (id) => ref.read(notificationProvider.notifier).removeNotification(id),
                 );
               },
             ),
@@ -295,20 +278,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   }
 
   Widget _buildAccountDropdown(List<Account> accounts) {
-    final allAccountsSelected =
-        _selectedAccountIds != null &&
-        _selectedAccountIds!.length == accounts.length;
+    final allAccountsSelected = _selectedAccountIds != null && _selectedAccountIds!.length == accounts.length;
 
     return Select<String>(
-      initialValue: allAccountsSelected
-          ? '_all_'
-          : _selectedAccountIds?.firstOrNull,
+      initialValue: allAccountsSelected ? '_all_' : _selectedAccountIds?.firstOrNull,
       items: [
         Item<String>(value: '_all_', label: 'All Accounts'),
-        ...accounts.map(
-          (account) =>
-              Item<String>(value: account.accountId, label: account.name),
-        ),
+        ...accounts.map((account) => Item<String>(value: account.accountId, label: account.name)),
       ],
       onSelect: (selectedItem) {
         final newSelectedIds = selectedItem.value == '_all_'
@@ -323,16 +299,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     );
   }
 
-  List<NotificationData> _filterNotificationsByAccounts(
-    List<NotificationData> notifications,
-  ) {
+  List<NotificationData> _filterNotificationsByAccounts(List<NotificationData> notifications) {
     if (_selectedAccountIds == null || _selectedAccountIds!.isEmpty) {
       return notifications;
     }
 
     // If "All Accounts" is selected, show all notifications
-    if (_selectedAccountIds!.length ==
-        ref.read(accountsProvider).value?.length) {
+    if (_selectedAccountIds!.length == ref.read(accountsProvider).value?.length) {
       return notifications;
     }
 

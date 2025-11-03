@@ -2,7 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/models/notification_models.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:flutter_timezone/flutter_timezone.dart';
 
 class LocalNotificationsService {
   static final LocalNotificationsService _instance = LocalNotificationsService._internal();
@@ -12,53 +17,10 @@ class LocalNotificationsService {
   final _notificationPlugin = FlutterLocalNotificationsPlugin();
   bool _isInitialized = false;
 
-  final StreamController<TransactionEvent?> _onNotificationClick = StreamController<TransactionEvent?>.broadcast();
-
-  // Helper function to serialize the payload
-  String? _serializePayload(TransactionEvent event) {
-    String eventType;
-    Map<String, dynamic> eventData;
-
-    if (event is TransferEvent) {
-      eventType = 'transfer';
-      eventData = event.toJson();
-    } else if (event is ReversibleTransferEvent) {
-      eventType = 'reversible_transfer';
-      eventData = event.toJson();
-    } else {
-      // Unknown type, don't serialize
-      return null;
-    }
-
-    // Wrap the event data with a type identifier
-    final payloadMap = {'eventType': eventType, 'data': eventData};
-    return jsonEncode(payloadMap);
-  }
-
-  TransactionEvent? _deserializePayload(String? payload) {
-    if (payload == null || payload.isEmpty) return null;
-
-    try {
-      final payloadMap = jsonDecode(payload) as Map<String, dynamic>;
-      final eventType = payloadMap['eventType'] as String;
-      final data = payloadMap['data'] as Map<String, dynamic>;
-
-      switch (eventType) {
-        case 'transfer':
-          return TransferEvent.fromJson(data);
-        case 'reversible_transfer':
-          return ReversibleTransferEvent.fromJson(data);
-        default:
-          return null;
-      }
-    } catch (e) {
-      print('Error deserializing notification payload: $e');
-      return null;
-    }
-  }
+  final StreamController<String?> _onNotificationClick = StreamController<String?>.broadcast();
 
   void _onDidReceiveNotificationResponse(NotificationResponse response) {
-    _onNotificationClick.add(_deserializePayload(response.payload));
+    _onNotificationClick.add(response.payload);
   }
 
   NotificationDetails _notificationDetails() {
@@ -66,7 +28,7 @@ class LocalNotificationsService {
       android: AndroidNotificationDetails(
         'local_channel_id',
         'Local Notification',
-        channelDescription: 'Wallet local notification channel',
+        channelDescription: 'Wallet notification channel',
         importance: Importance.high,
         priority: Priority.high,
       ),
@@ -74,8 +36,12 @@ class LocalNotificationsService {
     );
   }
 
-  Future<void> initService() async {
+  Future<void> init() async {
     if (_isInitialized) return;
+
+    tz.initializeTimeZones();
+    final currentTimeZone = await FlutterTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(currentTimeZone.identifier));
 
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
@@ -94,30 +60,72 @@ class LocalNotificationsService {
     final notificationAppLaunchDetails = await _notificationPlugin.getNotificationAppLaunchDetails();
     if (notificationAppLaunchDetails?.didNotificationLaunchApp ?? false) {
       final payload = notificationAppLaunchDetails!.notificationResponse?.payload;
-      _onNotificationClick.add(_deserializePayload(payload));
+      _onNotificationClick.add(payload);
     }
 
     _isInitialized = true;
   }
 
-  Future<void> showNotification({required int id, required String title, String? body, TransactionEvent? event}) async {
-    final String? payload = event != null ? _serializePayload(event) : null;
+  Future<void> _showNotification(NotificationData notification) async {
+    final String? payload = notification.metadata != null ? jsonEncode(notification.metadata) : null;
+    return _notificationPlugin.show(
+      notification.id.hashCode,
+      notification.title,
+      notification.message,
+      _notificationDetails(),
+      payload: payload,
+    );
+  }
 
-    return _notificationPlugin.show(id, title, body, _notificationDetails(), payload: payload);
+  Future<void> _scheduleNotification(NotificationData notification, {required int hour}) async {
+    final now = tz.TZDateTime.now(tz.local);
+    final scheduledDate = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour);
+
+    final String? payload = notification.metadata != null ? jsonEncode(notification.metadata) : null;
+
+    await _notificationPlugin.zonedSchedule(
+      notification.id.hashCode,
+      notification.title,
+      notification.message,
+      scheduledDate,
+      _notificationDetails(),
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      payload: payload,
+    );
+  }
+
+  Future<void> showOrScheduleNotification(NotificationData notification) async {
+    if (notification.scheduledTime != null) {
+      _scheduleNotification(notification, hour: notification.scheduledTime!.hour);
+    } else {
+      _showNotification(notification);
+    }
   }
 
   void setupNotificationsClickListener(GlobalKey<NavigatorState> navigatorKey) {
-    _onNotificationClick.stream.listen((TransactionEvent? event) {
-      if (event != null) {
-        print('Notification tapped ${event.id}');
+    _onNotificationClick.stream.listen((payload) {
+      if (payload == null || payload.isEmpty) return;
 
-        print('Navigating to tx detail...');
-        navigatorKey.currentState?.pushNamed('/transactions', arguments: event);
-      }
+      final json = jsonDecode(payload);
+      final event = TransactionEvent.fromJson(json);
+
+      navigatorKey.currentState?.pushNamed('/transactions', arguments: event);
     });
+  }
+
+  Future<void> cancelNotification(int id) async {
+    await _notificationPlugin.cancel(id);
+  }
+
+  Future<void> cancelAllNotifications() async {
+    await _notificationPlugin.cancelAll();
   }
 
   void dispose() {
     _onNotificationClick.close();
   }
 }
+
+final localNotificationsServiceProvider = Provider<LocalNotificationsService>((ref) {
+  return LocalNotificationsService();
+});

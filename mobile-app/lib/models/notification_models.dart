@@ -10,6 +10,9 @@ enum NotificationType {
   info, // General information
 }
 
+/// Notification intent for granular control
+enum NotificationIntent { sentTokens, receivedTokens, recoveryTimerEnding, reversibleTransactions, others }
+
 /// Source of the notification
 enum NotificationSource {
   local, // App-generated alerts
@@ -17,57 +20,111 @@ enum NotificationSource {
   remote, // Server push notifications (stub for future)
 }
 
-/// Transaction data for failed transaction notifications
-class TransactionData {
-  final String id;
-  final String from;
-  final String to;
-  final BigInt amount;
-  final BigInt? fee;
-  final String? error;
-  final DateTime timestamp;
-  final TransactionState? state;
+/// OS-level notification settings (what the system allows)
+class OSNotificationSettings {
+  final bool enabled;
+  final bool sound;
+  final bool vibration;
+  final bool badge;
 
-  const TransactionData({
-    required this.id,
-    required this.from,
-    required this.to,
-    required this.amount,
-    this.fee,
-    this.error,
-    required this.timestamp,
-    this.state,
+  const OSNotificationSettings({
+    required this.enabled,
+    required this.sound,
+    required this.vibration,
+    required this.badge,
   });
+
+  bool supportsSound() => enabled && sound;
+  bool supportsVibration() => enabled && vibration;
+  bool supportsBadge() => enabled && badge;
+}
+
+/// App-level notification configuration (what the user wants in-app)
+class NotificationConfig {
+  final bool enabled;
+  final bool sound;
+  final bool vibration;
+  final bool showBadge;
+
+  // Granular notification intent controls
+  final bool sentTokensEnabled;
+  final bool receivedTokensEnabled;
+  final bool recoveryTimerEndingEnabled;
+  final bool reversibleTransactionsEnabled;
+
+  const NotificationConfig({
+    required this.enabled,
+    required this.sound,
+    required this.vibration,
+    required this.showBadge,
+    required this.sentTokensEnabled,
+    required this.receivedTokensEnabled,
+    required this.recoveryTimerEndingEnabled,
+    required this.reversibleTransactionsEnabled,
+  });
+
+  factory NotificationConfig.fromJson(Map<String, dynamic> json) {
+    return NotificationConfig(
+      enabled: json['enabled'] ?? true,
+      sound: json['sound'] ?? true,
+      vibration: json['vibration'] ?? true,
+      showBadge: json['showBadge'] ?? true,
+      sentTokensEnabled: json['sentTokensEnabled'] ?? true,
+      receivedTokensEnabled: json['receivedTokensEnabled'] ?? true,
+      recoveryTimerEndingEnabled: json['recoveryTimerEndingEnabled'] ?? true,
+      reversibleTransactionsEnabled: json['reversibleTransactionsEnabled'] ?? true,
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'from': from,
-      'to': to,
-      'amount': amount.toString(),
-      'fee': fee?.toString(),
-      'error': error,
-      'timestamp': timestamp.toIso8601String(),
-      'state': state?.name,
+      'enabled': enabled,
+      'sound': sound,
+      'vibration': vibration,
+      'showBadge': showBadge,
+      'sentTokensEnabled': sentTokensEnabled,
+      'receivedTokensEnabled': receivedTokensEnabled,
+      'recoveryTimerEndingEnabled': recoveryTimerEndingEnabled,
+      'reversibleTransactionsEnabled': reversibleTransactionsEnabled,
     };
   }
 
-  factory TransactionData.fromJson(Map<String, dynamic> json) {
-    return TransactionData(
-      id: json['id'] as String,
-      from: json['from'] as String,
-      to: json['to'] as String,
-      amount: BigInt.parse(json['amount'] as String),
-      fee: json['fee'] != null ? BigInt.parse(json['fee'] as String) : null,
-      error: json['error'] as String?,
-      timestamp: DateTime.parse(json['timestamp'] as String),
-      state: json['state'] != null
-          ? TransactionState.values.firstWhere(
-              (e) => e.name == json['state'],
-              orElse: () => TransactionState.ready,
-            )
-          : null,
+  NotificationConfig copyWith({
+    bool? enabled,
+    bool? sound,
+    bool? vibration,
+    bool? showBadge,
+    bool? sentTokensEnabled,
+    bool? receivedTokensEnabled,
+    bool? recoveryTimerEndingEnabled,
+    bool? reversibleTransactionsEnabled,
+  }) {
+    return NotificationConfig(
+      enabled: enabled ?? this.enabled,
+      sound: sound ?? this.sound,
+      vibration: vibration ?? this.vibration,
+      showBadge: showBadge ?? this.showBadge,
+      sentTokensEnabled: sentTokensEnabled ?? this.sentTokensEnabled,
+      receivedTokensEnabled: receivedTokensEnabled ?? this.receivedTokensEnabled,
+      recoveryTimerEndingEnabled: recoveryTimerEndingEnabled ?? this.recoveryTimerEndingEnabled,
+      reversibleTransactionsEnabled: reversibleTransactionsEnabled ?? this.reversibleTransactionsEnabled,
     );
+  }
+
+  /// Check if a specific notification type is enabled
+  bool isIntentEnabled(NotificationIntent intent) {
+    switch (intent) {
+      case NotificationIntent.sentTokens:
+        return sentTokensEnabled;
+      case NotificationIntent.receivedTokens:
+        return receivedTokensEnabled;
+      case NotificationIntent.recoveryTimerEnding:
+        return recoveryTimerEndingEnabled;
+      case NotificationIntent.reversibleTransactions:
+        return reversibleTransactionsEnabled;
+      case NotificationIntent.others:
+        return true;
+    }
   }
 }
 
@@ -75,6 +132,7 @@ class TransactionData {
 class NotificationData {
   final String id;
   final NotificationType type;
+  final NotificationIntent intent;
   final NotificationSource source;
   final String title;
   final String message;
@@ -83,7 +141,6 @@ class NotificationData {
   final DateTime? scheduledTime; // For reminders
   final DateTime? expiryTime; // When notification should auto-delete
   final Map<String, dynamic>? metadata; // For actions/deep links
-  final TransactionData? transactionData; // For failed transaction details
   final bool persistent; // Should survive app restart
   final VoidCallback? onViewDetails;
 
@@ -98,15 +155,16 @@ class NotificationData {
     this.scheduledTime,
     this.expiryTime,
     this.metadata,
-    this.transactionData,
     this.persistent = true,
     this.onViewDetails,
+    this.intent = NotificationIntent.others,
   });
 
   // Create a copy with modified fields
   NotificationData copyWith({
     String? id,
     NotificationType? type,
+    NotificationIntent? intent,
     NotificationSource? source,
     String? title,
     String? message,
@@ -115,13 +173,14 @@ class NotificationData {
     DateTime? scheduledTime,
     DateTime? expiryTime,
     Map<String, dynamic>? metadata,
-    TransactionData? transactionData,
+    PendingTransactionEvent? transactionData,
     bool? persistent,
     VoidCallback? onViewDetails,
   }) {
     return NotificationData(
       id: id ?? this.id,
       type: type ?? this.type,
+      intent: intent ?? this.intent,
       source: source ?? this.source,
       title: title ?? this.title,
       message: message ?? this.message,
@@ -130,7 +189,6 @@ class NotificationData {
       scheduledTime: scheduledTime ?? this.scheduledTime,
       expiryTime: expiryTime ?? this.expiryTime,
       metadata: metadata ?? this.metadata,
-      transactionData: transactionData ?? this.transactionData,
       persistent: persistent ?? this.persistent,
       onViewDetails: onViewDetails ?? this.onViewDetails,
     );
@@ -141,6 +199,7 @@ class NotificationData {
     return {
       'id': id,
       'type': type.name,
+      'intent': intent.name,
       'source': source.name,
       'title': title,
       'message': message,
@@ -149,7 +208,6 @@ class NotificationData {
       'scheduledTime': scheduledTime?.toIso8601String(),
       'expiryTime': expiryTime?.toIso8601String(),
       'metadata': metadata,
-      'transactionData': transactionData?.toJson(),
       'persistent': persistent,
     };
   }
@@ -158,9 +216,10 @@ class NotificationData {
   factory NotificationData.fromJson(Map<String, dynamic> json) {
     return NotificationData(
       id: json['id'] as String,
-      type: NotificationType.values.firstWhere(
-        (e) => e.name == json['type'],
-        orElse: () => NotificationType.info,
+      type: NotificationType.values.firstWhere((e) => e.name == json['type'], orElse: () => NotificationType.info),
+      intent: NotificationIntent.values.firstWhere(
+        (e) => e.name == json['intent'],
+        orElse: () => NotificationIntent.others,
       ),
       source: NotificationSource.values.firstWhere(
         (e) => e.name == json['source'],
@@ -170,18 +229,9 @@ class NotificationData {
       message: json['message'] as String,
       accountName: json['accountName'] as String,
       timestamp: DateTime.parse(json['timestamp'] as String),
-      scheduledTime: json['scheduledTime'] != null
-          ? DateTime.parse(json['scheduledTime'] as String)
-          : null,
-      expiryTime: json['expiryTime'] != null
-          ? DateTime.parse(json['expiryTime'] as String)
-          : null,
+      scheduledTime: json['scheduledTime'] != null ? DateTime.parse(json['scheduledTime'] as String) : null,
+      expiryTime: json['expiryTime'] != null ? DateTime.parse(json['expiryTime'] as String) : null,
       metadata: json['metadata'] as Map<String, dynamic>?,
-      transactionData: json['transactionData'] != null
-          ? TransactionData.fromJson(
-              json['transactionData'] as Map<String, dynamic>,
-            )
-          : null,
       persistent: json['persistent'] as bool? ?? true,
     );
   }
@@ -200,28 +250,23 @@ class NotificationData {
 class NotificationTemplates {
   static NotificationData transactionFailed({
     required String accountName,
-    required String transactionId,
+    required PendingTransactionEvent transactionData,
     required String errorMessage,
-    TransactionData? transactionData,
   }) {
     return NotificationData(
-      id: 'tx_failed_${transactionId}_${DateTime.now().millisecondsSinceEpoch}',
+      id: 'tx_failed_${transactionData.id}_${DateTime.now().millisecondsSinceEpoch}',
       type: NotificationType.warning,
-      source: NotificationSource.local,
+      source: NotificationSource.push,
       title: 'Transaction Failed',
       message: errorMessage,
       accountName: accountName,
       timestamp: DateTime.now(),
       persistent: true,
-      metadata: {'transactionId': transactionId},
-      transactionData: transactionData,
+      metadata: transactionData.toJson(),
     );
   }
 
-  static NotificationData balanceLow({
-    required String accountName,
-    required String accountId,
-  }) {
+  static NotificationData balanceLow({required String accountName, required String accountId}) {
     return NotificationData(
       id: 'balance_low_${accountId}_${DateTime.now().millisecondsSinceEpoch}',
       type: NotificationType.alert,
@@ -235,10 +280,7 @@ class NotificationTemplates {
     );
   }
 
-  static NotificationData accountAdded({
-    required String accountName,
-    required String accountId,
-  }) {
+  static NotificationData accountAdded({required String accountName, required String accountId}) {
     return NotificationData(
       id: 'account_added_${accountId}_${DateTime.now().millisecondsSinceEpoch}',
       type: NotificationType.success,
@@ -254,27 +296,40 @@ class NotificationTemplates {
 
   static NotificationData reversibleTransactionReminder({
     required String accountName,
-    required String transactionId,
-    required DateTime executionTime,
+    required ReversibleTransferEvent transactionData,
   }) {
     const reminderDuration = Duration(hours: 2);
-    final reminderTime = executionTime.subtract(reminderDuration);
+    final reminderTime = transactionData.scheduledAt.subtract(reminderDuration);
     return NotificationData(
-      id: 'reversible_reminder_${transactionId}_${DateTime.now().millisecondsSinceEpoch}',
+      id: 'reversible_reminder_${transactionData.id}_${DateTime.now().millisecondsSinceEpoch}',
       type: NotificationType.reminder,
+      intent: NotificationIntent.reversibleTransactions,
       source: NotificationSource.push,
       title: 'Reversible Transaction Reminder',
-      message:
-          'Your reversible transaction will execute in ${reminderDuration.inHours} hours.',
+      message: 'Your reversible transaction will execute in ${reminderDuration.inHours} hours.',
       accountName: accountName,
       timestamp: DateTime.now(),
       scheduledTime: reminderTime,
-      expiryTime: executionTime,
+      expiryTime: transactionData.scheduledAt,
       persistent: true,
-      metadata: {
-        'transactionId': transactionId,
-        'executionTime': executionTime.toIso8601String(),
-      },
+      metadata: transactionData.toJson(),
+    );
+  }
+
+  static NotificationData tokenSent({required String accountName, required TransferEvent transactionData}) {
+    final tokenString = '${transactionData.amount} ${AppConstants.tokenSymbol}';
+
+    return NotificationData(
+      id: 'token_sent_${transactionData.id}_${DateTime.now().millisecondsSinceEpoch}',
+      type: NotificationType.success,
+      intent: NotificationIntent.sentTokens,
+      source: NotificationSource.local,
+      title: '$tokenString Sent',
+      message: 'You just sent $tokenString to ${transactionData.to}',
+      accountName: accountName,
+      timestamp: DateTime.now(),
+      persistent: true,
+      metadata: transactionData.toJson(),
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:resonance_network_wallet/features/main/screens/send/send_screen.
 import 'package:resonance_network_wallet/features/styles/app_theme.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/local_notifications_service.dart';
+import 'package:resonance_network_wallet/services/notification_integration_service.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_navigator_observer.dart';
 import 'package:resonance_network_wallet/services/deep_link_service.dart';
@@ -29,6 +30,7 @@ class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(notificationIntegrationServiceProvider);
       ref.read(deepLinkServiceProvider).init(navigatorKey);
       _localNotificationsService.setupNotificationsClickListener(navigatorKey);
       if (Platform.isAndroid) _referralService.checkPlayStoreReferralCode();

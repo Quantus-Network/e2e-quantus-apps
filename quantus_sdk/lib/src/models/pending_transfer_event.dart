@@ -32,6 +32,54 @@ class PendingTransactionEvent extends TransactionEvent {
     this.error,
   }) : super(id: tempId);
 
+  factory PendingTransactionEvent.fromJson(Map<String, dynamic> json) {
+    return PendingTransactionEvent(
+      tempId: json['id'] as String,
+      from: json['from'] as String,
+      to: json['to'] as String,
+      amount: BigInt.parse(json['amount'].toString()),
+      timestamp: DateTime.parse(json['timestamp']),
+      blockHash: json['blockHash'] as String?,
+      transactionState: TransactionState.values.firstWhere(
+        (e) => e.name == json['transactionState'],
+        orElse: () => TransactionState.pending,
+      ),
+      isReversible: json['isReversible'] ?? false,
+      txId: json['txId'] as String?,
+      status: ReversibleTransferStatus.values.firstWhere(
+        (e) => e.name == json['status'],
+        orElse: () => ReversibleTransferStatus.SCHEDULED,
+      ),
+      scheduledAtTime: json['scheduledAtTime'] != null ? DateTime.tryParse(json['scheduledAtTime']) : null,
+      delaySeconds: json['delaySeconds'] ?? 0,
+      fee: json['fee'] != null ? BigInt.parse(json['fee'].toString()) : null,
+      extrinsicHash: json['extrinsicHash'] as String?,
+      blockNumber: json['blockNumber'] ?? 0,
+      error: json['error'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'from': from,
+      'to': to,
+      'amount': amount.toString(),
+      'timestamp': timestamp.toIso8601String(),
+      'blockHash': blockHash,
+      'transactionState': transactionState.name,
+      'isReversible': isReversible,
+      'txId': txId,
+      'status': status?.name,
+      'scheduledAtTime': scheduledAtTime?.toIso8601String(),
+      'delaySeconds': delaySeconds,
+      'fee': fee?.toString(),
+      'extrinsicHash': extrinsicHash,
+      'blockNumber': blockNumber,
+      'error': error,
+    };
+  }
+
   @override
   String toString() {
     return 'PendingTransactionEvent{id: $id, from: $from, to: $to, '

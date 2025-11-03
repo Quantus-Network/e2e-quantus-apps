@@ -5,9 +5,7 @@ import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 
 /// Provider that holds the current app lifecycle state
-final appLifecycleStateProvider = StateProvider<AppLifecycleState>(
-  (ref) => AppLifecycleState.resumed,
-);
+final appLifecycleStateProvider = StateProvider<AppLifecycleState>((ref) => AppLifecycleState.resumed);
 
 /// App lifecycle listener that manages polling based on app state
 class AppLifecycleManager extends ConsumerStatefulWidget {
@@ -16,22 +14,20 @@ class AppLifecycleManager extends ConsumerStatefulWidget {
   const AppLifecycleManager({super.key, required this.child});
 
   @override
-  ConsumerState<AppLifecycleManager> createState() =>
-      _AppLifecycleManagerState();
+  ConsumerState<AppLifecycleManager> createState() => _AppLifecycleManagerState();
 }
 
-class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager>
-    with WidgetsBindingObserver {
+class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Set initial state
-    ref.read(appLifecycleStateProvider.notifier).state =
-        WidgetsBinding.instance.lifecycleState ?? AppLifecycleState.resumed;
-    
+
     // Initialize Taskmaster login on app start
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(appLifecycleStateProvider.notifier).state =
+          WidgetsBinding.instance.lifecycleState ?? AppLifecycleState.resumed;
+
       _initializeTaskmasterLogin();
       _setupConnectivityListener();
     });
@@ -43,7 +39,7 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager>
         data: (status) {
           final pollingManager = ref.read(historyPollingManagerProvider);
           final appState = ref.read(appLifecycleStateProvider);
-          
+
           if (status == NetworkStatus.online && appState == AppLifecycleState.resumed) {
             print('Back online - resuming polling');
             pollingManager.resumePolling();
@@ -103,12 +99,12 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager>
     }
   }
 
-  // This is merely an optimization - check our login is active. 
+  // This is merely an optimization - check our login is active.
   Future<void> _initializeTaskmasterLogin() async {
     try {
       final settingsService = SettingsService();
       final hasWallet = await settingsService.getHasWallet();
-      
+
       if (hasWallet) {
         final taskmasterService = TaskmasterService();
         await taskmasterService.ensureIsLoggedIn();
