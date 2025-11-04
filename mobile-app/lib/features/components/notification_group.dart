@@ -4,12 +4,14 @@ import 'package:resonance_network_wallet/models/notification_models.dart';
 
 class NotificationGroup extends StatefulWidget {
   final List<NotificationData> notifications;
+  final List<String> accountIds; // List of account IDs we're showing transactions for
   final VoidCallback onDismissAll;
   final Function(String) onDismissSingle;
 
   const NotificationGroup({
     super.key,
     required this.notifications,
+    required this.accountIds,
     required this.onDismissAll,
     required this.onDismissSingle,
   });
@@ -77,6 +79,7 @@ class _NotificationGroupState extends State<NotificationGroup>
                     .map(
                       (notification) => NotificationCard(
                         notification: notification,
+                        accountIds: widget.accountIds,
                         onDismiss: () =>
                             widget.onDismissSingle(notification.id),
                       ),

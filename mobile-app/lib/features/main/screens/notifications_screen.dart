@@ -60,14 +60,16 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   }
 
   void _addNotification() {
-    final activeAccount = ref.read(activeAccountProvider).value;
-    final accountName = activeAccount?.name ?? 'Unknown';
+    final account = ref.read(activeAccountProvider).value;
+    final accountName = account?.name ?? 'Unknown';
+    final accountId = account?.accountId ?? 'unknown';
 
     final notifier = ref.read(notificationProvider.notifier);
 
     notifier.addNotification(
       NotificationData(
         id: '1',
+        accountId: accountId,
         type: NotificationType.info,
         source: NotificationSource.local,
         title: 'Notification Info',
@@ -80,6 +82,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     notifier.addNotification(
       NotificationData(
         id: '2',
+        accountId: accountId,
         type: NotificationType.success,
         source: NotificationSource.local,
         title: 'Notification Success',
@@ -92,6 +95,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     notifier.addNotification(
       NotificationData(
         id: '3',
+        accountId: accountId,
         type: NotificationType.warning,
         source: NotificationSource.local,
         title: 'Notification Warning',
@@ -104,6 +108,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     notifier.addNotification(
       NotificationData(
         id: '4',
+        accountId: accountId,
         type: NotificationType.alert,
         source: NotificationSource.local,
         title: 'Notification Alert',
@@ -115,16 +120,14 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   }
 
   void _addTransactionFailed() {
-    final activeAccount = ref.read(activeAccountProvider).value;
-    final accountName = activeAccount?.name ?? 'Unknown';
-    final accountId = activeAccount?.accountId ?? 'unknown';
+    final account = ref.read(activeAccountProvider).value;
 
     final notifier = ref.read(notificationProvider.notifier);
 
     // Create sample transaction data for demonstration
     final transactionData = PendingTransactionEvent(
       tempId: 'tx_${DateTime.now().millisecondsSinceEpoch}',
-      from: accountId,
+      from: account?.accountId ?? 'Unknown',
       to: 'recipient_address',
       amount: BigInt.from(1000000), // 1 QNT
       fee: BigInt.from(10000), // 0.01 QNT
@@ -137,37 +140,32 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     );
 
     notifier.addTransactionFailed(
-      accountName: accountName,
+      account: account,
       errorMessage: 'Transaction failed due to insufficient balance',
       transactionData: transactionData,
     );
   }
 
   void _addBalanceAlert() {
-    final activeAccount = ref.read(activeAccountProvider).value;
-    final accountName = activeAccount?.name ?? 'Unknown';
-    final accountId = activeAccount?.accountId ?? 'unknown';
+    final account = ref.read(activeAccountProvider).value;
 
     final notifier = ref.read(notificationProvider.notifier);
-    notifier.addBalanceLow(accountName: accountName, accountId: accountId);
+    notifier.addBalanceLow(account: account);
   }
 
   void _addAccountSuccess() {
-    final activeAccount = ref.read(activeAccountProvider).value;
-    final accountName = activeAccount?.name ?? 'Unknown';
-    final accountId = activeAccount?.accountId ?? 'unknown';
+    final account = ref.read(activeAccountProvider).value;
 
     final notifier = ref.read(notificationProvider.notifier);
-    notifier.addAccountAdded(accountName: accountName, accountId: accountId);
+    notifier.addAccountAdded(account: account);
   }
 
   void _addReversibleReminder() {
-    final activeAccount = ref.read(activeAccountProvider).value;
-    final accountName = activeAccount?.name ?? 'Unknown';
+    final account = ref.read(activeAccountProvider).value;
 
     final notifier = ref.read(notificationProvider.notifier);
     notifier.addReversibleTransactionReminder(
-      accountName: accountName,
+      account: account,
       transactionData: ReversibleTransferEvent(
         id: 'revtx_123456',
         from: '0xABCDEF1234567890',
@@ -266,6 +264,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
                 return NotificationGroup(
                   notifications: filteredNotifications,
+                  accountIds: _selectedAccountIds ?? [],
                   onDismissAll: () => ref.read(notificationProvider.notifier).clearAll(),
                   onDismissSingle: (id) => ref.read(notificationProvider.notifier).removeNotification(id),
                 );
@@ -312,8 +311,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     // Filter notifications by selected account IDs
     return notifications.where((notification) {
       // Check if notification has account metadata
-      final accountId = notification.metadata?['accountId'] as String?;
-      return accountId != null && _selectedAccountIds!.contains(accountId);
+      final accountId = notification.accountId;
+      return _selectedAccountIds!.contains(accountId);
     }).toList();
   }
 }

@@ -114,9 +114,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
 
         // Invalidate the accounts provider to reload the entire list
         ref.invalidate(accountsProvider);
-        ref
-            .read(notificationProvider.notifier)
-            .addAccountAdded(accountId: accountToSave.accountId, accountName: accountToSave.name);
+        ref.read(notificationProvider.notifier).addAccountAdded(account: accountToSave);
         TelemetryService().sendEvent('create_account');
       }
 

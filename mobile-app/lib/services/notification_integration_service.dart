@@ -36,16 +36,15 @@ class NotificationIntegrationService {
     });
 
     _ref.listen(paginationControllerProvider, (previous, next) {
-      if (previous != null) {
+      if (previous != null && previous.items.isNotEmpty) {
         final accounts = _ref.watch(accountsProvider).value;
         if (accounts == null || accounts.isEmpty) return;
 
         final accountIds = accounts.map((acc) => acc.accountId).toSet();
 
-        final hasNewTxs = next.items.length > previous.items.length;
-        if (!hasNewTxs) return;
+        final previousIds = previous.items.map((tx) => tx.id).toSet();
+        final newTxs = next.items.where((tx) => !previousIds.contains(tx.id));
 
-        final List<TransactionEvent> newTxs = next.items.sublist(previous.items.length);
         final newReceiveTxs = newTxs.where((tx) {
           if (tx is! TransferEvent) return false;
 
@@ -70,7 +69,7 @@ class NotificationIntegrationService {
           // Example threshold
           final activeAccount = _ref.read(activeAccountProvider).value;
           if (activeAccount != null) {
-            _notifyLowBalance(activeAccount.name, activeAccount.accountId);
+            _notifyLowBalance(activeAccount, activeAccount.accountId);
           }
         }
       });
@@ -79,18 +78,16 @@ class NotificationIntegrationService {
 
   void _notifyTransactionFailed(PendingTransactionEvent transaction) {
     final notifier = _ref.read(notificationProvider.notifier);
-    final accountName =
-        _ref.read(accountsProvider).value?.firstWhere((account) => account.accountId == transaction.from).name ??
-        'Undefined';
+    final account = _ref.read(accountsProvider).value?.firstWhere((account) => account.accountId == transaction.from);
 
     notifier.addTransactionFailed(
-      accountName: accountName,
+      account: account,
       errorMessage: transaction.error ?? 'Transaction failed',
       transactionData: transaction,
     );
   }
 
-  void _notifyLowBalance(String accountName, String accountId) {
+  void _notifyLowBalance(Account account, String accountId) {
     final notifier = _ref.read(notificationProvider.notifier);
 
     // Check if we already have a recent low balance notification for this account
@@ -100,17 +97,15 @@ class NotificationIntegrationService {
     );
 
     if (!recentLowBalance) {
-      notifier.addBalanceLow(accountName: accountName, accountId: accountId);
+      notifier.addBalanceLow(account: account);
     }
   }
 
   void _notifyTokenReceived(TransferEvent transaction) {
     final notifier = _ref.read(notificationProvider.notifier);
-    final accountName =
-        _ref.read(accountsProvider).value?.firstWhere((account) => account.accountId == transaction.to).name ??
-        'Undefined';
+    final account = _ref.read(accountsProvider).value?.firstWhere((account) => account.accountId == transaction.to);
 
-    notifier.addTokenReceived(accountName: accountName, transactionData: transaction);
+    notifier.addTokenReceived(account: account, transactionData: transaction);
   }
 }
 

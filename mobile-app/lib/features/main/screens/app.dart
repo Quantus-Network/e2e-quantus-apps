@@ -33,6 +33,7 @@ class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
       ref.read(notificationIntegrationServiceProvider);
       ref.read(deepLinkServiceProvider).init(navigatorKey);
       _localNotificationsService.setupNotificationsClickListener(navigatorKey);
+      _localNotificationsService.handleLaunchByNotification(navigatorKey);
       if (Platform.isAndroid) _referralService.checkPlayStoreReferralCode();
     });
   }

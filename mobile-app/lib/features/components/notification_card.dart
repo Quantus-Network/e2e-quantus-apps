@@ -1,24 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
+import 'package:resonance_network_wallet/utils/transaction_utils.dart';
 
 class NotificationCard extends StatefulWidget {
   final NotificationData notification;
+  final List<String> accountIds; // List of account IDs we're showing transactions for
   final VoidCallback onDismiss;
 
-  const NotificationCard({
-    super.key,
-    required this.notification,
-    required this.onDismiss,
-  });
+  const NotificationCard({super.key, required this.notification, required this.onDismiss, required this.accountIds});
 
   @override
   State<NotificationCard> createState() => _NotificationCardState();
 }
 
-class _NotificationCardState extends State<NotificationCard>
-    with TickerProviderStateMixin {
+class _NotificationCardState extends State<NotificationCard> with TickerProviderStateMixin {
   late AnimationController _slideController;
   late AnimationController _swipeController;
   late Animation<Offset> _slideAnimation;
@@ -42,44 +40,22 @@ class _NotificationCardState extends State<NotificationCard>
   SvgPicture get icon {
     switch (widget.notification.type) {
       case NotificationType.success:
-        return SvgPicture.asset(
-          'assets/notification/tick_icon.svg',
-          width: 22,
-          height: 22,
-        );
+        return SvgPicture.asset('assets/notification/tick_icon.svg', width: 22, height: 22);
       case NotificationType.warning:
-        return SvgPicture.asset(
-          'assets/notification/alert_icon.svg',
-          width: 21,
-          height: 20,
-        );
+        return SvgPicture.asset('assets/notification/alert_icon.svg', width: 21, height: 20);
       case NotificationType.alert:
-        return SvgPicture.asset(
-          'assets/notification/red_alert_icon.svg',
-          width: 21,
-          height: 20,
-        );
+        return SvgPicture.asset('assets/notification/red_alert_icon.svg', width: 21, height: 20);
       default:
-        return SvgPicture.asset(
-          'assets/notification/hourglass_icon.svg',
-          width: 21,
-          height: 21,
-        );
+        return SvgPicture.asset('assets/notification/hourglass_icon.svg', width: 21, height: 21);
     }
   }
 
   @override
   void initState() {
     super.initState();
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
+    _slideController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
 
-    _swipeController = AnimationController(
-      duration: const Duration(milliseconds: 200),
-      vsync: this,
-    );
+    _swipeController = AnimationController(duration: const Duration(milliseconds: 200), vsync: this);
 
     _slideAnimation = Tween<Offset>(
       begin: const Offset(1.0, 0.0),
@@ -133,12 +109,10 @@ class _NotificationCardState extends State<NotificationCard>
     if (_isDismissing) return;
 
     const double threshold = 80.0; // Threshold distance for dismissal
-    const double velocityThreshold =
-        500.0; // Velocity threshold for quick swipes
+    const double velocityThreshold = 500.0; // Velocity threshold for quick swipes
 
     // Check if swipe meets dismissal criteria
-    bool shouldDismiss =
-        _swipeOffset.abs() > threshold || velocity.abs() > velocityThreshold;
+    bool shouldDismiss = _swipeOffset.abs() > threshold || velocity.abs() > velocityThreshold;
 
     if (shouldDismiss) {
       _handleSwipeDismiss();
@@ -160,6 +134,16 @@ class _NotificationCardState extends State<NotificationCard>
       });
       _swipeController.reset();
     });
+  }
+
+  void _onViewDetails() {
+    final transaction = TransactionEvent.fromJson(widget.notification.metadata!);
+
+    showTransactionActionSheet(
+      context,
+      transaction: transaction,
+      role: TransactionUtils.getTransactionRole(transaction, widget.accountIds),
+    );
   }
 
   @override
@@ -194,18 +178,13 @@ class _NotificationCardState extends State<NotificationCard>
                   child: Container(
                     decoration: ShapeDecoration(
                       color: const Color(0x99313131),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                     ),
                     child: Column(
                       children: [
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 3,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
                           decoration: ShapeDecoration(
                             color: Colors.white.withValues(alpha: 0.15),
                             shape: const RoundedRectangleBorder(
@@ -234,10 +213,7 @@ class _NotificationCardState extends State<NotificationCard>
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           child: Column(
                             spacing: 13,
                             children: [
@@ -251,8 +227,7 @@ class _NotificationCardState extends State<NotificationCard>
                                   Expanded(
                                     child: Column(
                                       spacing: 2,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text.rich(
                                           TextSpan(
@@ -278,9 +253,7 @@ class _NotificationCardState extends State<NotificationCard>
                                               TextSpan(
                                                 text:
                                                     // ignore: lines_longer_than_80_chars
-                                                    DatetimeFormattingService.format(
-                                                      notification.timestamp,
-                                                    ),
+                                                    DatetimeFormattingService.format(notification.timestamp),
                                                 style: const TextStyle(
                                                   color: Color(0xFFD9D9D9),
                                                   fontSize: 10,
@@ -306,25 +279,11 @@ class _NotificationCardState extends State<NotificationCard>
 
                                   GestureDetector(
                                     onTap: widget.onDismiss,
-                                    child: const Icon(
-                                      Icons.close,
-                                      color: Colors.white70,
-                                      size: 16,
-                                    ),
+                                    child: const Icon(Icons.close, color: Colors.white70, size: 16),
                                   ),
                                 ],
                               ),
-                              if (notification.onViewDetails != null ||
-                                  notification.metadata != null)
-                                _buildViewDetailsButton(
-                                  notification.onViewDetails ??
-                                      () {
-                                        print(
-                                          'TODO View transaction details:'
-                                          ' ${notification.metadata?['id']}',
-                                        );
-                                      },
-                                ),
+                              if (notification.canViewDetails) _buildViewDetailsButton(),
                             ],
                           ),
                         ),
@@ -340,20 +299,17 @@ class _NotificationCardState extends State<NotificationCard>
     );
   }
 
-  Widget _buildViewDetailsButton(VoidCallback onViewDetails) {
+  Widget _buildViewDetailsButton() {
     return Align(
       alignment: Alignment.bottomRight,
       child: GestureDetector(
-        onTap: onViewDetails,
+        onTap: _onViewDetails,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
           decoration: ShapeDecoration(
             color: Colors.black.withValues(alpha: 0.25),
             shape: RoundedRectangleBorder(
-              side: BorderSide(
-                width: 1,
-                color: Colors.white.withValues(alpha: 0.15),
-              ),
+              side: BorderSide(width: 1, color: Colors.white.withValues(alpha: 0.15)),
               borderRadius: BorderRadius.circular(4),
             ),
           ),

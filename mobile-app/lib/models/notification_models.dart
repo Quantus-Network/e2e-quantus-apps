@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// Notification types as specified in requirements
@@ -112,6 +111,7 @@ class NotificationConfig {
 /// Main notification data model
 class NotificationData {
   final String id;
+  final String accountId;
   final NotificationType type;
   final NotificationIntent intent;
   final NotificationSource source;
@@ -123,10 +123,10 @@ class NotificationData {
   final DateTime? expiryTime; // When notification should auto-delete
   final Map<String, dynamic>? metadata; // For actions/deep links
   final bool persistent; // Should survive app restart
-  final VoidCallback? onViewDetails;
 
   const NotificationData({
     required this.id,
+    required this.accountId,
     required this.type,
     required this.source,
     required this.title,
@@ -137,13 +137,13 @@ class NotificationData {
     this.expiryTime,
     this.metadata,
     this.persistent = true,
-    this.onViewDetails,
     this.intent = NotificationIntent.others,
   });
 
   // Create a copy with modified fields
   NotificationData copyWith({
     String? id,
+    String? accountId,
     NotificationType? type,
     NotificationIntent? intent,
     NotificationSource? source,
@@ -156,10 +156,10 @@ class NotificationData {
     Map<String, dynamic>? metadata,
     PendingTransactionEvent? transactionData,
     bool? persistent,
-    VoidCallback? onViewDetails,
   }) {
     return NotificationData(
       id: id ?? this.id,
+      accountId: accountId ?? this.accountId,
       type: type ?? this.type,
       intent: intent ?? this.intent,
       source: source ?? this.source,
@@ -171,7 +171,6 @@ class NotificationData {
       expiryTime: expiryTime ?? this.expiryTime,
       metadata: metadata ?? this.metadata,
       persistent: persistent ?? this.persistent,
-      onViewDetails: onViewDetails ?? this.onViewDetails,
     );
   }
 
@@ -179,6 +178,7 @@ class NotificationData {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'accountId': accountId,
       'type': type.name,
       'intent': intent.name,
       'source': source.name,
@@ -197,6 +197,7 @@ class NotificationData {
   factory NotificationData.fromJson(Map<String, dynamic> json) {
     return NotificationData(
       id: json['id'] as String,
+      accountId: json['accountId'] as String,
       type: NotificationType.values.firstWhere((e) => e.name == json['type'], orElse: () => NotificationType.info),
       intent: NotificationIntent.values.firstWhere(
         (e) => e.name == json['intent'],
@@ -225,50 +226,72 @@ class NotificationData {
 
   @override
   int get hashCode => id.hashCode;
+
+  bool get canViewDetails {
+    if (metadata == null) return false;
+
+    try {
+      // This will throw a TypeError or FormatException if metadata is bad.
+      TransactionEvent.fromJson(metadata!);
+
+      return true;
+    } catch (e) {
+      // If any exception was thrown during parsing, we catch it
+      // and safely return false. The data is "invalid".
+      return false;
+    }
+  }
 }
 
 /// Specific notification types for type safety
 class NotificationTemplates {
   static NotificationData transactionFailed({
-    required String accountName,
+    required Account? account,
     required PendingTransactionEvent transactionData,
     required String errorMessage,
   }) {
     return NotificationData(
       id: 'tx_failed_${transactionData.id}_${DateTime.now().millisecondsSinceEpoch}',
+      accountId: account?.accountId ?? 'Undefined',
       type: NotificationType.warning,
       source: NotificationSource.push,
       title: 'Transaction Failed',
       message: errorMessage,
-      accountName: accountName,
+      accountName: account?.name ?? 'Undefined',
       timestamp: DateTime.now(),
       persistent: true,
       metadata: transactionData.toJson(),
     );
   }
 
-  static NotificationData balanceLow({required String accountName, required String accountId}) {
+  static NotificationData balanceLow({required Account? account}) {
+    final accountId = account?.accountId ?? 'Undefined';
+
     return NotificationData(
       id: 'balance_low_${accountId}_${DateTime.now().millisecondsSinceEpoch}',
+      accountId: account?.accountId ?? 'Undefined',
       type: NotificationType.alert,
       source: NotificationSource.local,
       title: 'Low Balance Alert',
       message: 'Your account balance is at or near the existential deposit.',
-      accountName: accountName,
+      accountName: account?.name ?? 'Undefined',
       timestamp: DateTime.now(),
       persistent: true,
       metadata: {'accountId': accountId},
     );
   }
 
-  static NotificationData accountAdded({required String accountName, required String accountId}) {
+  static NotificationData accountAdded({required Account? account}) {
+    final accountId = account?.accountId ?? 'Undefined';
+
     return NotificationData(
       id: 'account_added_${accountId}_${DateTime.now().millisecondsSinceEpoch}',
+      accountId: account?.accountId ?? 'Undefined',
       type: NotificationType.success,
       source: NotificationSource.local,
       title: 'Account Added',
       message: 'A new account has been successfully added to your wallet.',
-      accountName: accountName,
+      accountName: account?.name ?? 'Undefined',
       timestamp: DateTime.now(),
       persistent: true,
       metadata: {'accountId': accountId},
@@ -276,19 +299,20 @@ class NotificationTemplates {
   }
 
   static NotificationData reversibleTransactionReminder({
-    required String accountName,
+    required Account? account,
     required ReversibleTransferEvent transactionData,
   }) {
     const reminderDuration = Duration(hours: 2);
     final reminderTime = transactionData.scheduledAt.subtract(reminderDuration);
     return NotificationData(
       id: 'reversible_reminder_${transactionData.id}_${DateTime.now().millisecondsSinceEpoch}',
+      accountId: account?.accountId ?? 'Undefined',
       type: NotificationType.reminder,
       intent: NotificationIntent.reversibleTransactions,
       source: NotificationSource.push,
       title: 'Reversible Transaction Reminder',
       message: 'Your reversible transaction will execute in ${reminderDuration.inHours} hours.',
-      accountName: accountName,
+      accountName: account?.name ?? 'Undefined',
       timestamp: DateTime.now(),
       scheduledTime: reminderTime,
       expiryTime: transactionData.scheduledAt,
@@ -297,37 +321,44 @@ class NotificationTemplates {
     );
   }
 
-  static NotificationData tokenSent({required String accountName, required TransferEvent transactionData}) {
-    final tokenString = '${transactionData.amount} ${AppConstants.tokenSymbol}';
+  static NotificationData tokenSent({required Account? account, required TransferEvent transactionData}) {
+    final tokenString = _formatAmount(transactionData.amount);
 
     return NotificationData(
       id: 'token_sent_${transactionData.id}_${DateTime.now().millisecondsSinceEpoch}',
+      accountId: account?.accountId ?? 'Undefined',
       type: NotificationType.success,
       intent: NotificationIntent.sentTokens,
       source: NotificationSource.local,
       title: '$tokenString Sent',
       message: 'You just sent $tokenString to ${transactionData.to}',
-      accountName: accountName,
+      accountName: account?.name ?? 'Undefined',
       timestamp: DateTime.now(),
       persistent: true,
       metadata: transactionData.toJson(),
     );
   }
 
-  static NotificationData tokenReceived({required String accountName, required TransferEvent transactionData}) {
-    final tokenString = '${transactionData.amount} ${AppConstants.tokenSymbol}';
+  static NotificationData tokenReceived({required Account? account, required TransferEvent transactionData}) {
+    final tokenString = _formatAmount(transactionData.amount);
 
     return NotificationData(
       id: 'token_received_${transactionData.id}_${DateTime.now().millisecondsSinceEpoch}',
+      accountId: account?.accountId ?? 'Undefined',
       type: NotificationType.info,
       intent: NotificationIntent.receivedTokens,
       source: NotificationSource.local,
       title: '$tokenString Received',
       message: 'You just received $tokenString from ${transactionData.from}',
-      accountName: accountName,
+      accountName: account?.name ?? 'Undefined',
       timestamp: DateTime.now(),
       persistent: true,
       metadata: transactionData.toJson(),
     );
+  }
+
+  static String _formatAmount(BigInt amount) {
+    final NumberFormattingService formattingService = NumberFormattingService();
+    return formattingService.formatBalance(amount, addSymbol: true);
   }
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -56,14 +57,34 @@ class LocalNotificationsService {
       onDidReceiveNotificationResponse: _onDidReceiveNotificationResponse,
     );
 
-    // Handle terminated state
-    final notificationAppLaunchDetails = await _notificationPlugin.getNotificationAppLaunchDetails();
-    if (notificationAppLaunchDetails?.didNotificationLaunchApp ?? false) {
-      final payload = notificationAppLaunchDetails!.notificationResponse?.payload;
-      _onNotificationClick.add(payload);
+    // It will show the permission pop-up on Android.
+    // It does nothing on older Android versions or iOS.
+    if (Platform.isAndroid) {
+      await _notificationPlugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          ?.requestNotificationsPermission();
     }
 
     _isInitialized = true;
+  }
+
+  // This is for handling when app is in terminated state then launched by tapping notification.
+  Future<void> handleLaunchByNotification(GlobalKey<NavigatorState> navigatorKey) async {
+    final notificationAppLaunchDetails = await _notificationPlugin.getNotificationAppLaunchDetails();
+    print('NOTIFICATION DETAILS FOUND!');
+    print(notificationAppLaunchDetails?.didNotificationLaunchApp);
+    
+    if (notificationAppLaunchDetails?.didNotificationLaunchApp != true) return;
+
+    final payload = notificationAppLaunchDetails!.notificationResponse?.payload;
+    if (payload == null || payload.isEmpty) return;
+
+    print('NOTIFICATION DETAILS HAS PAYLOAD!');
+
+    final json = jsonDecode(payload);
+    final event = TransactionEvent.fromJson(json);
+
+    navigatorKey.currentState?.pushNamed('/transactions', arguments: event);
   }
 
   Future<void> _showNotification(NotificationData notification) async {

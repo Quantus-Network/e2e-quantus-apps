@@ -254,16 +254,14 @@ class TransactionSubmissionService {
             .read(pendingTransactionsProvider.notifier)
             .updateState(pendingTx.id, TransactionState.inHistory, blockHash: result.blockHash);
 
-        final accountName =
-            _ref.read(accountsProvider).value?.firstWhere((account) => account.accountId == pendingTx.from).name ??
-            'Undefined';
+        final account = _ref.read(accountsProvider).value?.firstWhere((account) => account.accountId == pendingTx.from);
 
         if (result is TransferEvent) {
-          _ref.read(notificationProvider.notifier).addTokenSent(accountName: accountName, transactionData: result);
+          _ref.read(notificationProvider.notifier).addTokenSent(account: account, transactionData: result);
         } else if (result is ReversibleTransferEvent) {
           _ref
               .read(notificationProvider.notifier)
-              .addReversibleTransactionReminder(accountName: accountName, transactionData: result);
+              .addReversibleTransactionReminder(account: account, transactionData: result);
         }
 
         // Remove after a short delay to show completion

@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:async/async.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
+import 'package:resonance_network_wallet/providers/notification_config_provider.dart';
 import 'package:resonance_network_wallet/services/local_notifications_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -15,20 +14,21 @@ const int maxNotifications = 64;
 
 /// Key for storing notifications in shared preferences
 const String notificationsStorageKey = 'notifications';
-const String notificationConfigKey = 'notification_config';
 
 /// Notification provider that manages the notification state
 final notificationProvider = StateNotifierProvider<NotificationNotifier, List<NotificationData>>((ref) {
   final localNotificationsService = ref.watch(localNotificationsServiceProvider);
+  final notificationConfig = ref.watch(notificationConfigProvider);
 
-  return NotificationNotifier(localNotificationsService);
+  return NotificationNotifier(localNotificationsService, notificationConfig);
 });
 
 /// Notifier that manages notification state with persistence and streams
 class NotificationNotifier extends StateNotifier<List<NotificationData>> {
   final LocalNotificationsService _localNotificationsService;
+  final NotificationConfig _config;
 
-  NotificationNotifier(this._localNotificationsService) : super([]) {
+  NotificationNotifier(this._localNotificationsService, this._config) : super([]) {
     _initialize();
   }
 
@@ -36,18 +36,6 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
   final StreamController<NotificationData> _localAlertController = StreamController.broadcast();
   final StreamController<NotificationData> _localPushController = StreamController.broadcast();
   final StreamController<NotificationData> _remotePushController = StreamController.broadcast();
-
-  NotificationConfig _config = const NotificationConfig(
-    enabled: true,
-    sound: true,
-    vibration: true,
-    showBadge: true,
-    sentTokensEnabled: true,
-    receivedTokensEnabled: true,
-    recoveryTimerEndingEnabled: true,
-    reversibleTransactionsEnabled: true,
-  );
-  NotificationConfig get config => _config;
 
   // Timer for periodic cleanup of expired notifications
   Timer? _cleanupTimer;
@@ -58,7 +46,6 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
 
   /// Initialize the notifier by loading persisted notifications
   Future<void> _initialize() async {
-    await _loadConfig();
     await _loadPersistedNotifications();
     _startCleanupTimer();
     _cleanupExpiredNotifications();
@@ -69,18 +56,6 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
     _cleanupTimer = Timer.periodic(const Duration(minutes: 5), (_) {
       _cleanupExpiredNotifications();
     });
-  }
-
-  /// Get OS-level notification status
-  Future<bool> getOsPermission() async {
-    if (Platform.isAndroid || Platform.isIOS) {
-      final status = await Permission.notification.status;
-      final isGranted = status.isGranted;
-
-      return isGranted;
-    }
-
-    return false;
   }
 
   /// Check if notifications can be shown (OS + app level + notification type)
@@ -97,13 +72,6 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
       return false;
     }
 
-    // Check OS-level permission
-    final isGranted = await getOsPermission();
-    if (!isGranted) {
-      print('Notifications disabled at OS level');
-      return false;
-    }
-
     return true;
   }
 
@@ -111,12 +79,6 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
   Future<bool> canShowNotifications() async {
     if (!_config.enabled) {
       print('Notifications disabled at app level');
-      return false;
-    }
-
-    final isGranted = await getOsPermission();
-    if (!isGranted) {
-      print('Notifications disabled at OS level');
       return false;
     }
 
@@ -134,15 +96,22 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
           .where((notification) => notification.persistent)
           .toList();
 
-      state = notifications;
+      if (mounted) {
+        state = notifications;
+      }
     } catch (e) {
+
       // If loading fails, start with empty state
-      state = [];
+      if (mounted) {
+        state = [];
+      }
     }
   }
 
   /// Save notifications to shared preferences
   Future<void> _saveNotifications() async {
+    if (!mounted) return;
+
     final prefs = await SharedPreferences.getInstance();
     final notificationsJson = state
         .where((notification) => notification.persistent)
@@ -154,6 +123,8 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
 
   /// Add a new notification
   Future<void> addNotification(NotificationData notification) async {
+    if (!mounted) return;
+
     // Check if this specific notification intent can be shown
     if (!await canShowNotification(notification.intent)) {
       print('Cannot show ${notification.intent.name} notification: disabled or permission not granted');
@@ -192,12 +163,16 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
 
   /// Remove a notification by ID
   void removeNotification(String id) {
+    if (!mounted) return;
+
     state = state.where((notification) => notification.id != id).toList();
     _saveNotifications();
   }
 
   /// Clear all notifications
   void clearAll() {
+    if (!mounted) return;
+
     state = [];
     _saveNotifications();
   }
@@ -229,6 +204,8 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
 
   /// Clean up expired notifications
   void _cleanupExpiredNotifications() {
+    if (!mounted) return;
+
     final now = DateTime.now();
     final expiredIds = <String>[];
 
@@ -244,78 +221,45 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
     }
   }
 
-  /// Load saved configuration from storage
-  Future<void> _loadConfig() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final configJson = prefs.getString(notificationConfigKey);
-
-      if (configJson != null) {
-        _config = NotificationConfig.fromJson(Map<String, dynamic>.from(jsonDecode(configJson)));
-      }
-    } catch (e) {
-      print('Error loading notification config: $e');
-    }
-  }
-
-  /// Save configuration to storage
-  Future<void> _saveConfig() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(notificationConfigKey, jsonEncode(_config.toJson()));
-    } catch (e) {
-      print('Error saving notification config: $e');
-    }
-  }
-
-  /// Update app-level notification configuration
-  Future<void> updateConfig(NotificationConfig newConfig) async {
-    _config = newConfig;
-    await _saveConfig();
-  }
-
   /// Add convenience methods for specific notification types
   void addTransactionFailed({
-    required String accountName,
+    required Account? account,
     required String errorMessage,
     required PendingTransactionEvent transactionData,
   }) {
     final notification = NotificationTemplates.transactionFailed(
-      accountName: accountName,
+      account: account,
       transactionData: transactionData,
       errorMessage: errorMessage,
     );
     addNotification(notification);
   }
 
-  void addBalanceLow({required String accountName, required String accountId}) {
-    final notification = NotificationTemplates.balanceLow(accountName: accountName, accountId: accountId);
+  void addBalanceLow({required Account? account}) {
+    final notification = NotificationTemplates.balanceLow(account: account);
     addNotification(notification);
   }
 
-  void addAccountAdded({required String accountName, required String accountId}) {
-    final notification = NotificationTemplates.accountAdded(accountName: accountName, accountId: accountId);
+  void addAccountAdded({required Account? account}) {
+    final notification = NotificationTemplates.accountAdded(account: account);
     addNotification(notification);
   }
 
-  void addReversibleTransactionReminder({
-    required String accountName,
-    required ReversibleTransferEvent transactionData,
-  }) {
+  void addReversibleTransactionReminder({required Account? account, required ReversibleTransferEvent transactionData}) {
     final notification = NotificationTemplates.reversibleTransactionReminder(
-      accountName: accountName,
+      account: account,
       transactionData: transactionData,
     );
     addNotification(notification);
   }
 
-  void addTokenSent({required String accountName, required TransferEvent transactionData}) {
-    final notification = NotificationTemplates.tokenSent(accountName: accountName, transactionData: transactionData);
+  void addTokenSent({required Account? account, required TransferEvent transactionData}) {
+    final notification = NotificationTemplates.tokenSent(account: account, transactionData: transactionData);
     addNotification(notification);
   }
 
-  void addTokenReceived({required String accountName, required TransferEvent transactionData}) {
-    final notification = NotificationTemplates.tokenSent(accountName: accountName, transactionData: transactionData);
+  void addTokenReceived({required Account? account, required TransferEvent transactionData}) {
+    final notification = NotificationTemplates.tokenReceived(account: account, transactionData: transactionData);
     addNotification(notification);
   }
 

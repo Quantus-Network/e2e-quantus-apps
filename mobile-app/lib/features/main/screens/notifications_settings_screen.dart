@@ -1,68 +1,25 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/providers/notification_config_provider.dart';
 
-class NotificationsSettingsScreen extends StatefulWidget {
+class NotificationsSettingsScreen extends ConsumerStatefulWidget {
   const NotificationsSettingsScreen({super.key});
 
   @override
-  State<NotificationsSettingsScreen> createState() => _NotificationsSettingsScreenState();
+  ConsumerState<NotificationsSettingsScreen> createState() => _NotificationsSettingsScreenState();
 }
 
-class _NotificationsSettingsScreenState extends State<NotificationsSettingsScreen> {
-  bool _isNotificationsEnabled = false;
-  bool _isSentTokensNotificationEnabled = false;
-  bool _isReceivedTokensNotificationEnabled = false;
-  bool _isRecoveryTimerEndingNotificationEnabled = false;
-  bool _isReversibleTransactionsNotificationEnabled = false;
-  // bool _isUpdateFromQuantusNotificationEnabled = false;
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  void _toggleNotifications(bool enable) {
-    setState(() {
-      _isNotificationsEnabled = enable;
-    });
-  }
-
-  void _toggleSentTokensNotification(bool enable) {
-    setState(() {
-      _isSentTokensNotificationEnabled = enable;
-    });
-  }
-
-  void _toggleReceivedTokensNotification(bool enable) {
-    setState(() {
-      _isReceivedTokensNotificationEnabled = enable;
-    });
-  }
-
-  void _toggleRecoveryTimerEndingNotification(bool enable) {
-    setState(() {
-      _isRecoveryTimerEndingNotificationEnabled = enable;
-    });
-  }
-
-  void _toggleReversibleTransactionsNotification(bool enable) {
-    setState(() {
-      _isReversibleTransactionsNotificationEnabled = enable;
-    });
-  }
-
-  // void _toggleUpdateFromQuantusNotification(bool enable) {
-  //   setState(() {
-  //     _isUpdateFromQuantusNotificationEnabled = enable;
-  //   });
-  // }
-
+class _NotificationsSettingsScreenState extends ConsumerState<NotificationsSettingsScreen> {
   @override
   Widget build(BuildContext context) {
+    final config = ref.watch(notificationConfigProvider); 
+    final configNotifier = ref.read(notificationConfigProvider.notifier);
+
     return ScaffoldBase(
       decorations: [
         const Positioned(bottom: 40, left: -80, child: Sphere(variant: 4, size: 251.62)),
@@ -93,15 +50,17 @@ class _NotificationsSettingsScreenState extends State<NotificationsSettingsScree
                       Text('Notifications', style: context.themeText.largeTag),
                       const SizedBox(height: 4),
                       Text(
-                        _isNotificationsEnabled ? 'ON' : 'OFF',
+                        config.enabled ? 'ON' : 'OFF',
                         style: context.themeText.detail?.copyWith(color: context.themeColors.textMuted),
                       ),
                     ],
                   ),
                 ),
                 CupertinoSwitch(
-                  value: _isNotificationsEnabled,
-                  onChanged: _toggleNotifications,
+                  value: config.enabled,
+                  onChanged: (newValue) {
+                    configNotifier.updateConfig(config.copyWith(enabled: newValue));
+                  },
                   activeTrackColor: context.themeColors.buttonSuccess,
                   inactiveTrackColor: context.themeColors.textMuted,
                   thumbColor: context.themeColors.buttonNeutral,
@@ -109,42 +68,34 @@ class _NotificationsSettingsScreenState extends State<NotificationsSettingsScree
               ],
             ),
           ),
-          if (_isNotificationsEnabled) ...[
+          if (config.enabled) ...[
             const SizedBox(height: 25),
             _buildNotificationToggle(
               context,
               label: 'Sent Tokens',
-              value: _isSentTokensNotificationEnabled,
-              onChanged: _toggleSentTokensNotification,
+              value: config.sentTokensEnabled,
+              onChanged: (newValue) {
+                configNotifier.updateConfig(config.copyWith(sentTokensEnabled: newValue));
+              },
             ),
             const SizedBox(height: 12),
             _buildNotificationToggle(
               context,
               label: 'Received Tokens',
-              value: _isReceivedTokensNotificationEnabled,
-              onChanged: _toggleReceivedTokensNotification,
+              value: config.receivedTokensEnabled,
+              onChanged: (newValue) {
+                configNotifier.updateConfig(config.copyWith(receivedTokensEnabled: newValue));
+              },
             ),
             const SizedBox(height: 12),
             _buildNotificationToggle(
               context,
               label: 'Recovery Timer Ending',
-              value: _isRecoveryTimerEndingNotificationEnabled,
-              onChanged: _toggleRecoveryTimerEndingNotification,
+              value: config.recoveryTimerEndingEnabled,
+              onChanged: (newValue) {
+                configNotifier.updateConfig(config.copyWith(recoveryTimerEndingEnabled: newValue));
+              },
             ),
-            const SizedBox(height: 12),
-            _buildNotificationToggle(
-              context,
-              label: 'Reversible Transactions',
-              value: _isReversibleTransactionsNotificationEnabled,
-              onChanged: _toggleReversibleTransactionsNotification,
-            ),
-            // const SizedBox(height: 12),
-            // _buildNotificationToggle(
-            //   context,
-            //   label: 'Update From Quantus',
-            //   value: _isUpdateFromQuantusNotificationEnabled,
-            //   onChanged: _toggleUpdateFromQuantusNotification,
-            // ),
           ],
         ],
       ),
