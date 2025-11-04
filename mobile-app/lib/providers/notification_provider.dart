@@ -72,16 +72,15 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
   }
 
   /// Get OS-level notification status
-  Future<OSNotificationSettings> getOSSettings() async {
+  Future<bool> getOsPermission() async {
     if (Platform.isAndroid || Platform.isIOS) {
       final status = await Permission.notification.status;
       final isGranted = status.isGranted;
 
-      // If permission is granted, all features are available
-      return OSNotificationSettings(enabled: isGranted, sound: isGranted, vibration: isGranted, badge: isGranted);
+      return isGranted;
     }
 
-    return const OSNotificationSettings(enabled: false, sound: false, vibration: false, badge: false);
+    return false;
   }
 
   /// Check if notifications can be shown (OS + app level + notification type)
@@ -99,8 +98,8 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
     }
 
     // Check OS-level permission
-    final osSettings = await getOSSettings();
-    if (!osSettings.enabled) {
+    final isGranted = await getOsPermission();
+    if (!isGranted) {
       print('Notifications disabled at OS level');
       return false;
     }
@@ -115,8 +114,8 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
       return false;
     }
 
-    final osSettings = await getOSSettings();
-    if (!osSettings.enabled) {
+    final isGranted = await getOsPermission();
+    if (!isGranted) {
       print('Notifications disabled at OS level');
       return false;
     }
@@ -186,7 +185,7 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
         _localNotificationsService.showOrScheduleNotification(notification);
         break;
       case NotificationSource.remote:
-        // 
+        // To be handled in the future
         break;
     }
   }
@@ -311,6 +310,11 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
   }
 
   void addTokenSent({required String accountName, required TransferEvent transactionData}) {
+    final notification = NotificationTemplates.tokenSent(accountName: accountName, transactionData: transactionData);
+    addNotification(notification);
+  }
+
+  void addTokenReceived({required String accountName, required TransferEvent transactionData}) {
     final notification = NotificationTemplates.tokenSent(accountName: accountName, transactionData: transactionData);
     addNotification(notification);
   }

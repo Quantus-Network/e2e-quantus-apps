@@ -20,25 +20,6 @@ enum NotificationSource {
   remote, // Server push notifications (stub for future)
 }
 
-/// OS-level notification settings (what the system allows)
-class OSNotificationSettings {
-  final bool enabled;
-  final bool sound;
-  final bool vibration;
-  final bool badge;
-
-  const OSNotificationSettings({
-    required this.enabled,
-    required this.sound,
-    required this.vibration,
-    required this.badge,
-  });
-
-  bool supportsSound() => enabled && sound;
-  bool supportsVibration() => enabled && vibration;
-  bool supportsBadge() => enabled && badge;
-}
-
 /// App-level notification configuration (what the user wants in-app)
 class NotificationConfig {
   final bool enabled;
@@ -326,6 +307,23 @@ class NotificationTemplates {
       source: NotificationSource.local,
       title: '$tokenString Sent',
       message: 'You just sent $tokenString to ${transactionData.to}',
+      accountName: accountName,
+      timestamp: DateTime.now(),
+      persistent: true,
+      metadata: transactionData.toJson(),
+    );
+  }
+
+  static NotificationData tokenReceived({required String accountName, required TransferEvent transactionData}) {
+    final tokenString = '${transactionData.amount} ${AppConstants.tokenSymbol}';
+
+    return NotificationData(
+      id: 'token_received_${transactionData.id}_${DateTime.now().millisecondsSinceEpoch}',
+      type: NotificationType.info,
+      intent: NotificationIntent.receivedTokens,
+      source: NotificationSource.local,
+      title: '$tokenString Received',
+      message: 'You just received $tokenString from ${transactionData.from}',
       accountName: accountName,
       timestamp: DateTime.now(),
       persistent: true,

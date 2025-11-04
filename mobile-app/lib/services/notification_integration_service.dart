@@ -3,6 +3,7 @@ import 'package:quantus_sdk/generated/schrodinger/pallets/balances.dart' as bala
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -30,6 +31,30 @@ class NotificationIntegrationService {
 
         for (final failedTx in newFailed) {
           _notifyTransactionFailed(failedTx);
+        }
+      }
+    });
+
+    _ref.listen(paginationControllerProvider, (previous, next) {
+      if (previous != null) {
+        final accounts = _ref.watch(accountsProvider).value;
+        if (accounts == null || accounts.isEmpty) return;
+
+        final accountIds = accounts.map((acc) => acc.accountId).toSet();
+
+        final hasNewTxs = next.items.length > previous.items.length;
+        if (!hasNewTxs) return;
+
+        final List<TransactionEvent> newTxs = next.items.sublist(previous.items.length);
+        final newReceiveTxs = newTxs.where((tx) {
+          if (tx is! TransferEvent) return false;
+
+          // Received from someone else (not a self-transfer)
+          return accountIds.contains(tx.to) && !accountIds.contains(tx.from);
+        });
+
+        for (final receiveTokenTx in newReceiveTxs) {
+          _notifyTokenReceived(receiveTokenTx as TransferEvent);
         }
       }
     });
@@ -77,6 +102,15 @@ class NotificationIntegrationService {
     if (!recentLowBalance) {
       notifier.addBalanceLow(accountName: accountName, accountId: accountId);
     }
+  }
+
+  void _notifyTokenReceived(TransferEvent transaction) {
+    final notifier = _ref.read(notificationProvider.notifier);
+    final accountName =
+        _ref.read(accountsProvider).value?.firstWhere((account) => account.accountId == transaction.to).name ??
+        'Undefined';
+
+    notifier.addTokenReceived(accountName: accountName, transactionData: transaction);
   }
 }
 
