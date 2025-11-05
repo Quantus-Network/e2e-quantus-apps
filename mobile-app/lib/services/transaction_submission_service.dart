@@ -254,7 +254,7 @@ class TransactionSubmissionService {
             .read(pendingTransactionsProvider.notifier)
             .updateState(pendingTx.id, TransactionState.inHistory, blockHash: result.blockHash);
 
-        final account = _ref.read(accountsProvider).value?.firstWhere((account) => account.accountId == pendingTx.from);
+        final account = _ref.read(accountsProvider.notifier).getAccountWithId(pendingTx.from);
 
         if (result is TransferEvent) {
           _ref.read(notificationProvider.notifier).addTokenSent(account: account, transactionData: result);

@@ -78,7 +78,7 @@ class NotificationIntegrationService {
 
   void _notifyTransactionFailed(PendingTransactionEvent transaction) {
     final notifier = _ref.read(notificationProvider.notifier);
-    final account = _ref.read(accountsProvider).value?.firstWhere((account) => account.accountId == transaction.from);
+    final account = _ref.read(accountsProvider.notifier).getAccountWithId(transaction.from);
 
     notifier.addTransactionFailed(
       account: account,
@@ -103,7 +103,7 @@ class NotificationIntegrationService {
 
   void _notifyTokenReceived(TransferEvent transaction) {
     final notifier = _ref.read(notificationProvider.notifier);
-    final account = _ref.read(accountsProvider).value?.firstWhere((account) => account.accountId == transaction.to);
+    final account = _ref.read(accountsProvider.notifier).getAccountWithId(transaction.to);
 
     notifier.addTokenReceived(account: account, transactionData: transaction);
   }
