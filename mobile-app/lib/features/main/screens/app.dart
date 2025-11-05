@@ -23,7 +23,6 @@ class ResonanceWalletApp extends ConsumerStatefulWidget {
 
 class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
   final ReferralService _referralService = ReferralService();
-  final LocalNotificationsService _localNotificationsService = LocalNotificationsService();
 
   @override
   void initState() {
@@ -32,8 +31,8 @@ class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(notificationIntegrationServiceProvider);
       ref.read(deepLinkServiceProvider).init(navigatorKey);
-      _localNotificationsService.setupNotificationsClickListener(navigatorKey);
-      _localNotificationsService.handleLaunchByNotification(navigatorKey);
+      ref.read(localNotificationsServiceProvider).setupNotificationsClickListener(navigatorKey);
+      ref.read(localNotificationsServiceProvider).handleLaunchByNotification(navigatorKey);
       if (Platform.isAndroid) _referralService.checkPlayStoreReferralCode();
     });
   }

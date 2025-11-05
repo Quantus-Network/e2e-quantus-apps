@@ -72,4 +72,23 @@ class TransactionService {
       return TransactionRole.receiver;
     }
   }
+
+  TransactionEvent? deserializeTxEventFromJsonIfPossible(dynamic json) {
+    final txType = json['type'];
+    TransactionEvent? event;
+
+    try {
+      if (txType == EventType.TRANSFER.name) {
+        event = TransferEvent.fromJson(json);
+      } else if (txType == EventType.REVERSIBLE_TRANSFER.name) {
+        event = ReversibleTransferEvent.fromJson(json);
+      } else if (txType == EventType.PENDING_TRANSACTION.name) {
+        event = PendingTransactionEvent.fromJson(json);
+      }
+    } catch (e) {
+      print('Failed deserializing event: $e');
+    }
+
+    return event;
+  }
 }

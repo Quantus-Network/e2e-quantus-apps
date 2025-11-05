@@ -4,16 +4,16 @@ import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
+import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
 
 class LocalNotificationsService {
-  static final LocalNotificationsService _instance = LocalNotificationsService._internal();
-  factory LocalNotificationsService() => _instance;
-  LocalNotificationsService._internal();
+  final Ref _ref;
+
+  LocalNotificationsService(this._ref);
 
   final _notificationPlugin = FlutterLocalNotificationsPlugin();
   bool _isInitialized = false;
@@ -71,20 +71,16 @@ class LocalNotificationsService {
   // This is for handling when app is in terminated state then launched by tapping notification.
   Future<void> handleLaunchByNotification(GlobalKey<NavigatorState> navigatorKey) async {
     final notificationAppLaunchDetails = await _notificationPlugin.getNotificationAppLaunchDetails();
-    print('NOTIFICATION DETAILS FOUND!');
-    print(notificationAppLaunchDetails?.didNotificationLaunchApp);
-    
     if (notificationAppLaunchDetails?.didNotificationLaunchApp != true) return;
 
     final payload = notificationAppLaunchDetails!.notificationResponse?.payload;
     if (payload == null || payload.isEmpty) return;
 
-    print('NOTIFICATION DETAILS HAS PAYLOAD!');
-
     final json = jsonDecode(payload);
-    final event = TransactionEvent.fromJson(json);
+    final txService = _ref.read(transactionServiceProvider);
+    final event = txService.deserializeTxEventFromJsonIfPossible(json);
 
-    navigatorKey.currentState?.pushNamed('/transactions', arguments: event);
+    if (event != null) navigatorKey.currentState?.pushNamed('/transactions', arguments: event);
   }
 
   Future<void> _showNotification(NotificationData notification) async {
@@ -128,7 +124,8 @@ class LocalNotificationsService {
       if (payload == null || payload.isEmpty) return;
 
       final json = jsonDecode(payload);
-      final event = TransactionEvent.fromJson(json);
+      final txService = _ref.read(transactionServiceProvider);
+      final event = txService.deserializeTxEventFromJsonIfPossible(json);
 
       navigatorKey.currentState?.pushNamed('/transactions', arguments: event);
     });
@@ -148,5 +145,5 @@ class LocalNotificationsService {
 }
 
 final localNotificationsServiceProvider = Provider<LocalNotificationsService>((ref) {
-  return LocalNotificationsService();
+  return LocalNotificationsService(ref);
 });

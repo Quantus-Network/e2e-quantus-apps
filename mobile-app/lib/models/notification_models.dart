@@ -226,21 +226,6 @@ class NotificationData {
 
   @override
   int get hashCode => id.hashCode;
-
-  bool get canViewDetails {
-    if (metadata == null) return false;
-
-    try {
-      // This will throw a TypeError or FormatException if metadata is bad.
-      TransactionEvent.fromJson(metadata!);
-
-      return true;
-    } catch (e) {
-      // If any exception was thrown during parsing, we catch it
-      // and safely return false. The data is "invalid".
-      return false;
-    }
-  }
 }
 
 /// Specific notification types for type safety

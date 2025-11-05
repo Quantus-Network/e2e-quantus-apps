@@ -62,6 +62,7 @@ class PendingTransactionEvent extends TransactionEvent {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'type': EventType.PENDING_TRANSACTION.name,
       'from': from,
       'to': to,
       'amount': amount.toString(),

@@ -138,14 +138,19 @@ class _NotificationCardState extends ConsumerState<NotificationCard> with Ticker
 
   void _onViewDetails() {
     final txService = ref.read(transactionServiceProvider);
-    final transaction = TransactionEvent.fromJson(widget.notification.metadata!);
+    final transaction = txService.deserializeTxEventFromJsonIfPossible(widget.notification.metadata);
 
-    showTransactionActionSheet(context, transaction: transaction, role: txService.getTransactionRole(transaction));
+    if (transaction != null) {
+      showTransactionActionSheet(context, transaction: transaction, role: txService.getTransactionRole(transaction));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final notification = widget.notification;
+    final txService = ref.read(transactionServiceProvider);
+    final transaction = txService.deserializeTxEventFromJsonIfPossible(notification.metadata);
+    
 
     return GestureDetector(
       onHorizontalDragUpdate: (details) {
@@ -280,7 +285,7 @@ class _NotificationCardState extends ConsumerState<NotificationCard> with Ticker
                                   ),
                                 ],
                               ),
-                              if (notification.canViewDetails) _buildViewDetailsButton(),
+                              if (transaction != null) _buildViewDetailsButton(),
                             ],
                           ),
                         ),

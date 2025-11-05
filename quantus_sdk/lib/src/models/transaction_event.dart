@@ -22,16 +22,6 @@ abstract class TransactionEvent {
     this.blockHash,
   });
 
-  static TransactionEvent fromJson(Map<String, dynamic> json) {
-    if (json.containsKey('transactionState')) {
-      return PendingTransactionEvent.fromJson(json);
-    } else if (json.containsKey('txId') && json.containsKey('status')) {
-      return ReversibleTransferEvent.fromJson(json);
-    } else {
-      return TransferEvent.fromJson(json);
-    }
-  }
-
   @override
   String toString() {
     return 'Transaction{id: $id, from: $from, to: $to, amount: $amount, timestamp: $timestamp, extrinsicHash: $extrinsicHash, blockNumber: $blockNumber}';
@@ -74,6 +64,7 @@ class TransferEvent extends TransactionEvent {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'type': EventType.TRANSFER.name,
       'from': {'id': from},
       'to': {'id': to},
       'amount': amount.toString(),
@@ -133,6 +124,7 @@ class ReversibleTransferEvent extends TransactionEvent {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'type': EventType.REVERSIBLE_TRANSFER.name,
       'from': {'id': from},
       'to': {'id': to},
       'amount': amount.toString(),
