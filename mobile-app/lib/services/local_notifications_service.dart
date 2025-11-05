@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
+import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
@@ -80,7 +81,10 @@ class LocalNotificationsService {
     final txService = _ref.read(transactionServiceProvider);
     final event = txService.deserializeTxEventFromJsonIfPossible(json);
 
-    if (event != null) navigatorKey.currentState?.pushNamed('/transactions', arguments: event);
+    if (event != null) {
+      _ref.read(transactionIntentProvider.notifier).state = event;
+      navigatorKey.currentState?.pushNamed('/transactions');
+    }
   }
 
   Future<void> _showNotification(NotificationData notification) async {
@@ -127,7 +131,10 @@ class LocalNotificationsService {
       final txService = _ref.read(transactionServiceProvider);
       final event = txService.deserializeTxEventFromJsonIfPossible(json);
 
-      navigatorKey.currentState?.pushNamed('/transactions', arguments: event);
+      if (event != null) {
+        _ref.read(transactionIntentProvider.notifier).state = event;
+        navigatorKey.currentState?.pushNamed('/transactions');
+      }
     });
   }
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/select.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
@@ -12,15 +11,15 @@ import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
   final bool showAccountFilter;
   final String? fixedAccountId; // if set, hide filter popdown
-  final TransactionEvent? transaction;
 
-  const TransactionsScreen({super.key, this.showAccountFilter = true, this.fixedAccountId, this.transaction});
+  const TransactionsScreen({super.key, this.showAccountFilter = true, this.fixedAccountId});
 
   @override
   ConsumerState<TransactionsScreen> createState() => _TransactionsScreenState();
@@ -64,12 +63,11 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                 .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get(accountIds)).notifier)
                 .loadingRefresh();
 
-            if (widget.transaction != null) {
-              showTransactionActionSheet(
-                context,
-                transaction: widget.transaction!,
-                role: txService.getTransactionRole(widget.transaction!),
-              );
+            final txIntent = ref.read(transactionIntentProvider);
+            if (txIntent != null) {
+              // After we consume the intent, we clean it up
+              ref.read(transactionIntentProvider.notifier).state = null;
+              showTransactionActionSheet(context, transaction: txIntent, role: txService.getTransactionRole(txIntent));
             }
           });
         }

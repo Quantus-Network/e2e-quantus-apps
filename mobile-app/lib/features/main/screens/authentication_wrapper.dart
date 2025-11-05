@@ -1,25 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_initializer.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 
-class AuthenticationWrapper extends StatefulWidget {
+class AuthenticationWrapper extends ConsumerStatefulWidget {
   const AuthenticationWrapper({super.key});
 
   @override
-  State<AuthenticationWrapper> createState() => _AuthenticationWrapperState();
+  ConsumerState<AuthenticationWrapper> createState() => _AuthenticationWrapperState();
 }
 
-class _AuthenticationWrapperState extends State<AuthenticationWrapper> with WidgetsBindingObserver {
+class _AuthenticationWrapperState extends ConsumerState<AuthenticationWrapper> with WidgetsBindingObserver {
   final LocalAuthService _localAuthService = LocalAuthService();
   bool _isAuthenticated = false;
   bool _isAuthenticating = false;
 
   bool _hasProcessedArguments = false;
-  TransactionEvent? _transaction;
   String? _address;
 
   @override
@@ -98,13 +97,7 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper> with Widg
   void _processArguments() {
     final Object? arguments = ModalRoute.of(context)?.settings.arguments;
 
-    if (arguments is TransactionEvent) {
-      print('Argument is a TransactionEvent from notification.');
-
-      setState(() {
-        _transaction = arguments;
-      });
-    } else if (arguments is String) {
+    if (arguments is String) {
       print('Argument is a String address from a deep link.');
 
       setState(() {
@@ -115,7 +108,7 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper> with Widg
 
   @override
   Widget build(BuildContext context) {
-    return _isAuthenticated ? WalletInitializer(address: _address, transaction: _transaction) : _buildLockScreen();
+    return _isAuthenticated ? WalletInitializer(address: _address) : _buildLockScreen();
   }
 
   Widget _buildLockScreen() {

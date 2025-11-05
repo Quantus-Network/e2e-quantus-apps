@@ -5,13 +5,13 @@ import 'package:resonance_network_wallet/features/components/migration_dialog.da
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/utils/env_utils.dart';
 
 class WalletInitializer extends ConsumerStatefulWidget {
   final String? address;
-  final TransactionEvent? transaction;
 
-  const WalletInitializer({super.key, this.address, this.transaction});
+  const WalletInitializer({super.key, this.address});
 
   @override
   ConsumerState<WalletInitializer> createState() => WalletInitializerState();
@@ -154,9 +154,10 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
 
   @override
   Widget build(BuildContext context) {
+    final hasTxIntent = ref.read(transactionIntentProvider) != null;
     // If we have value of tx that means we got arguments from notification tap,
     // so we wanted to display the transactions history screen instead which is index 1.
-    final initialIndex = (widget.transaction != null) ? 1 : 0;
+    final initialIndex = hasTxIntent ? 1 : 0;
 
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -169,7 +170,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
     }
 
     if (_walletExists) {
-      return Navbar(address: widget.address, transaction: widget.transaction, initialIndex: initialIndex);
+      return Navbar(address: widget.address, initialIndex: initialIndex);
     } else {
       return const WelcomeScreen();
     }
