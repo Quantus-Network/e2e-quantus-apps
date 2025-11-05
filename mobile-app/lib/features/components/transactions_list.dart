@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
-import 'package:resonance_network_wallet/utils/transaction_utils.dart';
+import 'package:resonance_network_wallet/services/transaction_service.dart';
 
-class RecentTransactionsList extends StatelessWidget {
+class RecentTransactionsList extends ConsumerWidget {
   final List<TransactionEvent> transactions;
   final List<String> accountIds; // List of account IDs we're showing transactions for
   final bool Function(TransactionEvent)? filter;
@@ -20,7 +21,8 @@ class RecentTransactionsList extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final txService = ref.read(transactionServiceProvider);
     final transactionsToShow = filter == null ? transactions : transactions.where(filter!).toList();
 
     final scheduled = transactionsToShow
@@ -63,7 +65,7 @@ class RecentTransactionsList extends StatelessWidget {
                     return TransactionListItem(
                       key: ValueKey(transaction.id),
                       transaction: transaction,
-                      role: TransactionUtils.getTransactionRole(transaction, accountIds),
+                      role: txService.getTransactionRole(transaction),
                       showFromAndTo: accountIds.length > 1,
                     );
                   },
@@ -84,7 +86,7 @@ class RecentTransactionsList extends StatelessWidget {
                     return TransactionListItem(
                       key: ValueKey(transaction.id),
                       transaction: transaction,
-                      role: TransactionUtils.getTransactionRole(transaction, accountIds),
+                      role: txService.getTransactionRole(transaction),
                       showFromAndTo: accountIds.length > 1,
                     );
                   },

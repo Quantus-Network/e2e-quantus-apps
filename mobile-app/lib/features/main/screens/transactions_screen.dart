@@ -12,8 +12,8 @@ import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
+import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
-import 'package:resonance_network_wallet/utils/transaction_utils.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
   final bool showAccountFilter;
@@ -40,6 +40,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   void _initialize(BuildContext context, WidgetRef ref) {
     if (_isInitialized) return;
 
+    final txService = ref.read(transactionServiceProvider);
     final accountsValue = ref.watch(accountsProvider);
     accountsValue.when(
       data: (accounts) {
@@ -67,7 +68,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
               showTransactionActionSheet(
                 context,
                 transaction: widget.transaction!,
-                role: TransactionUtils.getTransactionRole(widget.transaction!, accountIds),
+                role: txService.getTransactionRole(widget.transaction!),
               );
             }
           });
@@ -285,7 +286,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         child: Text('Error: $error', style: const TextStyle(color: Colors.red)),
       ),
       data: (combinedData) {
-        final allTransactions = TransactionUtils.combineAndDeduplicateTransactions(
+        final txService = ref.read(transactionServiceProvider);
+        final allTransactions = txService.combineAndDeduplicateTransactions(
           pendingCancellationIds: combinedData.pendingCancellationIds,
           pendingTransactions: combinedData.pendingTransactions,
           reversibleTransfers: combinedData.reversibleTransfers,

@@ -4,14 +4,12 @@ import 'package:resonance_network_wallet/models/notification_models.dart';
 
 class NotificationGroup extends StatefulWidget {
   final List<NotificationData> notifications;
-  final List<String> accountIds; // List of account IDs we're showing transactions for
   final VoidCallback onDismissAll;
   final Function(String) onDismissSingle;
 
   const NotificationGroup({
     super.key,
     required this.notifications,
-    required this.accountIds,
     required this.onDismissAll,
     required this.onDismissSingle,
   });
@@ -20,18 +18,14 @@ class NotificationGroup extends StatefulWidget {
   State<NotificationGroup> createState() => _NotificationGroupState();
 }
 
-class _NotificationGroupState extends State<NotificationGroup>
-    with TickerProviderStateMixin {
+class _NotificationGroupState extends State<NotificationGroup> with TickerProviderStateMixin {
   late AnimationController _slideController;
   late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
+    _slideController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
 
     _slideAnimation = Tween<Offset>(
       begin: const Offset(1.0, 0.0),
@@ -62,10 +56,7 @@ class _NotificationGroupState extends State<NotificationGroup>
             alignment: Alignment.centerRight,
             child: InkWell(
               onTap: widget.onDismissAll,
-              child: const Text(
-                'Dismiss All',
-                style: TextStyle(color: Colors.red),
-              ),
+              child: const Text('Dismiss All', style: TextStyle(color: Colors.red)),
             ),
           ),
           const SizedBox(height: 16),
@@ -79,9 +70,7 @@ class _NotificationGroupState extends State<NotificationGroup>
                     .map(
                       (notification) => NotificationCard(
                         notification: notification,
-                        accountIds: widget.accountIds,
-                        onDismiss: () =>
-                            widget.onDismissSingle(notification.id),
+                        onDismiss: () => widget.onDismissSingle(notification.id),
                       ),
                     )
                     .toList(),

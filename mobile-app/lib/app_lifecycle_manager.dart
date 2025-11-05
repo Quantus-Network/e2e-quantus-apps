@@ -23,7 +23,6 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // Initialize Taskmaster login on app start
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(appLifecycleStateProvider.notifier).state =
           WidgetsBinding.instance.lifecycleState ?? AppLifecycleState.resumed;

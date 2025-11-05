@@ -1,12 +1,21 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/transaction_role.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
 
-/// Utility functions for handling transactions
-class TransactionUtils {
+final transactionServiceProvider = Provider<TransactionService>((ref) {
+  return TransactionService(ref);
+});
+
+class TransactionService {
+  final Ref _ref;
+
+  TransactionService(this._ref);
+
   /// Combines and deduplicates transactions from multiple sources
   /// Priority order: pending -> reversible -> other
   /// Duplicates are removed based on transaction ID
-  static List<TransactionEvent> combineAndDeduplicateTransactions({
+  List<TransactionEvent> combineAndDeduplicateTransactions({
     required Set<String> pendingCancellationIds,
     required List<PendingTransactionEvent> pendingTransactions,
     required List<ReversibleTransferEvent> reversibleTransfers,
@@ -49,9 +58,11 @@ class TransactionUtils {
     return result;
   }
 
-  static TransactionRole getTransactionRole(TransactionEvent transaction, List<String> accountIds) {
-    final isFrom = accountIds.contains(transaction.from);
-    final isTo = accountIds.contains(transaction.to);
+  TransactionRole getTransactionRole(TransactionEvent transaction) {
+    final accounts = _ref.read(accountsProvider).value?.map((acc) => acc.accountId).toList() ?? [];
+
+    final isFrom = accounts.contains(transaction.from);
+    final isTo = accounts.contains(transaction.to);
 
     if (isFrom && isTo) {
       return TransactionRole.both;

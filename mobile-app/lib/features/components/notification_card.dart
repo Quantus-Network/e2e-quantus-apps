@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
-import 'package:resonance_network_wallet/utils/transaction_utils.dart';
+import 'package:resonance_network_wallet/services/transaction_service.dart';
 
-class NotificationCard extends StatefulWidget {
+class NotificationCard extends ConsumerStatefulWidget {
   final NotificationData notification;
-  final List<String> accountIds; // List of account IDs we're showing transactions for
   final VoidCallback onDismiss;
 
-  const NotificationCard({super.key, required this.notification, required this.onDismiss, required this.accountIds});
+  const NotificationCard({super.key, required this.notification, required this.onDismiss});
 
   @override
-  State<NotificationCard> createState() => _NotificationCardState();
+  ConsumerState<NotificationCard> createState() => _NotificationCardState();
 }
 
-class _NotificationCardState extends State<NotificationCard> with TickerProviderStateMixin {
+class _NotificationCardState extends ConsumerState<NotificationCard> with TickerProviderStateMixin {
   late AnimationController _slideController;
   late AnimationController _swipeController;
   late Animation<Offset> _slideAnimation;
@@ -137,13 +137,10 @@ class _NotificationCardState extends State<NotificationCard> with TickerProvider
   }
 
   void _onViewDetails() {
+    final txService = ref.read(transactionServiceProvider);
     final transaction = TransactionEvent.fromJson(widget.notification.metadata!);
 
-    showTransactionActionSheet(
-      context,
-      transaction: transaction,
-      role: TransactionUtils.getTransactionRole(transaction, widget.accountIds),
-    );
+    showTransactionActionSheet(context, transaction: transaction, role: txService.getTransactionRole(transaction));
   }
 
   @override

@@ -264,7 +264,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
                 return NotificationGroup(
                   notifications: filteredNotifications,
-                  accountIds: _selectedAccountIds ?? [],
                   onDismissAll: () => ref.read(notificationProvider.notifier).clearAll(),
                   onDismissSingle: (id) => ref.read(notificationProvider.notifier).removeNotification(id),
                 );
