@@ -19,13 +19,12 @@ import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class WalletMain extends ConsumerStatefulWidget {
-  final String? address;
-
-  const WalletMain({super.key, this.address});
+  const WalletMain({super.key});
 
   @override
   ConsumerState<WalletMain> createState() => _WalletMainState();
@@ -36,24 +35,27 @@ class _WalletMainState extends ConsumerState<WalletMain> {
   final ScrollController _scrollController = ScrollController();
 
   @override
-  void initState() {
-    super.initState();
-
-    if (widget.address != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        showSharedAddressActionSheet(context, widget.address!);
-      });
-    }
-  }
-
-  @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
   }
 
+  void _processIntentIfAvailable() {
+    final sharedAccount = ref.read(sharedAccountIntentProvider);
+
+    if (sharedAccount != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Clean up intent after consumption
+        ref.read(sharedAccountIntentProvider.notifier).state = null;
+        showSharedAddressActionSheet(context, sharedAccount);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    _processIntentIfAvailable();
+
     final activeAccountAsync = ref.watch(activeAccountProvider);
     final balanceAsync = ref.watch(balanceProvider);
     final activeAccountTransactionsAsync = ref.watch(activeAccountTransactionsProvider);
