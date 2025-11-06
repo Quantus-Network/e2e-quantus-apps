@@ -18,7 +18,6 @@ void main() async {
     url: EnvUtils.supabaseUrl,
     anonKey: EnvUtils.supabaseKey,
   );
-
   await QuantusSdk.init();
   Telemetrydecksdk.start(
     const TelemetryManagerConfiguration(

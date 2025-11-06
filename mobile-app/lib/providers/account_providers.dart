@@ -34,9 +34,7 @@ class AccountsNotifier extends StateNotifier<AsyncValue<List<Account>>> {
     state.whenData((accounts) async {
       try {
         await _accountsService.removeAccount(account);
-        final newAccounts = accounts
-            .where((a) => a.index != account.index)
-            .toList();
+        final newAccounts = accounts.where((a) => a.index != account.index).toList();
         state = AsyncValue.data(newAccounts);
       } catch (e, st) {
         print('remove account error $e $st');
@@ -44,22 +42,24 @@ class AccountsNotifier extends StateNotifier<AsyncValue<List<Account>>> {
     });
   }
 
+  Account? getAccountWithId(String accountId) {
+    return state.value?.firstWhere((account) => account.accountId == accountId);
+  }
+
   void reset() {
     state = const AsyncValue.loading();
   }
 }
 
-final accountsProvider =
-    StateNotifierProvider<AccountsNotifier, AsyncValue<List<Account>>>((ref) {
-      final accountsService = ref.watch(accountsServiceProvider);
-      return AccountsNotifier(accountsService);
-    });
+final accountsProvider = StateNotifierProvider<AccountsNotifier, AsyncValue<List<Account>>>((ref) {
+  final accountsService = ref.watch(accountsServiceProvider);
+  return AccountsNotifier(accountsService);
+});
 
 class ActiveAccountNotifier extends StateNotifier<AsyncValue<Account?>> {
   final SettingsService _settingsService;
 
-  ActiveAccountNotifier(this._settingsService)
-    : super(const AsyncValue.loading()) {
+  ActiveAccountNotifier(this._settingsService) : super(const AsyncValue.loading()) {
     _loadActiveAccount();
   }
 
@@ -88,8 +88,7 @@ class ActiveAccountNotifier extends StateNotifier<AsyncValue<Account?>> {
   }
 }
 
-final activeAccountProvider =
-    StateNotifierProvider<ActiveAccountNotifier, AsyncValue<Account?>>((ref) {
-      final settingsService = ref.watch(settingsServiceProvider);
-      return ActiveAccountNotifier(settingsService);
-    });
+final activeAccountProvider = StateNotifierProvider<ActiveAccountNotifier, AsyncValue<Account?>>((ref) {
+  final settingsService = ref.watch(settingsServiceProvider);
+  return ActiveAccountNotifier(settingsService);
+});

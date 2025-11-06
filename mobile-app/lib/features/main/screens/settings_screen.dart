@@ -10,6 +10,7 @@ import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/authentication_settings_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/notifications_settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/show_recovery_phrase_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
@@ -128,6 +129,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       children: [
         _buildSettingsItem(context, 'Manage Accounts', () {
           Navigator.push(context, MaterialPageRoute(builder: (context) => const AccountsScreen()));
+        }),
+        const SizedBox(height: 22),
+        _buildSettingsItem(context, 'Notifications', () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsSettingsScreen()));
         }),
         const SizedBox(height: 22),
         _buildSettingsItem(context, 'Authentication', () {

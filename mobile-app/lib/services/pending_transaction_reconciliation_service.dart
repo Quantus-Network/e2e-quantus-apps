@@ -7,7 +7,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/utils/transaction_utils.dart';
+import 'package:resonance_network_wallet/services/transaction_service.dart';
 
 /// Service that reconciles pending transactions with confirmed transactions
 /// from blockchain history. This handles cases where the inBlock status
@@ -35,6 +35,8 @@ class PendingTransactionReconciliationService {
   /// This should be called during history polling to clean up stale pending
   /// transactions.
   Future<void> reconcilePendingTransactions() async {
+    final txService =_ref.read(transactionServiceProvider);
+
     try {
       final pendingTxs = _ref.read(pendingTransactionsProvider);
 
@@ -49,7 +51,7 @@ class PendingTransactionReconciliationService {
       final allTransactionsAsync = _ref.read(allTransactionsProvider);
 
       final confirmedTransactions = allTransactionsAsync.when(
-        data: (transactions) => TransactionUtils.combineAndDeduplicateTransactions(
+        data: (transactions) => txService.combineAndDeduplicateTransactions(
           pendingCancellationIds: transactions.pendingCancellationIds,
           pendingTransactions:
               [], // Don't include pending here as we're comparing against them

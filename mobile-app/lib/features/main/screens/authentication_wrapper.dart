@@ -12,23 +12,35 @@ class AuthenticationWrapper extends StatefulWidget {
   State<AuthenticationWrapper> createState() => _AuthenticationWrapperState();
 }
 
-class _AuthenticationWrapperState extends State<AuthenticationWrapper>
-    with WidgetsBindingObserver {
+class _AuthenticationWrapperState extends State<AuthenticationWrapper> with WidgetsBindingObserver {
   final LocalAuthService _localAuthService = LocalAuthService();
   bool _isAuthenticated = false;
   bool _isAuthenticating = false;
+
+  bool _hasProcessedArguments = false;
+  String? _address;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _checkAuthentication();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_hasProcessedArguments) {
+      _hasProcessedArguments = true;
+      _processArguments();
+      _checkAuthentication();
+    }
   }
 
   @override
@@ -79,15 +91,23 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper>
         _isAuthenticating = false;
       });
     }
+  }
 
+  void _processArguments() {
+    final Object? arguments = ModalRoute.of(context)?.settings.arguments;
+
+    if (arguments is String) {
+      print('Argument is a String address from a deep link.');
+
+      setState(() {
+        _address = arguments;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // This is accessing the deep link argument
-    final String? address = ModalRoute.of(context)?.settings.arguments as String?;
-
-    return _isAuthenticated ? WalletInitializer(address: address) : _buildLockScreen();
+    return _isAuthenticated ? WalletInitializer(address: _address) : _buildLockScreen();
   }
 
   Widget _buildLockScreen() {
@@ -99,20 +119,13 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper>
             Text('Authentication Required', style: context.themeText.lockTitle),
             const SizedBox(height: 30),
             if (_isAuthenticating)
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  context.themeColors.circularLoader,
-                ),
-              )
+              CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(context.themeColors.circularLoader))
             else
               ElevatedButton(
                 onPressed: _authenticate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.themeColors.authButtonBg,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 15,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                 ),
                 child: Text('Authenticate', style: context.themeText.paragraph),
               ),

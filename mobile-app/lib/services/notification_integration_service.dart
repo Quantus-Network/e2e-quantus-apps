@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/generated/schrodinger/pallets/balances.dart'
-    as balances;
+import 'package:quantus_sdk/generated/schrodinger/pallets/balances.dart' as balances;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -20,24 +20,40 @@ class NotificationIntegrationService {
 
   void _setupTransactionListeners() {
     // Listen to pending transactions for failure notifications
-    _ref.listen<List<PendingTransactionEvent>>(pendingTransactionsProvider, (
-      previous,
-      next,
-    ) {
+    _ref.listen<List<PendingTransactionEvent>>(pendingTransactionsProvider, (previous, next) {
       if (previous != null) {
         // Check for newly failed transactions
         final newFailed = next.where(
           (tx) =>
               tx.transactionState == TransactionState.failed &&
-              !previous.any(
-                (prevTx) =>
-                    prevTx.id == tx.id &&
-                    prevTx.transactionState == tx.transactionState,
-              ),
+              !previous.any((prevTx) => prevTx.id == tx.id && prevTx.transactionState == tx.transactionState),
         );
 
         for (final failedTx in newFailed) {
           _notifyTransactionFailed(failedTx);
+        }
+      }
+    });
+
+    _ref.listen(paginationControllerProvider, (previous, next) {
+      if (previous != null && previous.items.isNotEmpty) {
+        final accounts = _ref.watch(accountsProvider).value;
+        if (accounts == null || accounts.isEmpty) return;
+
+        final accountIds = accounts.map((acc) => acc.accountId).toSet();
+
+        final previousIds = previous.items.map((tx) => tx.id).toSet();
+        final newTxs = next.items.where((tx) => !previousIds.contains(tx.id));
+
+        final newReceiveTxs = newTxs.where((tx) {
+          if (tx is! TransferEvent) return false;
+
+          // Received from someone else (not a self-transfer)
+          return accountIds.contains(tx.to) && !accountIds.contains(tx.from);
+        });
+
+        for (final receiveTokenTx in newReceiveTxs) {
+          _notifyTokenReceived(receiveTokenTx as TransferEvent);
         }
       }
     });
@@ -53,7 +69,7 @@ class NotificationIntegrationService {
           // Example threshold
           final activeAccount = _ref.read(activeAccountProvider).value;
           if (activeAccount != null) {
-            _notifyLowBalance(activeAccount.name, activeAccount.accountId);
+            _notifyLowBalance(activeAccount, activeAccount.accountId);
           }
         }
       });
@@ -62,70 +78,38 @@ class NotificationIntegrationService {
 
   void _notifyTransactionFailed(PendingTransactionEvent transaction) {
     final notifier = _ref.read(notificationProvider.notifier);
-
-    // Create transaction data for detailed view
-    final transactionData = TransactionData(
-      id: transaction.id,
-      from: transaction.from,
-      to: transaction.to,
-      amount: transaction.amount,
-      fee: transaction.fee,
-      error: transaction.error,
-      timestamp: transaction.timestamp,
-      state: transaction.transactionState,
-    );
+    final account = _ref.read(accountsProvider.notifier).getAccountWithId(transaction.from);
 
     notifier.addTransactionFailed(
-      accountName: transaction
-          .from, // This might need adjustment based on your account resolution
-      transactionId: transaction.id,
+      account: account,
       errorMessage: transaction.error ?? 'Transaction failed',
-      transactionData: transactionData,
+      transactionData: transaction,
     );
   }
 
-  void _notifyLowBalance(String accountName, String accountId) {
+  void _notifyLowBalance(Account account, String accountId) {
     final notifier = _ref.read(notificationProvider.notifier);
 
     // Check if we already have a recent low balance notification for this account
-    final existingNotifications = notifier.getNotificationsForAccount(
-      accountId,
-    );
+    final existingNotifications = notifier.getNotificationsForAccount(accountId);
     final recentLowBalance = existingNotifications.any(
-      (n) =>
-          n.type == NotificationType.alert &&
-          n.timestamp.isAfter(
-            DateTime.now().subtract(const Duration(hours: 1)),
-          ),
+      (n) => n.type == NotificationType.alert && n.timestamp.isAfter(DateTime.now().subtract(const Duration(hours: 1))),
     );
 
     if (!recentLowBalance) {
-      notifier.addBalanceLow(accountName: accountName, accountId: accountId);
+      notifier.addBalanceLow(account: account);
     }
   }
 
-  /// Manually trigger notifications (for testing or specific use cases)
-  void notifyAccountAdded(String accountName, String accountId) {
+  void _notifyTokenReceived(TransferEvent transaction) {
     final notifier = _ref.read(notificationProvider.notifier);
-    notifier.addAccountAdded(accountName: accountName, accountId: accountId);
-  }
+    final account = _ref.read(accountsProvider.notifier).getAccountWithId(transaction.to);
 
-  void notifyReversibleTransaction(
-    String accountName,
-    String transactionId,
-    DateTime executionTime,
-  ) {
-    final notifier = _ref.read(notificationProvider.notifier);
-    notifier.addReversibleTransactionReminder(
-      accountName: accountName,
-      transactionId: transactionId,
-      executionTime: executionTime,
-    );
+    notifier.addTokenReceived(account: account, transactionData: transaction);
   }
 }
 
 /// Provider for the notification integration service
-final notificationIntegrationServiceProvider =
-    Provider<NotificationIntegrationService>((ref) {
-      return NotificationIntegrationService(ref);
-    });
+final notificationIntegrationServiceProvider = Provider<NotificationIntegrationService>((ref) {
+  return NotificationIntegrationService(ref);
+});

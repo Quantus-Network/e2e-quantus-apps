@@ -51,13 +51,12 @@ class _TransactionDetailsActionSheetState
   String get title {
     if (widget.transaction.isFailed) {
       final tx = widget.transaction;
-      String s = '';
+
       if (tx is PendingTransactionEvent) {
         final pending = tx;
-        s = pending.error ?? 'Unknown error';
         print('pending error: ${pending.error}');
       }
-      return 'TRANSACTION\nFAILED\n$s';
+      return 'TRANSACTION\nFAILED';
     }
     if (widget.transaction.isReversibleCancelled) {
       return 'TRANSACTION\nCANCELLED';

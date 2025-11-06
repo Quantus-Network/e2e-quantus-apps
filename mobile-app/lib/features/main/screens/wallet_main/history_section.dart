@@ -10,7 +10,7 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/models/combined_transactions_list.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
-import 'package:resonance_network_wallet/utils/transaction_utils.dart';
+import 'package:resonance_network_wallet/services/transaction_service.dart';
 
 class HistorySection extends ConsumerStatefulWidget {
   final AsyncValue<CombinedTransactionsList> allTransactionsAsync;
@@ -27,8 +27,9 @@ class _HistorySectionState extends ConsumerState<HistorySection> {
   Widget build(BuildContext context) {
     return widget.allTransactionsAsync.when(
       data: (combinedData) {
+        final txService = ref.read(transactionServiceProvider);
         // Combine and deduplicate all transaction types
-        final allTransactions = TransactionUtils.combineAndDeduplicateTransactions(
+        final allTransactions = txService.combineAndDeduplicateTransactions(
           pendingCancellationIds: combinedData.pendingCancellationIds,
           pendingTransactions: combinedData.pendingTransactions,
           reversibleTransfers: combinedData.reversibleTransfers,

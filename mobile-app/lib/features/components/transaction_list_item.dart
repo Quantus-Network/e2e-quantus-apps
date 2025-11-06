@@ -134,40 +134,6 @@ class TransactionListItemState extends State<TransactionListItem> {
     return DatetimeFormattingService.formatTimestamp(widget.transaction.timestamp);
   }
 
-  void _showActionSheet(BuildContext context) {
-    Widget sheet;
-
-    if (widget.transaction.isReversibleScheduled && role == TransactionRole.sender) {
-      sheet = TransactionActionSheet(transaction: widget.transaction as ReversibleTransferEvent);
-    } else {
-      sheet = TransactionDetailsActionSheet(transaction: widget.transaction, role: role);
-    }
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
-      barrierColor: Colors.transparent,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Stack(
-        children: [
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.black, const Color(0xFF312E6E).useOpacity(0.4), Colors.black],
-                ),
-              ),
-            ),
-          ),
-          Positioned(bottom: 0, left: 0, right: 0, child: sheet),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final isFailed =
@@ -176,7 +142,7 @@ class TransactionListItemState extends State<TransactionListItem> {
 
     return InkWell(
       onTap: () {
-        _showActionSheet(context);
+        showTransactionActionSheet(context, transaction: widget.transaction, role: widget.role);
       },
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -264,6 +230,40 @@ class TransactionListItemState extends State<TransactionListItem> {
     }
     return const SizedBox.shrink();
   }
+}
+
+void showTransactionActionSheet(BuildContext context, {required TransactionEvent transaction, required role}) {
+  Widget sheet;
+
+  if (transaction.isReversibleScheduled && role == TransactionRole.sender) {
+    sheet = TransactionActionSheet(transaction: transaction as ReversibleTransferEvent);
+  } else {
+    sheet = TransactionDetailsActionSheet(transaction: transaction, role: role);
+  }
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
+    barrierColor: Colors.transparent,
+    backgroundColor: Colors.transparent,
+    builder: (context) => Stack(
+      children: [
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.black, const Color(0xFF312E6E).useOpacity(0.4), Colors.black],
+              ),
+            ),
+          ),
+        ),
+        Positioned(bottom: 0, left: 0, right: 0, child: sheet),
+      ],
+    ),
+  );
 }
 
 class _TimerDisplay extends StatelessWidget {

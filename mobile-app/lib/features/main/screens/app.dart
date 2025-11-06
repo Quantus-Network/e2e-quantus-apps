@@ -4,6 +4,8 @@ import 'package:resonance_network_wallet/features/main/screens/authentication_wr
 import 'package:resonance_network_wallet/features/main/screens/send/send_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_theme.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
+import 'package:resonance_network_wallet/services/local_notifications_service.dart';
+import 'package:resonance_network_wallet/services/notification_integration_service.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_navigator_observer.dart';
 import 'package:resonance_network_wallet/services/deep_link_service.dart';
@@ -27,8 +29,10 @@ class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(notificationIntegrationServiceProvider);
       ref.read(deepLinkServiceProvider).init(navigatorKey);
-
+      ref.read(localNotificationsServiceProvider).setupNotificationsClickListener(navigatorKey);
+      ref.read(localNotificationsServiceProvider).handleLaunchByNotification(navigatorKey);
       if (Platform.isAndroid) _referralService.checkPlayStoreReferralCode();
     });
   }
@@ -51,14 +55,14 @@ class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
         // The send route is really just an internal thing and not accessible
         // to the outside. So no fancy auth logic, it just doesn't work from
         // outside the app when not authenticated.
-        '/send': (context) => LocalAuthService().shouldRequireAuthentication()
-            ? const AuthenticationWrapper()
-            : const SendScreen(),
+        '/send': (context) =>
+            LocalAuthService().shouldRequireAuthentication() ? const AuthenticationWrapper() : const SendScreen(),
 
         // The AuthenticationWrapper will need to be smart enough to handle
         // the arguments passed to this route. The arguments will only accesible
         // to the AuthenticationWrapper widget, we have to pass it to the next widget
         '/account': (context) => const AuthenticationWrapper(),
+        '/transactions': (context) => const AuthenticationWrapper(),
       },
       theme: AppTheme.lightTheme(context),
       darkTheme: AppTheme.darkTheme(context),
