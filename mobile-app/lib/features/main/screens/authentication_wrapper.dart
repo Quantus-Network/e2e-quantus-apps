@@ -17,9 +17,6 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper> with Widg
   bool _isAuthenticated = false;
   bool _isAuthenticating = false;
 
-  bool _hasProcessedArguments = false;
-  String? _address;
-
   @override
   void initState() {
     super.initState();
@@ -36,11 +33,7 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper> with Widg
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    if (!_hasProcessedArguments) {
-      _hasProcessedArguments = true;
-      _processArguments();
-      _checkAuthentication();
-    }
+    _checkAuthentication();
   }
 
   @override
@@ -93,21 +86,9 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper> with Widg
     }
   }
 
-  void _processArguments() {
-    final Object? arguments = ModalRoute.of(context)?.settings.arguments;
-
-    if (arguments is String) {
-      print('Argument is a String address from a deep link.');
-
-      setState(() {
-        _address = arguments;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return _isAuthenticated ? WalletInitializer(address: _address) : _buildLockScreen();
+    return _isAuthenticated ? const WalletInitializer() : _buildLockScreen();
   }
 
   Widget _buildLockScreen() {

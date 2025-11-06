@@ -87,12 +87,10 @@ class NavbarItem extends StatelessWidget {
 }
 
 class Navbar extends ConsumerStatefulWidget {
-  final String? address;
-
   final bool showReferralOnLaunch;
   final int initialIndex;
 
-  const Navbar({super.key, this.address, this.showReferralOnLaunch = false, this.initialIndex = 0});
+  const Navbar({super.key, this.showReferralOnLaunch = false, this.initialIndex = 0});
 
   @override
   ConsumerState<Navbar> createState() => _NavbarState();
@@ -222,7 +220,7 @@ class _NavbarState extends ConsumerState<Navbar> {
     return IndexedStack(
       index: _selectedIndex,
       children: [
-        WalletMain(address: widget.address),
+        const WalletMain(),
         const TransactionsScreen(),
         const SettingsScreen(),
         QuestsScreen(key: _questsScreenKey),

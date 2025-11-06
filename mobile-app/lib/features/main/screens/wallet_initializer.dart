@@ -9,9 +9,7 @@ import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/utils/env_utils.dart';
 
 class WalletInitializer extends ConsumerStatefulWidget {
-  final String? address;
-
-  const WalletInitializer({super.key, this.address});
+  const WalletInitializer({super.key});
 
   @override
   ConsumerState<WalletInitializer> createState() => WalletInitializerState();
@@ -170,7 +168,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
     }
 
     if (_walletExists) {
-      return Navbar(address: widget.address, initialIndex: initialIndex);
+      return Navbar(initialIndex: initialIndex);
     } else {
       return const WelcomeScreen();
     }
