@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_initializer.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 
-class AuthenticationWrapper extends ConsumerStatefulWidget {
+class AuthenticationWrapper extends StatefulWidget {
   const AuthenticationWrapper({super.key});
 
   @override
-  ConsumerState<AuthenticationWrapper> createState() => _AuthenticationWrapperState();
+  State<AuthenticationWrapper> createState() => _AuthenticationWrapperState();
 }
 
-class _AuthenticationWrapperState extends ConsumerState<AuthenticationWrapper> with WidgetsBindingObserver {
+class _AuthenticationWrapperState extends State<AuthenticationWrapper> with WidgetsBindingObserver {
   final LocalAuthService _localAuthService = LocalAuthService();
   bool _isAuthenticated = false;
   bool _isAuthenticating = false;
