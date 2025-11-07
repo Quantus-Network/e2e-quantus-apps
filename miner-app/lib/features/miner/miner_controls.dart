@@ -3,9 +3,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
+import 'package:quantus_miner/src/shared/extensions/theme_extensions.dart';
 
-import '../services/binary_manager.dart';
-import '../services/miner_process.dart';
+import '../../src/services/binary_manager.dart';
+import '../../src/services/miner_process.dart';
 import '../../main.dart'; // Import for GlobalMinerManager
 // PrometheusService import might not be needed here anymore if hashrate is exclusively from MinerProcess
 // import '../services/prometheus_service.dart';
@@ -184,19 +185,19 @@ class _MinerControlsState extends State<MinerControls> {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(statusText, style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
+        Text(statusText, style: context.textTheme.headlineSmall, textAlign: TextAlign.center),
         const SizedBox(height: 8),
         if (_proc != null && !_isSyncingNode && _hashrate != null)
           Text(
             'Hashrate: ${_hashrate!.toStringAsFixed(2)} H/s',
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: context.textTheme.bodyMedium,
             textAlign: TextAlign.center,
           )
         else if (_proc != null &&
             !_isSyncingNode &&
             _hashrate == null &&
             !_isSyncingNode) // Show fetching only if not syncing and proc started
-          Text('Hashrate: Fetching...', style: Theme.of(context).textTheme.bodyMedium, textAlign: TextAlign.center),
+          Text('Hashrate: Fetching...', style: context.textTheme.bodyMedium, textAlign: TextAlign.center),
         const SizedBox(height: 20),
         ConstrainedBox(
           constraints: BoxConstraints(maxWidth: 400),
