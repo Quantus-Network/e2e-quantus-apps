@@ -1,28 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:quantus_miner/src/shared/extensions/theme_extensions.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class TopSnackBarContent extends StatelessWidget {
   final String title;
   final String message;
-  final Widget? icon;
+  final Icon? icon;
 
   const TopSnackBarContent({super.key, required this.title, required this.message, this.icon});
 
   @override
   Widget build(BuildContext context) {
     // Default Icon if none provided
-    final Widget displayIcon =
-        icon ??
-        Container(
-          width: 44,
-          height: 44,
-          decoration: const ShapeDecoration(
-            color: Color(0xFF494949), // Default grey background
-            shape: OvalBorder(), // Use OvalBorder for circle
-          ),
-          alignment: Alignment.center,
-          child: Icon(Icons.check, color: Colors.white, size: 24), // Default check icon
-        );
+    final Widget displayIcon = Container(
+      width: 36,
+      height: 36,
+      decoration: const ShapeDecoration(
+        color: Color(0xFF494949), // Default grey background
+        shape: OvalBorder(), // Use OvalBorder for circle
+      ),
+      alignment: Alignment.center,
+      child: Icon(icon?.icon ?? Icons.check, color: icon?.color ?? Colors.white, size: 24), // Default check icon
+    );
 
     return Container(
       // width: 343, // Width will be handled by the flash package's constraints
@@ -49,10 +48,11 @@ class TopSnackBarContent extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title),
+                Text(title, style: context.textTheme.titleSmall),
                 const SizedBox(height: 2), // Spacing
                 Text(
                   message,
+                  style: context.textTheme.bodySmall,
 
                   // softWrap: true, // Ensure message wraps
                 ),

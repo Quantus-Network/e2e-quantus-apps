@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart'; // Import GoRouter
 import 'package:quantus_miner/src/services/miner_process.dart'; // Import MinerProcess
 import 'package:quantus_miner/src/services/miner_settings_service.dart'; // Import the new service
 import 'package:quantus_miner/src/services/mining_stats_service.dart'; // Import mining stats service
-import 'package:quantus_miner/src/shared/extensions/clipboard_extensions.dart';
+import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
 import 'package:quantus_miner/src/ui/logs_widget.dart'; // Import LogsWidget
 import 'package:quantus_miner/src/ui/miner_controls.dart'; // Import MinerControls
 import 'package:quantus_sdk/quantus_sdk.dart'; // Assuming quantus_sdk exports necessary components
@@ -70,6 +70,8 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
           _miningStats = stats;
         });
       }
+
+      print(_miningStats);
     });
   }
 
@@ -438,7 +440,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                         icon: Icon(Icons.copy, color: Colors.white.useOpacity(0.5), size: 16),
                                         onPressed: () {
                                           if (_walletAddress != null) {
-                                            ClipboardExtensions.copyTextWithSnackbar(context, _walletAddress!);
+                                            context.copyTextWithSnackbar(_walletAddress!);
                                           }
                                         },
                                         constraints: const BoxConstraints(),
@@ -585,18 +587,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                       const SizedBox(height: 24),
 
                       // Mining Controls
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Colors.white.useOpacity(0.1), Colors.white.useOpacity(0.05)],
-                          ),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: Colors.white.useOpacity(0.1), width: 1),
-                        ),
-                        child: MinerControls(onMinerProcessChanged: _onMinerProcessChanged),
-                      ),
+                      MinerControls(onMinerProcessChanged: _onMinerProcessChanged),
                     ]),
                   ),
                 ),

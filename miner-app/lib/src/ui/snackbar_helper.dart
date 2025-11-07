@@ -8,7 +8,7 @@ Future<void> showTopSnackBar(
   BuildContext context, {
   required String title,
   required String message,
-  Widget? icon,
+  Icon? icon,
   Duration duration = const Duration(seconds: 3), // Default duration
   FlashBehavior style = FlashBehavior.floating, // Floating style
 }) async {
@@ -43,4 +43,22 @@ Future<void> showTopSnackBar(
 
 Future<void> showCopySnackbar(BuildContext context, {required String title, required String message}) async {
   await showTopSnackBar(context, title: title, message: message);
+}
+
+Future<void> showWarningSnackbar(BuildContext context, {required String title, required String message}) async {
+  await showTopSnackBar(
+    context,
+    title: title,
+    message: message,
+    icon: Icon(Icons.warning, color: Colors.amber),
+  );
+}
+
+Future<void> showErrorSnackbar(BuildContext context, {required String title, required String message}) async {
+  await showTopSnackBar(
+    context,
+    title: title,
+    message: message,
+    icon: Icon(Icons.warning, color: Colors.red),
+  );
 }
