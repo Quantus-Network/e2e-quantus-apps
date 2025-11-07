@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Import secure storage
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart'; // Import GoRouter
 import 'package:quantus_miner/src/services/miner_process.dart'; // Import MinerProcess
 import 'package:quantus_miner/src/services/miner_settings_service.dart'; // Import the new service
@@ -216,14 +217,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                               // Logo/Title area
                               Row(
                                 children: [
-                                  Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: const BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      gradient: LinearGradient(colors: [Color(0xFF00D4FF), Color(0xFF0099FF)]),
-                                    ),
-                                  ),
+                                  SvgPicture.asset('assets/logo/logo.svg'),
                                   const SizedBox(width: 12),
                                   const Text(
                                     'Quantus Miner',
@@ -269,9 +263,11 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                       ),
                                     ),
                                   ],
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: Icon(Icons.more_vert, color: Colors.white.useOpacity(0.7), size: 20),
+                                  child: Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                      child: Icon(Icons.menu, color: Colors.white.useOpacity(0.7), size: 20),
+                                    ),
                                   ),
                                 ),
                               ),
