@@ -1,0 +1,141 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
+import 'package:quantus_miner/src/services/miner_settings_service.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
+
+enum _MenuValues { logout }
+
+class DashboardAppBar extends StatefulWidget {
+  const DashboardAppBar({super.key});
+
+  @override
+  State<DashboardAppBar> createState() => _DashboardAppBarState();
+}
+
+class _DashboardAppBarState extends State<DashboardAppBar> {
+  final _minerSettingsService = MinerSettingsService();
+
+  Future<void> _performLogout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Logout?'),
+          content: const Text(
+            'This will delete your stored rewards address mnemonic, node identity, and the downloaded node binary. You will need to go through the full setup process again.\n\nAre you sure you want to continue?',
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+            ),
+            TextButton(
+              child: const Text('Logout', style: TextStyle(color: Colors.red)),
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      await _minerSettingsService.logout();
+      if (mounted) {
+        context.go('/node_setup');
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverAppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      floating: true,
+      pinned: false,
+      flexibleSpace: ClipRRect(
+        borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24)),
+        child: BackdropFilter(
+          filter: ColorFilter.mode(Colors.black.useOpacity(0.1), BlendMode.srcOver),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.white.useOpacity(0.1), Colors.white.useOpacity(0.05)],
+              ),
+              border: Border(bottom: BorderSide(color: Colors.white.useOpacity(0.1), width: 1)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Row(
+                children: [
+                  Row(
+                    children: [
+                      SvgPicture.asset('assets/logo/logo.svg'),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Quantus Miner',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.white.useOpacity(0.1),
+                      border: Border.all(color: Colors.white.useOpacity(0.2), width: 1),
+                    ),
+                    child: PopupMenuButton<_MenuValues>(
+                      color: const Color(0xFF1A1A1A),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      onSelected: (_MenuValues item) async {
+                        switch (item) {
+                          case _MenuValues.logout:
+                            await _performLogout();
+                            break;
+                        }
+                      },
+                      itemBuilder: (BuildContext context) => <PopupMenuEntry<_MenuValues>>[
+                        PopupMenuItem<_MenuValues>(
+                          value: _MenuValues.logout,
+                          child: Row(
+                            children: [
+                              Icon(Icons.logout, color: Colors.red.useOpacity(0.8), size: 20),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Logout (Full Reset)',
+                                style: TextStyle(color: Colors.white.useOpacity(0.9), fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Icon(Icons.menu, color: Colors.white.useOpacity(0.7), size: 20),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
