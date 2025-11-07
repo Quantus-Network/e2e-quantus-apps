@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart'; // Import GoRouter
 import 'package:quantus_miner/src/services/miner_process.dart'; // Import MinerProcess
 import 'package:quantus_miner/src/services/miner_settings_service.dart'; // Import the new service
 import 'package:quantus_miner/src/services/mining_stats_service.dart'; // Import mining stats service
+import 'package:quantus_miner/src/shared/extensions/clipboard_extensions.dart';
 import 'package:quantus_miner/src/ui/logs_widget.dart'; // Import LogsWidget
 import 'package:quantus_miner/src/ui/miner_controls.dart'; // Import MinerControls
 import 'package:quantus_sdk/quantus_sdk.dart'; // Assuming quantus_sdk exports necessary components
@@ -33,10 +34,8 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
   MinerProcess? _currentMinerProcess;
 
   final _storage = const FlutterSecureStorage(); // Instantiate secure storage
-  final _minerSettingsService =
-      MinerSettingsService(); // Instantiate the service
-  final _miningStatsService =
-      MiningStatsService(); // Instantiate mining stats service
+  final _minerSettingsService = MinerSettingsService(); // Instantiate the service
+  final _miningStatsService = MiningStatsService(); // Instantiate mining stats service
 
   @override
   void initState() {
@@ -96,9 +95,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
       if (mnemonic != null) {
         // Derive keypair from mnemonic using SubstrateService (exported by quantus_sdk)
         // ignore: deprecated_member_use
-        final keypair = SubstrateService().nonHDdilithiumKeypairFromMnemonic(
-          mnemonic,
-        );
+        final keypair = SubstrateService().nonHDdilithiumKeypairFromMnemonic(mnemonic);
         // Use toAccountId function to get the SS58 address (exported by quantus_sdk)
         address = toAccountId(obj: keypair);
 
@@ -111,10 +108,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
 
         setState(() {
           // Assuming NumberFormattingService and AppConstants are available via quantus_sdk export
-          _walletBalance = NumberFormattingService().formatBalance(
-            balance,
-            addSymbol: true,
-          );
+          _walletBalance = NumberFormattingService().formatBalance(balance, addSymbol: true);
           _walletAddress = address;
         });
       } else {
@@ -205,32 +199,18 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                       bottomRight: Radius.circular(24),
                     ),
                     child: BackdropFilter(
-                      filter: ColorFilter.mode(
-                        Colors.black.useOpacity(0.1),
-                        BlendMode.srcOver,
-                      ),
+                      filter: ColorFilter.mode(Colors.black.useOpacity(0.1), BlendMode.srcOver),
                       child: Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.white.useOpacity(0.1),
-                              Colors.white.useOpacity(0.05),
-                            ],
+                            colors: [Colors.white.useOpacity(0.1), Colors.white.useOpacity(0.05)],
                           ),
-                          border: Border(
-                            bottom: BorderSide(
-                              color: Colors.white.useOpacity(0.1),
-                              width: 1,
-                            ),
-                          ),
+                          border: Border(bottom: BorderSide(color: Colors.white.useOpacity(0.1), width: 1)),
                         ),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                           child: Row(
                             children: [
                               // Logo/Title area
@@ -241,12 +221,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                     height: 8,
                                     decoration: const BoxDecoration(
                                       shape: BoxShape.circle,
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          Color(0xFF00D4FF),
-                                          Color(0xFF0099FF),
-                                        ],
-                                      ),
+                                      gradient: LinearGradient(colors: [Color(0xFF00D4FF), Color(0xFF0099FF)]),
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -267,16 +242,11 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(12),
                                   color: Colors.white.useOpacity(0.1),
-                                  border: Border.all(
-                                    color: Colors.white.useOpacity(0.2),
-                                    width: 1,
-                                  ),
+                                  border: Border.all(color: Colors.white.useOpacity(0.2), width: 1),
                                 ),
                                 child: PopupMenuButton<_MenuValues>(
                                   color: const Color(0xFF1A1A1A),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                   onSelected: (_MenuValues item) async {
                                     switch (item) {
                                       case _MenuValues.logout:
@@ -284,39 +254,24 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                         break;
                                     }
                                   },
-                                  itemBuilder: (BuildContext context) =>
-                                      <PopupMenuEntry<_MenuValues>>[
-                                        PopupMenuItem<_MenuValues>(
-                                          value: _MenuValues.logout,
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.logout,
-                                                color: Colors.red.useOpacity(
-                                                  0.8,
-                                                ),
-                                                size: 20,
-                                              ),
-                                              const SizedBox(width: 12),
-                                              Text(
-                                                'Logout (Full Reset)',
-                                                style: TextStyle(
-                                                  color: Colors.white
-                                                      .useOpacity(0.9),
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                            ],
+                                  itemBuilder: (BuildContext context) => <PopupMenuEntry<_MenuValues>>[
+                                    PopupMenuItem<_MenuValues>(
+                                      value: _MenuValues.logout,
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.logout, color: Colors.red.useOpacity(0.8), size: 20),
+                                          const SizedBox(width: 12),
+                                          Text(
+                                            'Logout (Full Reset)',
+                                            style: TextStyle(color: Colors.white.useOpacity(0.9), fontSize: 14),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                   child: Padding(
                                     padding: const EdgeInsets.all(12),
-                                    child: Icon(
-                                      Icons.more_vert,
-                                      color: Colors.white.useOpacity(0.7),
-                                      size: 20,
-                                    ),
+                                    child: Icon(Icons.more_vert, color: Colors.white.useOpacity(0.7), size: 20),
                                   ),
                                 ),
                               ),
@@ -341,33 +296,21 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: _miningStats!.isSyncing
-                                        ? [
-                                            const Color(0xFFFF6B35),
-                                            const Color(0xFFFF8F65),
-                                          ]
+                                        ? [const Color(0xFFFF6B35), const Color(0xFFFF8F65)]
                                         : [
-                                            const Color(
-                                              0xFF6366F1,
-                                            ), // Deep purple
-                                            const Color(
-                                              0xFF1E3A8A,
-                                            ), // Deep blue
+                                            const Color(0xFF6366F1), // Deep purple
+                                            const Color(0xFF1E3A8A), // Deep blue
                                           ],
                                   ),
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
                                       color:
-                                          (_miningStats!.isSyncing
-                                                  ? const Color(0xFFFF6B35)
-                                                  : const Color(0xFF6366F1))
+                                          (_miningStats!.isSyncing ? const Color(0xFFFF6B35) : const Color(0xFF6366F1))
                                               .useOpacity(0.3),
                                       blurRadius: 8,
                                       spreadRadius: 1,
@@ -377,9 +320,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                 child: Row(
                                   children: [
                                     Icon(
-                                      _miningStats!.isSyncing
-                                          ? Icons.sync
-                                          : Icons.check_circle,
+                                      _miningStats!.isSyncing ? Icons.sync : Icons.check_circle,
                                       color: Colors.white,
                                       size: 16,
                                     ),
@@ -407,16 +348,10 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: [
-                              Colors.white.useOpacity(0.1),
-                              Colors.white.useOpacity(0.05),
-                            ],
+                            colors: [Colors.white.useOpacity(0.1), Colors.white.useOpacity(0.05)],
                           ),
                           borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: Colors.white.useOpacity(0.1),
-                            width: 1,
-                          ),
+                          border: Border.all(color: Colors.white.useOpacity(0.1), width: 1),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.useOpacity(0.2),
@@ -444,11 +379,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                       ),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: const Icon(
-                                      Icons.account_balance_wallet,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
+                                    child: const Icon(Icons.account_balance_wallet, color: Colors.white, size: 20),
                                   ),
                                   const SizedBox(width: 12),
                                   Text(
@@ -466,11 +397,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                       color: Colors.white.useOpacity(0.1),
                                     ),
                                     child: IconButton(
-                                      icon: Icon(
-                                        Icons.refresh,
-                                        color: Colors.white.useOpacity(0.7),
-                                        size: 20,
-                                      ),
+                                      icon: Icon(Icons.refresh, color: Colors.white.useOpacity(0.7), size: 20),
                                       tooltip: 'Reload Balance',
                                       onPressed: _fetchWalletBalance,
                                     ),
@@ -494,18 +421,11 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                   decoration: BoxDecoration(
                                     color: Colors.white.useOpacity(0.05),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: Colors.white.useOpacity(0.1),
-                                      width: 1,
-                                    ),
+                                    border: Border.all(color: Colors.white.useOpacity(0.1), width: 1),
                                   ),
                                   child: Row(
                                     children: [
-                                      Icon(
-                                        Icons.link,
-                                        color: Colors.white.useOpacity(0.5),
-                                        size: 16,
-                                      ),
+                                      Icon(Icons.link, color: Colors.white.useOpacity(0.5), size: 16),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
@@ -519,13 +439,11 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                         ),
                                       ),
                                       IconButton(
-                                        icon: Icon(
-                                          Icons.copy,
-                                          color: Colors.white.useOpacity(0.5),
-                                          size: 16,
-                                        ),
+                                        icon: Icon(Icons.copy, color: Colors.white.useOpacity(0.5), size: 16),
                                         onPressed: () {
-                                          // Copy to clipboard
+                                          if (_walletAddress != null) {
+                                            ClipboardExtensions.copyTextWithSnackbar(context, _walletAddress!);
+                                          }
                                         },
                                         constraints: const BoxConstraints(),
                                         padding: EdgeInsets.zero,
@@ -547,16 +465,10 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [
-                                Colors.white.useOpacity(0.1),
-                                Colors.white.useOpacity(0.05),
-                              ],
+                              colors: [Colors.white.useOpacity(0.1), Colors.white.useOpacity(0.05)],
                             ),
                             borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: Colors.white.useOpacity(0.1),
-                              width: 1,
-                            ),
+                            border: Border.all(color: Colors.white.useOpacity(0.1), width: 1),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.useOpacity(0.2),
@@ -585,11 +497,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                         ),
                                         borderRadius: BorderRadius.circular(14),
                                       ),
-                                      child: const Icon(
-                                        Icons.analytics,
-                                        color: Colors.white,
-                                        size: 24,
-                                      ),
+                                      child: const Icon(Icons.analytics, color: Colors.white, size: 24),
                                     ),
                                     const SizedBox(width: 16),
                                     Text(
@@ -619,8 +527,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                           _buildCompactStat(
                                             icon: Icons.block,
                                             label: 'Current',
-                                            value:
-                                                '${_miningStats!.currentBlock}',
+                                            value: '${_miningStats!.currentBlock}',
                                           ),
                                         ],
                                       ),
@@ -633,15 +540,13 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                           _buildCompactStat(
                                             icon: Icons.speed,
                                             label: 'Hashrate',
-                                            value:
-                                                '${_miningStats!.hashrate.toStringAsFixed(2)} H/s',
+                                            value: '${_miningStats!.hashrate.toStringAsFixed(2)} H/s',
                                           ),
                                           const SizedBox(height: 16),
                                           _buildCompactStat(
                                             icon: Icons.sync,
                                             label: 'Target',
-                                            value:
-                                                '${_miningStats!.targetBlock}',
+                                            value: '${_miningStats!.targetBlock}',
                                           ),
                                         ],
                                       ),
@@ -668,18 +573,13 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white.useOpacity(0.6),
-                                  ),
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white.useOpacity(0.6)),
                                 ),
                               ),
                               const SizedBox(width: 16),
                               Text(
                                 'Loading mining stats...',
-                                style: TextStyle(
-                                  color: Colors.white.useOpacity(0.6),
-                                  fontSize: 16,
-                                ),
+                                style: TextStyle(color: Colors.white.useOpacity(0.6), fontSize: 16),
                               ),
                             ],
                           ),
@@ -694,20 +594,12 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: [
-                              Colors.white.useOpacity(0.1),
-                              Colors.white.useOpacity(0.05),
-                            ],
+                            colors: [Colors.white.useOpacity(0.1), Colors.white.useOpacity(0.05)],
                           ),
                           borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: Colors.white.useOpacity(0.1),
-                            width: 1,
-                          ),
+                          border: Border.all(color: Colors.white.useOpacity(0.1), width: 1),
                         ),
-                        child: MinerControls(
-                          onMinerProcessChanged: _onMinerProcessChanged,
-                        ),
+                        child: MinerControls(onMinerProcessChanged: _onMinerProcessChanged),
                       ),
                     ]),
                   ),
@@ -779,11 +671,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
     );
   }
 
-  Widget _buildCompactStat({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
+  Widget _buildCompactStat({required IconData icon, required String label, required String value}) {
     return Row(
       children: [
         Container(
