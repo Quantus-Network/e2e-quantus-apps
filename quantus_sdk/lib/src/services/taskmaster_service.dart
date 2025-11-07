@@ -5,12 +5,34 @@ import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
+class TokenInfo {
+  final String accessToken;
+  final DateTime expiresAt;
+  final DateTime issuedAt;
+
+  TokenInfo({required this.accessToken, required this.expiresAt, required this.issuedAt});
+
+  bool get isExpired => DateTime.now().isAfter(expiresAt);
+  bool get isNearExpiry => DateTime.now().add(const Duration(minutes: 30)).isAfter(expiresAt);
+
+  Map<String, dynamic> toJson() => {
+    'accessToken': accessToken,
+    'expiresAt': expiresAt.toIso8601String(),
+    'issuedAt': issuedAt.toIso8601String(),
+  };
+
+  factory TokenInfo.fromJson(Map<String, dynamic> json) => TokenInfo(
+    accessToken: json['accessToken'],
+    expiresAt: DateTime.parse(json['expiresAt']),
+    issuedAt: DateTime.parse(json['issuedAt']),
+  );
+}
+
 class TaskMasterAuthClient {
   final String taskMasterEndpointUrl;
   final http.Client _client;
 
-  TaskMasterAuthClient(this.taskMasterEndpointUrl, {http.Client? client})
-    : _client = client ?? http.Client();
+  TaskMasterAuthClient(this.taskMasterEndpointUrl, {http.Client? client}) : _client = client ?? http.Client();
 
   Future<Map<String, String>> requestChallenge() async {
     print('request challenge');
@@ -23,10 +45,7 @@ class TaskMasterAuthClient {
       throw Exception('request-challenge failed: ${r.statusCode} ${r.body}');
     }
     final j = jsonDecode(r.body) as Map<String, dynamic>;
-    return {
-      'temp_session_id': j['temp_session_id'] as String,
-      'challenge': j['challenge'] as String,
-    };
+    return {'temp_session_id': j['temp_session_id'] as String, 'challenge': j['challenge'] as String};
   }
 
   Future<String> verify({
@@ -35,6 +54,7 @@ class TaskMasterAuthClient {
     required String publicKeyHex,
     required String signatureHex,
   }) async {
+    print('verify $tempSessionId ');
     final r = await _client.post(
       Uri.parse('$taskMasterEndpointUrl/auth/verify'),
       headers: {'content-type': 'application/json'},
@@ -54,10 +74,7 @@ class TaskMasterAuthClient {
   }
 
   Future<Map<String, dynamic>> me(String accessToken) async {
-    final r = await _client.get(
-      Uri.parse('$taskMasterEndpointUrl/auth/me'),
-      headers: getAuthHeaders(accessToken),
-    );
+    final r = await _client.get(Uri.parse('$taskMasterEndpointUrl/auth/me'), headers: getAuthHeaders(accessToken));
     if (r.statusCode != 200) {
       throw Exception('me failed: ${r.statusCode}');
     }
@@ -71,8 +88,7 @@ class TaskMasterAuthClient {
   }) async {
     final ch = await requestChallenge();
     print('challenge: $ch');
-    final msg =
-        'taskmaster:login:1|challenge=${ch['challenge']}|address=$ss58Address';
+    final msg = 'taskmaster:login:1|challenge=${ch['challenge']}|address=$ss58Address';
     print('msg: $msg');
     final sigHex = await signHex(utf8.encode(msg));
     return verify(
@@ -90,9 +106,7 @@ class TaskMasterAuthClient {
 
 // Task master service singleton
 class TaskmasterService {
-  final _referralEndpoint = Uri.parse(
-    '${AppConstants.taskMasterEndpoint}/referrals',
-  );
+  final _referralEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/referrals');
   final String _minerStatsQuery = r'''
     query MinerStats($ids: [String!]!) {
       minerStats(where: {id_in: $ids}) {
@@ -110,25 +124,26 @@ class TaskmasterService {
   final SettingsService _settingsService = SettingsService();
   final HdWalletService _hd = HdWalletService();
   final _mainAccountIndex = 0;
-  String? _accessToken;
-  String? get accessToken => _accessToken;
-  bool get isLoggedIn => _accessToken != null;
+  TokenInfo? _tokenInfo;
+  String? get accessToken => _tokenInfo?.accessToken;
+  bool get isLoggedIn => _tokenInfo != null && !_tokenInfo!.isExpired;
 
-  TaskMasterAuthClient get _client =>
-      TaskMasterAuthClient(AppConstants.taskMasterEndpoint);
+  TaskMasterAuthClient get _client => TaskMasterAuthClient(AppConstants.taskMasterEndpoint);
+
+  void _clearToken() {
+    _tokenInfo = null;
+  }
 
   Future<String> getOldMiningAccountId() async {
     final mnemonic = await _settingsService.getMnemonic();
     if (mnemonic == null) {
       throw Exception('Mnemonic not found.');
     }
-    final rawKeyPair = SubstrateService().nonHDdilithiumKeypairFromMnemonic(
-      mnemonic,
-    );
+    final rawKeyPair = SubstrateService().nonHDdilithiumKeypairFromMnemonic(mnemonic);
     return rawKeyPair.ss58Address;
   }
 
-  Future<String> loginWithAccount1() async {
+  Future<TokenInfo> loginWithAccount1() async {
     final mnemonic = await _settingsService.getMnemonic();
     if (mnemonic == null) {
       throw Exception('Mnemonic not found.');
@@ -142,11 +157,12 @@ class TaskmasterService {
       return convert_hex.hex.encode(sig);
     }
 
-    return _client.login(
-      ss58Address: ss58Address,
-      publicKeyHex: publicKeyHex,
-      signHex: signHex,
-    );
+    final accessToken = await _client.login(ss58Address: ss58Address, publicKeyHex: publicKeyHex, signHex: signHex);
+
+    final now = DateTime.now();
+    final expiresAt = now.add(const Duration(hours: 24));
+
+    return TokenInfo(accessToken: accessToken, expiresAt: expiresAt, issuedAt: now);
   }
 
   Future<Map<String, dynamic>> me(String accessToken) {
@@ -157,25 +173,29 @@ class TaskmasterService {
     return _client.getAuthHeaders(accessToken);
   }
 
-  // Makes sure account is logged in
   Future<bool> ensureIsLoggedIn() async {
-    if (_accessToken != null) {
-      try {
-        // ignore: unused_local_variable
-        final meResult = await me(_accessToken!);
+    print('ensureIsLoggedIn');
+
+    if (_tokenInfo != null && !_tokenInfo!.isExpired) {
+      if (_tokenInfo!.isNearExpiry) {
+        try {
+          _tokenInfo = await loginWithAccount1();
+          return true;
+        } catch (error) {
+          print('Token refresh failed: $error');
+          _clearToken();
+        }
+      } else {
+        print('is logged in by token expiry');
         return true;
-      } catch (error) {
-        print('ensureIsLoggedIn error: $error');
-        _accessToken = null;
       }
     }
 
     try {
-      _accessToken = await loginWithAccount1();
-
+      _tokenInfo = await loginWithAccount1();
       return true;
     } catch (error) {
-      print('ensureIsLoggedIn login error $error');
+      print('Login failed: $error');
       return false;
     }
   }
@@ -183,9 +203,7 @@ class TaskmasterService {
   // Submit a referral code
   Future<void> submitReferral(String referralCode) async {
     print('submitReferral $referralCode');
-    final Map<String, dynamic> requestBody = {
-      'referral_code': referralCode.toLowerCase(),
-    };
+    final Map<String, dynamic> requestBody = {'referral_code': referralCode.toLowerCase()};
 
     await ensureIsLoggedIn();
 
@@ -196,9 +214,7 @@ class TaskmasterService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception(
-        'Referral http request failed with status: ${response.statusCode}. Body: ${response.body}',
-      );
+      throw Exception('Referral http request failed with status: ${response.statusCode}. Body: ${response.body}');
     }
   }
 
@@ -208,9 +224,7 @@ class TaskmasterService {
       '${AppConstants.taskMasterEndpoint}/addresses/${activeAccount.accountId}/reward-program',
     );
 
-    print(
-      'opt in reward program for ${activeAccount.name} ${activeAccount.accountId}',
-    );
+    print('opt in reward program for ${activeAccount.name} ${activeAccount.accountId}');
     final Map<String, dynamic> requestBody = {'new_status': true};
 
     await ensureIsLoggedIn();
@@ -222,9 +236,7 @@ class TaskmasterService {
     );
 
     if (response.statusCode != 204) {
-      throw Exception(
-        'Referral http request failed with status: ${response.statusCode}. Body: ${response.body}',
-      );
+      throw Exception('Referral http request failed with status: ${response.statusCode}. Body: ${response.body}');
     }
   }
 
@@ -285,23 +297,16 @@ class TaskmasterService {
     final oldMiningAccountId = await getOldMiningAccountId();
     final List<String> accountIds = [oldMiningAccountId, mainAccount.accountId];
 
-    final Uri uri = Uri.parse('${AppConstants.graphQlEndpoint}/graphql');
     final Map<String, dynamic> requestBody = {
       'query': _minerStatsQuery,
       'variables': {'ids': accountIds},
     };
 
     try {
-      final http.Response response = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(requestBody),
-      );
+      final http.Response response = await GraphQlEndpointService().post(body: jsonEncode(requestBody));
 
       if (response.statusCode != 200) {
-        throw Exception(
-          'GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}',
-        );
+        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
       }
 
       final Map<String, dynamic> responseBody = jsonDecode(response.body);
@@ -327,10 +332,7 @@ class TaskmasterService {
         totalRewards += BigInt.parse(stats['totalRewards'] as String);
       }
 
-      return MinerStats(
-        totalMinedBlocks: totalMinedBlocks,
-        totalRewards: totalRewards,
-      );
+      return MinerStats(totalMinedBlocks: totalMinedBlocks, totalRewards: totalRewards);
     } catch (e, stackTrace) {
       print('Error fetching miner stats: $e');
       print(stackTrace);
@@ -340,20 +342,13 @@ class TaskmasterService {
 
   Future<AccountStats> getAccountStats() async {
     final account = await getMainAccount();
-    final Uri uri = Uri.parse(
-      '${AppConstants.taskMasterEndpoint}/addresses/${account.accountId}/stats',
-    );
+    final Uri uri = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/${account.accountId}/stats');
 
     try {
-      final http.Response response = await http.get(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-      );
+      final http.Response response = await http.get(uri, headers: {'Content-Type': 'application/json'});
 
       if (response.statusCode != 200) {
-        throw Exception(
-          'HTTP request failed with status: ${response.statusCode}. Body: ${response.body}',
-        );
+        throw Exception('HTTP request failed with status: ${response.statusCode}. Body: ${response.body}');
       }
 
       final json = jsonDecode(response.body) as Map<String, dynamic>;
@@ -365,7 +360,31 @@ class TaskmasterService {
     }
   }
 
+  Future<OptedInPosition> getOptInPosition() async {
+    final Uri uri = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/my-position');
+
+    await ensureIsLoggedIn();
+
+    try {
+      final http.Response response = await http.get(
+        uri,
+        headers: {'Content-Type': 'application/json', ...getAuthHeaders()},
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('HTTP request failed with status: ${response.statusCode}. Body: ${response.body}');
+      }
+
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return OptedInPosition.fromJson(json);
+    } catch (e, stackTrace) {
+      print('Error fetching address stats: $e');
+      print(stackTrace);
+      rethrow;
+    }
+  }
+
   Future<void> logout() async {
-    _accessToken = null;
+    _clearToken();
   }
 }

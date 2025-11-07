@@ -1,27 +1,44 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
+class AuthConfigItem {
+  final int value; // should be time in minutes
+  final String label;
+
+  AuthConfigItem({required this.value, required this.label});
+}
+
 class AuthenticationSettingsScreen extends StatefulWidget {
   const AuthenticationSettingsScreen({super.key});
 
   @override
-  State<AuthenticationSettingsScreen> createState() =>
-      _AuthenticationSettingsScreenState();
+  State<AuthenticationSettingsScreen> createState() => _AuthenticationSettingsScreenState();
 }
 
-class _AuthenticationSettingsScreenState
-    extends State<AuthenticationSettingsScreen> {
+class _AuthenticationSettingsScreenState extends State<AuthenticationSettingsScreen> {
   final LocalAuthService _localAuthService = LocalAuthService();
+  final _authConfigList = [
+    AuthConfigItem(value: 0, label: 'Immediately'),
+    AuthConfigItem(value: 1, label: '1 minute'),
+    AuthConfigItem(value: 5, label: '5 minutes'),
+    AuthConfigItem(value: 15, label: '15 minutes'),
+    AuthConfigItem(value: 30, label: '30 minutes'),
+    AuthConfigItem(value: 60, label: '1 hour'),
+  ];
+
   bool _isDeviceAuthEnabled = false;
   bool _isLoading = true;
   String _biometricDescription = 'Use Device Authentication';
+  int _authTimeout = 0;
 
   @override
   void initState() {
@@ -32,16 +49,16 @@ class _AuthenticationSettingsScreenState
   Future<void> _loadAuthenticationSettings() async {
     try {
       final isEnabled = _localAuthService.isLocalAuthEnabled();
+      final authTimeout = _localAuthService.getAuthTimeout();
       final isAvailable = await _localAuthService.isBiometricAvailable();
       final description = await _localAuthService.getBiometricDescription();
 
       if (mounted) {
         setState(() {
           _isDeviceAuthEnabled = isEnabled;
-          _biometricDescription = isAvailable
-              ? description
-              : 'Biometric authentication not available';
+          _biometricDescription = isAvailable ? description : 'Biometric authentication not available';
           _isLoading = false;
+          _authTimeout = authTimeout;
         });
       }
     } catch (e) {
@@ -72,10 +89,7 @@ class _AuthenticationSettingsScreenState
               _isLoading = false;
             });
           }
-          _showSnackBar(
-            'Biometric authentication is not available on this device',
-            isSuccess: false,
-          );
+          _showSnackBar('Biometric authentication is not available on this device', isSuccess: false);
           return;
         }
       }
@@ -128,6 +142,13 @@ class _AuthenticationSettingsScreenState
     }
   }
 
+  void _setAuthTimeout(int timeoutDurationInMinutes) {
+    _localAuthService.setAuthTimeout(timeoutDurationInMinutes);
+    setState(() {
+      _authTimeout = timeoutDurationInMinutes;
+    });
+  }
+
   void _showSnackBar(String message, {required bool isSuccess}) {
     if (!mounted) return;
 
@@ -144,31 +165,18 @@ class _AuthenticationSettingsScreenState
   Widget build(BuildContext context) {
     return ScaffoldBase(
       decorations: [
-        Positioned(
-          top: context.containerHalfHeight * 0.8,
-          right: -100,
-          child: const Sphere(variant: 7, size: 311.489),
-        ),
-        Positioned(
-          top: context.containerHalfHeight * 0.45,
-          right: 10,
-          child: const Sphere(variant: 2, size: 194),
-        ),
+        Positioned(top: context.containerHalfHeight * 0.9, right: -100, child: const Sphere(variant: 7, size: 311.489)),
+        Positioned(top: context.containerHalfHeight * 0.45, right: 10, child: const Sphere(variant: 2, size: 194)),
       ],
-      appBar: 'Authentication Settings',
+      appBar: WalletAppBar(title: 'Authentication Settings'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: EdgeInsets.symmetric(
-              vertical: 12,
-              horizontal: context.isTablet ? 18 : 12,
-            ),
+            padding: EdgeInsets.symmetric(vertical: 12, horizontal: context.isTablet ? 18 : 12),
             decoration: ShapeDecoration(
               color: context.themeColors.buttonGlass,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -186,9 +194,7 @@ class _AuthenticationSettingsScreenState
                       const SizedBox(height: 4),
                       Text(
                         _isLoading ? 'Loading...' : _biometricDescription,
-                        style: context.themeText.detail?.copyWith(
-                          color: context.themeColors.textMuted,
-                        ),
+                        style: context.themeText.detail?.copyWith(color: context.themeColors.textMuted),
                       ),
                     ],
                   ),
@@ -199,9 +205,7 @@ class _AuthenticationSettingsScreenState
                         height: context.isTablet ? 28 : 20,
                         child: const CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Color(0xFF16CECE),
-                          ),
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF16CECE)),
                         ),
                       )
                     : CupertinoSwitch(
@@ -214,6 +218,51 @@ class _AuthenticationSettingsScreenState
               ],
             ),
           ),
+          if (!_isLoading && _isDeviceAuthEnabled) ...[
+            const SizedBox(height: 29),
+            Text('Require Authentication', style: context.themeText.smallParagraph),
+            const SizedBox(height: 9),
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: ShapeDecoration(
+                color: context.themeColors.buttonGlass,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+              ),
+              child: Column(
+                children: _authConfigList.map((item) {
+                  final isFirstItem = item.value == 0;
+                  final isLastItem = item.value == 60;
+
+                  final double topPadding = isFirstItem ? 0 : 15;
+                  final double bottomPadding = isLastItem ? 0 : 15;
+
+                  final border = BorderSide(color: Colors.black.useOpacity(0.65), width: 0.6);
+                  final topBorder = isFirstItem ? BorderSide.none : border;
+                  final bottomBorder = isLastItem ? BorderSide.none : border;
+
+                  return InkWell(
+                    onTap: () {
+                      _setAuthTimeout(item.value);
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border(top: topBorder, bottom: bottomBorder),
+                      ),
+                      padding: EdgeInsets.only(top: topPadding, bottom: bottomPadding, left: 18, right: 18),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(item.label, style: context.themeText.smallParagraph),
+                          if (item.value == _authTimeout)
+                            Icon(Icons.check_circle, color: context.themeColors.buttonSuccess, size: 16),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
         ],
       ),
     );

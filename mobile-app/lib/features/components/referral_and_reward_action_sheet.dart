@@ -29,12 +29,10 @@ class ReferralAndRewardActionSheet extends StatefulWidget {
   });
 
   @override
-  State<ReferralAndRewardActionSheet> createState() =>
-      _ReferralAndRewardActionSheetState();
+  State<ReferralAndRewardActionSheet> createState() => _ReferralAndRewardActionSheetState();
 }
 
-class _ReferralAndRewardActionSheetState
-    extends State<ReferralAndRewardActionSheet> {
+class _ReferralAndRewardActionSheetState extends State<ReferralAndRewardActionSheet> {
   final SettingsService _settingsService = SettingsService();
   final ReferralService _referralService = ReferralService();
   final _referralCodeController = TextEditingController();
@@ -83,8 +81,7 @@ class _ReferralAndRewardActionSheetState
     });
 
     try {
-      final isRewardProgramParticipant = await _referralService
-          .getRewardProgramParticiation();
+      final isRewardProgramParticipant = await _referralService.getRewardProgramParticiation();
       await _referralService.submitReferralToBackend(referral: referralCode);
 
       if (isRewardProgramParticipant) {
@@ -139,13 +136,7 @@ class _ReferralAndRewardActionSheetState
   }
 
   Future<void> _loadReferralData() async {
-    final referraldata = await _referralService.getReferralData();
-
-    if (referraldata != null) {
-      _checksum = await HumanReadableChecksumService().getHumanReadableName(
-        referraldata.referrerAddress,
-      );
-    }
+    _checksum = await _referralService.getReferralData();
 
     setState(() {
       _isLoading = false;
@@ -153,8 +144,7 @@ class _ReferralAndRewardActionSheetState
   }
 
   Future<void> _handleSkipReferral() async {
-    final isRewardProgramParticipant = await _referralService
-        .getRewardProgramParticiation();
+    final isRewardProgramParticipant = await _referralService.getRewardProgramParticiation();
 
     if (isRewardProgramParticipant || !widget.showRewardProgram) {
       _closeSheet();
@@ -168,14 +158,10 @@ class _ReferralAndRewardActionSheetState
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
-    final effectiveHeight = _isRewardProgram
-        ? height
-        : height * AppConstants.sendingSheetHeightFraction;
+    final effectiveHeight = _isRewardProgram ? height : height * AppConstants.sendingSheetHeightFraction;
 
     final effectiveRadius = _isRewardProgram ? 0.0 : 5.0;
-    final effectivePadding = _isRewardProgram
-        ? null
-        : const EdgeInsets.symmetric(horizontal: 24, vertical: 16);
+    final effectivePadding = _isRewardProgram ? null : const EdgeInsets.symmetric(horizontal: 24, vertical: 16);
 
     return SafeArea(
       child: Container(
@@ -183,9 +169,7 @@ class _ReferralAndRewardActionSheetState
         padding: effectivePadding,
         decoration: ShapeDecoration(
           color: Colors.black,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(effectiveRadius),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(effectiveRadius)),
         ),
         child: _buildSheetContent(context),
       ),
@@ -214,11 +198,7 @@ class _ReferralAndRewardActionSheetState
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(7),
-          decoration: ShapeDecoration(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(100),
-            ),
-          ),
+          decoration: ShapeDecoration(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100))),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -230,18 +210,11 @@ class _ReferralAndRewardActionSheetState
           ),
         ),
         const SizedBox(height: 22),
-        Text(
-          'Referral Code',
-          style: context.themeText.mediumTitle?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        Text('Referral Code', style: context.themeText.mediumTitle?.copyWith(fontWeight: FontWeight.w600)),
         SizedBox(height: context.isTablet ? 36 : 28),
         Text(
           'Have you been referred by another user? Enter their 5 word code here:',
-          style: context.themeText.smallParagraph?.copyWith(
-            color: context.themeColors.inputLabel,
-          ),
+          style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.inputLabel),
         ),
         const SizedBox(height: 8),
         CustomTextField(
@@ -256,18 +229,13 @@ class _ReferralAndRewardActionSheetState
                 _referralCodeController.text = data.text!;
               }
             },
-            child: SvgPicture.asset(
-              'assets/paste_icon_1.svg',
-              width: context.isTablet ? 24 : 18,
-            ),
+            child: SvgPicture.asset('assets/paste_icon_1.svg', width: context.isTablet ? 24 : 18),
           ),
         ),
         const SizedBox(height: 24),
         Text(
           'Your referrer will get points when you join Quantus Network.',
-          style: context.themeText.smallParagraph?.copyWith(
-            color: context.themeColors.inputLabel.useOpacity(0.8),
-          ),
+          style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.inputLabel.useOpacity(0.8)),
         ),
         const Spacer(),
         SizedBox(
@@ -282,37 +250,32 @@ class _ReferralAndRewardActionSheetState
             },
           ),
         ),
-        const SizedBox(height: 24),
-        SizedBox(
-          width: context.isTablet ? 465 : null,
-          child: Button(
-            label: 'Skip',
-            isLoading: _isSubmitting,
-            variant: ButtonVariant.glassOutline,
-            onPressed: _handleSkipReferral,
+        if (widget.showRewardProgram) ...[
+          const SizedBox(height: 24),
+          SizedBox(
+            width: context.isTablet ? 465 : null,
+            child: Button(
+              label: 'Skip',
+              isLoading: _isSubmitting,
+              variant: ButtonVariant.glassOutline,
+              onPressed: _handleSkipReferral,
+            ),
           ),
-        ),
+        ],
 
         SizedBox(height: context.themeSize.bottomButtonSpacing),
       ],
     );
   }
 
-  Widget _buildPrefilledReferralForm(
-    BuildContext context,
-    String referralCode,
-  ) {
+  Widget _buildPrefilledReferralForm(BuildContext context, String referralCode) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(7),
-          decoration: ShapeDecoration(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(100),
-            ),
-          ),
+          decoration: ShapeDecoration(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100))),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -324,28 +287,19 @@ class _ReferralAndRewardActionSheetState
           ),
         ),
         const SizedBox(height: 22),
-        Text(
-          'You have been referred by:',
-          style: context.themeText.mediumTitle?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        Text('You have been referred by:', style: context.themeText.mediumTitle?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 22),
         CustomTextField(
           initialValue: referralCode,
           fillColor: context.themeColors.background,
           errorMsg: _errorMsg,
-          textStyle: context.themeText.paragraph?.copyWith(
-            color: context.themeColors.checksum,
-          ),
+          textStyle: context.themeText.paragraph?.copyWith(color: context.themeColors.checksum),
           disabled: true,
         ),
         const SizedBox(height: 24),
         Text(
           'Your referrer will get points when you join Quantus Network.',
-          style: context.themeText.smallParagraph?.copyWith(
-            color: context.themeColors.inputLabel.useOpacity(0.8),
-          ),
+          style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.inputLabel.useOpacity(0.8)),
         ),
         const Spacer(),
         SizedBox(
@@ -364,21 +318,14 @@ class _ReferralAndRewardActionSheetState
     );
   }
 
-  Widget _buildReferralSubmittedInfo(
-    BuildContext context,
-    String referralCode,
-  ) {
+  Widget _buildReferralSubmittedInfo(BuildContext context, String referralCode) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(7),
-          decoration: ShapeDecoration(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(100),
-            ),
-          ),
+          decoration: ShapeDecoration(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100))),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -392,26 +339,20 @@ class _ReferralAndRewardActionSheetState
         const SizedBox(height: 22),
         Text(
           'Your submitted referral code:',
-          style: context.themeText.mediumTitle?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+          style: context.themeText.mediumTitle?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 22),
         CustomTextField(
           initialValue: referralCode,
           fillColor: context.themeColors.background,
           errorMsg: _errorMsg,
-          textStyle: context.themeText.paragraph?.copyWith(
-            color: context.themeColors.yellow,
-          ),
+          textStyle: context.themeText.paragraph?.copyWith(color: context.themeColors.yellow),
           disabled: true,
         ),
         const SizedBox(height: 24),
         Text(
           'Your referrer and you get points because you submitted the referral code.',
-          style: context.themeText.smallParagraph?.copyWith(
-            color: context.themeColors.inputLabel.useOpacity(0.8),
-          ),
+          style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.inputLabel.useOpacity(0.8)),
         ),
       ],
     );
@@ -423,7 +364,7 @@ class _ReferralAndRewardActionSheetState
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 90),
+            if (!context.isSmallHeight) const SizedBox(height: 90),
             QuestsPromoVideo(
               isSubmitting: _isSubmitting,
               closeSheet: _closeSheet,
@@ -489,11 +430,7 @@ void showReferralAndRewardActionSheet(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black,
-                  const Color(0xFF312E6E).useOpacity(0.4),
-                  Colors.black,
-                ],
+                colors: [Colors.black, const Color(0xFF312E6E).useOpacity(0.4), Colors.black],
               ),
             ),
           ),

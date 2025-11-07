@@ -2,12 +2,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:app_links/app_links.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 
 final deepLinkServiceProvider = Provider<DeepLinkService>((ref) {
-  return DeepLinkService();
+  return DeepLinkService(ref);
 });
 
 class DeepLinkService {
+  final Ref _ref;
+
+  DeepLinkService(this._ref);
+
   final _appLinks = AppLinks();
   StreamSubscription<Uri>? _linkSubscription;
 
@@ -27,16 +32,24 @@ class DeepLinkService {
   }
 
   void _handleLink(Uri uri, GlobalKey<NavigatorState> navigatorKey) {
-    // Check if the path matches your expected format of /account/:id
-    if (uri.pathSegments.length == 2 && uri.pathSegments.first == 'account') {
-      final accountId = uri.pathSegments.last;
-      
-      // Use the navigator key to push the new route.
-      // We use `currentState` because the key is attached to the Navigator's state.
-      navigatorKey.currentState?.pushNamed(
-        '/account',
-        arguments: accountId, 
-      );
+    if (uri.pathSegments.isNotEmpty && uri.pathSegments.first == 'account') {
+      String? accountId;
+
+      // Check for new format: /account?id=123
+      if (uri.pathSegments.length == 1 && uri.queryParameters.containsKey('id')) {
+        accountId = uri.queryParameters['id'];
+      }
+      // Check for old format: /account/123
+      else if (uri.pathSegments.length == 2) {
+        accountId = uri.pathSegments.last;
+      }
+
+      if (accountId != null && accountId.isNotEmpty) {
+        _ref.read(sharedAccountIntentProvider.notifier).state = accountId;
+        navigatorKey.currentState?.pushNamed('/account');
+      } else {
+        print('Missing or empty account id');
+      }
     }
   }
 

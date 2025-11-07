@@ -1,26 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:resonance_network_wallet/features/components/dropdown_select.dart';
+import 'package:resonance_network_wallet/features/components/select.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
+import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
-import 'package:resonance_network_wallet/utils/transaction_utils.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
   final bool showAccountFilter;
   final String? fixedAccountId; // if set, hide filter popdown
 
-  const TransactionsScreen({
-    super.key,
-    this.showAccountFilter = true,
-    this.fixedAccountId,
-  });
+  const TransactionsScreen({super.key, this.showAccountFilter = true, this.fixedAccountId});
 
   @override
   ConsumerState<TransactionsScreen> createState() => _TransactionsScreenState();
@@ -40,6 +39,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   void _initialize(BuildContext context, WidgetRef ref) {
     if (_isInitialized) return;
 
+    final txService = ref.read(transactionServiceProvider);
     final accountsValue = ref.watch(accountsProvider);
     accountsValue.when(
       data: (accounts) {
@@ -60,12 +60,15 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
               _isInitialized = true;
             });
             ref
-                .read(
-                  filteredPaginationControllerProviderFamily(
-                    AccountIdListCache.get(accountIds),
-                  ).notifier,
-                )
+                .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get(accountIds)).notifier)
                 .loadingRefresh();
+
+            final txIntent = ref.read(transactionIntentProvider);
+            if (txIntent != null) {
+              // After we consume the intent, we clean it up
+              ref.read(transactionIntentProvider.notifier).state = null;
+              showTransactionActionSheet(context, transaction: txIntent, role: txService.getTransactionRole(txIntent));
+            }
           });
         }
       },
@@ -84,15 +87,10 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
       if (_selectedAccountIds != null) {
         ref
-            .read(
-              filteredPaginationControllerProviderFamily(
-                AccountIdListCache.get(_selectedAccountIds!),
-              ).notifier,
-            )
+            .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get(_selectedAccountIds!)).notifier)
             .fetchMore();
       }
     }
@@ -124,9 +122,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     if (_selectedAccountIds == null) {
       // Handles the case where initialization is complete but there are no
       // accounts
-      return widget.showAccountFilter
-          ? _buildFilterableScaffold()
-          : _buildSimpleScaffold();
+      return widget.showAccountFilter ? _buildFilterableScaffold() : _buildSimpleScaffold();
     }
 
     if (widget.showAccountFilter) {
@@ -145,7 +141,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           child: const Sphere(variant: 8, size: 251.62),
         ),
       ],
-      appBar: 'Transaction History',
+      appBar: WalletAppBar(title: 'Transaction History'),
       child: _buildBody(),
     );
   }
@@ -162,7 +158,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           child: const Sphere(variant: 8, size: 251.62),
         ),
       ],
-      screenTitle: ScreenTitle(title: 'Transaction History'),
+      appBar: WalletAppBar.simple(title: 'Transaction History'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -170,18 +166,12 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           accountsAsync.when(
             data: (accounts) {
               if (accounts.isEmpty) {
-                return Text(
-                  'No accounts found.',
-                  style: context.themeText.smallParagraph,
-                );
+                return Text('No accounts found.', style: context.themeText.smallParagraph);
               }
-              return _buildAccountDropdown();
+              return _buildAccountSelect();
             },
             loading: () => const CircularProgressIndicator(),
-            error: (e, st) => Text(
-              'Error loading accounts.',
-              style: TextStyle(color: context.themeColors.textError),
-            ),
+            error: (e, st) => Text('Error loading accounts.', style: TextStyle(color: context.themeColors.textError)),
           ),
           const SizedBox(height: 13),
           Expanded(child: _buildBody()),
@@ -191,25 +181,17 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     );
   }
 
-  Widget _buildAccountDropdown() {
+  Widget _buildAccountSelect() {
     final accounts = ref.read(accountsProvider).value!;
-    final allAccountsSelected =
-        _selectedAccountIds != null &&
-        _selectedAccountIds!.length == accounts.length;
+    final allAccountsSelected = _selectedAccountIds != null && _selectedAccountIds!.length == accounts.length;
 
-    return DropdownSelect<String>(
-      initialValue: allAccountsSelected
-          ? '_all_'
-          : _selectedAccountIds?.firstOrNull,
+    return Select<String>(
+      initialValue: allAccountsSelected ? '_all_' : _selectedAccountIds?.firstOrNull,
       items: [
         Item<String>(value: '_all_', label: 'All Accounts'),
-        ...accounts.map(
-          (account) =>
-              Item<String>(value: account.accountId, label: account.name),
-        ),
+        ...accounts.map((account) => Item<String>(value: account.accountId, label: account.name)),
       ],
-      onChanged: (selectedItem) {
-        if (selectedItem == null) return;
+      onSelect: (selectedItem) {
         final newSelectedIds = selectedItem.value == '_all_'
             ? accounts.map((a) => a.accountId).toList()
             : [selectedItem.value];
@@ -219,11 +201,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         });
 
         ref
-            .read(
-              filteredPaginationControllerProviderFamily(
-                AccountIdListCache.get(newSelectedIds),
-              ).notifier,
-            )
+            .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get(newSelectedIds)).notifier)
             .loadingRefresh();
       },
       disabled: false,
@@ -235,54 +213,92 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_selectedAccountIds!.isEmpty) {
-      return Center(
-        child: Text(
-          'No accounts selected.',
-          style: context.themeText.smallParagraph,
-        ),
-      );
+      return Center(child: Text('No accounts selected.', style: context.themeText.smallParagraph));
     }
 
     final accountIds = _selectedAccountIds!;
-    final filteredTransactionsAsync = ref.watch(
-      filteredTransactionsProviderFamily(AccountIdListCache.get(accountIds)),
-    );
-    final paginationState = ref.watch(
-      filteredPaginationControllerProviderFamily(
-        AccountIdListCache.get(accountIds),
-      ),
-    );
+    final filteredTransactionsAsync = ref.watch(filteredTransactionsProviderFamily(AccountIdListCache.get(accountIds)));
+    final paginationState = ref.watch(filteredPaginationControllerProviderFamily(AccountIdListCache.get(accountIds)));
 
     return filteredTransactionsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => ShaderMask(
+        shaderCallback: (Rect bounds) {
+          return const LinearGradient(
+            begin: Alignment.bottomCenter,
+            end: Alignment.center,
+            colors: [Colors.transparent, Colors.white],
+            stops: [0.0, 0.5],
+          ).createShader(bounds);
+        },
+        blendMode: BlendMode.dstIn,
+        child: CustomScrollView(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: ShapeDecoration(
+                  color: const Color(0x0d0c1014),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Column(
+                    children: [
+                      const TransactionSkeleton(),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Divider(color: context.themeColors.darkGray, thickness: 1),
+                      ),
+                      const TransactionSkeleton(),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Divider(color: context.themeColors.darkGray, thickness: 1),
+                      ),
+                      const TransactionSkeleton(),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Divider(color: context.themeColors.darkGray, thickness: 1),
+                      ),
+                      const TransactionSkeleton(),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Divider(color: context.themeColors.darkGray, thickness: 1),
+                      ),
+                      const TransactionSkeleton(),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Divider(color: context.themeColors.darkGray, thickness: 1),
+                      ),
+                      const TransactionSkeleton(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
       error: (error, stack) => Center(
         child: Text('Error: $error', style: const TextStyle(color: Colors.red)),
       ),
       data: (combinedData) {
-        final allTransactions =
-            TransactionUtils.combineAndDeduplicateTransactions(
-              pendingCancellationIds: combinedData.pendingCancellationIds,
-              pendingTransactions: combinedData.pendingTransactions,
-              reversibleTransfers: combinedData.reversibleTransfers,
-              otherTransfers: combinedData.otherTransfers,
-            );
+        final txService = ref.read(transactionServiceProvider);
+        final allTransactions = txService.combineAndDeduplicateTransactions(
+          pendingCancellationIds: combinedData.pendingCancellationIds,
+          pendingTransactions: combinedData.pendingTransactions,
+          reversibleTransfers: combinedData.reversibleTransfers,
+          otherTransfers: combinedData.otherTransfers,
+        );
 
         if (allTransactions.isEmpty && !paginationState.isFetching) {
-          return Center(
-            child: Text(
-              'No transactions found.',
-              style: context.themeText.smallParagraph,
-            ),
-          );
+          return Center(child: Text('No transactions found.', style: context.themeText.smallParagraph));
         }
 
         return RefreshIndicator(
           onRefresh: () => ref
-              .read(
-                filteredPaginationControllerProviderFamily(
-                  AccountIdListCache.get(accountIds),
-                ).notifier,
-              )
+              .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get(accountIds)).notifier)
               .loadingRefresh(),
           child: ShaderMask(
             shaderCallback: (Rect bounds) {
@@ -307,9 +323,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                     ),
                   ),
                 if (paginationState.isFetching && allTransactions.isEmpty)
-                  const SliverFillRemaining(
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
+                  const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
                 if (paginationState.hasMore && paginationState.isFetching)
                   const SliverToBoxAdapter(
                     child: Padding(

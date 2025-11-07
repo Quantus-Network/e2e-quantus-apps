@@ -5,12 +5,11 @@ import 'package:resonance_network_wallet/features/components/migration_dialog.da
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/utils/env_utils.dart';
 
 class WalletInitializer extends ConsumerStatefulWidget {
-  final String? address;
-
-  const WalletInitializer({super.key, this.address});
+  const WalletInitializer({super.key});
 
   @override
   ConsumerState<WalletInitializer> createState() => WalletInitializerState();
@@ -122,9 +121,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
     });
   }
 
-  Future<void> _uploadMigrationDataToSupabase(
-    List<MigrationAccountData> migrationData,
-  ) async {
+  Future<void> _uploadMigrationDataToSupabase(List<MigrationAccountData> migrationData) async {
     print('_uploadMigrationDataToSupabase');
     final supabase = EnvUtils.supabaseClient;
 
@@ -145,9 +142,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
       // Insert all records at once
       await supabase.from('account_id_mappings').insert(dataToInsert);
 
-      print(
-        'Successfully uploaded ${migrationData.length} migration records to Supabase',
-      );
+      print('Successfully uploaded ${migrationData.length} migration records to Supabase');
     } catch (e) {
       print('Failed to upload migration data to Supabase: $e');
       // Re-throw the error so it gets caught by the caller
@@ -157,6 +152,11 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
 
   @override
   Widget build(BuildContext context) {
+    final hasTxIntent = ref.read(transactionIntentProvider) != null;
+    // If we have value of tx that means we got arguments from notification tap,
+    // so we wanted to display the transactions history screen instead which is index 1.
+    final initialIndex = hasTxIntent ? 1 : 0;
+
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -168,7 +168,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
     }
 
     if (_walletExists) {
-      return Navbar(address: widget.address);
+      return Navbar(initialIndex: initialIndex);
     } else {
       return const WelcomeScreen();
     }

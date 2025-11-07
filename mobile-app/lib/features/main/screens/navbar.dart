@@ -28,16 +28,14 @@ class BottomNavPainter extends CustomPainter {
   final bool isTablet;
   final Color background;
 
-  BottomNavPainter({
-    super.repaint,
-    required this.background,
-    required this.isTablet,
-  });
-
-  double get offset => isTablet ? 130 : 80;
+  BottomNavPainter({super.repaint, required this.background, required this.isTablet});
 
   @override
   void paint(Canvas canvas, Size size) {
+    final dipWidth = 140.0;
+    final offset = dipWidth / 2;
+    final dipHeight = 26.0;
+
     Paint paint = Paint()
       ..color = background
       ..style = PaintingStyle.fill;
@@ -49,7 +47,7 @@ class BottomNavPainter extends CustomPainter {
     path.lineTo(size.width, size.height);
     path.lineTo(size.width, 0);
     path.lineTo((size.width * 1 / 2) + offset, 0);
-    path.lineTo((size.width * 1 / 2), size.height / 2);
+    path.lineTo((size.width * 1 / 2), dipHeight);
     path.lineTo((size.width * 1 / 2) - offset, 0);
     path.lineTo(0, 0);
 
@@ -68,13 +66,7 @@ class NavbarItem extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  const NavbarItem({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
+  const NavbarItem({super.key, required this.icon, required this.label, required this.isSelected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -83,17 +75,10 @@ class NavbarItem extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            color: isSelected ? Colors.white : Colors.grey,
-            size: isSelected ? 30 : 24,
-          ),
+          Icon(icon, color: isSelected ? Colors.white : Colors.grey, size: isSelected ? 30 : 24),
           Text(
             label,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.grey,
-              fontSize: isSelected ? 14 : 12,
-            ),
+            style: TextStyle(color: isSelected ? Colors.white : Colors.grey, fontSize: isSelected ? 14 : 12),
           ),
         ],
       ),
@@ -102,16 +87,10 @@ class NavbarItem extends StatelessWidget {
 }
 
 class Navbar extends ConsumerStatefulWidget {
-  final String? address;
   final bool showReferralOnLaunch;
   final int initialIndex;
 
-  const Navbar({
-    super.key,
-    this.address,
-    this.showReferralOnLaunch = false,
-    this.initialIndex = 0,
-  });
+  const Navbar({super.key, this.showReferralOnLaunch = false, this.initialIndex = 0});
 
   @override
   ConsumerState<Navbar> createState() => _NavbarState();
@@ -124,31 +103,11 @@ class _NavbarState extends ConsumerState<Navbar> {
   final GlobalKey _questsScreenKey = GlobalKey();
 
   final List<NavItem> _navItems = [
-    NavItem(
-      'assets/navbar/home_icon_off.svg',
-      'assets/navbar/home_icon_on.svg',
-      'Home',
-    ),
-    NavItem(
-      'assets/navbar/history_icon_off.svg',
-      'assets/navbar/history_icon_on.svg',
-      'History',
-    ),
-    NavItem(
-      'assets/navbar/floating_button.svg',
-      'assets/navbar/floating_button.svg',
-      'Send',
-    ),
-    NavItem(
-      'assets/navbar/settings_icon_off.svg',
-      'assets/navbar/settings_icon_on.svg',
-      'Settings',
-    ),
-    NavItem(
-      'assets/navbar/qcat_navbar_icon.png',
-      'assets/navbar/qcat_navbar_icon.png',
-      'Quests',
-    ),
+    NavItem('assets/navbar/home_icon_off.svg', 'assets/navbar/home_icon_on.svg', 'Home'),
+    NavItem('assets/navbar/history_icon_off.svg', 'assets/navbar/history_icon_on.svg', 'History'),
+    NavItem('assets/navbar/floating_button.svg', 'assets/navbar/floating_button.svg', 'Send'),
+    NavItem('assets/navbar/settings_icon_off.svg', 'assets/navbar/settings_icon_on.svg', 'Settings'),
+    NavItem('assets/navbar/qcat_navbar_icon.png', 'assets/navbar/qcat_navbar_icon.png', 'Quests'),
   ];
 
   @override
@@ -156,20 +115,16 @@ class _NavbarState extends ConsumerState<Navbar> {
     super.initState();
 
     _referralService.getRewardProgramParticiation();
+    _referralService.getReferralData();
 
     setState(() {
       _selectedIndex = widget.initialIndex;
     });
 
-    if (widget.showReferralOnLaunch ||
-        !SettingsService().existingUserSeenPromoVideo()) {
+    if (widget.showReferralOnLaunch || !SettingsService().existingUserSeenPromoVideo()) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          showReferralActionSheet(
-            context,
-            mounted,
-            widget.showReferralOnLaunch,
-          );
+          showReferralActionSheet(context, mounted, widget.showReferralOnLaunch);
         }
       });
     }
@@ -206,9 +161,7 @@ class _NavbarState extends ConsumerState<Navbar> {
   }
 
   Widget _buildNavItem(int index, NavItem item) {
-    bool isSelected = index > 2
-        ? _selectedIndex == index - 1
-        : _selectedIndex == index;
+    bool isSelected = index > 2 ? _selectedIndex == index - 1 : _selectedIndex == index;
 
     // Floating action button item
     if (index == 2) {
@@ -219,7 +172,7 @@ class _NavbarState extends ConsumerState<Navbar> {
           onTap: () {
             Navigator.pushNamed(context, '/send');
           },
-          child: SvgPicture.asset(item.onIcon),
+          child: Transform.translate(offset: const Offset(1, -2), child: SvgPicture.asset(item.onIcon)),
         ),
       );
     }
@@ -242,20 +195,10 @@ class _NavbarState extends ConsumerState<Navbar> {
                             Transform.translate(
                               offset: const Offset(0, 3),
                               child: ImageFiltered(
-                                imageFilter: ImageFilter.blur(
-                                  sigmaX: 4,
-                                  sigmaY: 4,
-                                ),
+                                imageFilter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
                                 child: ColorFiltered(
-                                  colorFilter: const ColorFilter.mode(
-                                    Color(0xFFA74CED),
-                                    BlendMode.srcIn,
-                                  ),
-                                  child: Image.asset(
-                                    item.offIcon,
-                                    width: 26,
-                                    height: 26,
-                                  ),
+                                  colorFilter: const ColorFilter.mode(Color(0xFFA74CED), BlendMode.srcIn),
+                                  child: Image.asset(item.offIcon, width: 26, height: 26),
                                 ),
                               ),
                             ),
@@ -277,7 +220,7 @@ class _NavbarState extends ConsumerState<Navbar> {
     return IndexedStack(
       index: _selectedIndex,
       children: [
-        WalletMain(address: widget.address),
+        const WalletMain(),
         const TransactionsScreen(),
         const SettingsScreen(),
         QuestsScreen(key: _questsScreenKey),
@@ -291,27 +234,33 @@ class _NavbarState extends ConsumerState<Navbar> {
       height: context.themeSize.navbarHeight,
       child: Stack(
         children: [
-          CustomPaint(
-            size: Size(
-              MediaQuery.of(context).size.width,
-              context.themeSize.navbarHeight,
-            ),
-            painter: BottomNavPainter(
-              background: context.themeColors.navbarBg,
-              isTablet: context.isTablet,
+          // Shadow
+          Transform.translate(
+            offset: const Offset(0, -3),
+            child: ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
+              child: ColorFiltered(
+                colorFilter: const ColorFilter.mode(Color(0x19FFFFFF), BlendMode.srcIn),
+                child: CustomPaint(
+                  size: Size(MediaQuery.of(context).size.width, context.themeSize.navbarHeight),
+                  painter: BottomNavPainter(background: context.themeColors.navbarBg, isTablet: context.isTablet),
+                ),
+              ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(top: 14.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: _navItems.asMap().entries.map((entry) {
-                int index = entry.key;
-                NavItem item = entry.value;
+          CustomPaint(
+            size: Size(MediaQuery.of(context).size.width, context.themeSize.navbarHeight),
+            painter: BottomNavPainter(background: context.themeColors.navbarBg, isTablet: context.isTablet),
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: _navItems.asMap().entries.map((entry) {
+              int index = entry.key;
+              NavItem item = entry.value;
 
-                return _buildNavItem(index, item);
-              }).toList(),
-            ),
+              return _buildNavItem(index, item);
+            }).toList(),
           ),
         ],
       ),
@@ -330,26 +279,16 @@ class _NavbarState extends ConsumerState<Navbar> {
     );
   }
 
-  Future<void> showReferralActionSheet(
-    BuildContext context,
-    bool mounted,
-    bool showReferral,
-  ) async {
+  Future<void> showReferralActionSheet(BuildContext context, bool mounted, bool showReferral) async {
     if (!mounted) {
       return;
     }
 
     SettingsService().setExistingUserSeenPromoVideo();
 
-    String? referralCode = showReferral
-        ? ReferralService().getReferralCode()
-        : null;
+    String? referralCode = showReferral ? ReferralService().getReferralCode() : null;
 
     // ignore: use_build_context_synchronously
-    showReferralAndRewardActionSheet(
-      context,
-      referralCode: referralCode,
-      directlyShowRewardProgram: !showReferral,
-    );
+    showReferralAndRewardActionSheet(context, referralCode: referralCode, directlyShowRewardProgram: !showReferral);
   }
 }

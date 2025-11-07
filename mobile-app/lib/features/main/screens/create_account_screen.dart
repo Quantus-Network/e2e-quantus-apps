@@ -6,8 +6,10 @@ import 'package:resonance_network_wallet/features/components/card_info.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
@@ -18,15 +20,13 @@ class CreateAccountScreen extends ConsumerStatefulWidget {
   const CreateAccountScreen({super.key, this.accountToEdit});
 
   @override
-  ConsumerState<CreateAccountScreen> createState() =>
-      _CreateAccountScreenState();
+  ConsumerState<CreateAccountScreen> createState() => _CreateAccountScreenState();
 }
 
 class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
   final AccountsService _accountsService = AccountsService();
   final ReferralService _referralService = ReferralService();
-  final HumanReadableChecksumService _checksumService =
-      HumanReadableChecksumService();
+  final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
   final TextEditingController _nameController = TextEditingController();
 
   late Account _provisionalAccount;
@@ -52,9 +52,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
     });
     try {
       final account = widget.accountToEdit!;
-      final checkphrase = await _checksumService.getHumanReadableName(
-        account.accountId,
-      );
+      final checkphrase = await _checksumService.getHumanReadableName(account.accountId);
 
       setState(() {
         _provisionalAccount = account;
@@ -67,9 +65,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load account details: $e')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load account details: $e')));
       }
     }
   }
@@ -80,9 +76,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
     });
     try {
       final account = await _accountsService.createNewAccount();
-      final checkphrase = await _checksumService.getHumanReadableName(
-        account.accountId,
-      );
+      final checkphrase = await _checksumService.getHumanReadableName(account.accountId);
 
       if (mounted) {
         setState(() {
@@ -98,9 +92,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to generate account details')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to generate account details')));
       }
     }
   }
@@ -111,22 +103,18 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
     });
     try {
       if (_isEditMode) {
-        await _accountsService.updateAccountName(
-          _provisionalAccount,
-          _nameController.text,
-        );
+        await _accountsService.updateAccountName(_provisionalAccount, _nameController.text);
         // Invalidate the accounts provider to reload the entire list
         ref.invalidate(accountsProvider);
         TelemetryService().sendEvent('edit_account');
       } else {
-        final accountToSave = _provisionalAccount.copyWith(
-          name: _nameController.text,
-        );
-        await _referralService
-            .submitAddressToBackend(); // ensure the user is logged in
+        final accountToSave = _provisionalAccount.copyWith(name: _nameController.text);
+        await _referralService.submitAddressToBackend(); // ensure the user is logged in
         await _accountsService.addAccount(accountToSave);
+
         // Invalidate the accounts provider to reload the entire list
         ref.invalidate(accountsProvider);
+        ref.read(notificationProvider.notifier).addAccountAdded(account: accountToSave);
         TelemetryService().sendEvent('create_account');
       }
 
@@ -138,20 +126,13 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
 
       TelemetryService().sendEvent(
         'error',
-        parameters: {
-          'action': _isEditMode ? 'edit_account' : 'create_account',
-          'error': e.toString(),
-        },
+        parameters: {'action': _isEditMode ? 'edit_account' : 'create_account', 'error': e.toString()},
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to ${_isEditMode ? 'save' : 'create'} account',
-            ),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to ${_isEditMode ? 'save' : 'create'} account')));
       }
     } finally {
       if (mounted) {
@@ -179,7 +160,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         ),
       ],
       backdropBlur: 32,
-      appBar: _isEditMode ? 'Edit Account' : 'Create New Account',
+      appBar: WalletAppBar(title: _isEditMode ? 'Edit Account' : 'Create New Account'),
       child: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
@@ -190,10 +171,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 18),
-                        CustomTextField(
-                          controller: _nameController,
-                          labelText: 'ACCOUNT NAME',
-                        ),
+                        CustomTextField(controller: _nameController, labelText: 'ACCOUNT NAME'),
                         const SizedBox(height: 25.0),
                         CardInfo(
                           text: _isLoading ? 'Loading checksum...' : _checksum,
@@ -206,15 +184,10 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                         CardInfo(
                           text: _isLoading
                               ? 'Loading address...'
-                              : AddressFormattingService.splitIntoChunks(
-                                  _provisionalAccount.accountId,
-                                ).join(' '),
+                              : AddressFormattingService.splitIntoChunks(_provisionalAccount.accountId).join(' '),
                           icon: const Icon(Icons.copy),
                           onPressed: () {
-                            ClipboardExtensions.copyTextWithSnackbar(
-                              context,
-                              _provisionalAccount.accountId,
-                            );
+                            ClipboardExtensions.copyTextWithSnackbar(context, _provisionalAccount.accountId);
                           },
                           label: 'ACCOUNT ADDRESS',
                         ),

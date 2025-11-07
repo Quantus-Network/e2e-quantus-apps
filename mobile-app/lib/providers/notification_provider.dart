@@ -3,8 +3,10 @@ import 'dart:convert';
 
 import 'package:async/async.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
-import 'package:resonance_network_wallet/services/notification_scheduler.dart';
+import 'package:resonance_network_wallet/providers/notification_config_provider.dart';
+import 'package:resonance_network_wallet/services/local_notifications_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Maximum number of notifications to keep (FIFO)
@@ -14,34 +16,33 @@ const int maxNotifications = 64;
 const String notificationsStorageKey = 'notifications';
 
 /// Notification provider that manages the notification state
-final notificationProvider =
-    StateNotifierProvider<NotificationNotifier, List<NotificationData>>((ref) {
-      return NotificationNotifier();
-    });
+final notificationProvider = StateNotifierProvider<NotificationNotifier, List<NotificationData>>((ref) {
+  final localNotificationsService = ref.watch(localNotificationsServiceProvider);
+  final notificationConfig = ref.watch(notificationConfigProvider);
+
+  return NotificationNotifier(localNotificationsService, notificationConfig);
+});
 
 /// Notifier that manages notification state with persistence and streams
 class NotificationNotifier extends StateNotifier<List<NotificationData>> {
-  NotificationNotifier() : super([]) {
+  final LocalNotificationsService _localNotificationsService;
+  final NotificationConfig _config;
+
+  NotificationNotifier(this._localNotificationsService, this._config) : super([]) {
     _initialize();
   }
 
   // Stream controllers for different notification sources
-  final StreamController<NotificationData> _localAlertController =
-      StreamController.broadcast();
-  final StreamController<NotificationData> _localPushController =
-      StreamController.broadcast();
-  final StreamController<NotificationData> _remotePushController =
-      StreamController.broadcast();
+  final StreamController<NotificationData> _localAlertController = StreamController.broadcast();
+  final StreamController<NotificationData> _localPushController = StreamController.broadcast();
+  final StreamController<NotificationData> _remotePushController = StreamController.broadcast();
 
   // Timer for periodic cleanup of expired notifications
   Timer? _cleanupTimer;
 
   /// Combined stream of all notifications
-  Stream<NotificationData> get notificationStream => StreamGroup.merge([
-    _localAlertController.stream,
-    _localPushController.stream,
-    _remotePushController.stream,
-  ]);
+  Stream<NotificationData> get notificationStream =>
+      StreamGroup.merge([_localAlertController.stream, _localPushController.stream, _remotePushController.stream]);
 
   /// Initialize the notifier by loading persisted notifications
   Future<void> _initialize() async {
@@ -57,27 +58,60 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
     });
   }
 
+  /// Check if notifications can be shown (OS + app level + notification type)
+  Future<bool> canShowNotification(NotificationIntent type) async {
+    // Check app-level master setting
+    if (!_config.enabled) {
+      print('Notifications disabled at app level');
+      return false;
+    }
+
+    // Check specific notification type setting
+    if (!_config.isIntentEnabled(type)) {
+      print('Notification type ${type.name} is disabled');
+      return false;
+    }
+
+    return true;
+  }
+
+  /// Check if any notifications can be shown (master check)
+  Future<bool> canShowNotifications() async {
+    if (!_config.enabled) {
+      print('Notifications disabled at app level');
+      return false;
+    }
+
+    return true;
+  }
+
   /// Load notifications from shared preferences
   Future<void> _loadPersistedNotifications() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final notificationsJson =
-          prefs.getStringList(notificationsStorageKey) ?? [];
+      final notificationsJson = prefs.getStringList(notificationsStorageKey) ?? [];
 
       final notifications = notificationsJson
           .map((json) => NotificationData.fromJson(jsonDecode(json)))
           .where((notification) => notification.persistent)
           .toList();
 
-      state = notifications;
+      if (mounted) {
+        state = notifications;
+      }
     } catch (e) {
+
       // If loading fails, start with empty state
-      state = [];
+      if (mounted) {
+        state = [];
+      }
     }
   }
 
   /// Save notifications to shared preferences
   Future<void> _saveNotifications() async {
+    if (!mounted) return;
+
     final prefs = await SharedPreferences.getInstance();
     final notificationsJson = state
         .where((notification) => notification.persistent)
@@ -88,7 +122,15 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
   }
 
   /// Add a new notification
-  void addNotification(NotificationData notification) {
+  Future<void> addNotification(NotificationData notification) async {
+    if (!mounted) return;
+
+    // Check if this specific notification intent can be shown
+    if (!await canShowNotification(notification.intent)) {
+      print('Cannot show ${notification.intent.name} notification: disabled or permission not granted');
+      return;
+    }
+
     // Enforce 64 notification limit (FIFO)
     if (state.length >= maxNotifications) {
       // Remove oldest notification
@@ -106,29 +148,38 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
     // Send to appropriate stream
     _sendToStream(notification);
 
-    // Schedule if needed
-    scheduleIfNeeded(notification);
+    switch (notification.source) {
+      case NotificationSource.local:
+        // No need to handle, because it already shown by default when we added to the state array.
+        break;
+      case NotificationSource.push:
+        _localNotificationsService.showOrScheduleNotification(notification);
+        break;
+      case NotificationSource.remote:
+        // To be handled in the future
+        break;
+    }
   }
 
   /// Remove a notification by ID
   void removeNotification(String id) {
+    if (!mounted) return;
+
     state = state.where((notification) => notification.id != id).toList();
     _saveNotifications();
   }
 
   /// Clear all notifications
   void clearAll() {
+    if (!mounted) return;
+
     state = [];
     _saveNotifications();
   }
 
   /// Get notifications for a specific account
   List<NotificationData> getNotificationsForAccount(String accountId) {
-    return state
-        .where(
-          (notification) => notification.metadata?['accountId'] == accountId,
-        )
-        .toList();
+    return state.where((notification) => notification.metadata?['accountId'] == accountId).toList();
   }
 
   /// Get notifications by type
@@ -153,69 +204,62 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
 
   /// Clean up expired notifications
   void _cleanupExpiredNotifications() {
+    if (!mounted) return;
+
     final now = DateTime.now();
     final expiredIds = <String>[];
 
     for (final notification in state) {
-      if (notification.expiryTime != null &&
-          notification.expiryTime!.isBefore(now)) {
+      if (notification.expiryTime != null && notification.expiryTime!.isBefore(now)) {
         expiredIds.add(notification.id);
       }
     }
 
     if (expiredIds.isNotEmpty) {
-      state = state
-          .where((notification) => !expiredIds.contains(notification.id))
-          .toList();
+      state = state.where((notification) => !expiredIds.contains(notification.id)).toList();
       _saveNotifications();
     }
   }
 
   /// Add convenience methods for specific notification types
   void addTransactionFailed({
-    required String accountName,
-    required String transactionId,
+    required Account? account,
     required String errorMessage,
-    TransactionData? transactionData,
+    required PendingTransactionEvent transactionData,
   }) {
     final notification = NotificationTemplates.transactionFailed(
-      accountName: accountName,
-      transactionId: transactionId,
+      account: account,
+      transactionData: transactionData,
       errorMessage: errorMessage,
+    );
+    addNotification(notification);
+  }
+
+  void addBalanceLow({required Account? account}) {
+    final notification = NotificationTemplates.balanceLow(account: account);
+    addNotification(notification);
+  }
+
+  void addAccountAdded({required Account? account}) {
+    final notification = NotificationTemplates.accountAdded(account: account);
+    addNotification(notification);
+  }
+
+  void addReversibleTransactionReminder({required Account? account, required ReversibleTransferEvent transactionData}) {
+    final notification = NotificationTemplates.reversibleTransactionReminder(
+      account: account,
       transactionData: transactionData,
     );
     addNotification(notification);
   }
 
-  void addBalanceLow({required String accountName, required String accountId}) {
-    final notification = NotificationTemplates.balanceLow(
-      accountName: accountName,
-      accountId: accountId,
-    );
+  void addTokenSent({required Account? account, required TransferEvent transactionData}) {
+    final notification = NotificationTemplates.tokenSent(account: account, transactionData: transactionData);
     addNotification(notification);
   }
 
-  void addAccountAdded({
-    required String accountName,
-    required String accountId,
-  }) {
-    final notification = NotificationTemplates.accountAdded(
-      accountName: accountName,
-      accountId: accountId,
-    );
-    addNotification(notification);
-  }
-
-  void addReversibleTransactionReminder({
-    required String accountName,
-    required String transactionId,
-    required DateTime executionTime,
-  }) {
-    final notification = NotificationTemplates.reversibleTransactionReminder(
-      accountName: accountName,
-      transactionId: transactionId,
-      executionTime: executionTime,
-    );
+  void addTokenReceived({required Account? account, required TransferEvent transactionData}) {
+    final notification = NotificationTemplates.tokenReceived(account: account, transactionData: transactionData);
     addNotification(notification);
   }
 

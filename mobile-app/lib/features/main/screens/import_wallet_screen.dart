@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
@@ -90,9 +91,13 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
       );
 
       await _discoverAccounts(mnemonic);
-      // We set check status to true so we wil not prompt user to input refferal code.
+      // We set check status to true so we will not prompt user to input refferal code.
       // This is because we know they can only import if they have gone through create process.
       _settingsService.setReferralCheckCompleted();
+
+      // We set seen promo status to true so we will not show quests video promo.
+      // This is because we know only want to show for new user.
+      _settingsService.setExistingUserSeenPromoVideo();
 
       if (context.mounted && mounted) {
         Navigator.pushAndRemoveUntil(
@@ -120,7 +125,7 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
-      appBar: 'Import Wallet',
+      appBar: WalletAppBar(title:'Import Wallet'),
       decorations: [
         const Positioned(
           bottom: 140,

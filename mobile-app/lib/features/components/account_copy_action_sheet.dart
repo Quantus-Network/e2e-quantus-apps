@@ -89,7 +89,6 @@ class _AccountCopyActionSheetState extends State<AccountCopyActionSheet> {
           InkWell(
             onTap: _isLoading ? null : _copyChecksum,
             child: Container(
-              width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 16),
               child: Text(
                 _isLoading ? 'Loading...' : 'Copy Checkphrase',

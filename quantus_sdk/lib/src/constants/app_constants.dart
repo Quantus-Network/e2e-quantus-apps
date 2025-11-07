@@ -5,11 +5,11 @@ class AppConstants {
   static const String shareUrl = 'https://linktr.ee/quantusnetwork';
   static const String websiteBaseUrl = 'https://www.quantus.com';
 
-  // static const String rpcEndpoint = 'ws://127.0.0.1:9944'; // local testing
-  // static const String graphQlEndpoint = 'http://127.0.0.1:4350'; // local testing
+  // static const List<String> rpcEndpoints = ['ws://127.0.0.1:9944']; // local testing
+  // static const List<String> graphQlEndpoints = ['http://127.0.0.1:4350']; // local testing
 
-  static const String rpcEndpoint = 'https://quantu.se';
-  static const String graphQlEndpoint = 'https://quantu.se';
+  static const List<String> rpcEndpoints = ['https://matcha-latte.quantus.com', 'https://quantu.se'];
+  static const List<String> graphQlEndpoints = ['https://subsquid.quantus.com/graphql', 'https://quantu.se/graphql'];
 
   // local test android use special ip
   // static const String taskMasterEndpoint = 'http://10.0.2.2:3000/api';
@@ -19,10 +19,9 @@ class AppConstants {
 
   static const String explorerEndpoint = 'https://explorer.quantus.com';
   static const String helpAndSupportUrl = 'https://t.me/quantustechsupport';
-  static const String termsOfServiceUrl =
-      'https://quantus.com/terms-and-privacy.html';
-  static const String tutorialsAndGuidesUrl =
-      'https://github.com/Quantus-Network/chain';
+  static const String termsOfServiceUrl = 'https://www.quantus.com/terms-and-privacy';
+  static const String tutorialsAndGuidesUrl = 'https://github.com/Quantus-Network/chain';
+  static const String questsPageUrl = 'https://www.quantus.com/quests';
   static const String communityUrl = 'https://t.me/quantusnetwork';
   static const String faucetBotUrl = 'https://t.me/QuantusFaucetBot';
 

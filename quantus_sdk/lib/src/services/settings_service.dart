@@ -23,13 +23,13 @@ class SettingsService {
   // Local authentication keys
   static const String _isLocalAuthEnabledKey = 'is_local_auth_enabled';
   static const String _lastSuccessfulAuthKey = 'last_successful_auth';
+  static const String _authTimeoutKey = 'auth_timeout';
 
   // referral status
   static const String hasCheckedReferralKey = 'referral_check';
   static const String referralCodeKey = 'referral_code';
   static const String hasWatchedQuestsPromoKey = 'quests_promo';
-  static const String existingUserSeenPromoVideoKey =
-      'existing_user_seen_promo_video';
+  static const String existingUserSeenPromoVideoKey = 'existing_user_seen_promo_video';
 
   Future<void> initialize() async {
     // Always (re)bind the SharedPreferences instance. This ensures tests that
@@ -45,18 +45,13 @@ class SettingsService {
     final accountsJson = _prefs.getString(_accountsKey);
     if (accountsJson != null) {
       final decoded = jsonDecode(accountsJson) as List<dynamic>;
-      return decoded.map((e) => Account.fromJson(e)).toList()
-        ..sort((a, b) => a.index.compareTo(b.index));
+      return decoded.map((e) => Account.fromJson(e)).toList()..sort((a, b) => a.index.compareTo(b.index));
     }
     // Migration for existing single-account users
     final oldAccountId = _prefs.getString('account_id');
     if (oldAccountId != null) {
       final oldWalletName = _prefs.getString('wallet_name') ?? 'Account 1';
-      final account = Account(
-        index: 0,
-        name: oldWalletName,
-        accountId: oldAccountId,
-      );
+      final account = Account(index: 0, name: oldWalletName, accountId: oldAccountId);
       await saveAccounts([account]);
       await setActiveAccount(account);
       // Clean up old keys after migration
@@ -69,17 +64,13 @@ class SettingsService {
   }
 
   Future<void> saveAccounts(List<Account> accounts) async {
-    final List<Map<String, dynamic>> jsonData = accounts
-        .map((a) => a.toJson())
-        .toList();
+    final List<Map<String, dynamic>> jsonData = accounts.map((a) => a.toJson()).toList();
     await _prefs.setString(_accountsKey, jsonEncode(jsonData));
   }
 
   // --- Accounts To Migrate (for deferred upload) ---
   Future<void> setAccountsToMigrate(List<Account> accounts) async {
-    final List<Map<String, dynamic>> jsonData = accounts
-        .map((a) => a.toJson())
-        .toList();
+    final List<Map<String, dynamic>> jsonData = accounts.map((a) => a.toJson()).toList();
     await _prefs.setString(_accountsToMigrateKey, jsonEncode(jsonData));
   }
 
@@ -101,9 +92,7 @@ class SettingsService {
   Future<void> addAccount(Account account) async {
     final accounts = await getAccounts();
     // Check for duplicates by index or accountId before adding
-    if (!accounts.any(
-      (a) => a.index == account.index || a.accountId == account.accountId,
-    )) {
+    if (!accounts.any((a) => a.index == account.index || a.accountId == account.accountId)) {
       accounts.add(account);
       await saveAccounts(accounts);
       if (accounts.length == 1) {
@@ -172,9 +161,7 @@ class SettingsService {
 
   Future<int> getNextFreeAccountIndex() async {
     final accounts = await getAccounts();
-    final maxIndex = accounts
-        .map((a) => a.index)
-        .reduce((a, b) => a > b ? a : b);
+    final maxIndex = accounts.map((a) => a.index).reduce((a, b) => a > b ? a : b);
     return maxIndex + 1;
   }
 
@@ -237,6 +224,17 @@ class SettingsService {
     _prefs.setString(_lastSuccessfulAuthKey, time.toIso8601String());
   }
 
+  int? getAuthTimeout() {
+    final int? authTimeout = _prefs.getInt(_authTimeoutKey);
+    if (authTimeout == null) return null;
+
+    return authTimeout;
+  }
+
+  void setAuthTimeout(int timeoutDurationInMinutes) {
+    _prefs.setInt(_authTimeoutKey, timeoutDurationInMinutes);
+  }
+
   void setAuthEnabled(bool enabled) {
     _prefs.setBool(_isLocalAuthEnabledKey, enabled);
   }
@@ -255,8 +253,7 @@ class SettingsService {
 
   /// Get old accounts from legacy storage or v2 storage
   List<Account> getOldAccounts() {
-    final oldAccountsJson =
-        _prefs.getString(_oldAccountsKey) ?? _prefs.getString(_accountsKeyV2);
+    final oldAccountsJson = _prefs.getString(_oldAccountsKey) ?? _prefs.getString(_accountsKeyV2);
     if (oldAccountsJson != null) {
       try {
         final decoded = jsonDecode(oldAccountsJson) as List<dynamic>;

@@ -25,8 +25,7 @@ class LocalAuthService {
       if (!canCheckBiometrics) return false;
 
       // Additional check for enrolled biometrics
-      final List<BiometricType> availableBiometrics =
-          await getAvailableBiometrics();
+      final List<BiometricType> availableBiometrics = await getAvailableBiometrics();
       debugPrint('Available biometric types: $availableBiometrics');
 
       return availableBiometrics.isNotEmpty;
@@ -54,6 +53,14 @@ class LocalAuthService {
   /// Enable or disable local authentication in app settings
   void setLocalAuthEnabled(bool enabled) {
     _settingsService.setAuthEnabled(enabled);
+  }
+
+  int getAuthTimeout() {
+    return _settingsService.getAuthTimeout() ?? 0;
+  }
+
+  void setAuthTimeout(int timeoutDurationInMinutes) {
+    return _settingsService.setAuthTimeout(timeoutDurationInMinutes);
   }
 
   /// Authenticate using biometrics
@@ -84,11 +91,7 @@ class LocalAuthService {
 
       final bool didAuthenticate = await _localAuth.authenticate(
         localizedReason: localizedReason,
-        options: AuthenticationOptions(
-          biometricOnly: biometricOnly,
-          stickyAuth: true,
-          sensitiveTransaction: true,
-        ),
+        options: AuthenticationOptions(biometricOnly: biometricOnly, stickyAuth: true, sensitiveTransaction: true),
       );
 
       if (didAuthenticate) {
@@ -123,8 +126,7 @@ class LocalAuthService {
   /// Get a user-friendly description of available biometric types
   Future<String> getBiometricDescription() async {
     try {
-      final List<BiometricType> availableBiometrics =
-          await getAvailableBiometrics();
+      final List<BiometricType> availableBiometrics = await getAvailableBiometrics();
 
       if (availableBiometrics.isEmpty) {
         return 'No biometric authentication available';
@@ -172,13 +174,13 @@ class LocalAuthService {
       final bool isEnabled = isLocalAuthEnabled();
       if (!isEnabled) return false;
 
-      final DateTime? lastAuthTime = _settingsService
-          .getLastSuccessfulAuthTime();
+      final DateTime? lastAuthTime = _settingsService.getLastSuccessfulAuthTime();
       if (lastAuthTime == null) return true;
 
-      // Require authentication if more than 1 minute has passed
-      // You can adjust this duration based on your security requirements
-      const Duration authTimeout = Duration(minutes: 1);
+      final int? timeoutDurationInMinutes = _settingsService.getAuthTimeout();
+      if (timeoutDurationInMinutes == null) return true;
+
+      final Duration authTimeout = Duration(minutes: timeoutDurationInMinutes);
 
       print(
         // ignore: lines_longer_than_80_chars

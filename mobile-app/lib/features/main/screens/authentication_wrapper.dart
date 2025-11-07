@@ -1,7 +1,4 @@
-import 'dart:io' show Platform;
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_initializer.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
@@ -15,8 +12,7 @@ class AuthenticationWrapper extends StatefulWidget {
   State<AuthenticationWrapper> createState() => _AuthenticationWrapperState();
 }
 
-class _AuthenticationWrapperState extends State<AuthenticationWrapper>
-    with WidgetsBindingObserver {
+class _AuthenticationWrapperState extends State<AuthenticationWrapper> with WidgetsBindingObserver {
   final LocalAuthService _localAuthService = LocalAuthService();
   bool _isAuthenticated = false;
   bool _isAuthenticating = false;
@@ -25,13 +21,19 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _checkAuthentication();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    _checkAuthentication();
   }
 
   @override
@@ -82,23 +84,11 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper>
         _isAuthenticating = false;
       });
     }
-
-    if (!didAuthenticate) {
-      // Handle failed authentication, maybe close the app or show an error.
-      if (Platform.isAndroid) {
-        SystemNavigator.pop();
-      }
-      // On iOS, we can't programmatically close the app,
-      // so we'll just stay on the lock screen.
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // This is accessing the deep link argument
-    final String? address = ModalRoute.of(context)?.settings.arguments as String?;
-
-    return _isAuthenticated ? WalletInitializer(address: address) : _buildLockScreen();
+    return _isAuthenticated ? const WalletInitializer() : _buildLockScreen();
   }
 
   Widget _buildLockScreen() {
@@ -110,20 +100,13 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper>
             Text('Authentication Required', style: context.themeText.lockTitle),
             const SizedBox(height: 30),
             if (_isAuthenticating)
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  context.themeColors.circularLoader,
-                ),
-              )
+              CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(context.themeColors.circularLoader))
             else
               ElevatedButton(
                 onPressed: _authenticate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.themeColors.authButtonBg,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 15,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                 ),
                 child: Text('Authenticate', style: context.themeText.paragraph),
               ),

@@ -54,13 +54,25 @@ class TransferEvent extends TransactionEvent {
       to: json['to']?['id'] as String? ?? '',
       amount: BigInt.parse(json['amount'] as String),
       timestamp: DateTime.parse(json['timestamp'] as String),
-      fee: json['fee'] != null
-          ? BigInt.parse(json['fee'] as String)
-          : BigInt.zero,
+      fee: json['fee'] != null ? BigInt.parse(json['fee'] as String) : BigInt.zero,
       extrinsicHash: json['extrinsicHash'] as String?,
       blockNumber: blockHeight,
       blockHash: blockHash,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'type': EventType.TRANSFER.name,
+      'from': {'id': from},
+      'to': {'id': to},
+      'amount': amount.toString(),
+      'timestamp': timestamp.toIso8601String(),
+      'fee': fee.toString(),
+      'extrinsicHash': extrinsicHash,
+      'block': {'height': blockNumber, 'hash': blockHash},
+    };
   }
 
   @override
@@ -109,7 +121,23 @@ class ReversibleTransferEvent extends TransactionEvent {
     );
   }
 
-   ReversibleTransferEvent copyWith({
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'type': EventType.REVERSIBLE_TRANSFER.name,
+      'from': {'id': from},
+      'to': {'id': to},
+      'amount': amount.toString(),
+      'timestamp': timestamp.toIso8601String(),
+      'txId': txId,
+      'status': status.name,
+      'scheduledAt': scheduledAt.toIso8601String(),
+      'extrinsicHash': extrinsicHash,
+      'block': {'height': blockNumber, 'hash': blockHash},
+    };
+  }
+
+  ReversibleTransferEvent copyWith({
     String? id,
     String? from,
     String? to,

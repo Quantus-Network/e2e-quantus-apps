@@ -150,7 +150,6 @@ Future<void> main() async {
   // Note: Startup cleanup removed for simplicity
 
   try {
-    await SubstrateService().initialize(); // Initialize SubstrateService
     await QuantusSdk.init();
     print('SubstrateService and QuantusSdk initialized successfully.');
   } catch (e) {

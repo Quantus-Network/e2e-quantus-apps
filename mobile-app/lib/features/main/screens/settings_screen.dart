@@ -7,8 +7,10 @@ import 'package:resonance_network_wallet/features/components/reset_confirmation_
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/authentication_settings_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/notifications_settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/show_recovery_phrase_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
@@ -45,10 +47,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _logout() async {
     try {
       await SubstrateService().logout();
-      _referralService.invalidateRewardProgramCache();
-      ref
-          .read(pendingTransactionsProvider.notifier)
-          .clear(); // Clear specific notifier
+      _referralService.invalidateCache();
+      ref.read(pendingTransactionsProvider.notifier).clear(); // Clear specific notifier
 
       ref.read(accountsProvider.notifier).reset();
       ref.read(activeAccountProvider.notifier).reset();
@@ -56,9 +56,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(
-            builder: (context) => const WelcomeScreen(),
-          ), // Or your login screen
+          MaterialPageRoute(builder: (context) => const WelcomeScreen()), // Or your login screen
           (route) => false,
         );
       }
@@ -67,9 +65,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         print('invalidating all providers');
         ref.invalidate(accountsProvider);
         ref.invalidate(activeAccountProvider);
-        ref.invalidate(
-          pendingTransactionsProvider,
-        ); // If needed for transactions
+        ref.invalidate(pendingTransactionsProvider); // If needed for transactions
       });
 
       debugPrint('Logout successful');
@@ -93,7 +89,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
-      screenTitle: ScreenTitle(title: 'Wallet Settings'),
+      appBar: WalletAppBar.simple(title: 'Wallet Settings'),
       extendBodyBehindAppBar: true,
       extendBodyBehindNavBar: true,
       decorations: [
@@ -132,28 +128,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSettingsItem(context, 'Manage Accounts', () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AccountsScreen()),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const AccountsScreen()));
+        }),
+        const SizedBox(height: 22),
+        _buildSettingsItem(context, 'Notifications', () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsSettingsScreen()));
         }),
         const SizedBox(height: 22),
         _buildSettingsItem(context, 'Authentication', () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AuthenticationSettingsScreen(),
-            ),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const AuthenticationSettingsScreen()));
         }),
         const SizedBox(height: 22),
         _buildSettingsItem(context, 'Show Recovery Phrase', () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const ShowRecoveryPhraseScreen(),
-            ),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const ShowRecoveryPhraseScreen()));
         }),
         const SizedBox(height: 22),
         _buildSettingsItem(context, 'Referral', () {
@@ -187,10 +174,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           context,
           'Invite & Share',
           _share,
-          trailing: Icon(
-            Icons.share_outlined,
-            size: context.themeSize.settingMenuShareIconSize,
-          ),
+          trailing: Icon(Icons.share_outlined, size: context.themeSize.settingMenuShareIconSize),
         ),
         const SizedBox(height: 22),
         _buildSettingsItem(
@@ -218,10 +202,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.symmetric(
-          vertical: context.isTablet ? 16 : 12,
-          horizontal: 18,
-        ),
+        padding: EdgeInsets.symmetric(vertical: context.isTablet ? 16 : 12, horizontal: 18),
         decoration: ShapeDecoration(
           color: context.themeColors.buttonGlass,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
@@ -233,10 +214,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Text(title, style: context.themeText.smallParagraph),
             trailing ??
                 (showArrow
-                    ? Icon(
-                        Icons.arrow_forward_ios,
-                        size: context.themeSize.settingMenuIconSize,
-                      )
+                    ? Icon(Icons.arrow_forward_ios, size: context.themeSize.settingMenuIconSize)
                     : const SizedBox()),
           ],
         ),
@@ -249,10 +227,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       onTap: _showResetConfirmationSheet,
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.symmetric(
-          vertical: context.isTablet ? 16 : 12,
-          horizontal: 18,
-        ),
+        padding: EdgeInsets.symmetric(vertical: context.isTablet ? 16 : 12, horizontal: 18),
         decoration: ShapeDecoration(
           color: Colors.black,
           shape: RoundedRectangleBorder(
@@ -266,14 +241,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           children: [
             Text(
               'Reset & Clear Data',
-              style: context.themeText.smallParagraph?.copyWith(
-                color: context.themeColors.error,
-              ),
+              style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.error),
             ),
-            Icon(
-              Icons.arrow_forward_ios,
-              size: context.themeSize.settingMenuIconSize,
-            ),
+            Icon(Icons.arrow_forward_ios, size: context.themeSize.settingMenuIconSize),
           ],
         ),
       ),
