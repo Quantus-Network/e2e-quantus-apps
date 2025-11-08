@@ -47,6 +47,7 @@ dependencies:
 # Generate Polkadart bindings
 # dart pub run polkadart_cli:generate -v
 
+  collection: any
 polkadart:
   output_dir: lib/generated # Optional. Sets the directory of generated files. Provided value should be a valid path on your system. Default: lib/generated
   chains: # Dictionary of chains and endpoints
