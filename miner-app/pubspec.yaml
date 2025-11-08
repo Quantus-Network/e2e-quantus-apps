@@ -40,6 +40,7 @@ dependencies:
   decimal: # Version managed by melos.yaml
   logger: # Version managed by melos.yaml
   flash: ^3.1.1
+  lucide_icons_flutter: ^3.1.5
 
 dev_dependencies:
   flutter_test:

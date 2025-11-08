@@ -1,8 +1,4 @@
-import 'dart:async';
-
-import 'package:quantus_sdk/quantus_sdk.dart';
-
-import 'miner_process.dart';
+enum MiningStatus { idle, syncing, mining }
 
 class MiningStats {
   final int peerCount;
@@ -10,7 +6,7 @@ class MiningStats {
   final int targetBlock;
   final double hashrate;
   final bool isSyncing;
-  final String status;
+  final MiningStatus status;
 
   MiningStats({
     required this.peerCount,
@@ -21,171 +17,230 @@ class MiningStats {
     required this.status,
   });
 
+  MiningStats.empty()
+    : peerCount = 0,
+      currentBlock = 0,
+      targetBlock = 0,
+      hashrate = 0.0,
+      isSyncing = false,
+      status = MiningStatus.idle;
+
+  MiningStats copyWith({
+    int? peerCount,
+    int? currentBlock,
+    int? targetBlock,
+    double? hashrate,
+    bool? isSyncing,
+    MiningStatus? status,
+  }) {
+    return MiningStats(
+      peerCount: peerCount ?? this.peerCount,
+      currentBlock: currentBlock ?? this.currentBlock,
+      targetBlock: targetBlock ?? this.targetBlock,
+      hashrate: hashrate ?? this.hashrate,
+      isSyncing: isSyncing ?? this.isSyncing,
+      status: status ?? this.status,
+    );
+  }
+
   @override
   String toString() {
-    return 'Peers: $peerCount | Block: $currentBlock/$targetBlock | Hashrate: ${hashrate.toStringAsFixed(2)} H/s | Status: $status';
+    return 'Peers: $peerCount | Block: $currentBlock/$targetBlock | '
+        'Hashrate: ${hashrate.toStringAsFixed(2)} H/s | Status: ${status.name}';
   }
 }
 
+/// mining_stats_service.dart
+/// Service that parses node logs and maintains mining statistics
 class MiningStatsService {
-  final SubstrateService _substrateService = SubstrateService();
-  Timer? _statsTimer;
-  MiningStats? _lastStats;
-  MinerProcess? _minerProcess; // Reference to miner process for hashrate
+  MiningStats _currentStats = MiningStats.empty();
 
-  final _statsController = StreamController<MiningStats>.broadcast();
-  Stream<MiningStats> get statsStream => _statsController.stream;
+  // Track syncing state
+  DateTime? _lastImportTime;
+  int _rapidImportCount = 0;
+  static const _syncDetectionWindow = Duration(seconds: 3);
+  static const _rapidImportThreshold = 3; // If more than 3 blocks in 3 seconds, likely syncing
 
-  MiningStats? get lastStats => _lastStats;
+  MiningStats get currentStats => _currentStats;
 
-  void setMinerProcess(MinerProcess? minerProcess) {
-    _minerProcess = minerProcess;
-  }
-
-  Future<void> startMonitoring() async {
-    // Initialize the SubstrateService first
+  /// Main method to parse a log line and update stats
+  /// Returns true if stats were updated
+  bool parseLogLine(String logLine) {
     try {
-      print('MiningStatsService: Initialized Substrate service');
-    } catch (e) {
-      print('MiningStatsService: Failed to initialize Substrate service: $e');
-      return; // Don't start monitoring if initialization fails
-    }
+      // Remove flutter prefix if exists
+      final line = logLine.replaceFirst('flutter: ', '').trim();
 
-    // Start periodic stats fetching
-    _statsTimer = Timer.periodic(const Duration(seconds: 10), (_) {
-      _fetchStats();
-    });
+      bool updated = false;
 
-    // Fetch initial stats
-    await _fetchStats();
-  }
-
-  Future<void> stopMonitoring() async {
-    _statsTimer?.cancel();
-    _statsTimer = null;
-    _statsController.close();
-  }
-
-  Future<void> _fetchStats() async {
-    try {
-      final peerCount = await _getPeerCount();
-      final currentBlock = await _getCurrentBlock();
-      final targetBlock = await _getTargetBlock();
-      final hashrate = await _getHashrate();
-      final isSyncing = await _getSyncStatus();
-
-      String status = 'Unknown';
-      if (isSyncing) {
-        status = 'Syncing';
-      } else if (hashrate > 0) {
-        status = 'Mining';
-      } else {
-        status = 'Idle';
+      // Parse different log types
+      if (line.contains('💤 Idle')) {
+        updated = _parseIdleStatus(line);
+      } else if (line.contains('⛏️ Importing block')) {
+        updated = _parseImportingBlock(line);
+      } else if (line.contains('🏆 Imported')) {
+        updated = _parseImportedBlock(line);
+      } else if (line.contains('DEBUG: Sync status changed')) {
+        updated = _parseSyncStatusChange(line);
       }
 
-      final stats = MiningStats(
-        peerCount: peerCount,
-        currentBlock: currentBlock,
-        targetBlock: targetBlock,
-        hashrate: hashrate,
-        isSyncing: isSyncing,
-        status: status,
-      );
-
-      _lastStats = stats;
-      _statsController.add(stats);
+      return updated;
     } catch (e) {
-      print('Error fetching mining stats: $e');
-      // Don't add to stream on error, keep last known stats
-    }
-  }
-
-  Future<int> _getPeerCount() async {
-    try {
-      if (_substrateService.provider == null) {
-        print('Provider not available for peer count');
-        return 0;
-      }
-      final result = await _substrateService.provider!.send('system_peers', []);
-      if (result.result == null) {
-        print('Peer count result is null');
-        return 0;
-      }
-      final peers = result.result as List;
-      return peers.length;
-    } catch (e) {
-      print('Error getting peer count: $e');
-      return 0;
-    }
-  }
-
-  Future<int> _getCurrentBlock() async {
-    try {
-      if (_substrateService.provider == null) {
-        print('Provider not available for current block');
-        return 0;
-      }
-      final result = await _substrateService.provider!.send(
-        'chain_getHeader',
-        [],
-      );
-      final blockNumber = result.result['number'];
-      if (blockNumber is String) {
-        return int.parse(blockNumber);
-      } else if (blockNumber is int) {
-        return blockNumber;
-      }
-      return 0;
-    } catch (e) {
-      print('Error getting current block: $e');
-      return 0;
-    }
-  }
-
-  Future<int> _getTargetBlock() async {
-    try {
-      // For now, just return current block + 1 as target
-      // This could be improved by getting the actual target from the node
-      final currentBlock = await _getCurrentBlock();
-      return currentBlock + 1;
-    } catch (e) {
-      print('Error getting target block: $e');
-      return 0;
-    }
-  }
-
-  Future<double> _getHashrate() async {
-    // Get hashrate from MinerProcess if available
-    if (_minerProcess != null) {
-      return _minerProcess!.currentHashrate ?? 0.0;
-    }
-    return 0.0;
-  }
-
-  Future<bool> _getSyncStatus() async {
-    try {
-      if (_substrateService.provider == null) {
-        print('Provider not available for sync status');
-        return false;
-      }
-      final result = await _substrateService.provider!.send(
-        'system_syncState',
-        [],
-      );
-      final syncState = result.result as Map;
-      final currentBlock = syncState['currentBlock'] ?? 0;
-      final highestBlock = syncState['highestBlock'] ?? 0;
-
-      // Consider syncing if we're more than 10 blocks behind
-      return highestBlock - currentBlock > 10;
-    } catch (e) {
-      print('Error getting sync status: $e');
+      print('MiningStatsService: Error parsing log line: $e');
       return false;
     }
   }
 
-  void dispose() {
-    _statsTimer?.cancel();
-    _statsController.close();
+  bool _parseIdleStatus(String line) {
+    // Example: 💤 Idle (3 peers), best: #243894 (0x30ed…ad4c), finalized #243649
+    final peerMatch = RegExp(r'\((\d+) peers\)').firstMatch(line);
+    final bestMatch = RegExp(r'best: #(\d+)').firstMatch(line);
+
+    if (peerMatch != null && bestMatch != null) {
+      final peers = int.parse(peerMatch.group(1)!);
+      final bestBlock = int.parse(bestMatch.group(1)!);
+
+      final wasChanged = _currentStats.peerCount != peers || _currentStats.currentBlock != bestBlock;
+
+      if (wasChanged) {
+        int? newTargetBlock;
+        if (_currentStats.targetBlock < bestBlock) newTargetBlock = bestBlock;
+
+        _currentStats = _currentStats.copyWith(
+          peerCount: peers,
+          currentBlock: bestBlock,
+          targetBlock: newTargetBlock,
+          isSyncing: false,
+        );
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _parseImportingBlock(String line) {
+    // Example: ⛏️ Importing block #243829: 0x721b1c...
+    final blockMatch = RegExp(r'#(\d+):').firstMatch(line);
+
+    if (blockMatch != null) {
+      final blockNumber = int.parse(blockMatch.group(1)!);
+      final now = DateTime.now();
+
+      // Detect rapid imports (syncing)
+      if (_lastImportTime != null && now.difference(_lastImportTime!) < _syncDetectionWindow) {
+        _rapidImportCount++;
+      } else {
+        _rapidImportCount = 1;
+      }
+      _lastImportTime = now;
+
+      // If we're importing blocks rapidly, we're likely syncing
+      final isSyncing = _rapidImportCount >= _rapidImportThreshold;
+      final status = isSyncing ? MiningStatus.syncing : _currentStats.status;
+
+      final wasChanged =
+          _currentStats.currentBlock != blockNumber ||
+          _currentStats.isSyncing != isSyncing ||
+          _currentStats.status != status;
+
+      if (wasChanged) {
+        int? newTargetBlock;
+        if (_currentStats.targetBlock < blockNumber) newTargetBlock = blockNumber;
+
+        _currentStats = _currentStats.copyWith(
+          currentBlock: blockNumber,
+          targetBlock: newTargetBlock,
+          isSyncing: isSyncing,
+          status: status,
+        );
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _parseImportedBlock(String line) {
+    // Example: 🏆 Imported #243895 (0x30ed…ad4c → 0x939f…ecb4)
+    final blockMatch = RegExp(r'#(\d+)').firstMatch(line);
+
+    if (blockMatch != null) {
+      final blockNumber = int.parse(blockMatch.group(1)!);
+
+      final wasChanged = _currentStats.currentBlock != blockNumber || _currentStats.status != MiningStatus.mining;
+
+      if (wasChanged) {
+        int? newTargetBlock;
+        if (_currentStats.targetBlock < blockNumber) newTargetBlock = blockNumber;
+
+        _currentStats = _currentStats.copyWith(
+          currentBlock: blockNumber,
+          targetBlock: newTargetBlock,
+          status: MiningStatus.mining,
+          isSyncing: false,
+        );
+        _rapidImportCount = 0;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _parseSyncStatusChange(String line) {
+    // Example: DEBUG: Sync status changed: true -> false
+    final statusMatch = RegExp(r'-> (true|false)').firstMatch(line);
+
+    if (statusMatch != null) {
+      final isSyncing = statusMatch.group(1) == 'true';
+      final status = isSyncing ? MiningStatus.syncing : MiningStatus.idle;
+
+      final wasChanged = _currentStats.isSyncing != isSyncing;
+
+      if (wasChanged) {
+        _currentStats = _currentStats.copyWith(isSyncing: isSyncing, status: status);
+        // Reset rapid import counter on explicit sync state change
+        _rapidImportCount = 0;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// Update peer count (usually from a separate extraction)
+  void updatePeerCount(int peers) {
+    if (_currentStats.peerCount != peers) {
+      _currentStats = _currentStats.copyWith(peerCount: peers);
+    }
+  }
+
+  /// Update hashrate (from HashrateEstimator)
+  void updateHashrate(double hashrate) {
+    if (_currentStats.hashrate != hashrate) {
+      _currentStats = _currentStats.copyWith(hashrate: hashrate);
+    }
+  }
+
+  /// Update target block (can be from Prometheus or estimated)
+  void updateTargetBlock(int targetBlock) {
+    if (_currentStats.targetBlock != targetBlock) {
+      _currentStats = _currentStats.copyWith(targetBlock: targetBlock);
+    }
+  }
+
+  /// Manually set syncing state (useful for prometheus integration)
+  void setSyncingState(bool isSyncing, int? currentBlock, int? targetBlock) {
+    final status = isSyncing ? MiningStatus.syncing : MiningStatus.idle;
+
+    _currentStats = _currentStats.copyWith(
+      isSyncing: isSyncing,
+      status: status,
+      currentBlock: currentBlock,
+      targetBlock: targetBlock,
+    );
+  }
+
+  /// Reset stats to empty state
+  void reset() {
+    _currentStats = MiningStats.empty();
+    _rapidImportCount = 0;
+    _lastImportTime = null;
   }
 }

@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:quantus_miner/src/services/mining_stats_service.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
-import 'package:quantus_miner/src/shared/extensions/theme_extensions.dart';
 
 import '../../src/services/binary_manager.dart';
 import '../../src/services/miner_process.dart';
@@ -12,9 +12,16 @@ import '../../main.dart'; // Import for GlobalMinerManager
 // import '../services/prometheus_service.dart';
 
 class MinerControls extends StatefulWidget {
+  final MiningStats miningStats;
+  final Function(MiningStats) onMetricsUpdate;
   final Function(MinerProcess?)? onMinerProcessChanged;
 
-  const MinerControls({super.key, this.onMinerProcessChanged});
+  const MinerControls({
+    super.key,
+    required this.miningStats,
+    required this.onMetricsUpdate,
+    this.onMinerProcessChanged,
+  });
 
   @override
   State<MinerControls> createState() => _MinerControlsState();
@@ -22,14 +29,8 @@ class MinerControls extends StatefulWidget {
 
 class _MinerControlsState extends State<MinerControls> {
   MinerProcess? _proc;
-  double? _hashrate;
   // Timer? _poll; // Removed: Hashrate will come from MinerProcess callback
   bool _isAttemptingToggle = false;
-
-  // New state variables for sync status
-  bool _isSyncingNode = false;
-  int? _currentBlock;
-  int? _targetBlock;
 
   Future<void> _toggle() async {
     if (_isAttemptingToggle) return;
@@ -70,30 +71,15 @@ class _MinerControlsState extends State<MinerControls> {
         bin,
         id,
         rew,
-        // Updated to use onMetricsUpdate and new signature
-        onMetricsUpdate: (isSyncing, current, target, newHashrate) {
-          if (mounted) {
-            setState(() {
-              _isSyncingNode = isSyncing;
-              _currentBlock = current;
-              _targetBlock = target;
-              _hashrate = newHashrate; // Update hashrate from callback
-              // print('UI Updated: Syncing=$isSyncing, Current=$current, Target=$target, Hashrate=$newHashrate');
-            });
-          }
-        },
+        onStatsUpdate: widget.onMetricsUpdate,
       );
 
       // Notify parent about the new miner process
       widget.onMinerProcessChanged?.call(_proc);
 
       try {
-        setState(() {
-          _isSyncingNode = true;
-          _currentBlock = null;
-          _targetBlock = null;
-          _hashrate = null;
-        });
+        final newMiningStats = widget.miningStats.copyWith(isSyncing: true, status: MiningStatus.syncing);
+        widget.onMetricsUpdate(newMiningStats);
         await _proc!.start();
         // _poll Timer removed - no longer fetching hashrate from here
       } catch (e) {
@@ -104,12 +90,8 @@ class _MinerControlsState extends State<MinerControls> {
         _proc = null;
         // Notify parent that miner process is null
         widget.onMinerProcessChanged?.call(null);
-        setState(() {
-          _isSyncingNode = false;
-          _currentBlock = null;
-          _targetBlock = null;
-          _hashrate = null; // Clear hashrate on error too
-        });
+        final newMiningStats = MiningStats.empty();
+        widget.onMetricsUpdate(newMiningStats);
       }
     } else {
       print('Stopping mining');
@@ -129,14 +111,8 @@ class _MinerControlsState extends State<MinerControls> {
       _proc = null;
       // Notify parent that miner process is stopped
       widget.onMinerProcessChanged?.call(null);
-      _hashrate = null;
-      if (mounted) {
-        setState(() {
-          _isSyncingNode = false;
-          _currentBlock = null;
-          _targetBlock = null;
-        });
-      }
+      final newMiningStats = MiningStats.empty();
+      widget.onMetricsUpdate(newMiningStats);
     }
     if (mounted) {
       setState(() => _isAttemptingToggle = false);
@@ -165,57 +141,15 @@ class _MinerControlsState extends State<MinerControls> {
 
   @override
   Widget build(BuildContext context) {
-    String statusText = 'Status: Not Mining';
-    if (_proc != null) {
-      if (_isSyncingNode) {
-        String blockInfo = '';
-        if (_currentBlock != null && _targetBlock != null) {
-          blockInfo = ' (Block: $_currentBlock/$_targetBlock)';
-        } else if (_currentBlock != null) {
-          blockInfo = ' (Block: $_currentBlock)';
-        }
-        statusText = 'Status: Syncing$blockInfo...';
-      } else {
-        statusText = 'Status: Mining (External Miner)';
-      }
-    }
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(statusText, style: context.textTheme.headlineSmall, textAlign: TextAlign.center),
-        const SizedBox(height: 8),
-        if (_proc != null && !_isSyncingNode && _hashrate != null)
-          Text(
-            'Hashrate: ${_hashrate!.toStringAsFixed(2)} H/s',
-            style: context.textTheme.bodyMedium,
-            textAlign: TextAlign.center,
-          )
-        else if (_proc != null &&
-            !_isSyncingNode &&
-            _hashrate == null &&
-            !_isSyncingNode) // Show fetching only if not syncing and proc started
-          Text('Hashrate: Fetching...', style: context.textTheme.bodyMedium, textAlign: TextAlign.center),
-        const SizedBox(height: 20),
-        ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: 400),
-          child: SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _proc == null ? Colors.green : Colors.blue,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                minimumSize: const Size(200, 50),
-              ),
-              onPressed: _isAttemptingToggle ? null : _toggle,
-              child: Text(_proc == null ? 'Start Mining' : 'Stop Mining'),
-            ),
-          ),
-        ),
-      ],
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: _proc == null ? Colors.green : Colors.blue,
+        padding: const EdgeInsets.symmetric(vertical: 15),
+        textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        minimumSize: const Size(200, 50),
+      ),
+      onPressed: _isAttemptingToggle ? null : _toggle,
+      child: Text(_proc == null ? 'Start Mining' : 'Stop Mining'),
     );
   }
 }

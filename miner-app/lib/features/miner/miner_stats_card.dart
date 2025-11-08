@@ -3,9 +3,9 @@ import 'package:quantus_miner/src/services/mining_stats_service.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class MinerStatsCard extends StatefulWidget {
-  final MiningStats? miningStats;
+  final MiningStats miningStats;
 
-  const MinerStatsCard({super.key, this.miningStats});
+  const MinerStatsCard({super.key, required this.miningStats});
 
   @override
   State<MinerStatsCard> createState() => _MinerStatsCardState();

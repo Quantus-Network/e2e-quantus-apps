@@ -18,21 +18,16 @@ class MinerDashboardScreen extends StatefulWidget {
 }
 
 class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
-  MiningStats? _miningStats;
+  MiningStats _miningStats = MiningStats.empty();
   MinerProcess? _currentMinerProcess;
-
-  final _miningStatsService = MiningStatsService(); // Instantiate mining stats service
 
   @override
   void initState() {
     super.initState();
-    _startMiningStatsMonitoring();
   }
 
   @override
   void dispose() {
-    _miningStatsService.stopMonitoring();
-
     // Clean up global miner process
     if (_currentMinerProcess != null) {
       try {
@@ -46,16 +41,9 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
     super.dispose();
   }
 
-  void _startMiningStatsMonitoring() {
-    _miningStatsService.startMonitoring();
-    _miningStatsService.statsStream.listen((stats) {
-      if (mounted) {
-        setState(() {
-          _miningStats = stats;
-        });
-      }
-
-      print(_miningStats);
+  void _onMetricsUpdate(MiningStats miningStats) {
+    setState(() {
+      _miningStats = miningStats;
     });
   }
 
@@ -65,8 +53,6 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
         _currentMinerProcess = minerProcess;
       });
     }
-    // Connect miner process to mining stats service for real hashrate
-    _miningStatsService.setMinerProcess(minerProcess);
 
     // Register with global app lifecycle for cleanup
     GlobalMinerManager.setMinerProcess(minerProcess);
@@ -101,10 +87,22 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                   padding: const EdgeInsets.only(left: 20, right: 20, top: 20),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
-                      if (_miningStats != null) MinerStatus(miningStats: _miningStats!),
+                      MinerStatus(miningStats: _miningStats),
 
-                      MinerControls(onMinerProcessChanged: _onMinerProcessChanged),
-
+                      Center(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: 400),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: MinerControls(
+                              miningStats: _miningStats,
+                              onMetricsUpdate: _onMetricsUpdate,
+                              onMinerProcessChanged: _onMinerProcessChanged,
+                            ),
+                          ),
+                        ),
+                      ),
+                      
                       const SizedBox(height: 24),
 
                       _buildResponsiveCards(),
@@ -117,7 +115,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                   child: Padding(
                     padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
                     child: Container(
-                      height: 400,
+                      height: 430,
                       decoration: BoxDecoration(
                         color: Colors.white.useOpacity(0.05),
                         borderRadius: BorderRadius.circular(20),
@@ -141,23 +139,6 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                     color: Colors.white.useOpacity(0.9),
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const Spacer(),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.useOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    'AUTO-SCROLL',
-                                    style: TextStyle(
-                                      color: Colors.white.useOpacity(0.6),
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w500,
-                                      letterSpacing: 0.5,
-                                    ),
                                   ),
                                 ),
                               ],
