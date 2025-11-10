@@ -77,6 +77,8 @@ class MiningStatsService {
         updated = _parseIdleStatus(line);
       } else if (line.contains('⛏️ Importing block')) {
         updated = _parseImportingBlock(line);
+      } else if (line.contains('🎁 Prepared block')) {
+        updated = _parsePreparedBlock(line);
       } else if (line.contains('🏆 Imported')) {
         updated = _parseImportedBlock(line);
       } else if (line.contains('DEBUG: Sync status changed')) {
@@ -102,15 +104,7 @@ class MiningStatsService {
       final wasChanged = _currentStats.peerCount != peers || _currentStats.currentBlock != bestBlock;
 
       if (wasChanged) {
-        int? newTargetBlock;
-        if (_currentStats.targetBlock < bestBlock) newTargetBlock = bestBlock;
-
-        _currentStats = _currentStats.copyWith(
-          peerCount: peers,
-          currentBlock: bestBlock,
-          targetBlock: newTargetBlock,
-          isSyncing: false,
-        );
+        _currentStats = _currentStats.copyWith(peerCount: peers, currentBlock: bestBlock, isSyncing: false);
         return true;
       }
     }
@@ -143,15 +137,7 @@ class MiningStatsService {
           _currentStats.status != status;
 
       if (wasChanged) {
-        int? newTargetBlock;
-        if (_currentStats.targetBlock < blockNumber) newTargetBlock = blockNumber;
-
-        _currentStats = _currentStats.copyWith(
-          currentBlock: blockNumber,
-          targetBlock: newTargetBlock,
-          isSyncing: isSyncing,
-          status: status,
-        );
+        _currentStats = _currentStats.copyWith(currentBlock: blockNumber, isSyncing: isSyncing, status: status);
         return true;
       }
     }
@@ -168,15 +154,29 @@ class MiningStatsService {
       final wasChanged = _currentStats.currentBlock != blockNumber || _currentStats.status != MiningStatus.mining;
 
       if (wasChanged) {
-        int? newTargetBlock;
-        if (_currentStats.targetBlock < blockNumber) newTargetBlock = blockNumber;
-
         _currentStats = _currentStats.copyWith(
           currentBlock: blockNumber,
-          targetBlock: newTargetBlock,
           status: MiningStatus.mining,
           isSyncing: false,
         );
+        _rapidImportCount = 0;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _parsePreparedBlock(String line) {
+    // Example: 🎁 Prepared block for proposing at 243895 (1135 ms)
+    final blockMatch = RegExp(r'at (\d+)').firstMatch(line);
+
+    if (blockMatch != null) {
+      final blockNumber = int.parse(blockMatch.group(1)!);
+
+      final wasChanged = _currentStats.currentBlock != blockNumber || _currentStats.status != MiningStatus.mining;
+
+      if (wasChanged) {
+        _currentStats = _currentStats.copyWith(targetBlock: blockNumber, status: MiningStatus.mining, isSyncing: false);
         _rapidImportCount = 0;
         return true;
       }
@@ -218,14 +218,14 @@ class MiningStatsService {
     }
   }
 
-  /// Update target block (can be from Prometheus or estimated)
+  /// Update target block 
   void updateTargetBlock(int targetBlock) {
     if (_currentStats.targetBlock != targetBlock) {
       _currentStats = _currentStats.copyWith(targetBlock: targetBlock);
     }
   }
 
-  /// Manually set syncing state (useful for prometheus integration)
+  /// Manually set syncing state 
   void setSyncingState(bool isSyncing, int? currentBlock, int? targetBlock) {
     final status = isSyncing ? MiningStatus.syncing : MiningStatus.idle;
 

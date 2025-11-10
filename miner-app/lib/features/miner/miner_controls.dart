@@ -7,9 +7,7 @@ import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
 
 import '../../src/services/binary_manager.dart';
 import '../../src/services/miner_process.dart';
-import '../../main.dart'; // Import for GlobalMinerManager
-// PrometheusService import might not be needed here anymore if hashrate is exclusively from MinerProcess
-// import '../services/prometheus_service.dart';
+import '../../main.dart'; 
 
 class MinerControls extends StatefulWidget {
   final MiningStats miningStats;
@@ -29,7 +27,6 @@ class MinerControls extends StatefulWidget {
 
 class _MinerControlsState extends State<MinerControls> {
   MinerProcess? _proc;
-  // Timer? _poll; // Removed: Hashrate will come from MinerProcess callback
   bool _isAttemptingToggle = false;
 
   Future<void> _toggle() async {
@@ -81,7 +78,6 @@ class _MinerControlsState extends State<MinerControls> {
         final newMiningStats = widget.miningStats.copyWith(isSyncing: true, status: MiningStatus.syncing);
         widget.onMetricsUpdate(newMiningStats);
         await _proc!.start();
-        // _poll Timer removed - no longer fetching hashrate from here
       } catch (e) {
         print('Error starting miner process: $e');
         if (mounted) {
