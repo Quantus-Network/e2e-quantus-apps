@@ -203,7 +203,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        SvgPicture.asset('assets/quantus_icon.svg', width: 80, height: 80),
+        SvgPicture.asset('assets/logo/logo.svg', width: 80, height: 80),
         const SizedBox(height: 16),
         const Text(
           'Rewards Address not set.',

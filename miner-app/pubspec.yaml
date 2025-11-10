@@ -39,6 +39,8 @@ dependencies:
   # Math and logging
   decimal: # Version managed by melos.yaml
   logger: # Version managed by melos.yaml
+  flash: ^3.1.1
+  lucide_icons_flutter: ^3.1.5
 
 dev_dependencies:
   flutter_test:
@@ -46,9 +48,11 @@ dev_dependencies:
   flutter_lints: # Version managed by melos.yaml
   integration_test:
     sdk: flutter
+  flutter_launcher_icons: "^0.14.4"
 
 flutter:
   uses-material-design: true
   assets:
     - assets/quantus_icon.svg
+    - assets/logo/
   

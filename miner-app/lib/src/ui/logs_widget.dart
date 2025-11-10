@@ -89,9 +89,9 @@ class _LogsWidgetState extends State<LogsWidget> {
         return Colors.blue;
       case 'node-error':
         return Colors.red;
-      case 'external-miner':
+      case 'quantus-miner':
         return Colors.green;
-      case 'external-miner-error':
+      case 'quantus-miner-error':
         return Colors.orange;
       default:
         return Colors.grey;

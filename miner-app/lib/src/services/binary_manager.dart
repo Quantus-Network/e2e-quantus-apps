@@ -18,7 +18,7 @@ class BinaryManager {
 
   // External miner constants
   static const _minerRepoName = 'quantus-miner';
-  static const _minerBinary = 'external-miner';
+  static const _minerBinary = 'quantus-miner';
   static const _minerReleaseBinary =
       'quantus-miner'; // The actual binary name in releases
 

@@ -1,0 +1,11 @@
+# flutter pub run flutter_launcher_icons
+flutter_launcher_icons:
+  windows:
+    generate: true
+    image_path: "assets/quantus_icon_1024.png"
+  macos:
+    generate: true
+    image_path: "assets/quantus_icon_1024.png"
+  linux:
+    generate: true
+    image_path: "assets/quantus_icon_1024.png"
