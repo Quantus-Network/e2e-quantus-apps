@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
+import 'package:quantus_miner/src/services/prometheus_service.dart';
 import './mining_stats_service.dart';
 import './hashrate_estimator.dart';
-import './prometheus_service.dart';
 
 import './binary_manager.dart';
 import './log_filter_service.dart';
@@ -39,10 +39,8 @@ class MinerProcess {
   late PrometheusService _prometheusService;
 
   Timer? _syncStatusTimer;
-  double? _currentHashrate;
   final int minerCores;
 
-  double? get currentHashrate => _currentHashrate;
   final int externalMinerPort;
 
   // Public getters for process PIDs (for cleanup tracking)
@@ -269,30 +267,24 @@ class MinerProcess {
 
     _stdoutFilter.reset();
     _stderrFilter.reset();
-    _currentHashrate = null;
 
-    Future<void> syncStatsWithPrometheous() async {
+    Future<void> syncBlockTargetWithPrometheusMetrics() async {
       try {
         final metrics = await _prometheusService.fetchMetrics();
         if (metrics == null || metrics.targetBlock == null) return;
+        if (_statsService.currentStats.targetBlock >= metrics.targetBlock!) return;
 
-        print('PROMETHEUS TARGET: ${metrics.targetBlock}');
-
-        // Update target block from Prometheus
         _statsService.updateTargetBlock(metrics.targetBlock!);
 
-        // Emit updated stats
         onStatsUpdate?.call(_statsService.currentStats);
-
-        _syncStatusTimer?.cancel();
       } catch (e) {
-        print('Failed to fetch Prometheus metrics: $e');
+        print('Failed to fetch target block height: $e');
       }
     }
 
     // Start Prometheus polling for target block (every 3 seconds)
     _syncStatusTimer?.cancel();
-    _syncStatusTimer = Timer.periodic(const Duration(seconds: 3), (timer) => syncStatsWithPrometheous());
+    _syncStatusTimer = Timer.periodic(const Duration(seconds: 3), (timer) => syncBlockTargetWithPrometheusMetrics());
 
     // Process each log line
     void processLogLine(String line, String streamType) {
@@ -349,7 +341,6 @@ class MinerProcess {
   void stop() {
     print('MinerProcess: stop() called. Killing processes.');
     _syncStatusTimer?.cancel();
-    _currentHashrate = null;
 
     // Kill external miner process first
     if (_externalMinerProcess != null) {
@@ -425,7 +416,6 @@ class MinerProcess {
   void forceStop() {
     print('MinerProcess: forceStop() called. Force killing processes.');
     _syncStatusTimer?.cancel();
-    _currentHashrate = null;
 
     final List<Future<void>> killFutures = [];
 
