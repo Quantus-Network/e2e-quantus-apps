@@ -28,6 +28,8 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
   final LocalNotificationsService _localNotificationsService;
   final NotificationConfig _config;
 
+  final Map<String, Timer> _scheduledTimers = {};
+
   NotificationNotifier(this._localNotificationsService, this._config) : super([]) {
     _initialize();
   }
@@ -100,12 +102,45 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
         state = notifications;
       }
     } catch (e) {
-
       // If loading fails, start with empty state
       if (mounted) {
         state = [];
       }
     }
+  }
+
+  void _addNotificationImmediately(NotificationData notification) {
+    // Enforce 64 notification limit (FIFO)
+    if (state.length >= maxNotifications) {
+      // Remove oldest notification
+      state = state.sublist(1);
+    }
+
+    // Add new notification
+    state = [...state, notification];
+
+    // Save to persistence if persistent
+    if (notification.persistent) {
+      _saveNotifications();
+    }
+
+    // Send to appropriate stream
+    _sendToStream(notification);
+  }
+
+  void _addNotificationOnSchedule(NotificationData notification) {
+    final scheduledDate = notification.scheduledTime!;
+    final duration = scheduledDate.difference(DateTime.now());
+
+    print('DURATION ${scheduledDate.toString()}');
+
+    // Schedule timer to show notification at the right time
+    final timer = Timer(duration, () {
+      _addNotificationImmediately(notification);
+      _scheduledTimers.remove(notification.id);
+    });
+
+    _scheduledTimers[notification.id] = timer;
   }
 
   /// Save notifications to shared preferences
@@ -131,22 +166,11 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
       return;
     }
 
-    // Enforce 64 notification limit (FIFO)
-    if (state.length >= maxNotifications) {
-      // Remove oldest notification
-      state = state.sublist(1);
+    if (notification.hasValidScheduleTime) {
+      _addNotificationOnSchedule(notification);
+    } else {
+      _addNotificationImmediately(notification);
     }
-
-    // Add new notification
-    state = [...state, notification];
-
-    // Save to persistence if persistent
-    if (notification.persistent) {
-      _saveNotifications();
-    }
-
-    // Send to appropriate stream
-    _sendToStream(notification);
 
     switch (notification.source) {
       case NotificationSource.local:
@@ -159,6 +183,24 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
         // To be handled in the future
         break;
     }
+  }
+
+  Future<void> cancelNotification(String notificationId) async {
+    final timer = _scheduledTimers.remove(notificationId);
+    timer?.cancel();
+    print('Cancelled scheduled notification: $notificationId');
+  }
+
+  Future<void> cancelAllNotifications() async {
+    for (final timer in _scheduledTimers.values) {
+      timer.cancel();
+    }
+    _scheduledTimers.clear();
+    print('Cancelled all scheduled notifications');
+  }
+
+  List<String> getScheduledNotificationIds() {
+    return _scheduledTimers.keys.toList();
   }
 
   /// Remove a notification by ID

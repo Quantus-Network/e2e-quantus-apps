@@ -140,6 +140,8 @@ class NotificationData {
     this.intent = NotificationIntent.others,
   });
 
+  bool get hasValidScheduleTime => scheduledTime != null;
+
   // Create a copy with modified fields
   NotificationData copyWith({
     String? id,
@@ -230,6 +232,8 @@ class NotificationData {
 
 /// Specific notification types for type safety
 class NotificationTemplates {
+  static int scheduleTimeBufferInSeconds = 3;
+
   static NotificationData transactionFailed({
     required Account? account,
     required PendingTransactionEvent transactionData,
@@ -287,8 +291,21 @@ class NotificationTemplates {
     required Account? account,
     required ReversibleTransferEvent transactionData,
   }) {
-    const reminderDuration = Duration(hours: 2);
-    final reminderTime = transactionData.scheduledAt.subtract(reminderDuration);
+    final now = DateTime.now();
+    final scheduleDistance = transactionData.scheduledAt.difference(now);
+
+    DateTime reminderTime;
+    Duration reminderDuration;
+
+    if (scheduleDistance.inHours < 2) {
+      reminderDuration = scheduleDistance;
+      // Ensure the scheduled date is in the future
+      reminderTime = now.add(Duration(seconds: scheduleTimeBufferInSeconds));
+    } else {
+      reminderDuration = const Duration(hours: 2);
+      reminderTime = transactionData.scheduledAt.subtract(reminderDuration);
+    }
+
     return NotificationData(
       id: 'reversible_reminder_${transactionData.id}_${DateTime.now().millisecondsSinceEpoch}',
       accountId: account?.accountId ?? 'Undefined',
@@ -296,7 +313,7 @@ class NotificationTemplates {
       intent: NotificationIntent.reversibleTransactions,
       source: NotificationSource.push,
       title: 'Reversible Transaction Reminder',
-      message: 'Your reversible transaction will execute in ${reminderDuration.inHours} hours.',
+      message: 'Your reversible transaction will execute in ${_formatDuration(reminderDuration)}',
       accountName: account?.name ?? 'Undefined',
       timestamp: DateTime.now(),
       scheduledTime: reminderTime,
@@ -345,5 +362,18 @@ class NotificationTemplates {
   static String _formatAmount(BigInt amount) {
     final NumberFormattingService formattingService = NumberFormattingService();
     return formattingService.formatBalance(amount, addSymbol: true);
+  }
+
+  static String _formatDuration(Duration duration) {
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+
+    if (hours > 0 && minutes > 0) {
+      return '$hours hour${hours > 1 ? 's' : ''} $minutes minute${minutes > 1 ? 's' : ''}';
+    } else if (hours > 0) {
+      return '$hours hour${hours > 1 ? 's' : ''}';
+    } else {
+      return '$minutes minute${minutes > 1 ? 's' : ''}';
+    }
   }
 }
