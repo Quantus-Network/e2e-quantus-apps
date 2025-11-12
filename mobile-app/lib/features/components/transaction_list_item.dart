@@ -235,8 +235,8 @@ class TransactionListItemState extends State<TransactionListItem> {
 void showTransactionActionSheet(BuildContext context, {required TransactionEvent transaction, required role}) {
   Widget sheet;
 
-  if (transaction.isReversibleScheduled && role == TransactionRole.sender) {
-    sheet = TransactionActionSheet(transaction: transaction as ReversibleTransferEvent);
+  if (transaction.isReversibleScheduled && (role == TransactionRole.sender || role == TransactionRole.both)) {
+    sheet = ReversibleTransactionActionSheet(transaction: transaction as ReversibleTransferEvent);
   } else {
     sheet = TransactionDetailsActionSheet(transaction: transaction, role: role);
   }
