@@ -180,8 +180,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         blockHash: '0xblockhash987654321',
       ),
     );
-
-    print(DateTime.now().toString());
   }
 
   @override
