@@ -6,6 +6,7 @@ class ExternalMinerMetrics {
   final int activeJobs;
   final int totalHashes;
   final int workers;
+  final int cpuCapacity;
   final bool isHealthy;
 
   ExternalMinerMetrics({
@@ -13,12 +14,13 @@ class ExternalMinerMetrics {
     required this.activeJobs,
     required this.totalHashes,
     required this.workers,
+    required this.cpuCapacity,
     required this.isHealthy,
   });
 
   @override
   String toString() {
-    return 'ExternalMinerMetrics(hashRate: ${hashRate.toStringAsFixed(2)} H/s, activeJobs: $activeJobs, totalHashes: $totalHashes, workers: $workers, isHealthy: $isHealthy)';
+    return 'ExternalMinerMetrics(hashRate: ${hashRate.toStringAsFixed(2)} H/s, activeJobs: $activeJobs, totalHashes: $totalHashes, workers: $workers, cpuCapacity: $cpuCapacity, isHealthy: $isHealthy)';
   }
 }
 
@@ -84,6 +86,7 @@ class ExternalMinerApiClient {
     int activeJobs = 0;
     int totalHashes = 0;
     int workers = 0;
+    int cpuCapacity = 0;
 
     for (final line in lines) {
       if (line.startsWith('#')) continue; // Skip comments
@@ -105,10 +108,15 @@ class ExternalMinerApiClient {
           if (parts.length >= 2) {
             totalHashes = int.tryParse(parts.last) ?? 0;
           }
-        } else if (line.startsWith('miner_effective_cpus ')) {
+        } else if (line.startsWith('miner_workers ')) {
           final parts = line.split(' ');
           if (parts.length >= 2) {
             workers = int.tryParse(parts.last) ?? 0;
+          }
+        } else if (line.startsWith('miner_effective_cpus ')) {
+          final parts = line.split(' ');
+          if (parts.length >= 2) {
+            cpuCapacity = int.tryParse(parts.last) ?? 0;
           }
         }
       } catch (e) {
@@ -122,6 +130,7 @@ class ExternalMinerApiClient {
       activeJobs: activeJobs,
       totalHashes: totalHashes,
       workers: workers,
+      cpuCapacity: cpuCapacity,
       isHealthy: hashRate > 0 || activeJobs > 0,
     );
 
@@ -142,6 +151,7 @@ class ExternalMinerApiClient {
             activeJobs: 0,
             totalHashes: 0,
             workers: 0,
+            cpuCapacity: 0,
             isHealthy: false,
           ),
         );

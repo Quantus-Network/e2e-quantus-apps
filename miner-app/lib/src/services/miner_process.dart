@@ -565,6 +565,11 @@ class MinerProcess {
         _statsService.updateWorkers(metrics.workers);
       }
 
+      // Update CPU capacity from external miner if available
+      if (metrics.cpuCapacity > 0) {
+        _statsService.updateCpuCapacity(metrics.cpuCapacity);
+      }
+
       onStatsUpdate?.call(_statsService.currentStats);
     } else {
       // Invalid or zero metrics
