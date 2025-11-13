@@ -231,7 +231,6 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                       version: _minerUpdateInfo.latestVersion ?? "undefined",
                       message: 'New miner binary available!',
                       onUpdate: _handleUpdateMiner,
-                      onDismiss: _cleanMinerUpdateInfo,
                     ),
                   ),
 
@@ -243,7 +242,6 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                       version: _nodeUpdateInfo.latestVersion ?? "undefined",
                       message: 'New node binary available!',
                       onUpdate: _handleUpdateNode,
-                      onDismiss: _cleanNodeUpdateInfo,
                     ),
                   ),
 
