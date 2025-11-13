@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quantus_miner/features/settings/settings_screen.dart';
 import 'package:quantus_miner/src/services/miner_settings_service.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-enum _MenuValues { logout }
+enum _MenuValues { logout, setting }
 
 class MinerAppBar extends StatefulWidget {
   const MinerAppBar({super.key});
@@ -49,6 +50,10 @@ class _MinerAppBarState extends State<MinerAppBar> {
         context.go('/node_setup');
       }
     }
+  }
+
+  void _goToSettingScreen() {
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SettingsScreen()));
   }
 
   @override
@@ -105,6 +110,9 @@ class _MinerAppBarState extends State<MinerAppBar> {
                           case _MenuValues.logout:
                             await _performLogout();
                             break;
+                          case _MenuValues.setting:
+                            _goToSettingScreen();
+                            break;
                         }
                       },
                       itemBuilder: (BuildContext context) => <PopupMenuEntry<_MenuValues>>[
@@ -116,6 +124,19 @@ class _MinerAppBarState extends State<MinerAppBar> {
                               const SizedBox(width: 12),
                               Text(
                                 'Logout (Full Reset)',
+                                style: TextStyle(color: Colors.white.useOpacity(0.9), fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ),
+                         PopupMenuItem<_MenuValues>(
+                          value: _MenuValues.setting,
+                          child: Row(
+                            children: [
+                              Icon(Icons.settings, color: Colors.grey.useOpacity(0.8), size: 20),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Settings',
                                 style: TextStyle(color: Colors.white.useOpacity(0.9), fontSize: 14),
                               ),
                             ],

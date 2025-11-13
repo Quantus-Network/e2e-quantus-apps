@@ -7,18 +7,20 @@ import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
 
 import '../../src/services/binary_manager.dart';
 import '../../src/services/miner_process.dart';
-import '../../main.dart'; 
+import '../../main.dart';
 
 class MinerControls extends StatefulWidget {
+  final MinerProcess? minerProcess;
   final MiningStats miningStats;
   final Function(MiningStats) onMetricsUpdate;
-  final Function(MinerProcess?)? onMinerProcessChanged;
+  final Function(MinerProcess?) onMinerProcessChanged;
 
   const MinerControls({
     super.key,
+    required this.minerProcess,
     required this.miningStats,
     required this.onMetricsUpdate,
-    this.onMinerProcessChanged,
+    required this.onMinerProcessChanged,
   });
 
   @override
@@ -26,14 +28,13 @@ class MinerControls extends StatefulWidget {
 }
 
 class _MinerControlsState extends State<MinerControls> {
-  MinerProcess? _proc;
   bool _isAttemptingToggle = false;
 
   Future<void> _toggle() async {
     if (_isAttemptingToggle) return;
     setState(() => _isAttemptingToggle = true);
 
-    if (_proc == null) {
+    if (widget.minerProcess == null) {
       print('Starting mining');
 
       // Check for all required files and binaries
@@ -64,28 +65,22 @@ class _MinerControlsState extends State<MinerControls> {
         return;
       }
 
-      _proc = MinerProcess(
-        bin,
-        id,
-        rew,
-        onStatsUpdate: widget.onMetricsUpdate,
-      );
-
+      final newProc = MinerProcess(bin, id, rew, onStatsUpdate: widget.onMetricsUpdate);
       // Notify parent about the new miner process
-      widget.onMinerProcessChanged?.call(_proc);
+      widget.onMinerProcessChanged.call(newProc);
 
       try {
         final newMiningStats = widget.miningStats.copyWith(isSyncing: true, status: MiningStatus.syncing);
         widget.onMetricsUpdate(newMiningStats);
-        await _proc!.start();
+        await newProc.start();
       } catch (e) {
         print('Error starting miner process: $e');
         if (mounted) {
           context.showErrorSnackbar(title: 'Error starting miner!', message: e.toString());
         }
-        _proc = null;
+
         // Notify parent that miner process is null
-        widget.onMinerProcessChanged?.call(null);
+        widget.onMinerProcessChanged.call(null);
         final newMiningStats = MiningStats.empty();
         widget.onMetricsUpdate(newMiningStats);
       }
@@ -93,20 +88,17 @@ class _MinerControlsState extends State<MinerControls> {
       print('Stopping mining');
 
       try {
-        _proc!.stop();
+        widget.minerProcess!.stop();
         // Wait a moment for graceful shutdown
         await Future.delayed(const Duration(seconds: 1));
       } catch (e) {
         print('Error during graceful stop: $e');
       }
 
-      // Use GlobalMinerManager for comprehensive cleanup
       await GlobalMinerManager.cleanup();
 
-      // _poll?.cancel(); // _poll removed
-      _proc = null;
       // Notify parent that miner process is stopped
-      widget.onMinerProcessChanged?.call(null);
+      widget.onMinerProcessChanged.call(null);
       final newMiningStats = MiningStats.empty();
       widget.onMetricsUpdate(newMiningStats);
     }
@@ -118,11 +110,11 @@ class _MinerControlsState extends State<MinerControls> {
   @override
   void dispose() {
     // _poll?.cancel(); // _poll removed
-    if (_proc != null) {
+    if (widget.minerProcess != null) {
       print('MinerControls: disposing, force stopping miner process');
 
       try {
-        _proc!.forceStop();
+        widget.minerProcess!.forceStop();
       } catch (e) {
         print('MinerControls: Error force stopping miner process in dispose: $e');
       }
@@ -130,7 +122,7 @@ class _MinerControlsState extends State<MinerControls> {
       // Use GlobalMinerManager for comprehensive cleanup
       GlobalMinerManager.cleanup();
 
-      _proc = null;
+      widget.onMinerProcessChanged.call(null);
     }
     super.dispose();
   }
@@ -139,13 +131,13 @@ class _MinerControlsState extends State<MinerControls> {
   Widget build(BuildContext context) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: _proc == null ? Colors.green : Colors.blue,
+        backgroundColor: widget.minerProcess == null ? Colors.green : Colors.blue,
         padding: const EdgeInsets.symmetric(vertical: 15),
         textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         minimumSize: const Size(200, 50),
       ),
       onPressed: _isAttemptingToggle ? null : _toggle,
-      child: Text(_proc == null ? 'Start Mining' : 'Stop Mining'),
+      child: Text(widget.minerProcess == null ? 'Start Mining' : 'Stop Mining'),
     );
   }
 }
