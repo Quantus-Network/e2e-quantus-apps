@@ -6,16 +6,18 @@ class PrometheusMetrics {
   final bool isMajorSyncing;
   final int? bestBlock;
   final int? targetBlock;
+  final int? peerCount;
 
   PrometheusMetrics({
     required this.isMajorSyncing,
     this.bestBlock,
     this.targetBlock,
+    this.peerCount,
   });
 
   @override
   String toString() {
-    return 'PrometheusMetrics(isMajorSyncing: $isMajorSyncing, bestBlock: $bestBlock, targetBlock: $targetBlock)';
+    return 'PrometheusMetrics(isMajorSyncing: $isMajorSyncing, bestBlock: $bestBlock, targetBlock: $targetBlock, peerCount: $peerCount)';
   }
 }
 
@@ -36,6 +38,7 @@ class PrometheusService {
         bool isSyncing = false; // Default to false
         int? bestBlock;
         int? targetBlock;
+        int? peerCount;
 
         for (var line in lines) {
           if (line.startsWith('substrate_sub_libp2p_is_major_syncing')) {
@@ -54,6 +57,20 @@ class PrometheusService {
             final parts = line.split(' ');
             if (parts.length == 2) {
               targetBlock = int.tryParse(parts[1]);
+            }
+          } else if (line.startsWith('substrate_sub_libp2p_peers_count ') ||
+              line.startsWith(
+                'substrate_sub_libp2p_kademlia_query_duration_count ',
+              ) ||
+              line.contains('substrate_sub_libp2p_connections_opened_total') ||
+              line.contains('substrate_peerset_num_discovered_peers')) {
+            // Try various peer-related metrics
+            final parts = line.split(' ');
+            if (parts.length >= 2) {
+              final value = int.tryParse(parts.last);
+              if (value != null && value > 0) {
+                peerCount = value;
+              }
             }
           }
         }
@@ -75,6 +92,7 @@ class PrometheusService {
           isMajorSyncing: isSyncing,
           bestBlock: bestBlock,
           targetBlock: targetBlock,
+          peerCount: peerCount,
         );
       } else {
         // Request failed (e.g., 404, 500)
