@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:quantus_miner/src/services/prometheus_service.dart';
 import './mining_stats_service.dart';
 import './external_miner_api_client.dart';
+import './chain_rpc_client.dart';
 
 import './binary_manager.dart';
 import './log_filter_service.dart';
@@ -41,6 +42,7 @@ class MinerProcess {
   late MiningStatsService _statsService;
   late PrometheusService _prometheusService;
   late ExternalMinerApiClient _externalMinerApiClient;
+  late PollingChainRpcClient _chainRpcClient;
 
   Timer? _syncStatusTimer;
   final int minerCores;
@@ -98,6 +100,11 @@ class MinerProcess {
     // Set up external miner API callbacks
     _externalMinerApiClient.onMetricsUpdate = _handleExternalMinerMetrics;
     _externalMinerApiClient.onError = _handleExternalMinerError;
+
+    // Initialize chain RPC client
+    _chainRpcClient = PollingChainRpcClient(rpcUrl: 'http://127.0.0.1:9933');
+    _chainRpcClient.onChainInfoUpdate = _handleChainInfoUpdate;
+    _chainRpcClient.onError = _handleChainRpcError;
 
     // Initialize stats with the configured worker count
     _statsService.updateWorkers(minerCores);
@@ -265,6 +272,8 @@ class MinerProcess {
       '30333',
       '--prometheus-port',
       '9616',
+      '--experimental-rpc-endpoint',
+      'listen-addr=127.0.0.1:9933,methods=unsafe,cors=all',
       '--name',
       'QuantusMinerGUI',
       '--external-miner-url',
@@ -308,14 +317,11 @@ class MinerProcess {
     // Start external miner API polling (every second)
     _externalMinerApiClient.startPolling();
 
+    // Wait for node to be ready before starting RPC polling
+    _waitForNodeReadyThenStartRpc();
+
     // Process each log line
     void processLogLine(String line, String streamType) {
-      final statsUpdated = _statsService.parseLogLine(line);
-
-      if (statsUpdated) {
-        onStatsUpdate?.call(_statsService.currentStats);
-      }
-
       bool shouldPrint;
       if (streamType == 'stdout') {
         shouldPrint = _stdoutFilter.shouldPrintLine(
@@ -375,6 +381,7 @@ class MinerProcess {
     print('MinerProcess: stop() called. Killing processes.');
     _syncStatusTimer?.cancel();
     _externalMinerApiClient.stopPolling();
+    _chainRpcClient.stopPolling();
 
     // Kill external miner process first
     if (_externalMinerProcess != null) {
@@ -806,9 +813,84 @@ class MinerProcess {
     }
   }
 
+  /// Handle chain RPC information updates
+  /// Wait for the node RPC to be ready, then start polling
+  Future<void> _waitForNodeReadyThenStartRpc() async {
+    print('DEBUG: Waiting for node RPC to be ready...');
+
+    // Try to connect to RPC endpoint with exponential backoff
+    int attempts = 0;
+    const maxAttempts = 20; // Up to ~2 minutes of retries
+    Duration delay = const Duration(seconds: 2);
+
+    while (attempts < maxAttempts) {
+      try {
+        final isReady = await _chainRpcClient.isReachable();
+        if (isReady) {
+          print('DEBUG: Node RPC is ready! Starting chain RPC polling...');
+          _chainRpcClient.startPolling();
+          return;
+        }
+      } catch (e) {
+        // Expected during startup
+      }
+
+      attempts++;
+      print(
+        'DEBUG: Node RPC not ready yet (attempt $attempts/$maxAttempts), waiting ${delay.inSeconds}s...',
+      );
+
+      await Future.delayed(delay);
+
+      // Exponential backoff, but cap at 10 seconds
+      if (delay.inSeconds < 10) {
+        delay = Duration(seconds: (delay.inSeconds * 1.5).round());
+      }
+    }
+
+    print(
+      'DEBUG: Failed to connect to node RPC after $maxAttempts attempts. Will retry with polling...',
+    );
+    // Start polling anyway - the error handling in RPC client will manage failures
+    _chainRpcClient.startPolling();
+  }
+
+  void _handleChainInfoUpdate(ChainInfo info) {
+    print(
+      'DEBUG: Successfully received chain info - Peers: ${info.peerCount}, Block: ${info.currentBlock}',
+    );
+
+    // Update peer count from RPC (most accurate)
+    if (info.peerCount >= 0) {
+      _statsService.updatePeerCount(info.peerCount);
+      print('DEBUG: Updated peer count to: ${info.peerCount}');
+    }
+
+    // Always update current block and target block from RPC (most authoritative)
+    _statsService.setSyncingState(
+      info.isSyncing,
+      info.currentBlock,
+      info.targetBlock ?? info.currentBlock,
+    );
+    print(
+      'DEBUG: Updated blocks - current: ${info.currentBlock}, target: ${info.targetBlock ?? info.currentBlock}, syncing: ${info.isSyncing}',
+    );
+
+    onStatsUpdate?.call(_statsService.currentStats);
+  }
+
+  /// Handle chain RPC errors
+  void _handleChainRpcError(String error) {
+    // Only log significant RPC errors, not connection issues during startup
+    if (!error.contains('Connection refused') && !error.contains('timeout')) {
+      print('Chain RPC error: $error');
+    }
+  }
+
   /// Dispose of resources
   void dispose() {
     _syncStatusTimer?.cancel();
     _externalMinerApiClient.dispose();
+    _chainRpcClient.dispose();
   }
 }
