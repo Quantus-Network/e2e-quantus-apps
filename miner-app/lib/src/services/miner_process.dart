@@ -5,7 +5,8 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:quantus_miner/src/services/prometheus_service.dart';
 import './mining_stats_service.dart';
-import './hashrate_estimator.dart';
+import './external_miner_api_client.dart';
+import './chain_rpc_client.dart';
 
 import './binary_manager.dart';
 import './log_filter_service.dart';
@@ -15,7 +16,11 @@ class LogEntry {
   final DateTime timestamp;
   final String source; // 'node', 'quantus-miner', 'error'
 
-  LogEntry({required this.message, required this.timestamp, required this.source});
+  LogEntry({
+    required this.message,
+    required this.timestamp,
+    required this.source,
+  });
 
   @override
   String toString() {
@@ -35,13 +40,19 @@ class MinerProcess {
   late LogFilterService _stderrFilter;
 
   late MiningStatsService _statsService;
-  late HashrateEstimator _hashrateEstimator;
   late PrometheusService _prometheusService;
+  late ExternalMinerApiClient _externalMinerApiClient;
+  late PollingChainRpcClient _chainRpcClient;
 
   Timer? _syncStatusTimer;
   final int minerCores;
 
   final int externalMinerPort;
+
+  // Track metrics state to prevent premature hashrate reset
+  double _lastValidHashrate = 0.0;
+  int _consecutiveMetricsFailures = 0;
+  static const int _maxConsecutiveFailures = 5;
 
   // Public getters for process PIDs (for cleanup tracking)
   int? get nodeProcessPid {
@@ -73,35 +84,62 @@ class MinerProcess {
     this.onStatsUpdate,
     this.minerCores = 8,
     this.externalMinerPort = 9833,
-  });
+  }) {
+    // Initialize services
+    _statsService = MiningStatsService();
+    _prometheusService = PrometheusService();
+    _stdoutFilter = LogFilterService();
+    _stderrFilter = LogFilterService();
+
+    // Initialize external miner API client with metrics endpoint
+    _externalMinerApiClient = ExternalMinerApiClient(
+      baseUrl: 'http://127.0.0.1:$externalMinerPort',
+      metricsUrl: 'http://127.0.0.1:9900/metrics', // Standard metrics port
+    );
+
+    // Set up external miner API callbacks
+    _externalMinerApiClient.onMetricsUpdate = _handleExternalMinerMetrics;
+    _externalMinerApiClient.onError = _handleExternalMinerError;
+
+    // Initialize chain RPC client
+    _chainRpcClient = PollingChainRpcClient(rpcUrl: 'http://127.0.0.1:9933');
+    _chainRpcClient.onChainInfoUpdate = _handleChainInfoUpdate;
+    _chainRpcClient.onError = _handleChainRpcError;
+
+    // Initialize stats with the configured worker count
+    _statsService.updateWorkers(minerCores);
+  }
 
   Future<void> start() async {
     // First, ensure both binaries are available
-    print('DEBUG: Ensuring node binary is available...');
     await BinaryManager.ensureNodeBinary();
 
-    print('DEBUG: Ensuring external miner binary is available...');
-    final externalMinerBinPath = await BinaryManager.getExternalMinerBinaryFilePath();
-    print('DEBUG: External miner expected at: $externalMinerBinPath');
+    // Cleanup any existing processes first
+    await _cleanupExistingNodeProcesses();
+    await _cleanupExistingMinerProcesses();
+
+    // Cleanup database lock files if needed
+    await _cleanupDatabaseLocks();
+
+    // Ensure database directory has proper access
+    await _ensureDatabaseDirectoryAccess();
+
+    // Check if ports are available and cleanup if needed
+    await _ensurePortsAvailable();
+
+    final externalMinerBinPath =
+        await BinaryManager.getExternalMinerBinaryFilePath();
 
     await BinaryManager.ensureExternalMinerBinary();
     final externalMinerBin = File(externalMinerBinPath);
 
-    print('DEBUG: Checking if external miner binary exists after ensure...');
     if (!await externalMinerBin.exists()) {
-      print('DEBUG: ERROR - External miner binary not found at $externalMinerBinPath');
-      throw Exception('External miner binary not found at $externalMinerBinPath');
-    } else {
-      print('DEBUG: External miner binary found at $externalMinerBinPath');
-
-      // Check if it's executable
-      final stat = await externalMinerBin.stat();
-      print('DEBUG: External miner binary permissions: ${stat.mode.toRadixString(8)}');
+      throw Exception(
+        'External miner binary not found at $externalMinerBinPath',
+      );
     }
 
-    // Start the external miner first
-    print('DEBUG: Starting external miner on port $externalMinerPort with $minerCores cores...');
-    print('DEBUG: External miner command: ${externalMinerBin.path} --port $externalMinerPort --workers $minerCores');
+    // Start the external miner first with metrics enabled
 
     try {
       _externalMinerProcess = await Process.start(externalMinerBin.path, [
@@ -109,58 +147,48 @@ class MinerProcess {
         externalMinerPort.toString(),
         '--workers',
         minerCores.toString(),
+        '--metrics-port',
+        await _getMetricsPort().then((port) => port.toString()),
       ]);
-      print('DEBUG: External miner process started successfully with PID: ${_externalMinerProcess!.pid}');
     } catch (e) {
-      print('DEBUG: ERROR - Failed to start external miner process: $e');
       throw Exception('Failed to start external miner: $e');
     }
 
     // Set up external miner log handling
-    _externalMinerProcess!.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
-      final logEntry = LogEntry(message: line, timestamp: DateTime.now(), source: 'quantus-miner');
-      _logsController.add(logEntry);
-      print('[ext-miner] $line');
-    });
+    _externalMinerProcess!.stdout
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen((line) {
+          final logEntry = LogEntry(
+            message: line,
+            timestamp: DateTime.now(),
+            source: 'quantus-miner',
+          );
+          _logsController.add(logEntry);
+          print('[ext-miner] $line');
+        });
 
-    _externalMinerProcess!.stderr.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
-      final logEntry = LogEntry(message: line, timestamp: DateTime.now(), source: 'quantus-miner-error');
-      _logsController.add(logEntry);
-      print('[ext-miner-err] $line');
-    });
+    _externalMinerProcess!.stderr
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen((line) {
+          final logEntry = LogEntry(
+            message: line,
+            timestamp: DateTime.now(),
+            source: 'quantus-miner-error',
+          );
+          _logsController.add(logEntry);
+          print('[ext-miner-err] $line');
+        });
 
     // Monitor external miner process exit
     _externalMinerProcess!.exitCode.then((exitCode) {
-      print('DEBUG: External miner process exited with code: $exitCode');
       if (exitCode != 0) {
-        print('DEBUG: External miner crashed! Exit code: $exitCode');
-        // Convert exit code to signal name if it's negative
-        if (exitCode < 0) {
-          final signal = -exitCode;
-          print('DEBUG: External miner was killed by signal: $signal');
-          // Common signals: 2=SIGINT, 9=SIGKILL, 15=SIGTERM, 30=SIGUSR1
-          switch (signal) {
-            case 2:
-              print('DEBUG: Signal was SIGINT (interrupt)');
-              break;
-            case 9:
-              print('DEBUG: Signal was SIGKILL (force kill)');
-              break;
-            case 15:
-              print('DEBUG: Signal was SIGTERM (termination)');
-              break;
-            case 30:
-              print('DEBUG: Signal was SIGUSR1 (user signal 1)');
-              break;
-            default:
-              print('DEBUG: Unknown signal: $signal');
-          }
-        }
+        print('External miner process exited with code: $exitCode');
       }
     });
 
     // Give the external miner a moment to start up
-    print('DEBUG: Waiting 3 seconds for external miner to start up...');
     await Future.delayed(const Duration(seconds: 3));
 
     // Check if external miner process is still alive
@@ -170,13 +198,9 @@ class MinerProcess {
       final pid = _externalMinerProcess!.pid;
       final result = await Process.run('kill', ['-0', pid.toString()]);
       if (result.exitCode != 0) {
-        print('DEBUG: External miner process (PID: $pid) is not running');
         minerStillRunning = false;
-      } else {
-        print('DEBUG: External miner process (PID: $pid) is still running');
       }
     } catch (e) {
-      print('DEBUG: Error checking external miner process: $e');
       minerStillRunning = false;
     }
 
@@ -185,23 +209,20 @@ class MinerProcess {
     }
 
     // Test if external miner is responding on the port
-    print('DEBUG: Testing if external miner is responding on port $externalMinerPort...');
     try {
       final testClient = HttpClient();
       testClient.connectionTimeout = const Duration(seconds: 5);
-      final request = await testClient.getUrl(Uri.parse('http://127.0.0.1:$externalMinerPort'));
+      final request = await testClient.getUrl(
+        Uri.parse('http://127.0.0.1:$externalMinerPort'),
+      );
       final response = await request.close();
-      print('DEBUG: External miner test response status: ${response.statusCode}');
       await response.drain(); // Consume the response
       testClient.close();
-      print('DEBUG: External miner is responding correctly!');
     } catch (e) {
-      print('DEBUG: External miner not responding on port $externalMinerPort: $e');
-      print('DEBUG: This might be normal if the miner is still starting up');
+      // External miner might still be starting up
     }
 
     // Now start the node process
-    print('DEBUG: Starting node process...');
     final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
     final basePath = p.join(quantusHome, 'node_data');
     await Directory(basePath).create(recursive: true);
@@ -209,16 +230,17 @@ class MinerProcess {
     final nodeKeyFileFromFileSystem = await BinaryManager.getNodeKeyFile();
     if (await nodeKeyFileFromFileSystem.exists()) {
       final stat = await nodeKeyFileFromFileSystem.stat();
-      print('DEBUG: nodeKeyFileFromFileSystem (${nodeKeyFileFromFileSystem.path}) exists (size: ${stat.size} bytes)');
+      print(
+        'DEBUG: nodeKeyFileFromFileSystem (${nodeKeyFileFromFileSystem.path}) exists (size: ${stat.size} bytes)',
+      );
     } else {
-      print('DEBUG: nodeKeyFileFromFileSystem (${nodeKeyFileFromFileSystem.path}) does not exist.');
+      print(
+        'DEBUG: nodeKeyFileFromFileSystem (${nodeKeyFileFromFileSystem.path}) does not exist.',
+      );
     }
 
-    if (await identityPath.exists()) {
-      final stat = await identityPath.stat();
-      print('DEBUG: identityPath file (${identityPath.path}) exists (size: ${stat.size} bytes)');
-    } else {
-      print('DEBUG: identityPath file (${identityPath.path}) to be used by node does not exist.');
+    if (!await identityPath.exists()) {
+      throw Exception('Identity file not found: ${identityPath.path}');
     }
 
     // Read the rewards address from the file
@@ -231,7 +253,9 @@ class MinerProcess {
       rewardsAddress = rewardsAddress.trim(); // Remove any whitespace/newlines
       print('DEBUG: Read rewards address from file: $rewardsAddress');
     } catch (e) {
-      throw Exception('Failed to read rewards address from file ${rewardsPath.path}: $e');
+      throw Exception(
+        'Failed to read rewards address from file ${rewardsPath.path}: $e',
+      );
     }
 
     final List<String> args = [
@@ -243,11 +267,13 @@ class MinerProcess {
       rewardsAddress,
       '--validator',
       '--chain',
-      'schrodinger',
+      'dirac',
       '--port',
       '30333',
       '--prometheus-port',
       '9616',
+      '--experimental-rpc-endpoint',
+      'listen-addr=127.0.0.1:9933,methods=unsafe,cors=all',
       '--name',
       'QuantusMinerGUI',
       '--external-miner-url',
@@ -261,9 +287,7 @@ class MinerProcess {
     _nodeProcess = await Process.start(bin.path, args);
     _stdoutFilter = LogFilterService();
     _stderrFilter = LogFilterService();
-    _statsService = MiningStatsService();
-    _hashrateEstimator = HashrateEstimator();
-    _prometheusService = PrometheusService();
+    // Services are now initialized in constructor
 
     _stdoutFilter.reset();
     _stderrFilter.reset();
@@ -272,7 +296,9 @@ class MinerProcess {
       try {
         final metrics = await _prometheusService.fetchMetrics();
         if (metrics == null || metrics.targetBlock == null) return;
-        if (_statsService.currentStats.targetBlock >= metrics.targetBlock!) return;
+        if (_statsService.currentStats.targetBlock >= metrics.targetBlock!) {
+          return;
+        }
 
         _statsService.updateTargetBlock(metrics.targetBlock!);
 
@@ -284,26 +310,30 @@ class MinerProcess {
 
     // Start Prometheus polling for target block (every 3 seconds)
     _syncStatusTimer?.cancel();
-    _syncStatusTimer = Timer.periodic(const Duration(seconds: 3), (timer) => syncBlockTargetWithPrometheusMetrics());
+    _syncStatusTimer = Timer.periodic(
+      const Duration(seconds: 3),
+      (timer) => syncBlockTargetWithPrometheusMetrics(),
+    );
+
+    // Start external miner API polling (every second)
+    _externalMinerApiClient.startPolling();
+
+    // Wait for node to be ready before starting RPC polling
+    _waitForNodeReadyThenStartRpc();
 
     // Process each log line
     void processLogLine(String line, String streamType) {
-      final statsUpdated = _statsService.parseLogLine(line);
-
-      final hashrate = _hashrateEstimator.updateAndEstimate(line);
-      if (hashrate != null) {
-        _statsService.updateHashrate(hashrate);
-      }
-
-      if (statsUpdated || hashrate != null) {
-        onStatsUpdate?.call(_statsService.currentStats);
-      }
-
       bool shouldPrint;
       if (streamType == 'stdout') {
-        shouldPrint = _stdoutFilter.shouldPrintLine(line, isNodeSyncing: _statsService.currentStats.isSyncing);
+        shouldPrint = _stdoutFilter.shouldPrintLine(
+          line,
+          isNodeSyncing: _statsService.currentStats.isSyncing,
+        );
       } else {
-        shouldPrint = _stderrFilter.shouldPrintLine(line, isNodeSyncing: _statsService.currentStats.isSyncing);
+        shouldPrint = _stderrFilter.shouldPrintLine(
+          line,
+          isNodeSyncing: _statsService.currentStats.isSyncing,
+        );
       }
 
       if (shouldPrint) {
@@ -323,29 +353,43 @@ class MinerProcess {
           source = 'node';
         }
 
-        final logEntry = LogEntry(message: line, timestamp: DateTime.now(), source: source);
+        final logEntry = LogEntry(
+          message: line,
+          timestamp: DateTime.now(),
+          source: source,
+        );
         _logsController.add(logEntry);
         print(source == 'node' ? '[node] $line' : '[node-error] $line');
       }
     }
 
-    _nodeProcess.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
-      processLogLine(line, 'stdout');
-    });
+    _nodeProcess.stdout
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen((line) {
+          processLogLine(line, 'stdout');
+        });
 
-    _nodeProcess.stderr.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
-      processLogLine(line, 'stderr');
-    });
+    _nodeProcess.stderr
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen((line) {
+          processLogLine(line, 'stderr');
+        });
   }
 
   void stop() {
     print('MinerProcess: stop() called. Killing processes.');
     _syncStatusTimer?.cancel();
+    _externalMinerApiClient.stopPolling();
+    _chainRpcClient.stopPolling();
 
     // Kill external miner process first
     if (_externalMinerProcess != null) {
       try {
-        print('MinerProcess: Attempting to kill external miner process (PID: ${_externalMinerProcess!.pid})');
+        print(
+          'MinerProcess: Attempting to kill external miner process (PID: ${_externalMinerProcess!.pid})',
+        );
 
         // Try graceful termination first
         _externalMinerProcess!.kill(ProcessSignal.sigterm);
@@ -354,9 +398,14 @@ class MinerProcess {
         Future.delayed(const Duration(seconds: 2)).then((_) async {
           // Check if process is still running and force kill if necessary
           try {
-            final result = await Process.run('kill', ['-0', _externalMinerProcess!.pid.toString()]);
+            final result = await Process.run('kill', [
+              '-0',
+              _externalMinerProcess!.pid.toString(),
+            ]);
             if (result.exitCode == 0) {
-              print('MinerProcess: External miner still running, force killing...');
+              print(
+                'MinerProcess: External miner still running, force killing...',
+              );
               _externalMinerProcess!.kill(ProcessSignal.sigkill);
             }
           } catch (e) {
@@ -370,14 +419,18 @@ class MinerProcess {
         try {
           _externalMinerProcess!.kill(ProcessSignal.sigkill);
         } catch (e2) {
-          print('MinerProcess: Error force killing external miner process: $e2');
+          print(
+            'MinerProcess: Error force killing external miner process: $e2',
+          );
         }
       }
     }
 
     // Kill node process
     try {
-      print('MinerProcess: Attempting to kill node process (PID: ${_nodeProcess.pid})');
+      print(
+        'MinerProcess: Attempting to kill node process (PID: ${_nodeProcess.pid})',
+      );
 
       // Try graceful termination first
       _nodeProcess.kill(ProcessSignal.sigterm);
@@ -386,7 +439,10 @@ class MinerProcess {
       Future.delayed(const Duration(seconds: 2)).then((_) async {
         // Check if process is still running and force kill if necessary
         try {
-          final result = await Process.run('kill', ['-0', _nodeProcess.pid.toString()]);
+          final result = await Process.run('kill', [
+            '-0',
+            _nodeProcess.pid.toString(),
+          ]);
           if (result.exitCode == 0) {
             print('MinerProcess: Node process still running, force killing...');
             _nodeProcess.kill(ProcessSignal.sigkill);
@@ -464,9 +520,13 @@ class MinerProcess {
       final killResult = await Process.run('kill', ['-9', pid.toString()]);
 
       if (killResult.exitCode == 0) {
-        print('MinerProcess: Successfully force killed $processName (PID: $pid)');
+        print(
+          'MinerProcess: Successfully force killed $processName (PID: $pid)',
+        );
       } else {
-        print('MinerProcess: kill command failed for $processName (PID: $pid), exit code: ${killResult.exitCode}');
+        print(
+          'MinerProcess: kill command failed for $processName (PID: $pid), exit code: ${killResult.exitCode}',
+        );
       }
 
       // Wait a moment then verify the process is dead
@@ -476,12 +536,365 @@ class MinerProcess {
       if (checkResult.exitCode != 0) {
         print('MinerProcess: Verified $processName (PID: $pid) is terminated');
       } else {
-        print('MinerProcess: WARNING - $processName (PID: $pid) may still be running');
+        print(
+          'MinerProcess: WARNING - $processName (PID: $pid) may still be running',
+        );
         // Try pkill as last resort
-        await Process.run('pkill', ['-9', '-f', processName.contains('miner') ? 'quantus-miner' : 'quantus-node']);
+        await Process.run('pkill', [
+          '-9',
+          '-f',
+          processName.contains('miner') ? 'quantus-miner' : 'quantus-node',
+        ]);
       }
     } catch (e) {
       print('MinerProcess: Error in _forceKillProcess for $processName: $e');
     }
+  }
+
+  /// Handle external miner metrics updates
+  void _handleExternalMinerMetrics(ExternalMinerMetrics metrics) {
+    if (metrics.isHealthy && metrics.hashRate > 0) {
+      // Valid metrics received
+      _lastValidHashrate = metrics.hashRate;
+      _consecutiveMetricsFailures = 0;
+
+      _statsService.updateHashrate(metrics.hashRate);
+
+      // Update workers count from external miner if available
+      if (metrics.workers > 0) {
+        _statsService.updateWorkers(metrics.workers);
+      }
+
+      onStatsUpdate?.call(_statsService.currentStats);
+    } else {
+      // Invalid or zero metrics
+      _consecutiveMetricsFailures++;
+
+      // Only reset to zero after multiple consecutive failures
+      if (_consecutiveMetricsFailures >= _maxConsecutiveFailures) {
+        _statsService.updateHashrate(0.0);
+        _lastValidHashrate = 0.0;
+        onStatsUpdate?.call(_statsService.currentStats);
+      } else {
+        // Keep the last valid hashrate during temporary issues
+        if (_lastValidHashrate > 0) {
+          _statsService.updateHashrate(_lastValidHashrate);
+          onStatsUpdate?.call(_statsService.currentStats);
+        }
+      }
+    }
+  }
+
+  /// Handle external miner API errors
+  void _handleExternalMinerError(String error) {
+    _consecutiveMetricsFailures++;
+
+    // Only reset hashrate after multiple consecutive errors
+    if (_consecutiveMetricsFailures >= _maxConsecutiveFailures) {
+      if (_statsService.currentStats.hashrate != 0.0) {
+        _statsService.updateHashrate(0.0);
+        _lastValidHashrate = 0.0;
+        onStatsUpdate?.call(_statsService.currentStats);
+      }
+    }
+  }
+
+  /// Check if required ports are available and cleanup if needed
+  Future<void> _ensurePortsAvailable() async {
+    // Check if external miner port (9833) is in use
+    if (await _isPortInUse(externalMinerPort)) {
+      await _killProcessOnPort(externalMinerPort);
+      await Future.delayed(const Duration(seconds: 1));
+
+      if (await _isPortInUse(externalMinerPort)) {
+        throw Exception(
+          'Port $externalMinerPort is still in use after cleanup attempt',
+        );
+      }
+    }
+
+    // Check if metrics port (9900) is in use
+    if (await _isPortInUse(9900)) {
+      await _killProcessOnPort(9900);
+      await Future.delayed(const Duration(seconds: 1));
+
+      if (await _isPortInUse(9900)) {
+        final altMetricsPort = await _findAvailablePort(9900);
+        if (altMetricsPort != 9900) {
+          // Update the metrics URL for the API client
+          _externalMinerApiClient = ExternalMinerApiClient(
+            baseUrl: 'http://127.0.0.1:$externalMinerPort',
+            metricsUrl: 'http://127.0.0.1:$altMetricsPort/metrics',
+          );
+          _externalMinerApiClient.onMetricsUpdate = _handleExternalMinerMetrics;
+          _externalMinerApiClient.onError = _handleExternalMinerError;
+        }
+      }
+    }
+  }
+
+  /// Find an available port starting from the given port
+  Future<int> _findAvailablePort(int startPort) async {
+    for (int port = startPort; port <= startPort + 10; port++) {
+      if (!(await _isPortInUse(port))) {
+        return port;
+      }
+    }
+    return startPort; // Return original if no alternative found
+  }
+
+  /// Check if a port is currently in use
+  Future<bool> _isPortInUse(int port) async {
+    try {
+      final result = await Process.run('lsof', ['-i', ':$port']);
+      return result.exitCode == 0 && result.stdout.toString().isNotEmpty;
+    } catch (e) {
+      // lsof might not be available, try netstat as fallback
+      try {
+        final result = await Process.run('netstat', ['-an']);
+        return result.stdout.toString().contains(':$port');
+      } catch (e2) {
+        print('DEBUG: Could not check port $port availability: $e2');
+        return false;
+      }
+    }
+  }
+
+  /// Kill process using a specific port
+  Future<void> _killProcessOnPort(int port) async {
+    try {
+      // Find process using the port
+      final result = await Process.run('lsof', ['-ti', ':$port']);
+      if (result.exitCode == 0) {
+        final pids = result.stdout.toString().trim().split('\n');
+        for (final pid in pids) {
+          if (pid.isNotEmpty) {
+            await Process.run('kill', ['-9', pid.trim()]);
+          }
+        }
+      }
+    } catch (e) {
+      // Ignore cleanup errors
+    }
+  }
+
+  /// Get the metrics port to use (either 9900 or alternative)
+  Future<int> _getMetricsPort() async {
+    if (await _isPortInUse(9900)) {
+      return await _findAvailablePort(9901);
+    }
+    return 9900;
+  }
+
+  /// Cleanup any existing quantus-miner processes
+  Future<void> _cleanupExistingMinerProcesses() async {
+    try {
+      // Find all quantus-miner processes
+      final result = await Process.run('pgrep', ['-f', 'quantus-miner']);
+      if (result.exitCode == 0) {
+        final pids = result.stdout.toString().trim().split('\n');
+        for (final pid in pids) {
+          if (pid.isNotEmpty) {
+            try {
+              // Try graceful termination first
+              await Process.run('kill', ['-15', pid.trim()]);
+              await Future.delayed(const Duration(seconds: 1));
+
+              // Check if still running, force kill if needed
+              final checkResult = await Process.run('kill', ['-0', pid.trim()]);
+              if (checkResult.exitCode == 0) {
+                await Process.run('kill', ['-9', pid.trim()]);
+              }
+            } catch (e) {
+              // Ignore cleanup errors
+            }
+          }
+        }
+
+        // Wait a moment for processes to fully terminate
+        await Future.delayed(const Duration(seconds: 2));
+      }
+    } catch (e) {
+      // Ignore cleanup errors
+    }
+  }
+
+  /// Cleanup any existing quantus-node processes
+  Future<void> _cleanupExistingNodeProcesses() async {
+    try {
+      // Find all quantus-node processes
+      final result = await Process.run('pgrep', ['-f', 'quantus-node']);
+      if (result.exitCode == 0) {
+        final pids = result.stdout.toString().trim().split('\n');
+        for (final pid in pids) {
+          if (pid.isNotEmpty) {
+            try {
+              // Try graceful termination first
+              await Process.run('kill', ['-15', pid.trim()]);
+              await Future.delayed(const Duration(seconds: 2));
+
+              // Check if still running, force kill if needed
+              final checkResult = await Process.run('kill', ['-0', pid.trim()]);
+              if (checkResult.exitCode == 0) {
+                await Process.run('kill', ['-9', pid.trim()]);
+              }
+            } catch (e) {
+              // Ignore cleanup errors
+            }
+          }
+        }
+
+        // Wait a moment for processes to fully terminate
+        await Future.delayed(const Duration(seconds: 3));
+      }
+    } catch (e) {
+      // Ignore cleanup errors
+    }
+  }
+
+  /// Cleanup database lock files that may prevent node startup
+  Future<void> _cleanupDatabaseLocks() async {
+    try {
+      // Get the quantus home directory path
+      final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
+      final lockFilePath = '$quantusHome/node_data/chains/dirac/db/full/LOCK';
+      final lockFile = File(lockFilePath);
+
+      if (await lockFile.exists()) {
+        // At this point node processes should already be cleaned up
+        // Safe to remove the stale lock file
+        await lockFile.delete();
+      }
+
+      // Also check for other potential lock files
+      final dbDir = Directory('$quantusHome/node_data/chains/dirac/db/full');
+      if (await dbDir.exists()) {
+        await for (final entity in dbDir.list()) {
+          if (entity is File && entity.path.contains('LOCK')) {
+            try {
+              await entity.delete();
+            } catch (e) {
+              // Ignore cleanup errors
+            }
+          }
+        }
+      }
+    } catch (e) {
+      // Ignore cleanup errors
+    }
+  }
+
+  /// Check and fix database directory permissions
+  Future<void> _ensureDatabaseDirectoryAccess() async {
+    try {
+      final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
+      final dbPath = '$quantusHome/node_data/chains/dirac/db';
+      final dbDir = Directory(dbPath);
+
+      // Create the directory if it doesn't exist
+      if (!await dbDir.exists()) {
+        await dbDir.create(recursive: true);
+      }
+
+      // Check if directory is writable
+      final testFile = File('$dbPath/test_write_access');
+      try {
+        await testFile.writeAsString('test');
+        await testFile.delete();
+      } catch (e) {
+        // Try to fix permissions
+        try {
+          await Process.run('chmod', ['-R', '755', dbPath]);
+        } catch (permError) {
+          // Ignore permission fix errors
+        }
+      }
+    } catch (e) {
+      // Ignore directory access errors
+    }
+  }
+
+  /// Handle chain RPC information updates
+  /// Wait for the node RPC to be ready, then start polling
+  Future<void> _waitForNodeReadyThenStartRpc() async {
+    print('DEBUG: Waiting for node RPC to be ready...');
+
+    // Try to connect to RPC endpoint with exponential backoff
+    int attempts = 0;
+    const maxAttempts = 20; // Up to ~2 minutes of retries
+    Duration delay = const Duration(seconds: 2);
+
+    while (attempts < maxAttempts) {
+      try {
+        final isReady = await _chainRpcClient.isReachable();
+        if (isReady) {
+          print('DEBUG: Node RPC is ready! Starting chain RPC polling...');
+          _chainRpcClient.startPolling();
+          return;
+        }
+      } catch (e) {
+        // Expected during startup
+      }
+
+      attempts++;
+      print(
+        'DEBUG: Node RPC not ready yet (attempt $attempts/$maxAttempts), waiting ${delay.inSeconds}s...',
+      );
+
+      await Future.delayed(delay);
+
+      // Exponential backoff, but cap at 10 seconds
+      if (delay.inSeconds < 10) {
+        delay = Duration(seconds: (delay.inSeconds * 1.5).round());
+      }
+    }
+
+    print(
+      'DEBUG: Failed to connect to node RPC after $maxAttempts attempts. Will retry with polling...',
+    );
+    // Start polling anyway - the error handling in RPC client will manage failures
+    _chainRpcClient.startPolling();
+  }
+
+  void _handleChainInfoUpdate(ChainInfo info) {
+    print(
+      'DEBUG: Successfully received chain info - Peers: ${info.peerCount}, Block: ${info.currentBlock}',
+    );
+
+    // Update peer count from RPC (most accurate)
+    if (info.peerCount >= 0) {
+      _statsService.updatePeerCount(info.peerCount);
+      print('DEBUG: Updated peer count to: ${info.peerCount}');
+    }
+
+    // Update chain name from RPC
+    _statsService.updateChainName(info.chainName);
+
+    // Always update current block and target block from RPC (most authoritative)
+    _statsService.setSyncingState(
+      info.isSyncing,
+      info.currentBlock,
+      info.targetBlock ?? info.currentBlock,
+    );
+    print(
+      'DEBUG: Updated blocks - current: ${info.currentBlock}, target: ${info.targetBlock ?? info.currentBlock}, syncing: ${info.isSyncing}, chain: ${info.chainName}',
+    );
+
+    onStatsUpdate?.call(_statsService.currentStats);
+  }
+
+  /// Handle chain RPC errors
+  void _handleChainRpcError(String error) {
+    // Only log significant RPC errors, not connection issues during startup
+    if (!error.contains('Connection refused') && !error.contains('timeout')) {
+      print('Chain RPC error: $error');
+    }
+  }
+
+  /// Dispose of resources
+  void dispose() {
+    _syncStatusTimer?.cancel();
+    _externalMinerApiClient.dispose();
+    _chainRpcClient.dispose();
   }
 }
