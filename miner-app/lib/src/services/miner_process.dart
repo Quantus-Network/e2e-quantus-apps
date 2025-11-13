@@ -296,8 +296,9 @@ class MinerProcess {
       try {
         final metrics = await _prometheusService.fetchMetrics();
         if (metrics == null || metrics.targetBlock == null) return;
-        if (_statsService.currentStats.targetBlock >= metrics.targetBlock!)
+        if (_statsService.currentStats.targetBlock >= metrics.targetBlock!) {
           return;
+        }
 
         _statsService.updateTargetBlock(metrics.targetBlock!);
 
