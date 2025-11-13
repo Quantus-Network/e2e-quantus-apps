@@ -6,6 +6,7 @@ class MiningStats {
   final int targetBlock;
   final double hashrate;
   final int workers;
+  final int cpuCapacity;
   final bool isSyncing;
   final MiningStatus status;
   final String chainName;
@@ -16,6 +17,7 @@ class MiningStats {
     required this.targetBlock,
     required this.hashrate,
     required this.workers,
+    required this.cpuCapacity,
     required this.isSyncing,
     required this.status,
     required this.chainName,
@@ -27,6 +29,7 @@ class MiningStats {
       targetBlock = 0,
       hashrate = 0.0,
       workers = 0,
+      cpuCapacity = 0,
       isSyncing = false,
       status = MiningStatus.idle,
       chainName = '';
@@ -37,6 +40,7 @@ class MiningStats {
     int? targetBlock,
     double? hashrate,
     int? workers,
+    int? cpuCapacity,
     bool? isSyncing,
     MiningStatus? status,
     String? chainName,
@@ -47,6 +51,7 @@ class MiningStats {
       targetBlock: targetBlock ?? this.targetBlock,
       hashrate: hashrate ?? this.hashrate,
       workers: workers ?? this.workers,
+      cpuCapacity: cpuCapacity ?? this.cpuCapacity,
       isSyncing: isSyncing ?? this.isSyncing,
       status: status ?? this.status,
       chainName: chainName ?? this.chainName,
@@ -86,6 +91,13 @@ class MiningStatsService {
   void updateWorkers(int workers) {
     if (_currentStats.workers != workers) {
       _currentStats = _currentStats.copyWith(workers: workers);
+    }
+  }
+
+  /// Update CPU capacity
+  void updateCpuCapacity(int cpuCapacity) {
+    if (_currentStats.cpuCapacity != cpuCapacity) {
+      _currentStats = _currentStats.copyWith(cpuCapacity: cpuCapacity);
     }
   }
 

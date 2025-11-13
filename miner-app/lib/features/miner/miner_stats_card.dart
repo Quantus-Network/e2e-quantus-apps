@@ -127,7 +127,8 @@ class _MinerStatsCardState extends State<MinerStatsCard> {
                       _buildCompactStat(
                         icon: Icons.settings,
                         label: 'Workers',
-                        value: '${_miningStats!.workers}',
+                        value:
+                            '${_miningStats!.workers} / ${_miningStats!.cpuCapacity}',
                       ),
                     ],
                   ),
