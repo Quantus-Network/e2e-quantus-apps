@@ -5,6 +5,7 @@ class MiningStats {
   final int currentBlock;
   final int targetBlock;
   final double hashrate;
+  final int workers;
   final bool isSyncing;
   final MiningStatus status;
 
@@ -13,6 +14,7 @@ class MiningStats {
     required this.currentBlock,
     required this.targetBlock,
     required this.hashrate,
+    required this.workers,
     required this.isSyncing,
     required this.status,
   });
@@ -22,6 +24,7 @@ class MiningStats {
       currentBlock = 0,
       targetBlock = 0,
       hashrate = 0.0,
+      workers = 0,
       isSyncing = false,
       status = MiningStatus.idle;
 
@@ -30,6 +33,7 @@ class MiningStats {
     int? currentBlock,
     int? targetBlock,
     double? hashrate,
+    int? workers,
     bool? isSyncing,
     MiningStatus? status,
   }) {
@@ -38,6 +42,7 @@ class MiningStats {
       currentBlock: currentBlock ?? this.currentBlock,
       targetBlock: targetBlock ?? this.targetBlock,
       hashrate: hashrate ?? this.hashrate,
+      workers: workers ?? this.workers,
       isSyncing: isSyncing ?? this.isSyncing,
       status: status ?? this.status,
     );
@@ -45,8 +50,9 @@ class MiningStats {
 
   @override
   String toString() {
-    return 'Peers: $peerCount | Block: $currentBlock/$targetBlock | '
-        'Hashrate: ${hashrate.toStringAsFixed(2)} H/s | Status: ${status.name}';
+    return 'Mining Stats - Hashrate: ${hashrate.toStringAsFixed(2)} H/s, '
+        'Workers: $workers, Block: $currentBlock/$targetBlock, '
+        'Peers: $peerCount, Status: ${status.name}';
   }
 }
 
@@ -59,7 +65,8 @@ class MiningStatsService {
   DateTime? _lastImportTime;
   int _rapidImportCount = 0;
   static const _syncDetectionWindow = Duration(seconds: 3);
-  static const _rapidImportThreshold = 3; // If more than 3 blocks in 3 seconds, likely syncing
+  static const _rapidImportThreshold =
+      3; // If more than 3 blocks in 3 seconds, likely syncing
 
   MiningStats get currentStats => _currentStats;
 
@@ -101,10 +108,16 @@ class MiningStatsService {
       final peers = int.parse(peerMatch.group(1)!);
       final bestBlock = int.parse(bestMatch.group(1)!);
 
-      final wasChanged = _currentStats.peerCount != peers || _currentStats.currentBlock != bestBlock;
+      final wasChanged =
+          _currentStats.peerCount != peers ||
+          _currentStats.currentBlock != bestBlock;
 
       if (wasChanged) {
-        _currentStats = _currentStats.copyWith(peerCount: peers, currentBlock: bestBlock, isSyncing: false);
+        _currentStats = _currentStats.copyWith(
+          peerCount: peers,
+          currentBlock: bestBlock,
+          isSyncing: false,
+        );
         return true;
       }
     }
@@ -120,7 +133,8 @@ class MiningStatsService {
       final now = DateTime.now();
 
       // Detect rapid imports (syncing)
-      if (_lastImportTime != null && now.difference(_lastImportTime!) < _syncDetectionWindow) {
+      if (_lastImportTime != null &&
+          now.difference(_lastImportTime!) < _syncDetectionWindow) {
         _rapidImportCount++;
       } else {
         _rapidImportCount = 1;
@@ -137,7 +151,11 @@ class MiningStatsService {
           _currentStats.status != status;
 
       if (wasChanged) {
-        _currentStats = _currentStats.copyWith(currentBlock: blockNumber, isSyncing: isSyncing, status: status);
+        _currentStats = _currentStats.copyWith(
+          currentBlock: blockNumber,
+          isSyncing: isSyncing,
+          status: status,
+        );
         return true;
       }
     }
@@ -151,7 +169,9 @@ class MiningStatsService {
     if (blockMatch != null) {
       final blockNumber = int.parse(blockMatch.group(1)!);
 
-      final wasChanged = _currentStats.currentBlock != blockNumber || _currentStats.status != MiningStatus.mining;
+      final wasChanged =
+          _currentStats.currentBlock != blockNumber ||
+          _currentStats.status != MiningStatus.mining;
 
       if (wasChanged) {
         _currentStats = _currentStats.copyWith(
@@ -173,10 +193,16 @@ class MiningStatsService {
     if (blockMatch != null) {
       final blockNumber = int.parse(blockMatch.group(1)!);
 
-      final wasChanged = _currentStats.currentBlock != blockNumber || _currentStats.status != MiningStatus.mining;
+      final wasChanged =
+          _currentStats.currentBlock != blockNumber ||
+          _currentStats.status != MiningStatus.mining;
 
       if (wasChanged) {
-        _currentStats = _currentStats.copyWith(targetBlock: blockNumber, status: MiningStatus.mining, isSyncing: false);
+        _currentStats = _currentStats.copyWith(
+          targetBlock: blockNumber,
+          status: MiningStatus.mining,
+          isSyncing: false,
+        );
         _rapidImportCount = 0;
         return true;
       }
@@ -195,7 +221,10 @@ class MiningStatsService {
       final wasChanged = _currentStats.isSyncing != isSyncing;
 
       if (wasChanged) {
-        _currentStats = _currentStats.copyWith(isSyncing: isSyncing, status: status);
+        _currentStats = _currentStats.copyWith(
+          isSyncing: isSyncing,
+          status: status,
+        );
         // Reset rapid import counter on explicit sync state change
         _rapidImportCount = 0;
         return true;
@@ -218,14 +247,21 @@ class MiningStatsService {
     }
   }
 
-  /// Update target block 
+  /// Update workers count
+  void updateWorkers(int workers) {
+    if (_currentStats.workers != workers) {
+      _currentStats = _currentStats.copyWith(workers: workers);
+    }
+  }
+
+  /// Update target block
   void updateTargetBlock(int targetBlock) {
     if (_currentStats.targetBlock != targetBlock) {
       _currentStats = _currentStats.copyWith(targetBlock: targetBlock);
     }
   }
 
-  /// Manually set syncing state 
+  /// Manually set syncing state
   void setSyncingState(bool isSyncing, int? currentBlock, int? targetBlock) {
     final status = isSyncing ? MiningStatus.syncing : MiningStatus.idle;
 
