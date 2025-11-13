@@ -83,6 +83,9 @@ class MiningStatsService {
         updated = _parseImportedBlock(line);
       } else if (line.contains('DEBUG: Sync status changed')) {
         updated = _parseSyncStatusChange(line);
+      } else if (line.contains('event=Finalized')) {
+        // NEW: Handle the rapid finalization logs
+        updated = _parseFinalizedBlock(line);
       }
 
       return updated;
@@ -117,29 +120,52 @@ class MiningStatsService {
 
     if (blockMatch != null) {
       final blockNumber = int.parse(blockMatch.group(1)!);
-      final now = DateTime.now();
+      return _handleRapidBlockUpdates(blockNumber);
+    }
+    return false;
+  }
 
-      // Detect rapid imports (syncing)
-      if (_lastImportTime != null && now.difference(_lastImportTime!) < _syncDetectionWindow) {
-        _rapidImportCount++;
-      } else {
-        _rapidImportCount = 1;
-      }
-      _lastImportTime = now;
+  /// NEW: Parses logs like: maintain ... views=[(19570, 0, 0)] event=Finalized ...
+  bool _parseFinalizedBlock(String line) {
+    // Extract the block number from inside the views array: views=[(NUMBER,
+    final blockMatch = RegExp(r'views=\[\((\d+)').firstMatch(line);
 
-      // If we're importing blocks rapidly, we're likely syncing
-      final isSyncing = _rapidImportCount >= _rapidImportThreshold;
-      final status = isSyncing ? MiningStatus.syncing : _currentStats.status;
+    if (blockMatch != null) {
+      final blockNumber = int.parse(blockMatch.group(1)!);
+      return _handleRapidBlockUpdates(blockNumber);
+    }
+    return false;
+  }
 
-      final wasChanged =
-          _currentStats.currentBlock != blockNumber ||
-          _currentStats.isSyncing != isSyncing ||
-          _currentStats.status != status;
+  /// Shared logic for detecting syncing based on rapid block updates
+  /// Used by both "Importing block" and "event=Finalized"
+  bool _handleRapidBlockUpdates(int blockNumber) {
+    final now = DateTime.now();
 
-      if (wasChanged) {
-        _currentStats = _currentStats.copyWith(currentBlock: blockNumber, isSyncing: isSyncing, status: status);
-        return true;
-      }
+    // Detect rapid imports (syncing)
+    if (_lastImportTime != null && now.difference(_lastImportTime!) < _syncDetectionWindow) {
+      _rapidImportCount++;
+    } else {
+      _rapidImportCount = 1;
+    }
+    _lastImportTime = now;
+
+    // If we're processing blocks rapidly, we're likely syncing
+    final isSyncing = _rapidImportCount >= _rapidImportThreshold;
+    final status = isSyncing ? MiningStatus.syncing : _currentStats.status;
+
+    final wasChanged =
+        _currentStats.currentBlock != blockNumber ||
+        _currentStats.isSyncing != isSyncing ||
+        _currentStats.status != status;
+
+    if (wasChanged) {
+      _currentStats = _currentStats.copyWith(
+        currentBlock: blockNumber,
+        isSyncing: isSyncing,
+        status: status
+      );
+      return true;
     }
     return false;
   }

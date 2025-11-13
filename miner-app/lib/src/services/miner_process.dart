@@ -243,7 +243,7 @@ class MinerProcess {
       rewardsAddress,
       '--validator',
       '--chain',
-      'schrodinger',
+      'dirac',
       '--port',
       '30333',
       '--prometheus-port',
