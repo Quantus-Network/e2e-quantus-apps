@@ -23,6 +23,8 @@ class MinerDashboardScreen extends StatefulWidget {
 }
 
 class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
+  static const binaryUpdatePollingInterval =  Duration(hours: 1);
+
   BinaryUpdateInfo _minerUpdateInfo = BinaryUpdateInfo(updateAvailable: false);
   double? _minerUpdateProgress;
   Timer? _minerPollingTimer;
@@ -78,7 +80,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
   }
 
   void _initializeMinerUpdatePolling() {
-    _minerPollingTimer = Timer.periodic(const Duration(hours: 1), (timer) async {
+    _minerPollingTimer = Timer.periodic(binaryUpdatePollingInterval, (timer) async {
       final minerUpdateInfo = await BinaryManager.checkMinerUpdate();
 
       if (minerUpdateInfo.updateAvailable) {
@@ -133,7 +135,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
   }
 
   void _initializeNodeUpdatePolling() {
-    _nodePollingTimer = Timer.periodic(const Duration(hours: 1), (timer) async {
+    _nodePollingTimer = Timer.periodic(binaryUpdatePollingInterval, (timer) async {
       final nodeUpdateInfo = await BinaryManager.checkNodeUpdate();
 
       if (nodeUpdateInfo.updateAvailable) {
