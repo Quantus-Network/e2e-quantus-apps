@@ -98,9 +98,16 @@ class LocalNotificationsService {
     );
   }
 
-  Future<void> _scheduleNotification(NotificationData notification, {required int hour}) async {
+  Future<void> _scheduleNotification(NotificationData notification) async {
+    final remindAt = notification.scheduledTime ?? DateTime.now();
     final now = tz.TZDateTime.now(tz.local);
-    final scheduledDate = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour);
+
+    tz.TZDateTime scheduledDate = tz.TZDateTime.from(remindAt, tz.local);
+
+    // Ensure the scheduled date is in the future
+    if (scheduledDate.isBefore(now)) {
+      scheduledDate = now.add(Duration(seconds: NotificationTemplates.scheduleTimeBufferInSeconds));
+    }
 
     final String? payload = notification.metadata != null ? jsonEncode(notification.metadata) : null;
 
@@ -116,8 +123,8 @@ class LocalNotificationsService {
   }
 
   Future<void> showOrScheduleNotification(NotificationData notification) async {
-    if (notification.scheduledTime != null) {
-      _scheduleNotification(notification, hour: notification.scheduledTime!.hour);
+    if (notification.hasValidScheduleTime) {
+      _scheduleNotification(notification);
     } else {
       _showNotification(notification);
     }
