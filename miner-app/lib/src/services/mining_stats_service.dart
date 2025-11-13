@@ -5,16 +5,20 @@ class MiningStats {
   final int currentBlock;
   final int targetBlock;
   final double hashrate;
+  final int workers;
   final bool isSyncing;
   final MiningStatus status;
+  final String chainName;
 
   MiningStats({
     required this.peerCount,
     required this.currentBlock,
     required this.targetBlock,
     required this.hashrate,
+    required this.workers,
     required this.isSyncing,
     required this.status,
+    required this.chainName,
   });
 
   MiningStats.empty()
@@ -22,215 +26,49 @@ class MiningStats {
       currentBlock = 0,
       targetBlock = 0,
       hashrate = 0.0,
+      workers = 0,
       isSyncing = false,
-      status = MiningStatus.idle;
+      status = MiningStatus.idle,
+      chainName = '';
 
   MiningStats copyWith({
     int? peerCount,
     int? currentBlock,
     int? targetBlock,
     double? hashrate,
+    int? workers,
     bool? isSyncing,
     MiningStatus? status,
+    String? chainName,
   }) {
     return MiningStats(
       peerCount: peerCount ?? this.peerCount,
       currentBlock: currentBlock ?? this.currentBlock,
       targetBlock: targetBlock ?? this.targetBlock,
       hashrate: hashrate ?? this.hashrate,
+      workers: workers ?? this.workers,
       isSyncing: isSyncing ?? this.isSyncing,
       status: status ?? this.status,
+      chainName: chainName ?? this.chainName,
     );
   }
 
   @override
   String toString() {
-    return 'Peers: $peerCount | Block: $currentBlock/$targetBlock | '
-        'Hashrate: ${hashrate.toStringAsFixed(2)} H/s | Status: ${status.name}';
+    return 'Mining Stats - Hashrate: ${hashrate.toStringAsFixed(2)} H/s, '
+        'Workers: $workers, Block: $currentBlock/$targetBlock, '
+        'Peers: $peerCount, Chain: $chainName, Status: ${status.name}';
   }
 }
 
 /// mining_stats_service.dart
-/// Service that parses node logs and maintains mining statistics
+/// Service that maintains mining statistics from RPC and external miner data
 class MiningStatsService {
   MiningStats _currentStats = MiningStats.empty();
 
-  // Track syncing state
-  DateTime? _lastImportTime;
-  int _rapidImportCount = 0;
-  static const _syncDetectionWindow = Duration(seconds: 3);
-  static const _rapidImportThreshold = 3; // If more than 3 blocks in 3 seconds, likely syncing
-
   MiningStats get currentStats => _currentStats;
 
-  /// Main method to parse a log line and update stats
-  /// Returns true if stats were updated
-  bool parseLogLine(String logLine) {
-    try {
-      // Remove flutter prefix if exists
-      final line = logLine.replaceFirst('flutter: ', '').trim();
-
-      bool updated = false;
-
-      // Parse different log types
-      if (line.contains('💤 Idle')) {
-        updated = _parseIdleStatus(line);
-      } else if (line.contains('⛏️ Importing block')) {
-        updated = _parseImportingBlock(line);
-      } else if (line.contains('🎁 Prepared block')) {
-        updated = _parsePreparedBlock(line);
-      } else if (line.contains('🏆 Imported')) {
-        updated = _parseImportedBlock(line);
-      } else if (line.contains('DEBUG: Sync status changed')) {
-        updated = _parseSyncStatusChange(line);
-      } else if (line.contains('event=Finalized')) {
-        // NEW: Handle the rapid finalization logs
-        updated = _parseFinalizedBlock(line);
-      }
-
-      return updated;
-    } catch (e) {
-      print('MiningStatsService: Error parsing log line: $e');
-      return false;
-    }
-  }
-
-  bool _parseIdleStatus(String line) {
-    // Example: 💤 Idle (3 peers), best: #243894 (0x30ed…ad4c), finalized #243649
-    final peerMatch = RegExp(r'\((\d+) peers\)').firstMatch(line);
-    final bestMatch = RegExp(r'best: #(\d+)').firstMatch(line);
-
-    if (peerMatch != null && bestMatch != null) {
-      final peers = int.parse(peerMatch.group(1)!);
-      final bestBlock = int.parse(bestMatch.group(1)!);
-
-      final wasChanged = _currentStats.peerCount != peers || _currentStats.currentBlock != bestBlock;
-
-      if (wasChanged) {
-        _currentStats = _currentStats.copyWith(peerCount: peers, currentBlock: bestBlock, isSyncing: false);
-        return true;
-      }
-    }
-    return false;
-  }
-
-  bool _parseImportingBlock(String line) {
-    // Example: ⛏️ Importing block #243829: 0x721b1c...
-    final blockMatch = RegExp(r'#(\d+):').firstMatch(line);
-
-    if (blockMatch != null) {
-      final blockNumber = int.parse(blockMatch.group(1)!);
-      return _handleRapidBlockUpdates(blockNumber);
-    }
-    return false;
-  }
-
-  /// NEW: Parses logs like: maintain ... views=[(19570, 0, 0)] event=Finalized ...
-  bool _parseFinalizedBlock(String line) {
-    // Extract the block number from inside the views array: views=[(NUMBER,
-    final blockMatch = RegExp(r'views=\[\((\d+)').firstMatch(line);
-
-    if (blockMatch != null) {
-      final blockNumber = int.parse(blockMatch.group(1)!);
-      return _handleRapidBlockUpdates(blockNumber);
-    }
-    return false;
-  }
-
-  /// Shared logic for detecting syncing based on rapid block updates
-  /// Used by both "Importing block" and "event=Finalized"
-  bool _handleRapidBlockUpdates(int blockNumber) {
-    final now = DateTime.now();
-
-    // Detect rapid imports (syncing)
-    if (_lastImportTime != null && now.difference(_lastImportTime!) < _syncDetectionWindow) {
-      _rapidImportCount++;
-    } else {
-      _rapidImportCount = 1;
-    }
-    _lastImportTime = now;
-
-    // If we're processing blocks rapidly, we're likely syncing
-    final isSyncing = _rapidImportCount >= _rapidImportThreshold;
-    final status = isSyncing ? MiningStatus.syncing : _currentStats.status;
-
-    final wasChanged =
-        _currentStats.currentBlock != blockNumber ||
-        _currentStats.isSyncing != isSyncing ||
-        _currentStats.status != status;
-
-    if (wasChanged) {
-      _currentStats = _currentStats.copyWith(
-        currentBlock: blockNumber,
-        isSyncing: isSyncing,
-        status: status
-      );
-      return true;
-    }
-    return false;
-  }
-
-  bool _parseImportedBlock(String line) {
-    // Example: 🏆 Imported #243895 (0x30ed…ad4c → 0x939f…ecb4)
-    final blockMatch = RegExp(r'#(\d+)').firstMatch(line);
-
-    if (blockMatch != null) {
-      final blockNumber = int.parse(blockMatch.group(1)!);
-
-      final wasChanged = _currentStats.currentBlock != blockNumber || _currentStats.status != MiningStatus.mining;
-
-      if (wasChanged) {
-        _currentStats = _currentStats.copyWith(
-          currentBlock: blockNumber,
-          status: MiningStatus.mining,
-          isSyncing: false,
-        );
-        _rapidImportCount = 0;
-        return true;
-      }
-    }
-    return false;
-  }
-
-  bool _parsePreparedBlock(String line) {
-    // Example: 🎁 Prepared block for proposing at 243895 (1135 ms)
-    final blockMatch = RegExp(r'at (\d+)').firstMatch(line);
-
-    if (blockMatch != null) {
-      final blockNumber = int.parse(blockMatch.group(1)!);
-
-      final wasChanged = _currentStats.currentBlock != blockNumber || _currentStats.status != MiningStatus.mining;
-
-      if (wasChanged) {
-        _currentStats = _currentStats.copyWith(targetBlock: blockNumber, status: MiningStatus.mining, isSyncing: false);
-        _rapidImportCount = 0;
-        return true;
-      }
-    }
-    return false;
-  }
-
-  bool _parseSyncStatusChange(String line) {
-    // Example: DEBUG: Sync status changed: true -> false
-    final statusMatch = RegExp(r'-> (true|false)').firstMatch(line);
-
-    if (statusMatch != null) {
-      final isSyncing = statusMatch.group(1) == 'true';
-      final status = isSyncing ? MiningStatus.syncing : MiningStatus.idle;
-
-      final wasChanged = _currentStats.isSyncing != isSyncing;
-
-      if (wasChanged) {
-        _currentStats = _currentStats.copyWith(isSyncing: isSyncing, status: status);
-        // Reset rapid import counter on explicit sync state change
-        _rapidImportCount = 0;
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /// Update peer count (usually from a separate extraction)
+  /// Update peer count from RPC data
   void updatePeerCount(int peers) {
     if (_currentStats.peerCount != peers) {
       _currentStats = _currentStats.copyWith(peerCount: peers);
@@ -244,29 +82,41 @@ class MiningStatsService {
     }
   }
 
-  /// Update target block 
+  /// Update workers count
+  void updateWorkers(int workers) {
+    if (_currentStats.workers != workers) {
+      _currentStats = _currentStats.copyWith(workers: workers);
+    }
+  }
+
+  /// Update target block
   void updateTargetBlock(int targetBlock) {
     if (_currentStats.targetBlock != targetBlock) {
       _currentStats = _currentStats.copyWith(targetBlock: targetBlock);
     }
   }
 
-  /// Manually set syncing state 
+  /// Manually set syncing state (used by RPC client)
   void setSyncingState(bool isSyncing, int? currentBlock, int? targetBlock) {
-    final status = isSyncing ? MiningStatus.syncing : MiningStatus.idle;
+    final status = isSyncing ? MiningStatus.syncing : MiningStatus.mining;
 
     _currentStats = _currentStats.copyWith(
       isSyncing: isSyncing,
       status: status,
-      currentBlock: currentBlock,
-      targetBlock: targetBlock,
+      currentBlock: currentBlock ?? _currentStats.currentBlock,
+      targetBlock: targetBlock ?? _currentStats.targetBlock,
     );
+  }
+
+  /// Update chain name from RPC data
+  void updateChainName(String chainName) {
+    if (_currentStats.chainName != chainName) {
+      _currentStats = _currentStats.copyWith(chainName: chainName);
+    }
   }
 
   /// Reset stats to empty state
   void reset() {
     _currentStats = MiningStats.empty();
-    _rapidImportCount = 0;
-    _lastImportTime = null;
   }
 }
