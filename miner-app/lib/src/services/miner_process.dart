@@ -866,6 +866,9 @@ class MinerProcess {
       print('DEBUG: Updated peer count to: ${info.peerCount}');
     }
 
+    // Update chain name from RPC
+    _statsService.updateChainName(info.chainName);
+
     // Always update current block and target block from RPC (most authoritative)
     _statsService.setSyncingState(
       info.isSyncing,
@@ -873,7 +876,7 @@ class MinerProcess {
       info.targetBlock ?? info.currentBlock,
     );
     print(
-      'DEBUG: Updated blocks - current: ${info.currentBlock}, target: ${info.targetBlock ?? info.currentBlock}, syncing: ${info.isSyncing}',
+      'DEBUG: Updated blocks - current: ${info.currentBlock}, target: ${info.targetBlock ?? info.currentBlock}, syncing: ${info.isSyncing}, chain: ${info.chainName}',
     );
 
     onStatsUpdate?.call(_statsService.currentStats);

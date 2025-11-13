@@ -8,6 +8,7 @@ class MiningStats {
   final int workers;
   final bool isSyncing;
   final MiningStatus status;
+  final String chainName;
 
   MiningStats({
     required this.peerCount,
@@ -17,6 +18,7 @@ class MiningStats {
     required this.workers,
     required this.isSyncing,
     required this.status,
+    required this.chainName,
   });
 
   MiningStats.empty()
@@ -26,7 +28,8 @@ class MiningStats {
       hashrate = 0.0,
       workers = 0,
       isSyncing = false,
-      status = MiningStatus.idle;
+      status = MiningStatus.idle,
+      chainName = '';
 
   MiningStats copyWith({
     int? peerCount,
@@ -36,6 +39,7 @@ class MiningStats {
     int? workers,
     bool? isSyncing,
     MiningStatus? status,
+    String? chainName,
   }) {
     return MiningStats(
       peerCount: peerCount ?? this.peerCount,
@@ -45,6 +49,7 @@ class MiningStats {
       workers: workers ?? this.workers,
       isSyncing: isSyncing ?? this.isSyncing,
       status: status ?? this.status,
+      chainName: chainName ?? this.chainName,
     );
   }
 
@@ -52,7 +57,7 @@ class MiningStats {
   String toString() {
     return 'Mining Stats - Hashrate: ${hashrate.toStringAsFixed(2)} H/s, '
         'Workers: $workers, Block: $currentBlock/$targetBlock, '
-        'Peers: $peerCount, Status: ${status.name}';
+        'Peers: $peerCount, Chain: $chainName, Status: ${status.name}';
   }
 }
 
@@ -101,6 +106,13 @@ class MiningStatsService {
       currentBlock: currentBlock ?? _currentStats.currentBlock,
       targetBlock: targetBlock ?? _currentStats.targetBlock,
     );
+  }
+
+  /// Update chain name from RPC data
+  void updateChainName(String chainName) {
+    if (_currentStats.chainName != chainName) {
+      _currentStats = _currentStats.copyWith(chainName: chainName);
+    }
   }
 
   /// Reset stats to empty state

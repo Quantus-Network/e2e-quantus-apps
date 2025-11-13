@@ -101,7 +101,7 @@ class _MinerStatsCardState extends State<MinerStatsCard> {
                 ),
                 const SizedBox(width: 16),
                 Text(
-                  'Mining Performance',
+                  'Mining Performance - ${_miningStats!.chainName}',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
