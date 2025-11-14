@@ -107,6 +107,12 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         await _accountsService.updateAccountName(_provisionalAccount, _nameController.text);
         // Invalidate the accounts provider to reload the entire list
         ref.invalidate(accountsProvider);
+
+        final activeAccount = ref.read(activeAccountProvider).value;
+        if (activeAccount?.accountId == _provisionalAccount.accountId) {
+          ref.invalidate(activeAccountProvider);
+        }
+
         TelemetryService().sendEvent('edit_account');
       } else {
         final accountToSave = _provisionalAccount.copyWith(name: _nameController.text);
