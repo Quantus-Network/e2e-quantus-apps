@@ -41,8 +41,8 @@ class CreateWalletAndBackupScreenState extends ConsumerState<CreateWalletAndBack
   final ReferralService _referralService = ReferralService();
 
   final _accountName = TextEditingController();
-  // Remove _accounts field since we're using provider
-  // late List<Account> _accounts;
+  String? _accountNameError;
+
   late String _address;
   late String _checksum;
 
@@ -50,7 +50,7 @@ class CreateWalletAndBackupScreenState extends ConsumerState<CreateWalletAndBack
   void initState() {
     super.initState();
     _generateMnemonic();
-    _accountName.text = 'Account 1'; // Default; updated in build via provider
+    _accountName.text = 'Account 1';
   }
 
   Future<void> _generateMnemonic() async {
@@ -141,92 +141,86 @@ class CreateWalletAndBackupScreenState extends ConsumerState<CreateWalletAndBack
   @override
   Widget build(BuildContext context) {
     final List<String> words = _mnemonic.isNotEmpty ? _mnemonic.split(' ') : [];
+    final bool canContinue = !_isLoading && _error == null && _accountNameError == null;
 
-    final bool canContinue = !_isLoading && _error == null;
-
-    final accountsAsync = ref.watch(accountsProvider);
-
-    return accountsAsync.when(
-      data: (accounts) {
-        // Update name based on current accounts length
-        _accountName.text = 'Account ${accounts.length + 1}';
-
-        return ScaffoldBase(
-          appBar: WalletAppBar(title: 'Create New Wallet'),
-          decorations: [const Positioned(right: -32.0, bottom: 120.0, child: Sphere(variant: 1, size: 321.0))],
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 25.0),
-                      Focus(
-                        child: CustomTextField(
-                          controller: _accountName,
-                          labelText: 'ACCOUNT NAME',
-                          icon: !_isEditing ? const Icon(Icons.edit) : null,
-                        ),
-                        onFocusChange: (value) {
+    return ScaffoldBase(
+      appBar: WalletAppBar(title: 'Create New Wallet'),
+      decorations: [const Positioned(right: -32.0, bottom: 120.0, child: Sphere(variant: 1, size: 321.0))],
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 25.0),
+                  Focus(
+                    child: CustomTextField(
+                      controller: _accountName,
+                      labelText: 'ACCOUNT NAME',
+                      icon: !_isEditing ? const Icon(Icons.edit) : null,
+                      errorMsg: _accountNameError,
+                      onChanged: (value) {
+                        if (value.trim().isEmpty) {
                           setState(() {
-                            _isEditing = value;
+                            _accountNameError = "Account name can't be empty or whitespace only";
                           });
-                        },
-                      ),
-                      const SizedBox(height: 25.0),
-                      CardInfo(
-                        text: _isLoading ? 'Loading checksum...' : _checksum,
-                        icon: const Icon(Icons.info_outline),
-                        label: 'ACCOUNT CHECKPHRASE',
-                        onPressed: () {},
-                        textColor: context.themeColors.checksumDarker,
-                      ),
-                      const SizedBox(height: 25.0),
-                      CardInfo(
-                        text: _isLoading
-                            ? 'Loading address...'
-                            : AddressFormattingService.splitIntoChunks(_address).join(' '),
-                        icon: const Icon(Icons.copy),
-                        onPressed: () {
-                          ClipboardExtensions.copyTextWithSnackbar(context, _address);
-                        },
-                        label: 'ACCOUNT ADDRESS',
-                      ),
-                      const SizedBox(height: 25.0),
-                      CardInfo(
-                        text: 'Show Recovery Phrase',
-                        icon: const Icon(Icons.chevron_right),
-                        onPressed: () {
-                          showRecoveryPhraseSheet(context, words, _isLoading, _error, _mnemonic);
-                        },
-                      ),
-                      const SizedBox(height: 32),
-                      Button(
-                        variant: ButtonVariant.primary,
-                        label: 'Create Wallet',
-                        textStyle: context.themeText.smallTitle,
-                        onPressed: _saveWalletAndBackup,
-                        isLoading: _isLoading || _isSubmitting,
-                        isDisabled: !canContinue,
-                      ),
-                    ],
+                        } else {
+                          setState(() {
+                            _accountNameError = null;
+                          });
+                        }
+                      },
+                    ),
+                    onFocusChange: (value) {
+                      setState(() {
+                        _isEditing = value;
+                      });
+                    },
                   ),
-                ),
+                  const SizedBox(height: 25.0),
+                  CardInfo(
+                    text: _isLoading ? 'Loading checksum...' : _checksum,
+                    icon: const Icon(Icons.info_outline),
+                    label: 'ACCOUNT CHECKPHRASE',
+                    onPressed: () {},
+                    textColor: context.themeColors.checksumDarker,
+                  ),
+                  const SizedBox(height: 25.0),
+                  CardInfo(
+                    text: _isLoading
+                        ? 'Loading address...'
+                        : AddressFormattingService.splitIntoChunks(_address).join(' '),
+                    icon: const Icon(Icons.copy),
+                    onPressed: () {
+                      ClipboardExtensions.copyTextWithSnackbar(context, _address);
+                    },
+                    label: 'ACCOUNT ADDRESS',
+                  ),
+                  const SizedBox(height: 25.0),
+                  CardInfo(
+                    text: 'Show Recovery Phrase',
+                    icon: const Icon(Icons.chevron_right),
+                    onPressed: () {
+                      showRecoveryPhraseSheet(context, words, _isLoading, _error, _mnemonic);
+                    },
+                  ),
+                  const SizedBox(height: 32),
+                  Button(
+                    variant: ButtonVariant.primary,
+                    label: 'Create Wallet',
+                    textStyle: context.themeText.smallTitle,
+                    onPressed: _saveWalletAndBackup,
+                    isLoading: _isLoading || _isSubmitting,
+                    isDisabled: !canContinue,
+                  ),
+                ],
               ),
             ),
           ),
-        );
-      },
-      loading: () => ScaffoldBase(
-        appBar: WalletAppBar(title: 'Creating Wallet...'),
-        child: const Center(child: CircularProgressIndicator()),
-      ),
-      error: (error, stack) => ScaffoldBase(
-        appBar: WalletAppBar(title: 'Error'),
-        child: Center(child: Text('Failed to load accounts: $error')),
+        ),
       ),
     );
   }

@@ -28,6 +28,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
   final ReferralService _referralService = ReferralService();
   final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
   final TextEditingController _nameController = TextEditingController();
+  String? _nameError;
 
   late Account _provisionalAccount;
   late String _checksum;
@@ -106,6 +107,12 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         await _accountsService.updateAccountName(_provisionalAccount, _nameController.text);
         // Invalidate the accounts provider to reload the entire list
         ref.invalidate(accountsProvider);
+
+        final activeAccount = ref.read(activeAccountProvider).value;
+        if (activeAccount?.accountId == _provisionalAccount.accountId) {
+          ref.invalidate(activeAccountProvider);
+        }
+
         TelemetryService().sendEvent('edit_account');
       } else {
         final accountToSave = _provisionalAccount.copyWith(name: _nameController.text);
@@ -171,7 +178,22 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 18),
-                        CustomTextField(controller: _nameController, labelText: 'ACCOUNT NAME'),
+                        CustomTextField(
+                          controller: _nameController,
+                          labelText: 'ACCOUNT NAME',
+                          errorMsg: _nameError,
+                          onChanged: (value) {
+                            if (value.trim().isEmpty) {
+                              setState(() {
+                                _nameError = "Account name can't be empty or whitespace only";
+                              });
+                            } else {
+                              setState(() {
+                                _nameError = null;
+                              });
+                            }
+                          },
+                        ),
                         const SizedBox(height: 25.0),
                         CardInfo(
                           text: _isLoading ? 'Loading checksum...' : _checksum,
@@ -207,6 +229,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         : Button(
             variant: ButtonVariant.primary,
             onPressed: _saveAccount,
+            isDisabled: _nameError != null,
             label: _isEditMode ? 'Save' : 'Create Account',
           );
   }
