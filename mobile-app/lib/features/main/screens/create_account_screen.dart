@@ -28,6 +28,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
   final ReferralService _referralService = ReferralService();
   final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
   final TextEditingController _nameController = TextEditingController();
+  String? _nameError;
 
   late Account _provisionalAccount;
   late String _checksum;
@@ -171,7 +172,22 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 18),
-                        CustomTextField(controller: _nameController, labelText: 'ACCOUNT NAME'),
+                        CustomTextField(
+                          controller: _nameController,
+                          labelText: 'ACCOUNT NAME',
+                          errorMsg: _nameError,
+                          onChanged: (value) {
+                            if (value.trim().isEmpty) {
+                              setState(() {
+                                _nameError = "Account name can't be empty or whitespace only";
+                              });
+                            } else {
+                              setState(() {
+                                _nameError = null;
+                              });
+                            }
+                          },
+                        ),
                         const SizedBox(height: 25.0),
                         CardInfo(
                           text: _isLoading ? 'Loading checksum...' : _checksum,
@@ -207,6 +223,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         : Button(
             variant: ButtonVariant.primary,
             onPressed: _saveAccount,
+            isDisabled: _nameError != null,
             label: _isEditMode ? 'Save' : 'Create Account',
           );
   }
