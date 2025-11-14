@@ -1,97 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/features/main/screens/wallet_initializer.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
-import 'package:resonance_network_wallet/services/local_auth_service.dart';
+import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 
-class AuthenticationWrapper extends StatefulWidget {
+class AuthenticationWrapper extends ConsumerWidget {
   const AuthenticationWrapper({super.key});
 
   @override
-  State<AuthenticationWrapper> createState() => _AuthenticationWrapperState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(localAuthProvider);
 
-class _AuthenticationWrapperState extends State<AuthenticationWrapper> with WidgetsBindingObserver {
-  final LocalAuthService _localAuthService = LocalAuthService();
-  bool _isAuthenticated = false;
-  bool _isAuthenticating = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    _checkAuthentication();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _checkAuthentication();
-    }
-  }
-
-  Future<void> _checkAuthentication() async {
-    // Prevent multiple auth checks at the same time
-    if (_isAuthenticating) return;
-
-    final shouldAuth = _localAuthService.shouldRequireAuthentication();
-
-    if (shouldAuth) {
-      if (mounted) {
-        setState(() {
-          _isAuthenticated = false;
-        });
-      }
-      _authenticate();
-    } else {
-      if (mounted) {
-        setState(() {
-          _isAuthenticated = true;
-        });
-      }
-    }
-  }
-
-  Future<void> _authenticate() async {
-    if (_isAuthenticating) return;
-
-    if (mounted) {
-      setState(() {
-        _isAuthenticating = true;
-      });
+    if (authState.isAuthenticated) {
+      // If authenticated, be invisible.
+      return const SizedBox.shrink();
     }
 
-    final didAuthenticate = await _localAuthService.authenticate(
-      localizedReason: 'Please authenticate to access your wallet',
-    );
-
-    if (mounted) {
-      setState(() {
-        _isAuthenticated = didAuthenticate;
-        _isAuthenticating = false;
-      });
-    }
+    return _buildLockScreen(context, ref, authState.isAuthenticating);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return _isAuthenticated ? const WalletInitializer() : _buildLockScreen();
-  }
-
-  Widget _buildLockScreen() {
+  Widget _buildLockScreen(BuildContext context, WidgetRef ref, bool isAuthenticating) {
     return ScaffoldBase(
       child: Center(
         child: Column(
@@ -99,16 +28,15 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper> with Widg
           children: [
             Text('Authentication Required', style: context.themeText.lockTitle),
             const SizedBox(height: 30),
-            if (_isAuthenticating)
+            if (isAuthenticating)
               CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(context.themeColors.circularLoader))
             else
-              ElevatedButton(
-                onPressed: _authenticate,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: context.themeColors.authButtonBg,
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                ),
-                child: Text('Authenticate', style: context.themeText.paragraph),
+              IconButton(
+                icon: const Icon(Icons.fingerprint, size: 64),
+                color: context.themeColors.circularLoader,
+                onPressed: () {
+                  ref.read(localAuthProvider.notifier).authenticate();
+                },
               ),
           ],
         ),
