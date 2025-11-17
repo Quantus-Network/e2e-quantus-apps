@@ -3,6 +3,7 @@ import 'package:flash/flash_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:resonance_network_wallet/features/components/top_snackbar_content.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 // Helper function to show a custom top snackbar
@@ -68,29 +69,29 @@ Future<void> showCopySnackbar(
   );
 }
 
-// Example of how to create a specific error icon if needed elsewhere
-Widget buildErrorIcon() {
-  return Container(
-    width: 36,
-    height: 36,
-    decoration: const ShapeDecoration(
-      color: Colors.redAccent, // Red background for error
-      shape: OvalBorder(),
-    ),
-    alignment: Alignment.center,
-    child: const Icon(Icons.error_outline, color: Colors.white, size: 20),
+Future<void> showWarningSnackbar(BuildContext context, {required String title, required String message}) async {
+  await showTopSnackBar(
+    context,
+    title: title,
+    message: message,
+    icon: const Icon(Icons.warning, color: Colors.amber),
   );
 }
 
-Widget buildSuccessIcon() {
-  return Container(
-    width: 36,
-    height: 36,
-    decoration: const ShapeDecoration(
-      color: Colors.green, // Green background for success
-      shape: OvalBorder(),
-    ),
-    alignment: Alignment.center,
-    child: const Icon(Icons.check, color: Colors.white, size: 20),
+Future<void> showErrorSnackbar(BuildContext context, {required String title, required String message}) async {
+  await showTopSnackBar(
+    context,
+    title: title,
+    message: message,
+    icon: Icon(Icons.error_rounded, color: context.themeColors.error),
+  );
+}
+
+Future<void> showSuccessSnackbar(BuildContext context, {required String title, required String message}) async {
+  await showTopSnackBar(
+    context,
+    title: title,
+    message: message,
+    icon: Icon(Icons.check_circle_rounded, color: context.themeColors.buttonSuccess),
   );
 }
