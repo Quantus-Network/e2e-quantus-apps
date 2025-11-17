@@ -7,6 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
+import 'package:resonance_network_wallet/features/components/error_details_display.dart';
 import 'package:resonance_network_wallet/features/components/reversible_timer.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
@@ -42,6 +43,20 @@ class _TransactionDetailsActionSheetState extends ConsumerState<TransactionDetai
     final address = widget.role == TransactionRole.sender ? widget.transaction.to : widget.transaction.from;
 
     return HumanReadableChecksumService().getHumanReadableName(address);
+  }
+
+  String? get errorMsg {
+    if (widget.transaction.isFailed) {
+      final tx = widget.transaction;
+
+      if (tx is PendingTransactionEvent) {
+        final pending = tx;
+
+        return pending.error;
+      }
+    }
+
+    return null;
   }
 
   String get title {
@@ -205,6 +220,10 @@ class _TransactionDetailsActionSheetState extends ConsumerState<TransactionDetai
                           ),
                   const SizedBox(height: 17),
                   Text(title, textAlign: TextAlign.center, style: context.themeText.largeTitle),
+                  if (widget.transaction.isFailed && errorMsg != null) ...[
+                    const SizedBox(height: 8),
+                    ErrorDetailsButton(error: errorMsg!),
+                  ],
                   const SizedBox(height: 26),
                   _buildDetails(),
 
