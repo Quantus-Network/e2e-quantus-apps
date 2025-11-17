@@ -16,6 +16,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -86,7 +87,7 @@ class _TransactionDetailsActionSheetState extends ConsumerState<TransactionDetai
     return 'received from';
   }
 
-  void _retry() async {
+  void _retryFailedTx() async {
     if (!mounted) return;
 
     final tx = widget.transaction as PendingTransactionEvent;
@@ -111,11 +112,13 @@ class _TransactionDetailsActionSheetState extends ConsumerState<TransactionDetai
           blockHeight: tx.blockNumber,
         );
       }
-    } catch (e) {
-      print('Retrying transfer failed: $e');
-    } finally {
+
       // ignore: use_build_context_synchronously
       Navigator.of(context).pop();
+    } catch (e) {
+      print('Retrying failed: $e');
+      // ignore: use_build_context_synchronously
+      context.showErrorSnackbar(title: 'Retrying Failed', message: e.toString());
     }
   }
 
@@ -250,7 +253,7 @@ class _TransactionDetailsActionSheetState extends ConsumerState<TransactionDetai
       children: [
         const SizedBox(height: 26),
 
-        Button(variant: ButtonVariant.glassOutline, label: 'Retry', onPressed: _retry),
+        Button(variant: ButtonVariant.glassOutline, label: 'Retry', onPressed: _retryFailedTx),
       ],
     );
   }
