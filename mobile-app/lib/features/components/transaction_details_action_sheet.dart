@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
@@ -11,28 +12,24 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/models/transaction_role.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class TransactionDetailsActionSheet extends StatefulWidget {
+class TransactionDetailsActionSheet extends ConsumerStatefulWidget {
   final TransactionEvent transaction;
   final TransactionRole role;
 
-  const TransactionDetailsActionSheet({
-    super.key,
-    required this.transaction,
-    required this.role,
-  });
+  const TransactionDetailsActionSheet({super.key, required this.transaction, required this.role});
 
   @override
-  State<TransactionDetailsActionSheet> createState() =>
-      _TransactionDetailsActionSheetState();
+  ConsumerState<TransactionDetailsActionSheet> createState() => _TransactionDetailsActionSheetState();
 }
 
-class _TransactionDetailsActionSheetState
-    extends State<TransactionDetailsActionSheet> {
+class _TransactionDetailsActionSheetState extends ConsumerState<TransactionDetailsActionSheet> {
   Timer? _timer;
   Duration? _remainingTime;
   Future<String> get _checksumFuture {
@@ -41,9 +38,7 @@ class _TransactionDetailsActionSheetState
       return Future.value('');
     }
 
-    final address = widget.role == TransactionRole.sender
-        ? widget.transaction.to
-        : widget.transaction.from;
+    final address = widget.role == TransactionRole.sender ? widget.transaction.to : widget.transaction.from;
 
     return HumanReadableChecksumService().getHumanReadableName(address);
   }
@@ -61,8 +56,7 @@ class _TransactionDetailsActionSheetState
     if (widget.transaction.isReversibleCancelled) {
       return 'TRANSACTION\nCANCELLED';
     }
-    if (widget.role == TransactionRole.receiver &&
-        widget.transaction.isReversibleScheduled) {
+    if (widget.role == TransactionRole.receiver && widget.transaction.isReversibleScheduled) {
       return 'RECEIVING';
     }
 
@@ -74,25 +68,55 @@ class _TransactionDetailsActionSheetState
 
   String get detailText {
     if (widget.transaction.isFailed ||
-        (widget.role == TransactionRole.sender &&
-            widget.transaction.isReversibleCancelled)) {
+        (widget.role == TransactionRole.sender && widget.transaction.isReversibleCancelled)) {
       return 'to';
     }
-    if (widget.role == TransactionRole.receiver &&
-        widget.transaction.isReversibleScheduled) {
+    if (widget.role == TransactionRole.receiver && widget.transaction.isReversibleScheduled) {
       return 'received in';
     }
     if (widget.transaction is MinerRewardEvent) {
       return '💰';
     }
-    if (widget.role == TransactionRole.receiver &&
-        widget.transaction.isReversibleCancelled) {
+    if (widget.role == TransactionRole.receiver && widget.transaction.isReversibleCancelled) {
       return 'from';
     }
     if (widget.role == TransactionRole.sender) {
       return 'was successfully sent to';
     }
     return 'received from';
+  }
+
+  void _retry() async {
+    if (!mounted) return;
+
+    final tx = widget.transaction as PendingTransactionEvent;
+
+    final submissionService = ref.read(transactionSubmissionServiceProvider);
+    final account = ref.read(accountsProvider.notifier).getAccountWithId(tx.from);
+    if (account == null) {
+      print("Couldn't find account ${tx.from}");
+      return;
+    }
+
+    try {
+      if (tx.delaySeconds <= 0) {
+        await submissionService.balanceTransfer(account, tx.to, tx.amount, tx.fee!, tx.blockNumber);
+      } else {
+        await submissionService.scheduleReversibleTransferWithDelaySeconds(
+          account: account,
+          recipientAddress: tx.to,
+          amount: tx.amount,
+          delaySeconds: tx.delaySeconds,
+          feeEstimate: tx.fee!,
+          blockHeight: tx.blockNumber,
+        );
+      }
+    } catch (e) {
+      print('Retrying transfer failed: $e');
+    } finally {
+      // ignore: use_build_context_synchronously
+      Navigator.of(context).pop();
+    }
   }
 
   @override
@@ -121,9 +145,7 @@ class _TransactionDetailsActionSheetState
 
   @override
   Widget build(BuildContext context) {
-    final String accountId = widget.role == TransactionRole.sender
-        ? widget.transaction.to
-        : widget.transaction.from;
+    final String accountId = widget.role == TransactionRole.sender ? widget.transaction.to : widget.transaction.from;
 
     return SafeArea(
       child: Stack(
@@ -136,26 +158,14 @@ class _TransactionDetailsActionSheetState
             ),
           ),
           Container(
-            height:
-                MediaQuery.of(context).size.height *
-                AppConstants.sendingSheetHeightFraction,
+            height: MediaQuery.of(context).size.height * AppConstants.sendingSheetHeightFraction,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 30),
             clipBehavior: Clip.antiAlias,
             decoration: const BoxDecoration(
               color: Colors.black,
               boxShadow: [
-                BoxShadow(
-                  color: Color(0x0A0A0D12),
-                  blurRadius: 8,
-                  offset: Offset(0, 8),
-                  spreadRadius: -4,
-                ),
-                BoxShadow(
-                  color: Color(0x190A0D12),
-                  blurRadius: 24,
-                  offset: Offset(0, 20),
-                  spreadRadius: -4,
-                ),
+                BoxShadow(color: Color(0x0A0A0D12), blurRadius: 8, offset: Offset(0, 8), spreadRadius: -4),
+                BoxShadow(color: Color(0x190A0D12), blurRadius: 24, offset: Offset(0, 20), spreadRadius: -4),
               ],
             ),
             child: SingleChildScrollView(
@@ -167,10 +177,7 @@ class _TransactionDetailsActionSheetState
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       IconButton(
-                        icon: Icon(
-                          Icons.close,
-                          size: context.themeSize.overlayCloseIconSize,
-                        ),
+                        icon: Icon(Icons.close, size: context.themeSize.overlayCloseIconSize),
                         onPressed: () => Navigator.of(context).pop(),
                       ),
                     ],
@@ -185,26 +192,16 @@ class _TransactionDetailsActionSheetState
                       height: context.themeSize.txDetailsIconHeight,
                     )
                   else if (widget.transaction.isReversibleCancelled)
-                    SvgPicture.asset(
-                      'assets/transaction/cancel_icon.svg',
-                      width: context.themeSize.txDetailsIconWidth,
-                    )
+                    SvgPicture.asset('assets/transaction/cancel_icon.svg', width: context.themeSize.txDetailsIconWidth)
                   else
                     widget.role == TransactionRole.sender
-                        ? Image.asset(
-                            'assets/transaction/send_icon.png',
-                            height: context.themeSize.txDetailsIconHeight,
-                          )
+                        ? Image.asset('assets/transaction/send_icon.png', height: context.themeSize.txDetailsIconHeight)
                         : SvgPicture.asset(
                             'assets/transaction/receive_icon.svg',
                             height: context.themeSize.txDetailsIconHeight,
                           ),
                   const SizedBox(height: 17),
-                  Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    style: context.themeText.largeTitle,
-                  ),
+                  Text(title, textAlign: TextAlign.center, style: context.themeText.largeTitle),
                   const SizedBox(height: 26),
                   _buildDetails(),
 
@@ -219,10 +216,7 @@ class _TransactionDetailsActionSheetState
                       gapLength: 3,
                       borderRadius: const Radius.circular(4),
                       child: InkWell(
-                        onTap: () => ClipboardExtensions.copyTextWithSnackbar(
-                          context,
-                          accountId,
-                        ),
+                        onTap: () => ClipboardExtensions.copyTextWithSnackbar(context, accountId),
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Row(
@@ -231,14 +225,8 @@ class _TransactionDetailsActionSheetState
                             crossAxisAlignment: CrossAxisAlignment.center,
                             spacing: 8,
                             children: [
-                              SvgPicture.asset(
-                                'assets/copy_icon.svg',
-                                width: context.isTablet ? 28 : 20,
-                              ),
-                              Text(
-                                'Copy Address',
-                                style: context.themeText.smallParagraph,
-                              ),
+                              SvgPicture.asset('assets/copy_icon.svg', width: context.isTablet ? 28 : 20),
+                              Text('Copy Address', style: context.themeText.smallParagraph),
                             ],
                           ),
                         ),
@@ -262,11 +250,7 @@ class _TransactionDetailsActionSheetState
       children: [
         const SizedBox(height: 26),
 
-        Button(
-          variant: ButtonVariant.glassOutline,
-          label: 'Retry',
-          onPressed: () {},
-        ),
+        Button(variant: ButtonVariant.glassOutline, label: 'Retry', onPressed: _retry),
       ],
     );
   }
@@ -311,18 +295,14 @@ class _TransactionDetailsActionSheetState
                 'View in Explorer',
                 textAlign: TextAlign.center,
                 style: context.themeText.detail?.copyWith(
-                  color: hasExtrinsicHash
-                      ? context.themeColors.checksum
-                      : Colors.grey,
+                  color: hasExtrinsicHash ? context.themeColors.checksum : Colors.grey,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               Icon(
                 Icons.open_in_new,
                 size: context.isTablet ? 20 : 12,
-                color: hasExtrinsicHash
-                    ? context.themeColors.checksum
-                    : Colors.grey,
+                color: hasExtrinsicHash ? context.themeColors.checksum : Colors.grey,
               ),
             ],
           ),
@@ -333,9 +313,7 @@ class _TransactionDetailsActionSheetState
 
   Widget _buildDetails() {
     final NumberFormattingService formattingService = NumberFormattingService();
-    final String formattedAmount = formattingService.formatBalance(
-      widget.transaction.amount,
-    );
+    final String formattedAmount = formattingService.formatBalance(widget.transaction.amount);
 
     return Column(
       spacing: 8,
@@ -344,26 +322,17 @@ class _TransactionDetailsActionSheetState
         Text.rich(
           TextSpan(
             children: [
-              TextSpan(
-                text: formattedAmount,
-                style: context.themeText.mediumTitle,
-              ),
-              TextSpan(
-                text: ' ${AppConstants.tokenSymbol}',
-                style: context.themeText.paragraph,
-              ),
+              TextSpan(text: formattedAmount, style: context.themeText.mediumTitle),
+              TextSpan(text: ' ${AppConstants.tokenSymbol}', style: context.themeText.paragraph),
             ],
           ),
         ),
         Text(
           detailText,
           textAlign: TextAlign.center,
-          style: context.themeText.smallParagraph?.copyWith(
-            color: context.themeColors.textMuted,
-          ),
+          style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.textMuted),
         ),
-        if (widget.role == TransactionRole.receiver &&
-            widget.transaction.isReversibleScheduled)
+        if (widget.role == TransactionRole.receiver && widget.transaction.isReversibleScheduled)
           ReversibleTimer(remainingTime: _remainingTime ?? Duration.zero),
         if (widget.transaction is! MinerRewardEvent) ...[
           // Normal Events
@@ -373,27 +342,17 @@ class _TransactionDetailsActionSheetState
               String checkPhrase = snapshot.data ?? 'Loading checkphrase...';
               if (snapshot.hasError) checkPhrase = 'Error loading checkphrase';
 
-              return Text(
-                checkPhrase,
-                textAlign: TextAlign.center,
-                style: context.themeText.paragraph,
-              );
+              return Text(checkPhrase, textAlign: TextAlign.center, style: context.themeText.paragraph);
             },
           ),
           Text(
-            widget.role == TransactionRole.sender
-                ? widget.transaction.to
-                : widget.transaction.from,
+            widget.role == TransactionRole.sender ? widget.transaction.to : widget.transaction.from,
             textAlign: TextAlign.center,
             style: context.themeText.tiny,
           ),
         ] else ...[
           // Mining Reward Events
-          Text(
-            'Mining Reward',
-            textAlign: TextAlign.center,
-            style: context.themeText.paragraph,
-          ),
+          Text('Mining Reward', textAlign: TextAlign.center, style: context.themeText.paragraph),
         ],
       ],
     );
