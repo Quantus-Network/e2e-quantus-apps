@@ -16,7 +16,7 @@ jobs:
     name: Build macOS App
     runs-on: macos-latest
     env:
-      GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -41,7 +41,7 @@ jobs:
         working-directory: ./miner-app
         env:
           GIT_TERMINAL_PROMPT: 0
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure Xcode project for manual signing
         run: |
@@ -147,7 +147,7 @@ jobs:
     name: Build Linux App
     runs-on: ubuntu-latest
     env:
-      GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -179,7 +179,7 @@ jobs:
         working-directory: ./miner-app
         env:
           GIT_TERMINAL_PROMPT: 0
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Linux release
         run: flutter build linux --release
@@ -200,7 +200,7 @@ jobs:
     name: Build Windows App
     runs-on: windows-latest
     env:
-      GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -219,7 +219,7 @@ jobs:
         working-directory: ./miner-app
         env:
           GIT_TERMINAL_PROMPT: 0
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Windows release
         run: flutter build windows --release
