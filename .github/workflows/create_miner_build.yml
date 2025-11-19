@@ -1,5 +1,4 @@
 name: Create Miner Build
-
 on:
   workflow_dispatch: # Manual trigger only
     inputs:
@@ -8,10 +7,6 @@ on:
         required: false
         default: false
         type: boolean
-      tag_name:
-        description: 'Tag name for the release (e.g., v1.0.0)'
-        required: false
-        type: string
 
 jobs:
   build-macos:
@@ -32,6 +27,12 @@ jobs:
       - name: Enable macOS desktop
         run: flutter config --enable-macos-desktop
 
+      - name: Import Apple code-signing certificate
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.MACOS_CERTIFICATE }}
+          p12-password: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+
       - name: Get dependencies
         run: flutter pub get
         working-directory: ./miner-app
@@ -39,19 +40,99 @@ jobs:
           GIT_TERMINAL_PROMPT: 0
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
 
-      - name: Build macOS release (unsigned)
+      - name: Configure Xcode project for manual signing
         run: |
-          export CODE_SIGNING_ALLOWED=NO
-          export CODE_SIGNING_REQUIRED=NO
-          export CODE_SIGN_IDENTITY=""
-          flutter build macos --release --no-codesign
+          cd miner-app/macos/Runner.xcodeproj
+          perl -i -pe '
+            if (/33CC10FD2044A3C60003C045.*Release/../name = Release;/) {
+              s/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/;
+              s/CODE_SIGN_IDENTITY = "Apple Development";/CODE_SIGN_IDENTITY = "";/;
+              s/"CODE_SIGN_IDENTITY\[sdk=macosx\*\]" = "Apple Development";/"CODE_SIGN_IDENTITY[sdk=macosx*]" = "";/;
+              s/DEVELOPMENT_TEAM = 8BRRAHLVW5;/DEVELOPMENT_TEAM = "";/;
+            }
+          ' project.pbxproj
+
+      - name: Build macOS release (unsigned, will re-sign after)
+        run: |
+          flutter build macos --release
         working-directory: ./miner-app
 
-      - name: Package macOS App
+      - name: Re-sign app and frameworks with Developer ID
         run: |
           cd miner-app/build/macos/Build/Products/Release/
-          # Create a proper DMG or ZIP with the app
-          zip -r quantus_miner_macos.zip quantus_miner.app
+          APP_PATH="Quantus Miner.app"
+          CERT_IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | awk '{print $2}')
+          if [ -z "$CERT_IDENTITY" ]; then
+            echo "Error: Developer ID Application certificate not found in keychain"
+            echo "Available identities:"
+            security find-identity -v -p codesigning
+            exit 1
+          fi
+          echo "Using certificate identity: $CERT_IDENTITY"
+          find "$APP_PATH/Contents/Frameworks" -name "*.framework" -print0 | while IFS= read -r -d '' framework; do
+            echo "Signing framework: $framework"
+            codesign --force --verify --verbose --sign "$CERT_IDENTITY" \
+              --options runtime \
+              --timestamp \
+              "$framework"
+          done
+          find "$APP_PATH/Contents/Frameworks" -type f \( -name "*.dylib" -o -perm +111 \) -print0 | while IFS= read -r -d '' binary; do
+            if [ -f "$binary" ] && ! [[ "$binary" =~ \.framework ]]; then
+              echo "Signing binary: $binary"
+              codesign --force --verify --verbose --sign "$CERT_IDENTITY" \
+                --options runtime \
+                --timestamp \
+                "$binary"
+            fi
+          done
+          ENTITLEMENTS_PATH="$(cd ../../../../.. && pwd)/macos/Runner/Release.entitlements"
+          if [ ! -f "$ENTITLEMENTS_PATH" ]; then
+            echo "Error: Entitlements file not found at $ENTITLEMENTS_PATH"
+            exit 1
+          fi
+          EXECUTABLE="$APP_PATH/Contents/MacOS/Quantus Miner"
+          if [ -f "$EXECUTABLE" ]; then
+            echo "Signing main executable: $EXECUTABLE"
+            codesign --force --verify --verbose --sign "$CERT_IDENTITY" \
+              --options runtime \
+              --timestamp \
+              --entitlements "$ENTITLEMENTS_PATH" \
+              "$EXECUTABLE"
+          fi
+          echo "Signing app bundle: $APP_PATH"
+          codesign --force --verify --verbose --sign "$CERT_IDENTITY" \
+            --options runtime \
+            --timestamp \
+            --entitlements "$ENTITLEMENTS_PATH" \
+            "$APP_PATH"
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+          if [ $? -ne 0 ]; then
+            echo "Error: Code signing verification failed"
+            exit 1
+          fi
+          
+          # Check for hardened runtime
+          codesign -d --entitlements - "$APP_PATH" | grep -q "com.apple.security.cs.allow-unsigned-executable-memory" || echo "Warning: Hardened runtime entitlements may be missing"
+
+      # Create a single ZIP that we will both notarize AND ship to users.
+      # This guarantees the shipped bits are exactly what Apple accepted.
+      - name: Create ZIP for notarization and distribution
+        run: |
+          cd miner-app/build/macos/Build/Products/Release/
+          ditto -c -k --keepParent "Quantus Miner.app" quantus_miner_macos.zip
+
+      - name: Notarize macOS App
+        env:
+          APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
+        run: |
+          cd miner-app/build/macos/Build/Products/Release/
+          xcrun notarytool submit quantus_miner_macos.zip \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+            --wait
 
       - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4
@@ -77,7 +158,15 @@ jobs:
       - name: Install Linux dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev
+          sudo apt-get install -y \
+            clang \
+            cmake \
+            ninja-build \
+            pkg-config \
+            libgtk-3-dev \
+            liblzma-dev \
+            libsecret-1-dev \
+            libstdc++-14-dev
 
       - name: Enable Linux desktop
         run: flutter config --enable-linux-desktop
@@ -134,10 +223,10 @@ jobs:
         working-directory: ./miner-app
 
       - name: Package Windows App
+        shell: powershell
         run: |
           cd miner-app/build/windows/x64/runner/Release/
-          Compress-Archive -Path * -DestinationPath quantus_miner_windows.zip
-        shell: powershell
+          Compress-Archive -Path * -DestinationPath quantus_miner_windows.zip -Force
 
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
@@ -147,12 +236,19 @@ jobs:
 
   create-release:
     name: Create Release
-    if: ${{ github.event.inputs.create_release == 'true' }}
+    if: ${{ inputs.create_release }}
     needs: [build-macos, build-linux, build-windows]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Read version from pubspec.yaml
+        id: get_version
+        run: |
+          VERSION=$(grep '^version:' miner-app/pubspec.yaml | head -1 | sed 's/version:[[:space:]]*//')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=miner-v$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -161,7 +257,23 @@ jobs:
 
       - name: List downloaded artifacts
         run: |
-          find ./artifacts -type f -name "*.zip" -o -name "*.tar.gz" | sort
+          # For debugging only; artifact already contains the final ZIP we want
+          find ./artifacts -type f \( -name "*.zip" -o -name "*.tar.gz" \) -o -type d -name "*.app" | sort
+
+      - name: Create and push git tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          TAG="${{ steps.get_version.outputs.tag }}"
+          echo "Tag to create: $TAG"
+          if git ls-remote --tags origin "$TAG" | grep -q "$TAG"; then
+            echo "Tag $TAG already exists on remote, skipping tag creation."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag "$TAG" "$GITHUB_SHA"
+            git push origin "$TAG"
+          fi
 
       - name: Create Release
         id: create_release
@@ -169,27 +281,22 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
         with:
-          tag_name: ${{ github.event.inputs.tag_name || 'v0.1.0' }}
-          release_name: Quantus Miner ${{ github.event.inputs.tag_name || 'v0.1.0' }}
+          tag_name: ${{ steps.get_version.outputs.tag }}
+          release_name: Quantus Miner ${{ steps.get_version.outputs.version }}
           body: |
             ## Quantus Miner Release
-            
             This release includes binaries for:
             - 🍎 macOS (Intel/Apple Silicon)
             - 🐧 Linux (x64)
             - 🪟 Windows (x64)
-            
             ### Installation
-            
-            **macOS**: Download the `.zip` file, extract it, and run the `quantus_miner.app`
+            **macOS**: Download the `.zip` file, extract it, and run the `Quantus Miner.app`
             **Linux**: Download the `.tar.gz` file, extract it, and run the `quantus_miner` executable
             **Windows**: Download the `.zip` file, extract it, and run the `quantus_miner.exe`
-            
             ### What's Changed
             - Cross-platform mining support
             - External miner integration
             - Improved UI and stability
-            
             Built from commit: ${{ github.sha }}
           draft: false
           prerelease: false
