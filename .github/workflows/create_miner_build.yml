@@ -8,6 +8,9 @@ on:
         default: false
         type: boolean
 
+permissions:
+  contents: write
+
 jobs:
   build-macos:
     name: Build macOS App
@@ -242,8 +245,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.PAT_TOKEN }}
 
       - name: Read version from pubspec.yaml
         id: get_version
@@ -264,16 +265,15 @@ jobs:
 
       - name: Create and push git tag
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${{ steps.get_version.outputs.tag }}"
           echo "Tag to create: $TAG"
 
-          # Explicitly update remote with token to ensure correct authentication
-          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
-
           if git ls-remote --tags origin "$TAG" | grep -q "$TAG"; then
-            echo "Tag $TAG already exists on remote, skipping tag creation."
+            echo "Error: Tag $TAG already exists on remote."
+            echo "Please update the version in pubspec.yaml before creating a new release."
+            exit 1
           else
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
