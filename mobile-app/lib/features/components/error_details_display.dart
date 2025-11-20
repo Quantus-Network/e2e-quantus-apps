@@ -77,126 +77,112 @@ class _ErrorDetailsSheetState extends State<ErrorDetailsSheet> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      bottom: false,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         decoration: ShapeDecoration(
           color: context.themeColors.background,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
         ),
-        child: Stack(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Positioned(
-              left: context.getHorizontalCenterPosition(230 + (24 * 2)),
-              bottom: -100,
-              child: const Sphere(variant: 7, size: 230),
+            // Header with close button
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(7),
+              decoration: ShapeDecoration(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100))),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  InkWell(
+                    onTap: () => _closeSheet(context),
+                    child: Icon(Icons.close, size: context.isTablet ? 28 : 24, color: context.themeColors.textPrimary),
+                  ),
+                ],
+              ),
             ),
-            Column(
-              mainAxisSize: MainAxisSize.min,
+            const SizedBox(height: 28),
+
+            // Title with error icon
+            Row(
               mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Header with close button
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(7),
-                  decoration: ShapeDecoration(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100))),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      InkWell(
-                        onTap: () => _closeSheet(context),
-                        child: Icon(
-                          Icons.close,
-                          size: context.isTablet ? 28 : 24,
-                          color: context.themeColors.textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 28),
-
-                // Title with error icon
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Icon(Icons.error_outline, color: context.themeColors.textError, size: context.isTablet ? 36 : 32),
-                    const SizedBox(width: 12),
-                    Text('Error Details', style: context.themeText.largeTitle),
-                  ],
-                ),
-                SizedBox(height: context.isTablet ? 36 : 28),
-
-                // Error content container
-                Container(
-                  width: double.infinity,
-                  constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: context.themeColors.surface,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: context.themeColors.borderLight, width: 1),
-                  ),
-                  child: SingleChildScrollView(
-                    child: SelectableText(
-                      widget.error,
-                      style: context.themeText.smallParagraph?.copyWith(
-                        color: context.themeColors.textPrimary,
-                        fontFamily: 'Fira Code',
-                        height: 1.5,
-                      ),
-                    ),
-                  ),
-                ),
-
-                SizedBox(height: context.isTablet ? 24 : 20),
-
-                // Action buttons
-                Column(
-                  children: [
-                    InkWell(
-                      onTap: () => _copyToClipboard(context),
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        decoration: BoxDecoration(
-                          color: _copied
-                              ? context.themeColors.buttonSuccess.useOpacity(0.2)
-                              : context.themeColors.buttonGlass,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: _copied ? context.themeColors.buttonSuccess : context.themeColors.borderLight,
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              _copied ? Icons.check : Icons.copy,
-                              size: context.isTablet ? 20 : 18,
-                              color: _copied ? context.themeColors.buttonSuccess : context.themeColors.textPrimary,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              _copied ? 'Copied!' : 'Copy Error',
-                              style: context.themeText.paragraph?.copyWith(
-                                color: _copied ? context.themeColors.buttonSuccess : context.themeColors.textPrimary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Button(variant: ButtonVariant.neutral, label: 'Close', onPressed: () => _closeSheet(context)),
-                  ],
-                ),
-
-                const SizedBox(height: 24),
+                Icon(Icons.error_outline, color: context.themeColors.textError, size: context.isTablet ? 36 : 32),
+                const SizedBox(width: 12),
+                Text('Error Details', style: context.themeText.largeTitle),
               ],
             ),
+            SizedBox(height: context.isTablet ? 36 : 28),
+
+            // Error content container
+            Container(
+              width: double.infinity,
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: context.themeColors.surface,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: context.themeColors.borderLight, width: 1),
+              ),
+              child: SingleChildScrollView(
+                child: SelectableText(
+                  widget.error,
+                  style: context.themeText.smallParagraph?.copyWith(
+                    color: context.themeColors.textPrimary,
+                    fontFamily: 'Fira Code',
+                    height: 1.5,
+                  ),
+                ),
+              ),
+            ),
+
+            SizedBox(height: context.isTablet ? 24 : 20),
+
+            // Action buttons
+            Column(
+              children: [
+                InkWell(
+                  onTap: () => _copyToClipboard(context),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      color: _copied
+                          ? context.themeColors.buttonSuccess.useOpacity(0.2)
+                          : context.themeColors.buttonGlass,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: _copied ? context.themeColors.buttonSuccess : context.themeColors.borderLight,
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _copied ? Icons.check : Icons.copy,
+                          size: context.isTablet ? 20 : 18,
+                          color: _copied ? context.themeColors.buttonSuccess : context.themeColors.textPrimary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _copied ? 'Copied!' : 'Copy Error',
+                          style: context.themeText.paragraph?.copyWith(
+                            color: _copied ? context.themeColors.buttonSuccess : context.themeColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Button(variant: ButtonVariant.neutral, label: 'Close', onPressed: () => _closeSheet(context)),
+              ],
+            ),
+
+            const SizedBox(height: 24),
           ],
         ),
       ),
