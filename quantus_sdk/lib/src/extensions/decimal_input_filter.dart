@@ -4,13 +4,15 @@ class DecimalInputFilter extends TextInputFormatter {
   final RegExp decimalRegex = RegExp(r'^(0|([1-9]\d*))([,.]\d{0,12})?$|^$');
 
   @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
     // Allow empty input
     if (newValue.text.isEmpty) {
       return newValue;
+    }
+
+    // Allow single commas or dots
+    if (newValue.text == ',' || newValue.text == '.') {
+      return TextEditingValue(text: '0${newValue.text}');
     }
 
     // Check if the new value matches our regex

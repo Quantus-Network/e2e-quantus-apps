@@ -17,6 +17,7 @@ import 'package:resonance_network_wallet/providers/filtered_all_transactions_pro
 import 'package:resonance_network_wallet/providers/pending_cancellations_provider.dart';
 import 'package:resonance_network_wallet/services/reversible_transfer_monitoring_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
 
 class ReversibleTransactionActionSheet extends ConsumerStatefulWidget {
   final ReversibleTransferEvent transaction;
@@ -34,7 +35,6 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
   Timer? _timer;
   Duration? _remainingTime;
   bool _isCancelling = false;
-  String? _errorMessage;
 
   final NumberFormattingService _formattingService = NumberFormattingService();
   final SettingsService _settingsService = SettingsService();
@@ -45,6 +45,8 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
 
     return HumanReadableChecksumService().getHumanReadableName(address);
   }
+
+  bool get _isReverseDisabled => _remainingTime == null || _remainingTime == Duration.zero;
 
   @override
   void initState() {
@@ -93,7 +95,7 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
             ),
           ),
           Container(
-            height: MediaQuery.of(context).size.height * AppConstants.sendingSheetHeightFraction,
+            height: MediaQuery.of(context).size.height * 0.83,
             padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 18),
             clipBehavior: Clip.antiAlias,
             decoration: const BoxDecoration(color: Colors.black),
@@ -285,6 +287,7 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
                 _sheetState = _SheetState.confirmCancel;
               });
             },
+            isDisabled: _isReverseDisabled,
           ),
         ),
       ],
@@ -324,18 +327,15 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
               const SizedBox(width: 22),
               Expanded(
                 flex: 5,
-                child: Button(variant: ButtonVariant.danger, label: 'Reverse', onPressed: _cancelTransaction),
+                child: Button(
+                  variant: ButtonVariant.danger,
+                  label: 'Reverse',
+                  onPressed: _cancelTransaction,
+                  isDisabled: _isReverseDisabled,
+                ),
               ),
             ],
           ),
-        if (_errorMessage != null) ...[
-          const SizedBox(height: 10),
-          Text(
-            _errorMessage!,
-            style: const TextStyle(color: Colors.red, fontSize: 12),
-            textAlign: TextAlign.center,
-          ),
-        ],
       ],
     );
     return buttons;
@@ -344,7 +344,6 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
   Future<void> _cancelTransaction() async {
     setState(() {
       _isCancelling = true;
-      _errorMessage = null;
     });
 
     try {
@@ -388,9 +387,8 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
         _sheetState = _SheetState.cancelled;
       });
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Failed to cancel: ${e.toString()}';
-      });
+      // ignore: use_build_context_synchronously
+      if (mounted) context.showErrorSnackbar(title: 'Failed to cancel', message: e.toString());
     } finally {
       setState(() {
         _isCancelling = false;
