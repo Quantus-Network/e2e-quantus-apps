@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
@@ -13,12 +14,7 @@ class ErrorDetailsButton extends StatelessWidget {
   final String? label;
   final IconData? icon;
 
-  const ErrorDetailsButton({
-    super.key,
-    required this.error,
-    this.label,
-    this.icon,
-  });
+  const ErrorDetailsButton({super.key, required this.error, this.label, this.icon});
 
   @override
   Widget build(BuildContext context) {
@@ -30,25 +26,16 @@ class ErrorDetailsButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: context.themeColors.buttonGlass,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: context.themeColors.borderLight,
-            width: 1,
-          ),
+          border: Border.all(color: context.themeColors.borderLight, width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon ?? Icons.error_outline,
-              color: context.themeColors.textError,
-              size: context.isTablet ? 20 : 18,
-            ),
+            Icon(icon ?? Icons.error_outline, color: context.themeColors.textError, size: context.isTablet ? 20 : 18),
             const SizedBox(width: 8),
             Text(
               label ?? 'View Error Details',
-              style: context.themeText.detail?.copyWith(
-                color: context.themeColors.textPrimary,
-              ),
+              style: context.themeText.detail?.copyWith(color: context.themeColors.textPrimary),
             ),
           ],
         ),
@@ -95,16 +82,12 @@ class _ErrorDetailsSheetState extends State<ErrorDetailsSheet> {
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         decoration: ShapeDecoration(
           color: context.themeColors.background,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(5),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
         ),
         child: Stack(
           children: [
             Positioned(
-              left: context.getHorizontalCenterPosition(
-                230 + (24 * 2),
-              ),
+              left: context.getHorizontalCenterPosition(230 + (24 * 2)),
               bottom: -100,
               child: const Sphere(variant: 7, size: 230),
             ),
@@ -117,11 +100,7 @@ class _ErrorDetailsSheetState extends State<ErrorDetailsSheet> {
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(7),
-                  decoration: ShapeDecoration(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(100),
-                    ),
-                  ),
+                  decoration: ShapeDecoration(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100))),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
@@ -137,39 +116,27 @@ class _ErrorDetailsSheetState extends State<ErrorDetailsSheet> {
                   ),
                 ),
                 const SizedBox(height: 28),
-                
+
                 // Title with error icon
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.error_outline,
-                      color: context.themeColors.textError,
-                      size: context.isTablet ? 36 : 32,
-                    ),
+                    Icon(Icons.error_outline, color: context.themeColors.textError, size: context.isTablet ? 36 : 32),
                     const SizedBox(width: 12),
-                    Text(
-                      'Error Details',
-                      style: context.themeText.largeTitle,
-                    ),
+                    Text('Error Details', style: context.themeText.largeTitle),
                   ],
                 ),
                 SizedBox(height: context.isTablet ? 36 : 28),
-                
+
                 // Error content container
                 Container(
                   width: double.infinity,
-                  constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * 0.4,
-                  ),
+                  constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: context.themeColors.surface,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: context.themeColors.borderLight,
-                      width: 1,
-                    ),
+                    border: Border.all(color: context.themeColors.borderLight, width: 1),
                   ),
                   child: SingleChildScrollView(
                     child: SelectableText(
@@ -182,92 +149,51 @@ class _ErrorDetailsSheetState extends State<ErrorDetailsSheet> {
                     ),
                   ),
                 ),
-                
+
                 SizedBox(height: context.isTablet ? 24 : 20),
-                
+
                 // Action buttons
-                Row(
+                Column(
                   children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: () => _copyToClipboard(context),
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          decoration: BoxDecoration(
-                            color: _copied
-                                ? context.themeColors.buttonSuccess.useOpacity(0.2)
-                                : context.themeColors.buttonGlass,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: _copied
-                                  ? context.themeColors.buttonSuccess
-                                  : context.themeColors.borderLight,
-                              width: 1,
+                    InkWell(
+                      onTap: () => _copyToClipboard(context),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          color: _copied
+                              ? context.themeColors.buttonSuccess.useOpacity(0.2)
+                              : context.themeColors.buttonGlass,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: _copied ? context.themeColors.buttonSuccess : context.themeColors.borderLight,
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _copied ? Icons.check : Icons.copy,
+                              size: context.isTablet ? 20 : 18,
+                              color: _copied ? context.themeColors.buttonSuccess : context.themeColors.textPrimary,
                             ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                _copied ? Icons.check : Icons.copy,
-                                size: context.isTablet ? 20 : 18,
-                                color: _copied
-                                    ? context.themeColors.buttonSuccess
-                                    : context.themeColors.textPrimary,
+                            const SizedBox(width: 8),
+                            Text(
+                              _copied ? 'Copied!' : 'Copy Error',
+                              style: context.themeText.paragraph?.copyWith(
+                                color: _copied ? context.themeColors.buttonSuccess : context.themeColors.textPrimary,
                               ),
-                              const SizedBox(width: 8),
-                              Text(
-                                _copied ? 'Copied!' : 'Copy Error',
-                                style: context.themeText.paragraph?.copyWith(
-                                  color: _copied
-                                      ? context.themeColors.buttonSuccess
-                                      : context.themeColors.textPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: InkWell(
-                        onTap: () => _closeSheet(context),
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          decoration: BoxDecoration(
-                            color: context.themeColors.buttonDanger.useOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: context.themeColors.buttonDanger,
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.close,
-                                size: context.isTablet ? 20 : 18,
-                                color: context.themeColors.buttonDanger,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Close',
-                                style: context.themeText.paragraph?.copyWith(
-                                  color: context.themeColors.buttonDanger,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
+                    const SizedBox(height: 16),
+                    Button(variant: ButtonVariant.neutral, label: 'Close', onPressed: () => _closeSheet(context)),
                   ],
                 ),
-                
+
                 const SizedBox(height: 24),
               ],
             ),
@@ -283,9 +209,7 @@ void showErrorDetailsActionSheet(BuildContext context, String error) {
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
-    constraints: BoxConstraints(
-      maxWidth: MediaQuery.of(context).size.width,
-    ),
+    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
     builder: (context) => Stack(
       children: [
         Positioned.fill(
@@ -294,11 +218,7 @@ void showErrorDetailsActionSheet(BuildContext context, String error) {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black,
-                  const Color(0xFF312E6E).useOpacity(0.4),
-                  Colors.black,
-                ],
+                colors: [Colors.black, const Color(0xFF312E6E).useOpacity(0.4), Colors.black],
               ),
             ),
           ),
