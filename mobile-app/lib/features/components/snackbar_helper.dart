@@ -83,6 +83,7 @@ Future<void> showErrorSnackbar(BuildContext context, {required String title, req
     context,
     title: title,
     message: message,
+    duration: const Duration(seconds: 10),
     icon: Icon(Icons.error_rounded, color: context.themeColors.error),
   );
 }
