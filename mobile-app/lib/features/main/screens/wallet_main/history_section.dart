@@ -10,6 +10,7 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/models/combined_transactions_list.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 
 class HistorySection extends ConsumerStatefulWidget {
@@ -118,6 +119,7 @@ class _HistorySectionState extends ConsumerState<HistorySection> {
                 variant: ButtonVariant.neutral,
                 label: 'Retry',
                 onPressed: () {
+                  ref.invalidate(filteredTransactionsProviderFamily);
                   ref.invalidate(activeAccountTransactionsProvider);
                 },
               ),
