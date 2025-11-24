@@ -16,10 +16,12 @@ import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner_s
 import 'package:resonance_network_wallet/features/main/screens/send/recent_addresses.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/send_progress_overlay.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/send_providers.dart';
+import 'package:resonance_network_wallet/features/main/screens/send/send_screen_logic.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/time_picker_sheet.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
@@ -42,8 +44,6 @@ class SendScreenState extends ConsumerState<SendScreen> {
 
   final TextEditingController _recipientController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
-  final NumberFormattingService _formattingService = NumberFormattingService();
-  final SettingsService _settingsService = SettingsService();
   Account? activeAccount;
 
   BigInt _maxBalance = BigInt.zero;
@@ -60,31 +60,31 @@ class SendScreenState extends ConsumerState<SendScreen> {
   // Reversible time state
   int _reversibleTimeSeconds = 600; // Default: 10 minutes
 
-  int get _reversibleTimeDays => _reversibleTimeSeconds ~/ 86400;
-  int get _reversibleTimeHours => (_reversibleTimeSeconds % 86400) ~/ 3600;
-  int get _reversibleTimeMinutes => (_reversibleTimeSeconds % 3600) ~/ 60;
+  int get _reversibleTimeDays => SendScreenLogic.getReversibleTimeComponents(_reversibleTimeSeconds).days;
+  int get _reversibleTimeHours => SendScreenLogic.getReversibleTimeComponents(_reversibleTimeSeconds).hours;
+  int get _reversibleTimeMinutes => SendScreenLogic.getReversibleTimeComponents(_reversibleTimeSeconds).minutes;
 
   String get getButtonText {
-    if (_hasAddressError || _recipientController.text.isEmpty) {
-      return 'Enter Address';
-    } else if (_amount <= BigInt.zero) {
-      return 'Enter Amount';
-    } else if (_hasAmountError) {
-      return 'Insufficient Balance';
-    } else if (_recipientController.text == activeAccount!.accountId) {
-      return "Can't Self Transfer";
-    } else {
-      return 'Send ${_formattingService.formatBalance(_amount, addSymbol: true)}';
-    }
+    final formattingService = ref.watch(numberFormattingServiceProvider);
+    final amountStatus = SendScreenLogic.getAmountStatus(_amount, _maxBalance, _networkFee);
+
+    return SendScreenLogic.getButtonText(
+      hasAddressError: _hasAddressError,
+      recipientText: _recipientController.text,
+      amountStatus: amountStatus,
+      amount: _amount,
+      activeAccountId: activeAccount?.accountId ?? '',
+      formattingService: formattingService,
+    );
   }
 
-  bool get isButtonDisabled =>
-      (_hasAddressError ||
-          _hasAmountError ||
-          _recipientController.text.isEmpty ||
-          _amount <= BigInt.zero ||
-          _isFetchingFee) ||
-      _recipientController.text == activeAccount!.accountId;
+  bool get isButtonDisabled => SendScreenLogic.isButtonDisabled(
+    hasAddressError: _hasAddressError,
+    hasAmountError: _hasAmountError,
+    recipientText: _recipientController.text,
+    activeAccountId: activeAccount?.accountId ?? '',
+    isFetchingFee: _isFetchingFee,
+  );
 
   @override
   void initState() {
@@ -99,17 +99,11 @@ class SendScreenState extends ConsumerState<SendScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    // Check the flag
     if (_isInit) {
-      // Initialize active account
       _loadActiveAccount();
 
-      // Get the passed address
-      final String? address =
-          ModalRoute.of(context)?.settings.arguments as String?;
+      final String? address = ModalRoute.of(context)?.settings.arguments as String?;
       if (address != null) {
-        // You can directly update the controller here.
-        // No need for addPostFrameCallback.
         _recipientController.text = address;
         _lookupIdentity();
       }
@@ -130,13 +124,13 @@ class SendScreenState extends ConsumerState<SendScreen> {
   }
 
   Future<void> _loadActiveAccount() async {
-    activeAccount = await _settingsService.getActiveAccount();
+    final settingService = ref.read(settingsServiceProvider);
+    activeAccount = await settingService.getActiveAccount();
   }
 
   Future<void> _loadReversibleTimeSetting() async {
-    final savedTime =
-        (await _settingsService.getReversibleTimeSeconds()) ??
-        AppConstants.defaultReversibleTimeSeconds;
+    final settingService = ref.read(settingsServiceProvider);
+    final savedTime = (await settingService.getReversibleTimeSeconds()) ?? AppConstants.defaultReversibleTimeSeconds;
     _setReversibleTimeSeconds(savedTime);
   }
 
@@ -147,13 +141,15 @@ class SendScreenState extends ConsumerState<SendScreen> {
     _toggleExistentialDeposit(isReversible);
   }
 
-  bool get isReversible => _reversibleTimeSeconds > 0;
+  bool get isReversible => SendScreenLogic.isReversible(_reversibleTimeSeconds);
 
   Future<void> _saveReversibleTimeSetting(int seconds) async {
+    final settingService = ref.read(settingsServiceProvider);
+
     try {
       if (seconds > 0) {
         // if reversibility is off, we don't store that.
-        await _settingsService.setReversibleTimeSeconds(seconds);
+        await settingService.setReversibleTimeSeconds(seconds);
       }
       _fetchNetworkFee();
     } catch (e) {
@@ -161,32 +157,30 @@ class SendScreenState extends ConsumerState<SendScreen> {
     }
   }
 
-  // Method to toggle existential deposit calculation
   void _toggleExistentialDeposit(bool includeExistentialDeposit) {
-    ref.read(existentialDepositToggleProvider.notifier).state =
-        includeExistentialDeposit;
+    ref.read(existentialDepositToggleProvider.notifier).state = includeExistentialDeposit;
   }
 
   bool _isValidSS58Address(String address) {
     try {
-      return SubstrateService().isValidSS58Address(address);
+      final substrateService = ref.read(substrateServiceProvider);
+      return substrateService.isValidSS58Address(address);
     } catch (e) {
       debugPrint('Error validating address: $e');
       return false;
     }
   }
 
-  // return recipient or null if recipient is invalid
   String? _getValidRecipient() {
     final recipient = _recipientController.text.trim();
     return _isValidSS58Address(recipient) ? recipient : null;
   }
 
   Future<void> _lookupIdentity() async {
-    if (!mounted) return; // Add early return if not mounted
+    if (!mounted) return;
     final recipient = _recipientController.text.trim();
     if (recipient.isEmpty) {
-      if (!mounted) return; // Check mounted before setState
+      if (!mounted) return;
       setState(() {
         _humanReadableCheckphrase = '';
         _hasAddressError = false;
@@ -196,30 +190,30 @@ class SendScreenState extends ConsumerState<SendScreen> {
 
     try {
       final isValid = _isValidSS58Address(recipient);
-      if (!mounted) return; // Check mounted before setState
+      if (!mounted) return;
       setState(() {
         _hasAddressError = !isValid;
       });
 
       if (isValid) {
         print('Starting wallet name lookup for: $recipient');
-        final humanReadableName = await HumanReadableChecksumService()
-            .getHumanReadableName(recipient);
+        final humanReadableService = ref.read(humanReadableChecksumServiceProvider);
+        final humanReadableName = await humanReadableService.getHumanReadableName(recipient);
         print('Final humanReadableName: $humanReadableName');
-        if (!mounted) return; // Check mounted before setState
+        if (!mounted) return;
         setState(() {
           _humanReadableCheckphrase = humanReadableName;
         });
         _debounceFetchFee();
       } else {
-        if (!mounted) return; // Check mounted before setState
+        if (!mounted) return;
         setState(() {
           _humanReadableCheckphrase = '';
         });
       }
     } catch (e) {
       debugPrint('Error in identity lookup: $e');
-      if (!mounted) return; // Check mounted before setState
+      if (!mounted) return;
       setState(() {
         _humanReadableCheckphrase = '';
         _hasAddressError = true;
@@ -242,7 +236,8 @@ class SendScreenState extends ConsumerState<SendScreen> {
       return;
     }
 
-    final parsedAmount = _formattingService.parseAmount(value);
+    final formattingService = ref.read(numberFormattingServiceProvider);
+    final parsedAmount = formattingService.parseAmount(value);
 
     _setSendAmount(parsedAmount);
   }
@@ -258,9 +253,12 @@ class SendScreenState extends ConsumerState<SendScreen> {
         // if we don't have fee, we will need to load it
         _isFetchingFee = !_haveNetworkFee;
         _amount = parsedAmount;
-        // Simplified check; full check including fee happens after fetching fee
-        _hasAmountError =
-            _amount <= BigInt.zero || _amount > _maxBalance; // Basic validation
+        // Use the validation logic
+        _hasAmountError = SendScreenLogic.hasAmountError(
+          amount: _amount,
+          balance: _maxBalance,
+          networkFee: _networkFee,
+        );
       });
       _debounceFetchFee(); // Trigger fee fetch after amount validation
     }
@@ -281,8 +279,11 @@ class SendScreenState extends ConsumerState<SendScreen> {
       setState(() {
         _networkFee = _networkFee;
         _isFetchingFee = false;
-        _hasAmountError =
-            _amount > BigInt.zero && (_amount + _networkFee) > _maxBalance;
+        _hasAmountError = SendScreenLogic.hasAmountError(
+          amount: _amount,
+          balance: _maxBalance,
+          networkFee: _networkFee,
+        );
       });
       return;
     }
@@ -291,52 +292,47 @@ class SendScreenState extends ConsumerState<SendScreen> {
     });
 
     try {
-      ExtrinsicFeeData estimatedFee = await getNetworkFeeForAmount(
-        recipient,
-        _amount,
-      );
+      ExtrinsicFeeData estimatedFee = await getNetworkFeeForAmount(recipient, _amount);
 
       setState(() {
         _networkFee = estimatedFee.fee;
         _blockHeight = estimatedFee.extrinsicData.blockNumber;
         _isFetchingFee = false;
-        _hasAmountError = (_amount + _networkFee) > _maxBalance;
+        _hasAmountError = SendScreenLogic.hasAmountError(
+          amount: _amount,
+          balance: _maxBalance,
+          networkFee: _networkFee,
+        );
       });
     } catch (e) {
       print('Error fetching network fee: $e');
       setState(() {
         _isFetchingFee = false;
-        _hasAmountError = _amount <= BigInt.zero || _amount > _maxBalance;
+        _hasAmountError = SendScreenLogic.hasAmountError(
+          amount: _amount,
+          balance: _maxBalance,
+          networkFee: BigInt.zero,
+        );
       });
       if (mounted) {
-        showTopSnackBar(
-          context,
-          title: 'Error',
-          message: 'Error fetching network fee: ${e.toString()}',
-        );
+        showTopSnackBar(context, title: 'Error', message: 'Error fetching network fee: ${e.toString()}');
       }
     }
   }
 
-  Future<ExtrinsicFeeData> getNetworkFeeForAmount(
-    String recipient,
-    BigInt amount,
-  ) async {
+  Future<ExtrinsicFeeData> getNetworkFeeForAmount(String recipient, BigInt amount) async {
     ExtrinsicFeeData estimatedFee;
     if (isReversible) {
-      estimatedFee = await ReversibleTransfersService()
-          .getReversibleTransferWithDelayFeeEstimate(
-            account: activeAccount!,
-            recipientAddress: recipient,
-            amount: amount,
-            delaySeconds: _reversibleTimeSeconds,
-          );
-    } else {
-      estimatedFee = await BalancesService().getBalanceTransferFee(
-        activeAccount!,
-        recipient,
-        amount,
+      final reversibleTransfersService = ref.read(reversibleTransfersServiceProvider);
+      estimatedFee = await reversibleTransfersService.getReversibleTransferWithDelayFeeEstimate(
+        account: activeAccount!,
+        recipientAddress: recipient,
+        amount: amount,
+        delaySeconds: _reversibleTimeSeconds,
       );
+    } else {
+      final balanceService = ref.read(balancesServiceProvider);
+      estimatedFee = await balanceService.getBalanceTransferFee(activeAccount!, recipient, amount);
     }
     return estimatedFee;
   }
@@ -344,34 +340,28 @@ class SendScreenState extends ConsumerState<SendScreen> {
   Future<void> _setMaxAmount() async {
     String? recipient = _getValidRecipient();
     if (recipient == null) {
-      showTopSnackBar(
-        context,
-        title: 'Error',
-        message: 'Invalid recipient address',
-      );
+      showTopSnackBar(context, title: 'Error', message: 'Invalid recipient address');
       return;
     }
 
     try {
-      ExtrinsicFeeData estimatedFee = await getNetworkFeeForAmount(
-        recipient,
-        _maxBalance,
-      );
+      ExtrinsicFeeData estimatedFee = await getNetworkFeeForAmount(recipient, _maxBalance);
 
       // we keep track of block number so we can set it on pending transactions
       setState(() {
         _blockHeight = estimatedFee.extrinsicData.blockNumber;
       });
 
-      final maxSendableAmount = _maxBalance - estimatedFee.fee;
+      final maxSendableAmount = SendScreenLogic.calculateMaxSendableAmount(
+        balance: _maxBalance,
+        networkFee: estimatedFee.fee,
+      );
 
       print('max sendable amount: $maxSendableAmount');
 
       if (maxSendableAmount > BigInt.zero) {
-        final formattedMax = _formattingService.formatBalance(
-          maxSendableAmount,
-          addThousandsSeparators: false,
-        );
+        final formattingService = ref.read(numberFormattingServiceProvider);
+        final formattedMax = formattingService.formatBalance(maxSendableAmount, addThousandsSeparators: false);
         _amountController.text = formattedMax;
         _setSendAmount(maxSendableAmount);
       } else {
@@ -394,8 +384,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
     debugPrint('Showing confirmation for amount (BigInt): $_amount');
 
     // Keep a reference to the overlay's state
-    final GlobalKey<SendConfirmationOverlayState> overlayKey =
-        GlobalKey<SendConfirmationOverlayState>();
+    final GlobalKey<SendConfirmationOverlayState> overlayKey = GlobalKey<SendConfirmationOverlayState>();
 
     showModalBottomSheet(
       context: context,
@@ -411,11 +400,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black,
-                    const Color(0xFF312E6E).useOpacity(0.4),
-                    Colors.black,
-                  ],
+                  colors: [Colors.black, const Color(0xFF312E6E).useOpacity(0.4), Colors.black],
                 ),
               ),
             ),
@@ -430,9 +415,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
               recipientName: _humanReadableCheckphrase,
               recipientAddress: _recipientController.text,
               fee: _networkFee,
-              reversibleTimeSeconds: _sendMode.isReversible
-                  ? _reversibleTimeSeconds
-                  : 0,
+              reversibleTimeSeconds: _sendMode.isReversible ? _reversibleTimeSeconds : 0,
               blockHeight: _blockHeight ?? 0,
               onClose: () => Navigator.pop(context),
             ),
@@ -442,8 +425,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
     ).then((_) {
       // After the modal is dismissed, check its final state.
       final currentState = overlayKey.currentState?.currentState;
-      if (currentState == SendOverlayState.complete ||
-          currentState == SendOverlayState.progress) {
+      if (currentState == SendOverlayState.complete || currentState == SendOverlayState.progress) {
         // If the transaction was completed, navigate home.
         overlayKey.currentState?.goHome();
       }
@@ -454,10 +436,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
     print('Scanning QR code');
     final scannedAddress = await Navigator.push<String>(
       context,
-      MaterialPageRoute(
-        builder: (context) => const QRScannerScreen(),
-        fullscreenDialog: true,
-      ),
+      MaterialPageRoute(builder: (context) => const QRScannerScreen(), fullscreenDialog: true),
     );
 
     if (scannedAddress != null && mounted) {
@@ -469,44 +448,21 @@ class SendScreenState extends ConsumerState<SendScreen> {
   }
 
   String _formatReversibleTime() {
-    final days = _reversibleTimeDays;
-    final hours = _reversibleTimeHours;
-    final minutes = _reversibleTimeMinutes;
-
-    if (days > 0) {
-      return '${days}d, '
-          '${hours}h, '
-          '${minutes}m';
-    } else if (hours > 0) {
-      return '${hours}h, '
-          '${minutes}m';
-    } else {
-      return '${minutes}m';
-    }
+    return SendScreenLogic.formatReversibleTime(_reversibleTimeSeconds);
   }
 
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
       decorations: [
-        const Positioned(
-          top: 120,
-          left: -30,
-          child: Sphere(variant: 1, size: 144.23),
-        ),
-        Positioned(
-          top: context.containerHalfHeight,
-          right: -40,
-          child: const Sphere(variant: 2, size: 194),
-        ),
+        const Positioned(top: 120, left: -30, child: Sphere(variant: 1, size: 144.23)),
+        Positioned(top: context.containerHalfHeight, right: -40, child: const Sphere(variant: 2, size: 194)),
       ],
       appBar: WalletAppBar(title: 'Send'),
       child: Consumer(
         builder: (context, ref, child) {
           final balanceAsyncValue = ref.watch(effectiveMaxBalanceProvider);
-          final includeExistentialDeposit = ref.watch(
-            existentialDepositToggleProvider,
-          );
+          final includeExistentialDeposit = ref.watch(existentialDepositToggleProvider);
 
           return balanceAsyncValue.when(
             data: (balance) {
@@ -514,19 +470,13 @@ class SendScreenState extends ConsumerState<SendScreen> {
 
               return _buildSendContent(context, ref, includeExistentialDeposit);
             },
-            loading: () => Center(
-              child: CircularProgressIndicator(
-                color: context.themeColors.circularLoader,
-              ),
-            ),
+            loading: () => Center(child: CircularProgressIndicator(color: context.themeColors.circularLoader)),
             error: (error, stack) => Center(
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Text(
                   'Error loading balance: $error',
-                  style: context.themeText.paragraph?.copyWith(
-                    color: context.themeColors.textError,
-                  ),
+                  style: context.themeText.paragraph?.copyWith(color: context.themeColors.textError),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -537,11 +487,9 @@ class SendScreenState extends ConsumerState<SendScreen> {
     );
   }
 
-  Widget _buildSendContent(
-    BuildContext context,
-    WidgetRef ref,
-    bool includeExistentialDeposit,
-  ) {
+  Widget _buildSendContent(BuildContext context, WidgetRef ref, bool includeExistentialDeposit) {
+    final formattingService = ref.read(numberFormattingServiceProvider);
+
     return Column(
       children: [
         Column(
@@ -560,10 +508,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
                   child: _buildIconButton('assets/paste_icon_1.svg'),
                 ),
                 const SizedBox(width: 11.5),
-                GestureDetector(
-                  onTap: _scanQRCode,
-                  child: _buildIconButton('assets/scan_1.svg'),
-                ),
+                GestureDetector(onTap: _scanQRCode, child: _buildIconButton('assets/scan_1.svg')),
                 const SizedBox(width: 11.5),
                 GestureDetector(
                   onTap: () {
@@ -587,14 +532,8 @@ class SendScreenState extends ConsumerState<SendScreen> {
                   Container(
                     padding: const EdgeInsets.only(left: 5.0),
                     height: context.isTablet ? 42 : 38,
-                    decoration: BoxDecoration(
-                      color: context.themeColors.surface,
-                    ),
-                    child: Row(
-                      children: [
-                        Text('To:', style: context.themeText.smallParagraph),
-                      ],
-                    ),
+                    decoration: BoxDecoration(color: context.themeColors.surface),
+                    child: Row(children: [Text('To:', style: context.themeText.smallParagraph)]),
                   ),
                   Expanded(
                     child: Column(
@@ -607,19 +546,14 @@ class SendScreenState extends ConsumerState<SendScreen> {
                           hintText:
                               '${AppConstants.tokenSymbol} '
                               'address',
-                          hintStyle: context.themeText.detail?.copyWith(
-                            color: context.themeColors.textMuted,
-                          ),
+                          hintStyle: context.themeText.detail?.copyWith(color: context.themeColors.textMuted),
                           onChanged: (value) {
                             if (_debounce?.isActive ?? false) {
                               _debounce?.cancel();
                             }
-                            _debounce = Timer(
-                              const Duration(milliseconds: 300),
-                              () {
-                                _lookupIdentity();
-                              },
-                            );
+                            _debounce = Timer(const Duration(milliseconds: 300), () {
+                              _lookupIdentity();
+                            });
                           },
                         ),
                         if (_humanReadableCheckphrase.isNotEmpty)
@@ -643,9 +577,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
                                   Flexible(
                                     child: Text(
                                       _humanReadableCheckphrase,
-                                      style: context.themeText.detail?.copyWith(
-                                        color: context.themeColors.checksum,
-                                      ),
+                                      style: context.themeText.detail?.copyWith(color: context.themeColors.checksum),
                                     ),
                                   ),
                                   const SizedBox(width: 6),
@@ -653,11 +585,8 @@ class SendScreenState extends ConsumerState<SendScreen> {
                                     padding: const EdgeInsets.only(top: 1.0),
                                     child: Icon(
                                       Icons.copy,
-                                      size: context
-                                          .themeSize
-                                          .settingMenuShareIconSize,
-                                      color: context.themeColors.checksum
-                                          .useOpacity(0.7),
+                                      size: context.themeSize.settingMenuShareIconSize,
+                                      color: context.themeColors.checksum.useOpacity(0.7),
                                     ),
                                   ),
                                 ],
@@ -689,43 +618,30 @@ class SendScreenState extends ConsumerState<SendScreen> {
                         border: InputBorder.none,
                         enabledBorder: _hasAmountError
                             ? OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: context.themeColors.error,
-                                  width: 1,
-                                ),
+                                borderSide: BorderSide(color: context.themeColors.error, width: 1),
                                 borderRadius: BorderRadius.circular(5),
                               )
                             : InputBorder.none,
                         focusedBorder: _hasAmountError
                             ? OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: context.themeColors.error,
-                                  width: 1.5,
-                                ),
+                                borderSide: BorderSide(color: context.themeColors.error, width: 1.5),
                                 borderRadius: BorderRadius.circular(5),
                               )
                             : InputBorder.none,
                         hintText: '0',
-                        hintStyle: context.themeText.extraLargeTitle?.copyWith(
-                          color: context.themeColors.textMuted,
-                        ),
+                        hintStyle: context.themeText.extraLargeTitle?.copyWith(color: context.themeColors.textMuted),
                         isDense: true,
                         contentPadding: EdgeInsets.zero,
                         filled: true,
                         fillColor: Colors.transparent,
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       inputFormatters: [DecimalInputFilter()],
                       onChanged: _validateAmount,
                     ),
                   ),
                 ),
-                Text(
-                  ' ${AppConstants.tokenSymbol}',
-                  style: context.themeText.smallTitle,
-                ),
+                Text(' ${AppConstants.tokenSymbol}', style: context.themeText.smallTitle),
               ],
             ),
           ),
@@ -736,18 +652,14 @@ class SendScreenState extends ConsumerState<SendScreen> {
             Text(
               'Available: '
               // ignore: lines_longer_than_80_chars
-              '${_formattingService.formatBalance(_maxBalance)}',
-              style: context.themeText.smallParagraph?.copyWith(
-                color: context.themeColors.checksum,
-              ),
+              '${formattingService.formatBalance(_maxBalance)}',
+              style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.checksum),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: ShapeDecoration(
                 color: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
               ),
               child: GestureDetector(
                 onTap: _setMaxAmount,
@@ -782,10 +694,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
                       }
                     : null,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10.0,
-                    vertical: 8.0,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -794,18 +703,11 @@ class SendScreenState extends ConsumerState<SendScreen> {
                         spacing: 10,
                         children: [
                           SvgPicture.asset('assets/set_reversible.svg'),
-                          Text(
-                            _formatReversibleTime(),
-                            style: context.themeText.smallParagraph,
-                          ),
+                          Text(_formatReversibleTime(), style: context.themeText.smallParagraph),
                         ],
                       ),
                       if (_sendMode.isReversible)
-                        Icon(
-                          Icons.edit,
-                          color: const Color(0x75000000),
-                          size: context.isTablet ? 22 : 14,
-                        ),
+                        Icon(Icons.edit, color: const Color(0x75000000), size: context.isTablet ? 22 : 14),
                     ],
                   ),
                 ),
@@ -832,10 +734,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
                   ),
                 ),
                 Text(
-                  _formattingService.formatBalance(
-                    _networkFee,
-                    addSymbol: true,
-                  ),
+                  formattingService.formatBalance(_networkFee, addSymbol: true),
                   style: context.themeText.detail?.copyWith(
                     color: context.themeColors.textMuted,
                     fontWeight: FontWeight.w600,
@@ -847,10 +746,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
                     child: SizedBox(
                       width: 12,
                       height: 12,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: context.themeColors.circularLoader,
-                      ),
+                      child: CircularProgressIndicator(strokeWidth: 2, color: context.themeColors.circularLoader),
                     ),
                   ),
               ],
@@ -892,11 +788,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
         color: Colors.white.useOpacity(0.15),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       ),
-      child: Icon(
-        Icons.history,
-        color: Colors.white,
-        size: context.themeSize.mainMenuIconSize,
-      ),
+      child: Icon(Icons.history, color: Colors.white, size: context.themeSize.mainMenuIconSize),
     );
   }
 }

@@ -61,6 +61,7 @@ dev_dependencies:
   flutter_lints:
   riverpod_generator: ^2.6.5
   build_runner: ^2.5.4
+  mockito: ^5.4.6
   custom_lint: ^0.7.6
   riverpod_lint: ^2.6.5
 

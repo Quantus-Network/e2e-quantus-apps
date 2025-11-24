@@ -19,6 +19,22 @@ final substrateServiceProvider = Provider<SubstrateService>((ref) {
   return SubstrateService();
 });
 
+final numberFormattingServiceProvider = Provider<NumberFormattingService>((ref) {
+  return NumberFormattingService();
+});
+
+final humanReadableChecksumServiceProvider = Provider<HumanReadableChecksumService>((ref) {
+  return HumanReadableChecksumService();
+});
+
+final reversibleTransfersServiceProvider = Provider<ReversibleTransfersService>((ref) {
+  return ReversibleTransfersService();
+});
+
+final balancesServiceProvider = Provider<BalancesService>((ref) {
+  return BalancesService();
+});
+
 final balanceProviderFamily = FutureProvider.family<BigInt, String>((
   ref,
   accountId,
