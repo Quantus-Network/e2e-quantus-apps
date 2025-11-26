@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/providers/filtered_all_transactions_pro
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_reconciliation_service.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 
 /// Service that handles global history polling - refreshes transaction history
 /// every minute to keep the UI up to date with the latest blockchain state.
@@ -87,16 +88,17 @@ class GlobalHistoryPollingService {
 
       // Silently refresh without showing loading indicators for global
       // and active filtered
-      await _ref.read(paginationControllerProvider.notifier).silentRefresh();
-      final active = _ref.read(activeAccountProvider).value;
-      if (active != null) {
-        await _ref
-            .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get([active.accountId])).notifier)
-            .silentRefresh();
+      _ref.read(paginationControllerProvider.notifier).silentRefresh();
+      final accountIds = _ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
+      for (var id in accountIds) {
+        _ref.read(filteredPaginationControllerProviderFamily(AccountIdListCache.get([id])).notifier).silentRefresh();
       }
+      _ref
+          .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get(accountIds)).notifier)
+          .silentRefresh();
 
       // Reconcile pending transactions with confirmed transactions
-      await _ref.read(pendingTransactionReconciliationServiceProvider).reconcilePendingTransactions();
+      _ref.read(pendingTransactionReconciliationServiceProvider).reconcilePendingTransactions();
 
       print('Global history poll completed');
     } catch (e) {
@@ -151,8 +153,16 @@ final globalHistoryPollingServiceProvider = Provider<GlobalHistoryPollingService
           service.stopPolling();
         }
       },
-      loading: () => service.stopPolling(),
-      error: (_, _) => service.stopPolling(),
+      loading: () {},
+      error: (e, st) {
+        print('Error in account stats polling service: stopping polling');
+        TelemetryService().sendError(
+          'GlobalHistoryPollingService Error in accountsProvider: stopping polling',
+          error: e,
+          stackTrace: st,
+        );
+        service.stopPolling();
+      },
     );
   });
 
