@@ -172,6 +172,13 @@ class ReversibleTransferMonitoringService {
               .updateReversibleTransferToExecuted(transfer.extrinsicHash!, status);
         }
 
+        // Also update filtered controllers for all accounts so
+        // tx screen views for all accounts reflect the change immediately
+        final accountIds = _ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
+        _ref
+            .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get(accountIds)).notifier)
+            .updateReversibleTransferToExecuted(transfer.extrinsicHash!, status);
+
         // Refresh balance since transfer execution changes balance
         _ref.invalidate(balanceProviderFamily);
 

@@ -177,12 +177,6 @@ class TransactionSubmissionService {
               TransactionState.failed,
               error: 'Failed to submit after $maxRetries attempts: $e',
             );
-
-        // Remove after delay
-        Timer(const Duration(seconds: 3), () {
-          _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
-          print('Removed failed transaction from pending: ${pendingTx.id}');
-        });
       }
     }
   }
@@ -202,8 +196,26 @@ class TransactionSubmissionService {
     // Cancel any existing timer for this transaction
     _stopSearchingForBroadcastTransaction(pendingTx.id);
 
+    const timeoutDuration = Duration(minutes: 5);
+    final startTime = DateTime.now();
+
     // Start periodic search
     final timer = Timer.periodic(_searchInterval, (_) {
+      if (DateTime.now().difference(startTime) > timeoutDuration) {
+        print('Search timed out for transaction: ${pendingTx.id}');
+
+        _stopSearchingForBroadcastTransaction(pendingTx.id);
+
+        _ref
+            .read(pendingTransactionsProvider.notifier)
+            .updateState(
+              pendingTx.id,
+              TransactionState.failed,
+              error:
+                  "Transaction successfully submitted but couldn't find the transaction in block history. It could be the transaction is not correctly formed like below existential deposit or receiving account is not exist or other unknown error.",
+            );
+      }
+
       _searchForBroadcastTransaction(pendingTx);
     });
 
@@ -299,6 +311,12 @@ class TransactionSubmissionService {
             .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get([accountId])).notifier)
             .silentRefresh();
       }
+
+      // Trigger silent refresh on all accounts filtered pagination so the tx history has the data without manual refresh
+      final accountIds = _ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
+      _ref
+          .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get(accountIds)).notifier)
+          .silentRefresh();
 
       print('Silent history refresh triggered successfully');
     } catch (e, stackTrace) {
