@@ -4,6 +4,7 @@ import 'package:convert/convert.dart' as convert_hex;
 import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
+import 'package:quantus_sdk/src/services/network/jwt_authenticated_http_client.dart';
 
 class TokenInfo {
   final String accessToken;
@@ -129,6 +130,15 @@ class TaskmasterService {
   bool get isLoggedIn => _tokenInfo != null && !_tokenInfo!.isExpired;
 
   TaskMasterAuthClient get _client => TaskMasterAuthClient(AppConstants.taskMasterEndpoint);
+  JWTAuthenticatedHttpClient get _authenticatedHttpClient => JWTAuthenticatedHttpClient(() async {
+    final success = await ensureIsLoggedIn();
+
+    if (!success || accessToken == null) {
+      throw Exception('Unable to authenticate request. Login failed.');
+    }
+
+    return accessToken!;
+  });
 
   void _clearToken() {
     _tokenInfo = null;
@@ -205,16 +215,45 @@ class TaskmasterService {
     print('submitReferral $referralCode');
     final Map<String, dynamic> requestBody = {'referral_code': referralCode.toLowerCase()};
 
-    await ensureIsLoggedIn();
-
-    final http.Response response = await http.post(
+    final http.Response response = await _authenticatedHttpClient.post(
       _referralEndpoint,
-      headers: {'Content-Type': 'application/json', ...getAuthHeaders()},
       body: jsonEncode(requestBody),
     );
 
     if (response.statusCode != 200) {
       throw Exception('Referral http request failed with status: ${response.statusCode}. Body: ${response.body}');
+    }
+  }
+
+  Future<void> associateEthAddress(String ethAddress) async {
+    print('associateEthAddress $ethAddress');
+    final ethAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/associations/eth');
+
+    final Map<String, dynamic> requestBody = {'eth_address': ethAddress};
+
+    final http.Response response = await _authenticatedHttpClient.post(
+      ethAssociationsEndpoint,
+      body: jsonEncode(requestBody),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Associate ETH http request failed with status: ${response.statusCode}. Body: ${response.body}');
+    }
+  }
+
+  Future<void> updateAssociatedEthAddress(String ethAddress) async {
+    print('updateAssociatedEthAddress $ethAddress');
+    final ethAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/associations/eth');
+
+    final Map<String, dynamic> requestBody = {'eth_address': ethAddress};
+
+    final http.Response response = await _authenticatedHttpClient.put(
+      ethAssociationsEndpoint,
+      body: jsonEncode(requestBody),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Associate ETH http request failed with status: ${response.statusCode}. Body: ${response.body}');
     }
   }
 
@@ -227,11 +266,8 @@ class TaskmasterService {
     print('opt in reward program for ${activeAccount.name} ${activeAccount.accountId}');
     final Map<String, dynamic> requestBody = {'new_status': true};
 
-    await ensureIsLoggedIn();
-
-    final http.Response response = await http.put(
+    final http.Response response = await _authenticatedHttpClient.put(
       rewardProgramEndpoint,
-      headers: {'Content-Type': 'application/json', ...getAuthHeaders()},
       body: jsonEncode(requestBody),
     );
 
@@ -285,6 +321,29 @@ class TaskmasterService {
       print(stackTrace);
 
       return false;
+    }
+  }
+
+  Future<AccountAssociations> getAccountAssociations() async {
+    final activeAccount = await getMainAccount();
+    print('getAccountAssociations ${activeAccount.accountId}');
+    final accountAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/associations');
+
+    try {
+      final http.Response response = await _authenticatedHttpClient.get(accountAssociationsEndpoint);
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Account Associations http request failed with status: ${response.statusCode}. Body: ${response.body}',
+        );
+      }
+
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return AccountAssociations.fromJson(json);
+    } catch (e, stackTrace) {
+      print('Error fetching miner stats: $e');
+      print(stackTrace);
+      rethrow;
     }
   }
 
@@ -363,13 +422,8 @@ class TaskmasterService {
   Future<OptedInPosition> getOptInPosition() async {
     final Uri uri = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/my-position');
 
-    await ensureIsLoggedIn();
-
     try {
-      final http.Response response = await http.get(
-        uri,
-        headers: {'Content-Type': 'application/json', ...getAuthHeaders()},
-      );
+      final http.Response response = await _authenticatedHttpClient.get(uri);
 
       if (response.statusCode != 200) {
         throw Exception('HTTP request failed with status: ${response.statusCode}. Body: ${response.body}');
