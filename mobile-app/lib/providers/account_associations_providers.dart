@@ -14,6 +14,9 @@ class AccountAssociationsNotifier extends StateNotifier<AsyncValue<AccountAssoci
 
       state = AsyncValue.data(associations);
     } catch (e, st) {
+      print('Error fetching account associations: $e');
+      print('Stack trace: $st');
+
       state = AsyncValue.error(e, st);
     }
   }

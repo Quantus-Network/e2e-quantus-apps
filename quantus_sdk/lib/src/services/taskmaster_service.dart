@@ -4,7 +4,6 @@ import 'package:convert/convert.dart' as convert_hex;
 import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
-import 'package:quantus_sdk/src/services/network/jwt_authenticated_http_client.dart';
 
 class TokenInfo {
   final String accessToken;
@@ -27,6 +26,26 @@ class TokenInfo {
     expiresAt: DateTime.parse(json['expiresAt']),
     issuedAt: DateTime.parse(json['issuedAt']),
   );
+}
+
+class JWTAuthenticatedHttpClient extends http.BaseClient {
+  final TaskmasterService _service;
+  final http.Client _inner = http.Client();
+
+  JWTAuthenticatedHttpClient(this._service);
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    await _service.ensureIsLoggedIn();
+    final token = _service.accessToken;
+
+    if (token == null) throw Exception('Missing token');
+
+    request.headers['Authorization'] = 'Bearer $token';
+    request.headers['Content-Type'] = 'application/json';
+
+    return _inner.send(request);
+  }
 }
 
 class TaskMasterAuthClient {
@@ -108,6 +127,8 @@ class TaskMasterAuthClient {
 // Task master service singleton
 class TaskmasterService {
   final _referralEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/referrals');
+  final _ethAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/associations/eth');
+
   final String _minerStatsQuery = r'''
     query MinerStats($ids: [String!]!) {
       minerStats(where: {id_in: $ids}) {
@@ -130,18 +151,16 @@ class TaskmasterService {
   bool get isLoggedIn => _tokenInfo != null && !_tokenInfo!.isExpired;
 
   TaskMasterAuthClient get _client => TaskMasterAuthClient(AppConstants.taskMasterEndpoint);
-  JWTAuthenticatedHttpClient get _authenticatedHttpClient => JWTAuthenticatedHttpClient(() async {
-    final success = await ensureIsLoggedIn();
-
-    if (!success || accessToken == null) {
-      throw Exception('Unable to authenticate request. Login failed.');
-    }
-
-    return accessToken!;
-  });
+  JWTAuthenticatedHttpClient get _authenticatedHttpClient => JWTAuthenticatedHttpClient(this);
 
   void _clearToken() {
     _tokenInfo = null;
+  }
+
+  String _getEthAssociationsBody(String ethAddress) {
+    final Map<String, dynamic> requestBody = {'eth_address': ethAddress};
+
+    return jsonEncode(requestBody);
   }
 
   Future<String> getOldMiningAccountId() async {
@@ -227,13 +246,10 @@ class TaskmasterService {
 
   Future<void> associateEthAddress(String ethAddress) async {
     print('associateEthAddress $ethAddress');
-    final ethAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/associations/eth');
-
-    final Map<String, dynamic> requestBody = {'eth_address': ethAddress};
 
     final http.Response response = await _authenticatedHttpClient.post(
-      ethAssociationsEndpoint,
-      body: jsonEncode(requestBody),
+      _ethAssociationsEndpoint,
+      body: _getEthAssociationsBody(ethAddress),
     );
 
     if (response.statusCode != 200) {
@@ -243,13 +259,10 @@ class TaskmasterService {
 
   Future<void> updateAssociatedEthAddress(String ethAddress) async {
     print('updateAssociatedEthAddress $ethAddress');
-    final ethAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/associations/eth');
-
-    final Map<String, dynamic> requestBody = {'eth_address': ethAddress};
 
     final http.Response response = await _authenticatedHttpClient.put(
-      ethAssociationsEndpoint,
-      body: jsonEncode(requestBody),
+      _ethAssociationsEndpoint,
+      body: _getEthAssociationsBody(ethAddress),
     );
 
     if (response.statusCode != 200) {
