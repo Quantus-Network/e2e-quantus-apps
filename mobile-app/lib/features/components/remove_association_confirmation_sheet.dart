@@ -28,10 +28,7 @@ class _RemoveAssociationConfirmationSheetState extends State<RemoveAssociationCo
       await widget.onRemove();
 
       if (mounted) {
-        context.showSuccessSnackbar(
-          title: 'Association Removed',
-          message: 'Your association is successfully removed',
-        );
+        context.showSuccessSnackbar(title: 'Association Removed', message: 'Your association is successfully removed');
       }
 
       _closeSheet();
