@@ -2,9 +2,11 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
+import 'package:resonance_network_wallet/features/components/remove_association_confirmation_sheet.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
@@ -12,6 +14,7 @@ import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_associations_providers.dart';
+import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
 
@@ -72,6 +75,16 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
     }
   }
 
+  Future<void> _removeEthAddress() async {
+    await _taskmasterService.dissociateEthAddress();
+    ref.invalidate(accountAssociationsProvider);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     final associationsAsync = ref.watch(accountAssociationsProvider);
@@ -110,10 +123,11 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
 
   Widget _buildEthAssociationSection(AsyncValue<AccountAssociations> associationsAsync) {
     final associatedEthAddress = associationsAsync.value?.ethAddress;
+    final hasEthAddress = associatedEthAddress != null;
     final isLoading = associationsAsync.isLoading;
 
     String getDisplayText() {
-      if (associatedEthAddress == null) return "You haven't linked your ETH";
+      if (!hasEthAddress) return "You haven't linked your ETH";
 
       return context.isTablet
           ? associatedEthAddress
@@ -133,11 +147,17 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
       },
     );
 
-    final displayWidget = SizedBox(
-      width: context.isTablet ? 550 : 251,
-      child: isLoading
-          ? const Skeleton(width: 40, height: 16)
-          : Text(getDisplayText(), style: context.themeText.smallParagraph),
+    final displayWidget = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: context.isTablet ? 550 : 251,
+          child: isLoading
+              ? const Skeleton(width: 40, height: 16)
+              : Text(getDisplayText(), style: context.themeText.smallParagraph),
+        ),
+        if (hasEthAddress) SvgPicture.asset('assets/copy_icon.svg', width: context.isTablet ? 28 : 20),
+      ],
     );
 
     return Column(
@@ -145,10 +165,17 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
       children: [
         const Text('ETH Address'),
         const SizedBox(height: 4),
-        _buildCard(
-          child: Padding(
-            padding: const EdgeInsets.all(10.0),
-            child: _isEditingEthAddress ? inputWidget : displayWidget,
+        InkWell(
+          onTap: () {
+            if (hasEthAddress) {
+              ClipboardExtensions.copyTextWithSnackbar(context, associatedEthAddress);
+            }
+          },
+          child: _buildCard(
+            child: Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: _isEditingEthAddress ? inputWidget : displayWidget,
+            ),
           ),
         ),
         const SizedBox(height: 12.0),
@@ -195,6 +222,20 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
                       _isEditingEthAddress = false;
                     });
                   },
+                ),
+              ),
+
+            if (!_isEditingEthAddress && hasEthAddress)
+              SizedBox(
+                width: 100.0,
+                child: Button(
+                  variant: ButtonVariant.danger,
+                  label: 'Remove',
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  onPressed: () {
+                    showRemoveAssociationConfirmationSheet(context, _removeEthAddress);
+                  },
+                  isDisabled: isLoading,
                 ),
               ),
           ],

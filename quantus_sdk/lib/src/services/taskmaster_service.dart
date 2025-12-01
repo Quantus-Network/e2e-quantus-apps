@@ -270,6 +270,16 @@ class TaskmasterService {
     }
   }
 
+  Future<void> dissociateEthAddress() async {
+    print('dissociateEthAddress');
+
+    final http.Response response = await _authenticatedHttpClient.delete(_ethAssociationsEndpoint);
+
+    if (response.statusCode != 204) {
+      throw Exception('Dissociate ETH http request failed with status: ${response.statusCode}. Body: ${response.body}');
+    }
+  }
+
   Future<void> optInRewardProgram() async {
     final activeAccount = await getMainAccount();
     final rewardProgramEndpoint = Uri.parse(
