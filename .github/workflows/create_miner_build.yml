@@ -169,6 +169,7 @@ jobs:
             libgtk-3-dev \
             liblzma-dev \
             libsecret-1-dev \
+            libjsoncpp-dev \
             libstdc++-14-dev
 
       - name: Enable Linux desktop
