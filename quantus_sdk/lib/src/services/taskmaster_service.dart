@@ -280,6 +280,30 @@ class TaskmasterService {
     }
   }
 
+  Future<String> generateAssociateXLink() async {
+    print('generateAssociateXLink');
+    final xAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/auth/x/link');
+
+    final http.Response response = await _authenticatedHttpClient.get(xAssociationsEndpoint);
+
+    if (response.statusCode != 200) {
+      throw Exception('Generate X link http request failed with status: ${response.statusCode}. Body: ${response.body}');
+    }
+
+    return response.body;
+  }
+
+  Future<void> dissociateXAccount() async {
+    print('dissociateXAccount');
+    final xAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/associations/x');
+
+    final http.Response response = await _authenticatedHttpClient.delete(xAssociationsEndpoint);
+
+    if (response.statusCode != 204) {
+      throw Exception('Dissociate X http request failed with status: ${response.statusCode}. Body: ${response.body}');
+    }
+  }
+
   Future<void> optInRewardProgram() async {
     final activeAccount = await getMainAccount();
     final rewardProgramEndpoint = Uri.parse(
