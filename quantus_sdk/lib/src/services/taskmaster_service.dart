@@ -287,7 +287,9 @@ class TaskmasterService {
     final http.Response response = await _authenticatedHttpClient.get(xAssociationsEndpoint);
 
     if (response.statusCode != 200) {
-      throw Exception('Generate X link http request failed with status: ${response.statusCode}. Body: ${response.body}');
+      throw Exception(
+        'Generate X link http request failed with status: ${response.statusCode}. Body: ${response.body}',
+      );
     }
 
     return response.body;

@@ -289,7 +289,11 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
         InkWell(
           onTap: () {
             if (hasXUsername) {
-              ClipboardExtensions.copyTextWithSnackbar(context, associatedXUsername, message: 'Username copied to clipboard');
+              ClipboardExtensions.copyTextWithSnackbar(
+                context,
+                associatedXUsername,
+                message: 'Username copied to clipboard',
+              );
             }
           },
           child: _buildCard(
