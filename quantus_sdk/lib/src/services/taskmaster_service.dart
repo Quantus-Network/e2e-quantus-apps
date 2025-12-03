@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:convert/convert.dart' as convert_hex;
 import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/models/oauth_link.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
 class TokenInfo {
@@ -280,7 +281,7 @@ class TaskmasterService {
     }
   }
 
-  Future<String> generateAssociateXLink() async {
+  Future<OAuthLink> generateAssociateXLink() async {
     print('generateAssociateXLink');
     final xAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/auth/x/link');
 
@@ -292,7 +293,8 @@ class TaskmasterService {
       );
     }
 
-    return response.body;
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    return OAuthLink.fromJson(json);
   }
 
   Future<void> dissociateXAccount() async {

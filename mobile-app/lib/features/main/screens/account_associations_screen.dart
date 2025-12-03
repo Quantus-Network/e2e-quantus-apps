@@ -89,8 +89,8 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
         _isStartingOauth = true;
       });
 
-      final oauthRequestUrl = await _taskmasterService.generateAssociateXLink();
-      final Uri url = Uri.parse(oauthRequestUrl);
+      final oauthRequest = await _taskmasterService.generateAssociateXLink();
+      final Uri url = Uri.parse(oauthRequest.url);
 
       launchUrl(url, mode: LaunchMode.externalApplication);
     } catch (e) {
