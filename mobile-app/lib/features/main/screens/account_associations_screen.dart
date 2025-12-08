@@ -17,6 +17,7 @@ import 'package:resonance_network_wallet/providers/account_associations_provider
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AccountAssociationsScreen extends ConsumerStatefulWidget {
   const AccountAssociationsScreen({super.key});
@@ -32,6 +33,8 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
   String? _ethAddressError;
   bool _isEditingEthAddress = false;
   bool _isSubmittingEthAddress = false;
+
+  bool _isStartingOauth = false;
 
   void _saveEthAddress() async {
     final associations = ref.watch(accountAssociationsProvider).value;
@@ -80,9 +83,32 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
     ref.invalidate(accountAssociationsProvider);
   }
 
-  @override
-  void initState() {
-    super.initState();
+  void _handleOauthX() async {
+    try {
+      setState(() {
+        _isStartingOauth = true;
+      });
+
+      final oauthRequest = await _taskmasterService.generateAssociateXLink();
+      final Uri url = Uri.parse(oauthRequest.url);
+
+      launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      print('Failed associating X account: $e');
+
+      if (mounted) {
+        context.showErrorSnackbar(title: 'Failed associating', message: e.toString());
+      }
+    } finally {
+      setState(() {
+        _isStartingOauth = false;
+      });
+    }
+  }
+
+  Future<void> _removeXAccount() async {
+    await _taskmasterService.dissociateXAccount();
+    ref.invalidate(accountAssociationsProvider);
   }
 
   @override
@@ -97,9 +123,9 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 20),
           _buildEthAssociationSection(associationsAsync),
-          const SizedBox(height: 20),
+          const SizedBox(height: 32),
+          _buildXAssociationSection(associationsAsync),
         ],
       ),
     );
@@ -234,6 +260,84 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   onPressed: () {
                     showRemoveAssociationConfirmationSheet(context, _removeEthAddress);
+                  },
+                  isDisabled: isLoading,
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildXAssociationSection(AsyncValue<AccountAssociations> associationsAsync) {
+    final associatedXUsername = associationsAsync.value?.xUsername;
+    final hasXUsername = associatedXUsername != null;
+    final isLoading = associationsAsync.isLoading;
+
+    String getDisplayText() {
+      if (associatedXUsername == null) return "You haven't linked your X";
+
+      return associatedXUsername;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('X Account'),
+        const SizedBox(height: 4),
+        InkWell(
+          onTap: () {
+            if (hasXUsername) {
+              ClipboardExtensions.copyTextWithSnackbar(
+                context,
+                associatedXUsername,
+                message: 'Username copied to clipboard',
+              );
+            }
+          },
+          child: _buildCard(
+            child: Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: context.isTablet ? 550 : 251,
+                    child: isLoading
+                        ? const Skeleton(width: 40, height: 16)
+                        : Text(getDisplayText(), style: context.themeText.smallParagraph),
+                  ),
+                  if (hasXUsername) SvgPicture.asset('assets/copy_icon.svg', width: context.isTablet ? 28 : 20),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12.0),
+        Row(
+          spacing: 12.0,
+          children: [
+            SizedBox(
+              width: 100.0,
+              child: Button(
+                variant: ButtonVariant.neutral,
+                label: 'Update',
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                onPressed: _handleOauthX,
+                isLoading: _isStartingOauth,
+              ),
+            ),
+
+            if (hasXUsername)
+              SizedBox(
+                width: 100.0,
+                child: Button(
+                  variant: ButtonVariant.danger,
+                  label: 'Remove',
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  onPressed: () {
+                    showRemoveAssociationConfirmationSheet(context, _removeXAccount);
                   },
                   isDisabled: isLoading,
                 ),

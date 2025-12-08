@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:convert/convert.dart' as convert_hex;
 import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/models/oauth_link.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
 class TokenInfo {
@@ -277,6 +278,33 @@ class TaskmasterService {
 
     if (response.statusCode != 204) {
       throw Exception('Dissociate ETH http request failed with status: ${response.statusCode}. Body: ${response.body}');
+    }
+  }
+
+  Future<OAuthLink> generateAssociateXLink() async {
+    print('generateAssociateXLink');
+    final xAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/auth/x/link');
+
+    final http.Response response = await _authenticatedHttpClient.get(xAssociationsEndpoint);
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Generate X link http request failed with status: ${response.statusCode}. Body: ${response.body}',
+      );
+    }
+
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    return OAuthLink.fromJson(json);
+  }
+
+  Future<void> dissociateXAccount() async {
+    print('dissociateXAccount');
+    final xAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/associations/x');
+
+    final http.Response response = await _authenticatedHttpClient.delete(xAssociationsEndpoint);
+
+    if (response.statusCode != 204) {
+      throw Exception('Dissociate X http request failed with status: ${response.statusCode}. Body: ${response.body}');
     }
   }
 
