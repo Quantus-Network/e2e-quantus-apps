@@ -26,7 +26,7 @@ class AccountAssociationsScreen extends ConsumerStatefulWidget {
   ConsumerState<AccountAssociationsScreen> createState() => _AccountAssociationsScreenState();
 }
 
-class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsScreen> {
+class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsScreen> with WidgetsBindingObserver {
   final TaskmasterService _taskmasterService = TaskmasterService();
 
   final _ethAddress = TextEditingController();
@@ -92,7 +92,7 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
       final oauthRequest = await _taskmasterService.generateAssociateXLink();
       final Uri url = Uri.parse(oauthRequest.url);
 
-      launchUrl(url, mode: LaunchMode.externalApplication);
+      launchUrl(url, mode: LaunchMode.inAppBrowserView);
     } catch (e) {
       print('Failed associating X account: $e');
 
@@ -109,6 +109,33 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
   Future<void> _removeXAccount() async {
     await _taskmasterService.dissociateXAccount();
     ref.invalidate(accountAssociationsProvider);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.detached:
+        break;
+
+      case AppLifecycleState.resumed:
+        ref.invalidate(accountAssociationsProvider);
+        break;
+    }
   }
 
   @override
