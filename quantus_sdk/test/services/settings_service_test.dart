@@ -9,9 +9,9 @@ void main() {
     late SettingsService settingsService;
 
     // Accounts for testing
-    const account1 = Account(index: 0, name: 'Account 1', accountId: 'id_1');
-    const account2 = Account(index: 1, name: 'Account 2', accountId: 'id_2');
-    const account3 = Account(index: 2, name: 'Account 3', accountId: 'id_3');
+    const account1 = Account(walletIndex: 0, index: 0, name: 'Account 1', accountId: 'id_1');
+    const account2 = Account(walletIndex: 0, index: 1, name: 'Account 2', accountId: 'id_2');
+    const account3 = Account(walletIndex: 0, index: 2, name: 'Account 3', accountId: 'id_3');
 
     setUp(() async {
       // Reset mock storage BEFORE any SharedPreferences.getInstance() calls

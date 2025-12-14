@@ -18,14 +18,15 @@ class AccountsService {
   final SettingsService _settingsService = SettingsService();
   void Function()? onAccountsChanged;
 
-  Future<Account> createNewAccount() async {
-    final mnemonic = await _settingsService.getMnemonic();
+  Future<Account> createNewAccount({required int walletIndex}) async {
+    final mnemonic = await _settingsService.getMnemonic(walletIndex);
     if (mnemonic == null) {
       throw Exception('Mnemonic not found. Cannot create new account.');
     }
     final nextIndex = await _settingsService.getNextFreeAccountIndex();
     final keypair = HdWalletService().keyPairAtIndex(mnemonic, nextIndex);
     final newAccount = Account(
+      walletIndex: walletIndex,
       index: nextIndex,
       name: 'Account ${nextIndex + 1}', // Default name
       accountId: keypair.ss58Address,

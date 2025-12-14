@@ -165,7 +165,7 @@ class TaskmasterService {
   }
 
   Future<String> getOldMiningAccountId() async {
-    final mnemonic = await _settingsService.getMnemonic();
+    final mnemonic = await _settingsService.getMnemonic(0);
     if (mnemonic == null) {
       throw Exception('Mnemonic not found.');
     }
@@ -174,7 +174,7 @@ class TaskmasterService {
   }
 
   Future<TokenInfo> loginWithAccount1() async {
-    final mnemonic = await _settingsService.getMnemonic();
+    final mnemonic = await _settingsService.getMnemonic(0);
     if (mnemonic == null) {
       throw Exception('Mnemonic not found.');
     }

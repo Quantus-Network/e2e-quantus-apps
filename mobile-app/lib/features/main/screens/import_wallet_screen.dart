@@ -59,7 +59,7 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
     }
   }
 
-  Future<void> _importWallet() async {
+  Future<void> _importWallet({required int walletIndex }) async {
     setState(() {
       _isLoading = true;
       _errorMessage = '';
@@ -81,8 +81,8 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
       }
 
       final key = HdWalletService().keyPairAtIndex(mnemonic, 0);
-      await _settingsService.setMnemonic(mnemonic);
-      await _accountsService.addAccount(Account(index: 0, name: 'Account 1', accountId: key.ss58Address));
+      await _settingsService.setMnemonic(mnemonic, walletIndex);
+      await _accountsService.addAccount(Account(walletIndex: walletIndex, index: 0, name: 'Account 1', accountId: key.ss58Address));
 
       await _discoverAccounts(mnemonic);
       // We set check status to true so we will not prompt user to input refferal code.
@@ -190,7 +190,7 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
             Button(
               variant: ButtonVariant.primary,
               label: 'Import Wallet',
-              onPressed: _importWallet,
+              onPressed: () => _importWallet(walletIndex: 0),
               isLoading: _isLoading,
             ),
           SizedBox(height: context.themeSize.bottomButtonSpacing),

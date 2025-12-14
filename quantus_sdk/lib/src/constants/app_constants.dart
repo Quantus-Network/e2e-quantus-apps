@@ -40,7 +40,6 @@ class AppConstants {
 
   // Shared Preferences keys
   static const String hasWalletKey = 'has_wallet';
-  static const String mnemonicKey = 'mnemonic';
   static const String accountIdKey = 'account_id';
 
   // Reversible time settings

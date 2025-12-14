@@ -21,7 +21,9 @@ class AccountDiscoveryService {
 
     // Add raw account
     final rawKeyPair = _substrateService.nonHDdilithiumKeypairFromMnemonic(mnemonic);
+    final baseWalletIndex = 0;
     final rawAccount = Account(
+      walletIndex: baseWalletIndex,
       index: -1, //  indicator for a raw account
       name: 'Primary Account',
       accountId: rawKeyPair.ss58Address,
@@ -31,7 +33,7 @@ class AccountDiscoveryService {
     // Add HD accounts
     for (var i = 0; i < count; i++) {
       final keyPair = _hdWalletService.keyPairAtIndex(mnemonic, i);
-      final account = Account(index: i, name: 'Account ${i + 1}', accountId: keyPair.ss58Address);
+      final account = Account(walletIndex: baseWalletIndex, index: i, name: 'Account ${i + 1}', accountId: keyPair.ss58Address);
       allPossibleAccounts.add(account);
     }
 

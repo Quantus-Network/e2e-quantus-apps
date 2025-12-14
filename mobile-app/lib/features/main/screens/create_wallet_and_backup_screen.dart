@@ -100,14 +100,14 @@ class CreateWalletAndBackupScreenState extends ConsumerState<CreateWalletAndBack
     setState(() {
       _isSubmitting = true;
     });
-
+    final walletIndex = 0;
     try {
-      await _settingsService.setMnemonic(_mnemonic);
+      await _settingsService.setMnemonic(_mnemonic, walletIndex);
 
       final asyncAccounts = ref.read(accountsProvider); // Gets notifier state
       final accounts = asyncAccounts.value ?? <Account>[]; // Extract data or empty list
       if (accounts.isEmpty) {
-        await _accountsService.addAccount(Account(index: 0, name: _accountName.value.text, accountId: _address));
+        await _accountsService.addAccount(Account(walletIndex: walletIndex, index: 0, name: _accountName.value.text, accountId: _address));
         await _referralService.submitAddressToBackend();
       }
       ref.invalidate(accountsProvider);
