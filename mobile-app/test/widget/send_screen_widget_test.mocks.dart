@@ -149,12 +149,12 @@ class MockSettingsService extends _i1.Mock implements _i2.SettingsService {
           as _i3.Future<_i4.Account?>);
 
   @override
-  _i3.Future<_i4.Account?> getAccount(int? index) =>
+  _i3.Future<_i4.Account?> getAccount({required int index, required int walletIndex}) =>
       (super.noSuchMethod(Invocation.method(#getAccount, [index]), returnValue: _i3.Future<_i4.Account?>.value())
           as _i3.Future<_i4.Account?>);
 
   @override
-  _i3.Future<int> getNextFreeAccountIndex() =>
+  _i3.Future<int> getNextFreeAccountIndex(int walletIndex) =>
       (super.noSuchMethod(Invocation.method(#getNextFreeAccountIndex, []), returnValue: _i3.Future<int>.value(0))
           as _i3.Future<int>);
 

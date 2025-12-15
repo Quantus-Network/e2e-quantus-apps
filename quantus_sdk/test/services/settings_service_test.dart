@@ -174,7 +174,7 @@ void main() {
       await settingsService.saveAccounts([account1, account3]); // Indices 0 and 2
 
       // Act
-      final nextIndex = await settingsService.getNextFreeAccountIndex();
+      final nextIndex = await settingsService.getNextFreeAccountIndex(0);
 
       // Assert
       expect(nextIndex, 3);

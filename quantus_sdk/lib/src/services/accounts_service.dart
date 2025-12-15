@@ -23,7 +23,7 @@ class AccountsService {
     if (mnemonic == null) {
       throw Exception('Mnemonic not found. Cannot create new account.');
     }
-    final nextIndex = await _settingsService.getNextFreeAccountIndex();
+    final nextIndex = await _settingsService.getNextFreeAccountIndex(walletIndex);
     final keypair = HdWalletService().keyPairAtIndex(mnemonic, nextIndex);
     final newAccount = Account(
       walletIndex: walletIndex,

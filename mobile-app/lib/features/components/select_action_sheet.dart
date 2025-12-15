@@ -28,8 +28,8 @@ class _SelectActionSheetState<T> extends State<SelectActionSheet<T>> {
           children: widget.items.map((item) {
             return InkWell(
               onTap: () {
-                widget.onSelect(item);
                 Navigator.pop(context);
+                Future.microtask(() => widget.onSelect(item));
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 16),
