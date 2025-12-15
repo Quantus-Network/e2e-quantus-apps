@@ -104,36 +104,32 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
       Item(value: _WalletMoreAction.addHardwareWallet, label: 'Add hardware wallet'),
     ];
 
-    showSelectActionSheet<_WalletMoreAction>(
-      context,
-      items,
-      (item) async {
-        final result = await (switch (item.value) {
-          _WalletMoreAction.createWallet => Navigator.push<bool?>(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CreateWalletAndBackupScreen(walletIndex: nextWalletIndex, popOnComplete: true),
-              ),
-            ),
-          _WalletMoreAction.importWallet => Navigator.push<bool?>(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ImportWalletScreen(walletIndex: nextWalletIndex, popOnComplete: true),
-              ),
-            ),
-          _WalletMoreAction.addHardwareWallet => Navigator.push<bool?>(
-              context,
-              MaterialPageRoute(
-                builder: (context) => AddHardwareAccountScreen(walletIndex: nextWalletIndex, isNewWallet: true),
-              ),
-            ),
-        });
-        if (result == true && mounted) {
-          ref.invalidate(accountsProvider);
-          ref.invalidate(activeAccountProvider);
-        }
-      },
-    );
+    showSelectActionSheet<_WalletMoreAction>(context, items, (item) async {
+      final result = await (switch (item.value) {
+        _WalletMoreAction.createWallet => Navigator.push<bool?>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CreateWalletAndBackupScreen(walletIndex: nextWalletIndex, popOnComplete: true),
+          ),
+        ),
+        _WalletMoreAction.importWallet => Navigator.push<bool?>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ImportWalletScreen(walletIndex: nextWalletIndex, popOnComplete: true),
+          ),
+        ),
+        _WalletMoreAction.addHardwareWallet => Navigator.push<bool?>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AddHardwareAccountScreen(walletIndex: nextWalletIndex, isNewWallet: true),
+          ),
+        ),
+      });
+      if (result == true && mounted) {
+        ref.invalidate(accountsProvider);
+        ref.invalidate(activeAccountProvider);
+      }
+    });
   }
 
   @override
@@ -149,12 +145,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
       ],
       appBar: WalletAppBar(
         title: 'Your Accounts',
-        actions: [
-          IconButton(
-            onPressed: _openWalletMoreActions,
-            icon: const Icon(Icons.more_horiz),
-          ),
-        ],
+        actions: [IconButton(onPressed: _openWalletMoreActions, icon: const Icon(Icons.more_horiz))],
       ),
       child: Column(
         children: [
@@ -270,7 +261,9 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                   child: Text(
                     _walletLabel(walletIndex, walletAccounts),
                     style: context.themeText.detail?.copyWith(
-                      color: walletIndex == selectedWallet ? context.themeColors.textPrimary : context.themeColors.textMuted,
+                      color: walletIndex == selectedWallet
+                          ? context.themeColors.textPrimary
+                          : context.themeColors.textMuted,
                     ),
                   ),
                 ),

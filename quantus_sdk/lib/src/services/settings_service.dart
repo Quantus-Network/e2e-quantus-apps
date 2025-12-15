@@ -47,12 +47,9 @@ class SettingsService {
     final accountsJson = _prefs.getString(_accountsKey);
     if (accountsJson != null) {
       final decoded = jsonDecode(accountsJson) as List<dynamic>;
-      return decoded
-        .map((e) => Account.fromJson(e))
-        .toList()
-        ..sort(
-          (a, b) => a.walletIndex != b.walletIndex ? a.walletIndex.compareTo(b.walletIndex) : a.index.compareTo(b.index),
-        );
+      return decoded.map((e) => Account.fromJson(e)).toList()..sort(
+        (a, b) => a.walletIndex != b.walletIndex ? a.walletIndex.compareTo(b.walletIndex) : a.index.compareTo(b.index),
+      );
     }
     // Migration for existing single-account users
     final oldAccountId = _prefs.getString('account_id');
@@ -99,7 +96,9 @@ class SettingsService {
   Future<void> addAccount(Account account) async {
     final accounts = await getAccounts();
     // Check for duplicates by index or accountId before adding
-    if (!accounts.any((a) => (a.walletIndex == account.walletIndex && a.index == account.index) || a.accountId == account.accountId)) {
+    if (!accounts.any(
+      (a) => (a.walletIndex == account.walletIndex && a.index == account.index) || a.accountId == account.accountId,
+    )) {
       accounts.add(account);
       await saveAccounts(accounts);
       if (accounts.length == 1) {

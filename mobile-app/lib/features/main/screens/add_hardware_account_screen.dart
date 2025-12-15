@@ -120,4 +120,3 @@ class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScr
     );
   }
 }
-

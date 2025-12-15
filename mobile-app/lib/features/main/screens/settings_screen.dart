@@ -146,7 +146,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         const SizedBox(height: 22),
         _buildSettingsItem(context, 'Show Recovery Phrase', () {
           final walletIndex = ref.read(activeAccountProvider).value?.walletIndex ?? 0;
-          Navigator.push(context, MaterialPageRoute(builder: (context) => ShowRecoveryPhraseScreen(walletIndex: walletIndex)));
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => ShowRecoveryPhraseScreen(walletIndex: walletIndex)),
+          );
         }),
         const SizedBox(height: 22),
         _buildSettingsItem(context, 'Referral', () {
