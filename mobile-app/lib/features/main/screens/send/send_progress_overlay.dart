@@ -1,14 +1,21 @@
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:quantus_sdk/generated/schrodinger/types/qp_scheduler/block_number_or_timestamp.dart' as qp;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:convert/convert.dart';
+import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/send/transaction_qr_display_screen.dart';
+import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
@@ -101,31 +108,10 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
         return;
       }
 
-      final submissionService = ref.read(transactionSubmissionServiceProvider);
-
-      debugPrint('Attempting balance transfer...');
-      debugPrint('  Recipient: ${widget.recipientAddress}');
-      debugPrint('  Amount (BigInt): ${widget.amount}');
-      debugPrint('  Fee: ${widget.fee}');
-      debugPrint('  Reversible time: ${widget.reversibleTimeSeconds}');
-
-      if (widget.reversibleTimeSeconds <= 0) {
-        await submissionService.balanceTransfer(
-          account,
-          widget.recipientAddress,
-          widget.amount,
-          widget.fee,
-          widget.blockHeight,
-        );
+      if (account.accountType == AccountType.keystone) {
+        await _handleHardwareWalletTransaction(account);
       } else {
-        await submissionService.scheduleReversibleTransferWithDelaySeconds(
-          account: account,
-          recipientAddress: widget.recipientAddress,
-          amount: widget.amount,
-          delaySeconds: widget.reversibleTimeSeconds,
-          feeEstimate: widget.fee,
-          blockHeight: widget.blockHeight,
-        );
+        await _handleLocalWalletTransaction(account);
       }
 
       RecentAddressesService().addAddress(widget.recipientAddress);
@@ -146,6 +132,115 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
         });
       }
     }
+  }
+
+  Future<void> _handleLocalWalletTransaction(Account account) async {
+    final submissionService = ref.read(transactionSubmissionServiceProvider);
+
+    debugPrint('Attempting balance transfer...');
+    debugPrint('  Recipient: ${widget.recipientAddress}');
+    debugPrint('  Amount (BigInt): ${widget.amount}');
+    debugPrint('  Fee: ${widget.fee}');
+    debugPrint('  Reversible time: ${widget.reversibleTimeSeconds}');
+
+    if (widget.reversibleTimeSeconds <= 0) {
+      await submissionService.balanceTransfer(
+        account,
+        widget.recipientAddress,
+        widget.amount,
+        widget.fee,
+        widget.blockHeight,
+      );
+    } else {
+      await submissionService.scheduleReversibleTransferWithDelaySeconds(
+        account: account,
+        recipientAddress: widget.recipientAddress,
+        amount: widget.amount,
+        delaySeconds: widget.reversibleTimeSeconds,
+        feeEstimate: widget.fee,
+        blockHeight: widget.blockHeight,
+      );
+    }
+  }
+
+  Future<void> _handleHardwareWalletTransaction(Account account) async {
+    final substrateService = SubstrateService();
+    final balancesService = BalancesService();
+    final reversibleTransfersService = ReversibleTransfersService();
+
+    RuntimeCall call;
+    if (widget.reversibleTimeSeconds <= 0) {
+      call = balancesService.getBalanceTransferCall(widget.recipientAddress, widget.amount);
+    } else {
+      final delay = qp.Timestamp(BigInt.from(widget.reversibleTimeSeconds) * BigInt.from(1000));
+      call = reversibleTransfersService.getReversibleTransferCall(
+        widget.recipientAddress,
+        widget.amount,
+        delay,
+      );
+    }
+
+    final unsignedData = await substrateService.getUnsignedTransactionPayload(account, call);
+
+    if (!mounted) return;
+
+    final qrDisplayResult = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TransactionQRDisplayScreen(payloadToSign: unsignedData.payloadToSign),
+      ),
+    );
+
+    if (qrDisplayResult != true || !mounted) {
+      throw Exception('Transaction cancelled');
+    }
+
+    final signatureQR = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (context) => QRScannerScreen(payloadToSign: unsignedData.payloadToSign), fullscreenDialog: true),
+    );
+
+    if (signatureQR == null || !mounted) {
+      throw Exception('Signature scan cancelled');
+    }
+
+    final signatureHex = signatureQR.replaceAll('0x', '').replaceAll('0X', '');
+    final signatureBytes = hex.decode(signatureHex);
+
+    if (signatureBytes.length < 64) {
+      throw Exception('Invalid signature length');
+    }
+
+    // For Dilithium, the signature + public key are combined in the signatureBytes.
+    // We pass the full blob as signature and an empty list as public key,
+    // because submitExtrinsicWithExternalSignature will concatenate them back anyway.
+    final signature = Uint8List.fromList(signatureBytes);
+    final publicKey = Uint8List(0);
+
+    final submissionService = ref.read(transactionSubmissionServiceProvider);
+    final pendingTx = PendingTransactionEvent(
+      tempId: 'pending_${DateTime.now().millisecondsSinceEpoch}',
+      from: account.accountId,
+      to: widget.recipientAddress,
+      amount: widget.amount,
+      timestamp: DateTime.now(),
+      transactionState: TransactionState.created,
+      fee: widget.fee,
+      blockNumber: widget.blockHeight,
+    );
+
+    ref.read(pendingTransactionsProvider.notifier).add(pendingTx);
+
+    final submissionBuilder = () async {
+      return await substrateService.submitExtrinsicWithExternalSignature(
+        unsignedData,
+        signature,
+        publicKey,
+      );
+    };
+
+    TelemetryService().sendEvent('send_transfer_hardware');
+    await submissionService.submitAndTrackTransaction(submissionBuilder, pendingTx);
   }
 
   Widget _buildConfirmState() {
