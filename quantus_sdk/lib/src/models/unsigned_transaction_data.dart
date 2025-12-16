@@ -3,9 +3,9 @@ import 'dart:typed_data';
 import 'package:polkadart/polkadart.dart';
 
 class UnsignedTransactionData {
-  SigningPayload payloadToSign;
-  Uint8List signer;
-  dynamic registry;
+  final SigningPayload payloadToSign;
+  final Uint8List signer;
+  final dynamic registry;
 
   Uint8List get encodedPayload => payloadToSign.encode(registry);
 
