@@ -191,7 +191,7 @@ class QuantusPayloadParser {
       return U32Codec.codec.decode(input);
     } else if (variant == 1) { // Timestamp(u64)
       final timestamp = U64Codec.codec.decode(input);
-      return (timestamp ~/ BigInt.from(6000)).toInt(); // Convert milliseconds to blocks (assuming 6s blocks)
+      return timestamp.toInt(); 
     }
 
     return null;
