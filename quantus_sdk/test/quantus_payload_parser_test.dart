@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:polkadart/scale_codec.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 void main() {
