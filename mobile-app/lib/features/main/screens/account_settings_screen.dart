@@ -252,23 +252,23 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
     return _buildSettingCard(
       child: Padding(
         padding: const EdgeInsets.only(top: 10.0, left: 10.0, bottom: 10.0, right: 18.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            SizedBox(
-              width: context.isTablet ? 550 : 251,
-              child: Text(
-                context.isTablet
-                    ? widget.account.accountId
-                    : AddressFormattingService.splitIntoChunks(widget.account.accountId).join(' '),
-                style: context.themeText.smallParagraph,
+        child: InkWell(
+          onTap: () => ClipboardExtensions.copyTextWithSnackbar(context, widget.account.accountId),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              SizedBox(
+                width: context.isTablet ? 550 : 251,
+                child: Text(
+                  context.isTablet
+                      ? widget.account.accountId
+                      : AddressFormattingService.splitIntoChunks(widget.account.accountId).join(' '),
+                  style: context.themeText.smallParagraph,
+                ),
               ),
-            ),
-            InkWell(
-              child: Icon(Icons.copy, color: Colors.white, size: context.isTablet ? 26 : 22),
-              onTap: () => ClipboardExtensions.copyTextWithSnackbar(context, widget.account.accountId),
-            ),
-          ],
+              Icon(Icons.copy, color: Colors.white, size: context.isTablet ? 26 : 22),
+            ],
+          ),
         ),
       ),
     );
