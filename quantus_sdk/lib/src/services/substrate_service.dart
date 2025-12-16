@@ -7,7 +7,6 @@ import 'package:flutter/foundation.dart';
 import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/generated/schrodinger/schrodinger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_sdk/src/extensions/account_extension.dart';
 import 'package:quantus_sdk/src/resonance_extrinsic_payload.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 import 'package:ss58/ss58.dart';

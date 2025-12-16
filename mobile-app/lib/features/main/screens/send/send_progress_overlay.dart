@@ -228,9 +228,9 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
 
     ref.read(pendingTransactionsProvider.notifier).add(pendingTx);
 
-    final submissionBuilder = () async {
+    Future<Uint8List> submissionBuilder() async {
       return await substrateService.submitExtrinsicWithExternalSignature(unsignedData, signature, publicKey);
-    };
+    }
 
     TelemetryService().sendEvent('send_transfer_hardware');
     await submissionService.submitAndTrackTransaction(submissionBuilder, pendingTx);

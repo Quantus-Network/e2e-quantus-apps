@@ -50,6 +50,7 @@ export 'src/services/reversible_transfers_service.dart';
 export 'src/services/settings_service.dart';
 export 'src/services/substrate_service.dart';
 export 'src/services/taskmaster_service.dart';
+export 'src/extensions/account_extension.dart';
 
 class QuantusSdk {
   /// Initialise the SDK (loads Rust FFI, etc).

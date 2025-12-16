@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 import 'package:convert/convert.dart';
+import 'package:quantus_sdk/quantus_sdk.dart' as crypto;
 import 'dart:typed_data';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
-import 'package:quantus_sdk/src/extensions/account_extension.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 class QRScannerScreen extends StatefulWidget {
   final List<int>? payloadToSign; // Optional payload for debug simulation
@@ -157,7 +157,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                 child: TextButton(
                   onPressed: _simulateHardwareSignature,
                   style: TextButton.styleFrom(
-                    backgroundColor: Colors.red.withOpacity(0.7),
+                    backgroundColor: Colors.red.useOpacity(0.7),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   ),
