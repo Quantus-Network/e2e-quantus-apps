@@ -182,7 +182,7 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
 
     final qrDisplayResult = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(builder: (context) => TransactionQRDisplayScreen(payloadToSign: unsignedData.payloadToSign)),
+      MaterialPageRoute(builder: (context) => TransactionQRDisplayScreen(payloadToSign: unsignedData.encodedPayload)),
     );
 
     if (qrDisplayResult != true || !mounted) {
@@ -192,7 +192,7 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
     final signatureQR = await Navigator.push<String>(
       context,
       MaterialPageRoute(
-        builder: (context) => QRScannerScreen(payloadToSign: unsignedData.payloadToSign),
+        builder: (context) => QRScannerScreen(payloadToSign: unsignedData.encodedPayload),
         fullscreenDialog: true,
       ),
     );

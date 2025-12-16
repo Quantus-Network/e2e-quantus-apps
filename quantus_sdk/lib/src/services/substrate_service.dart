@@ -261,17 +261,9 @@ class SubstrateService {
       return Schrodinger(provider).registry;
     });
 
-    final payload = payloadToSign.encode(registry);
-
     return UnsignedTransactionData(
-      payloadToSign: payload,
+      payloadToSign: payloadToSign,
       signer: accountIdBytes,
-      method: encodedCall,
-      eraPeriod: 64,
-      blockNumber: blockNumber,
-      blockHash: blockHash,
-      nonce: nonce,
-      tip: 0,
       registry: registry,
     );
   }
@@ -283,14 +275,16 @@ class SubstrateService {
   ) async {
     final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, publicKey);
 
+    final payload = unsignedData.payloadToSign;
+
     final extrinsic = ResonanceExtrinsicPayload(
       signer: unsignedData.signer,
-      method: unsignedData.method,
+      method: payload.method,
       signature: signatureWithPublicKeyBytes,
-      eraPeriod: unsignedData.eraPeriod,
-      blockNumber: unsignedData.blockNumber,
-      nonce: unsignedData.nonce,
-      tip: unsignedData.tip,
+      eraPeriod: payload.eraPeriod,
+      blockNumber: payload.blockNumber,
+      nonce: payload.nonce,
+      tip: payload.tip,
     ).encodeResonance(unsignedData.registry, ResonanceSignatureType.resonance);
 
     return await _submitExtrinsic(extrinsic);
