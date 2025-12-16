@@ -51,11 +51,11 @@ impl QuantusPayloadParser {
         payload.to_base58()
     }
 
-    pub fn parse_payload(payload: &[u8]) -> Option<TransactionInfo> {
+    pub fn parse_payload(payload: &[u8]) -> Result<TransactionInfo, String> {
         let mut input = &payload[..];
 
         // Read pallet index (first byte)
-        let pallet_index: u8 = Decode::decode(&mut input).ok()?;
+        let pallet_index: u8 = Decode::decode(&mut input).map_err(|e| e.to_string())?;
 
         // Read the call data (remaining bytes)
         let call_data = input;
@@ -63,42 +63,42 @@ impl QuantusPayloadParser {
         match pallet_index {
             2 => Self::parse_balances_call(call_data), // Balances pallet
             13 => Self::parse_reversible_transfers_call(call_data), // ReversibleTransfers pallet
-            _ => None, // Unknown pallet
+            _ => Err("Unknown pallet".to_string()), // Unknown pallet
         }
     }
 
-    fn parse_balances_call(call_data: &[u8]) -> Option<TransactionInfo> {
+    fn parse_balances_call(call_data: &[u8]) -> Result<TransactionInfo, String> {
         let mut input = call_data;
 
         // Read call index
-        let call_index: u8 = Decode::decode(&mut input).ok()?;
+        let call_index: u8 = Decode::decode(&mut input).map_err(|e| e.to_string())?;
 
         match call_index {
             0 | 3 => { // transfer_allow_death or transfer_keep_alive
                 let dest = Self::parse_multi_address(&mut input)?;
-                let amount: Compact<u128> = Decode::decode(&mut input).ok()?;
-                Some(TransactionInfo {
+                let amount: Compact<u128> = Decode::decode(&mut input).map_err(|e| e.to_string())?;
+                Ok(TransactionInfo {
                     to_address: dest,
                     amount: amount.0,
                     is_reversible: false,
                     reversible_timeframe: None,
                 })
             }
-            _ => None,
+            _ => Err(format!("Balances: Unsupported call index {}", call_index)),
         }
     }
 
-    fn parse_reversible_transfers_call(call_data: &[u8]) -> Option<TransactionInfo> {
+    fn parse_reversible_transfers_call(call_data: &[u8]) -> Result<TransactionInfo, String> {
         let mut input = call_data;
 
         // Read call index
-        let call_index: u8 = Decode::decode(&mut input).ok()?;
+        let call_index: u8 = Decode::decode(&mut input).map_err(|e| e.to_string())?;
 
         match call_index {
             3 => { // schedule_transfer
                 let dest = Self::parse_multi_address(&mut input)?;
-                let amount: u128 = Decode::decode(&mut input).ok()?;
-                Some(TransactionInfo {
+                let amount: u128 = Decode::decode(&mut input).map_err(|e| e.to_string())?;
+                Ok(TransactionInfo {
                     to_address: dest,
                     amount,
                     is_reversible: true,
@@ -107,61 +107,45 @@ impl QuantusPayloadParser {
             }
             4 => { // schedule_transfer_with_delay
                 let dest = Self::parse_multi_address(&mut input)?;
-                let amount: u128 = Decode::decode(&mut input).ok()?;
-                let delay: u64 = Self::parse_block_number_or_timestamp(&mut input)?;
-                Some(TransactionInfo {
+                let amount: u128 = Decode::decode(&mut input).map_err(|e| e.to_string())?;
+                let delay = Self::parse_block_number_or_timestamp(&mut input)?;
+                Ok(TransactionInfo {
                     to_address: dest,
                     amount,
                     is_reversible: true,
                     reversible_timeframe: Some(delay),
                 })
             }
-            _ => None,
+            _ => Err(format!("ReversibleTransfers: Unsupported call index {}", call_index)),
         }
     }
 
-    fn parse_multi_address(input: &mut &[u8]) -> Option<String> {
-        let address_type: u8 = Decode::decode(input).ok()?;
+    fn parse_multi_address(input: &mut &[u8]) -> Result<String, String> {
+        let address_type: u8 = Decode::decode(input).map_err(|e| e.to_string())?;
 
         match address_type {
             0 => { // Id(AccountId)
-                let account_id: [u8; 32] = Decode::decode(input).ok()?;
-                Some(Self::bytes_to_ss58(&account_id))
+                let account_id: [u8; 32] = Decode::decode(input).map_err(|e| e.to_string())?;
+                Ok(Self::bytes_to_ss58(&account_id))
             }
-            1 => { // Index(Compact<u32>)
-                let index: Compact<u32> = Decode::decode(input).ok()?;
-                Some(format!("Index({})", index.0))
-            }
-            2 => { // Raw(Vec<u8>)
-                let _length: Compact<u32> = Decode::decode(input).ok()?;
-                let raw: Vec<u8> = Decode::decode(input).ok()?;
-                Some(format!("Raw(0x{})", hex::encode(raw)))
-            }
-            3 => { // Address32([u8; 32])
-                let address32: [u8; 32] = Decode::decode(input).ok()?;
-                Some(Self::bytes_to_ss58(&address32))
-            }
-            4 => { // Address20([u8; 20])
-                let address20: [u8; 20] = Decode::decode(input).ok()?;
-                Some(format!("0x{}", hex::encode(address20)))
-            }
-            _ => None,
+            1 => Err("Index(Compact<u32>) MultiAddress type 1 is not supported".to_string()),
+            2 => Err("Raw(Vec<u8>) MultiAddress type 2 is not supported".to_string()),
+            3 => Err("Address32([u8; 32]) MultiAddress type 3 is not supported".to_string()),
+            4 => Err("Address20([u8; 20]) MultiAddress type 4 is not supported".to_string()),
+            _ => Err(format!("Unknown multi address type: {}", address_type)),
         }
     }
 
-    fn parse_block_number_or_timestamp(input: &mut &[u8]) -> Option<u64> {
-        let variant: u8 = Decode::decode(input).ok()?;
+    fn parse_block_number_or_timestamp(input: &mut &[u8]) -> Result<u64, String> {
+        let variant: u8 = Decode::decode(input).map_err(|e| e.to_string())?;
 
         match variant {
-            0 => { // BlockNumber(u32)
-                let block_number: u32 = Decode::decode(input).ok()?;
-                Some(block_number as u64)
-            }
+            0 => Err("Block numbers are not supported for delayed transactions".to_string()),
             1 => { // Timestamp(u64)
-                let timestamp: u64 = Decode::decode(input).ok()?;
-                Some(timestamp)
+                let timestamp: u64 = Decode::decode(input).map_err(|e| e.to_string())?;
+                Ok(timestamp)
             }
-            _ => None,
+            _ => Err(format!("Unknown time variant: {}", variant)),
         }
     }
 }
@@ -180,7 +164,7 @@ mod tests {
 
         let result = QuantusPayloadParser::parse_payload(&payload);
 
-        assert!(result.is_some());
+        assert!(result.is_ok());
         let tx = result.unwrap();
         assert_eq!(tx.amount, expected_amount);
         assert_eq!(tx.is_reversible, false);
@@ -199,7 +183,7 @@ mod tests {
 
         let result = QuantusPayloadParser::parse_payload(&payload);
 
-        assert!(result.is_some());
+        assert!(result.is_ok());
         let tx = result.unwrap();
         assert_eq!(tx.amount, expected_amount);
         assert_eq!(tx.is_reversible, true);
