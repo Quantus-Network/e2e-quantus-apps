@@ -12,14 +12,14 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:convert/convert.dart';
-import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/send/transaction_qr_display_screen.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
-enum SendOverlayState { confirm, progress, complete }
+enum SendOverlayState { confirm, progress, complete, hardwareSign, hardwareScan }
 
 class SendConfirmationOverlay extends ConsumerStatefulWidget {
   final BigInt amount;
@@ -49,6 +49,11 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
   SendOverlayState currentState = SendOverlayState.confirm;
   String? _errorMessage;
   bool _isSending = false;
+  Account? _hardwareAccount;
+  UnsignedTransactionData? _hardwareUnsignedData;
+  bool _isHardwareSubmitting = false;
+  final MobileScannerController _signatureScannerController = MobileScannerController();
+  bool _hasScannedSignature = false;
 
   void goHome() {
     if (!mounted) return;
@@ -66,6 +71,10 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
       case SendOverlayState.complete:
         goHome();
         break;
+      case SendOverlayState.hardwareSign:
+      case SendOverlayState.hardwareScan:
+        widget.onClose();
+        break;
     }
   }
 
@@ -73,6 +82,12 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
 
   final NumberFormattingService _formattingService = NumberFormattingService();
   final SettingsService _settingsService = SettingsService();
+
+  @override
+  void dispose() {
+    _signatureScannerController.dispose();
+    super.dispose();
+  }
 
   String _formatReversibleTime() {
     final days = widget.reversibleTimeSeconds ~/ 86400;
@@ -96,7 +111,6 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
 
     setState(() {
       _isSending = true;
-      currentState = SendOverlayState.progress;
       _errorMessage = null;
     });
 
@@ -109,18 +123,23 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
       }
 
       if (account.accountType == AccountType.keystone || AppConstants.debugHardwareWallet) {
-        await _handleHardwareWalletTransaction(account);
+        await _startHardwareFlow(account);
+        return;
       } else {
-        await _handleLocalWalletTransaction(account);
-      }
-
-      RecentAddressesService().addAddress(widget.recipientAddress);
-
-      if (mounted) {
+        // For local wallets, show progress state
         setState(() {
-          currentState = SendOverlayState.complete;
-          _isSending = false;
+          currentState = SendOverlayState.progress;
         });
+        await _handleLocalWalletTransaction(account);
+
+        RecentAddressesService().addAddress(widget.recipientAddress);
+
+        if (mounted) {
+          setState(() {
+            currentState = SendOverlayState.complete;
+            _isSending = false;
+          });
+        }
       }
     } catch (e) {
       print('Balance transfer failed: $e');
@@ -131,6 +150,80 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
           _isSending = false;
         });
       }
+    }
+  }
+
+  RuntimeCall _buildRuntimeCall() {
+    final balancesService = BalancesService();
+    final reversibleTransfersService = ReversibleTransfersService();
+
+    if (widget.reversibleTimeSeconds <= 0) {
+      return balancesService.getBalanceTransferCall(widget.recipientAddress, widget.amount);
+    }
+
+    final delay = qp.Timestamp(BigInt.from(widget.reversibleTimeSeconds) * BigInt.from(1000));
+    return reversibleTransfersService.getReversibleTransferCall(widget.recipientAddress, widget.amount, delay);
+  }
+
+  Future<void> _startHardwareFlow(Account account) async {
+    setState(() {
+      currentState = SendOverlayState.hardwareSign;
+      _hardwareAccount = account;
+      _hardwareUnsignedData = null;
+      _isHardwareSubmitting = false;
+      _hasScannedSignature = false;
+    });
+
+    final substrateService = SubstrateService();
+    final unsignedData = await substrateService.getUnsignedTransactionPayload(account, _buildRuntimeCall());
+    if (!mounted) return;
+
+    setState(() {
+      _hardwareUnsignedData = unsignedData;
+      _isSending = false;
+    });
+  }
+
+  void _goToHardwareScanStep() {
+    setState(() {
+      currentState = SendOverlayState.hardwareScan;
+      _hasScannedSignature = false;
+      _isHardwareSubmitting = false;
+    });
+  }
+
+  Future<void> _onHardwareSignatureScanned(String signatureQR) async {
+    if (_isHardwareSubmitting) return;
+    final unsignedData = _hardwareUnsignedData;
+    final account = _hardwareAccount;
+    if (unsignedData == null || account == null) return;
+
+    setState(() {
+      _isHardwareSubmitting = true;
+    });
+
+    await _processHardwareSignature(signatureQR, unsignedData, account);
+  }
+
+  Future<void> _simulateHardwareSignature() async {
+    final unsignedData = _hardwareUnsignedData;
+    final account = _hardwareAccount;
+    if (unsignedData == null || account == null) return;
+
+    try {
+      final debugWallet = await account.getKeypair();
+      final signature = signMessage(keypair: debugWallet, message: unsignedData.encodedPayload);
+      final signatureWithPublicKey = Uint8List(signature.length + debugWallet.publicKey.length);
+      signatureWithPublicKey.setAll(0, signature);
+      signatureWithPublicKey.setAll(signature.length, debugWallet.publicKey);
+      await _onHardwareSignatureScanned('0x${hex.encode(signatureWithPublicKey)}');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Simulation failed: $e';
+        _hasScannedSignature = false;
+        _isHardwareSubmitting = false;
+      });
     }
   }
 
@@ -163,78 +256,6 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
     }
   }
 
-  Future<void> _handleHardwareWalletTransaction(Account account) async {
-    final substrateService = SubstrateService();
-    final balancesService = BalancesService();
-    final reversibleTransfersService = ReversibleTransfersService();
-
-    RuntimeCall call;
-    if (widget.reversibleTimeSeconds <= 0) {
-      call = balancesService.getBalanceTransferCall(widget.recipientAddress, widget.amount);
-    } else {
-      final delay = qp.Timestamp(BigInt.from(widget.reversibleTimeSeconds) * BigInt.from(1000));
-      call = reversibleTransfersService.getReversibleTransferCall(widget.recipientAddress, widget.amount, delay);
-    }
-
-    final unsignedData = await substrateService.getUnsignedTransactionPayload(account, call);
-
-    if (!mounted) return;
-
-    final qrDisplayResult = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(builder: (context) => TransactionQRDisplayScreen(payloadToSign: unsignedData.encodedPayload)),
-    );
-
-    if (qrDisplayResult != true || !mounted) {
-      throw Exception('Transaction cancelled');
-    }
-
-    final signatureQR = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => QRScannerScreen(payloadToSign: unsignedData.encodedPayload),
-        fullscreenDialog: true,
-      ),
-    );
-
-    if (signatureQR == null || !mounted) {
-      throw Exception('Signature scan cancelled');
-    }
-
-    final signatureHex = signatureQR.replaceAll('0x', '').replaceAll('0X', '');
-    final signatureBytes = hex.decode(signatureHex);
-
-    if (signatureBytes.length < 64) {
-      throw Exception('Invalid signature length');
-    }
-
-    // For Dilithium, the signature + public key are combined in the signatureBytes.
-    // We pass the full blob as signature and an empty list as public key,
-    // because submitExtrinsicWithExternalSignature will concatenate them back anyway.
-    final signature = Uint8List.fromList(signatureBytes);
-    final publicKey = Uint8List(0);
-
-    final submissionService = ref.read(transactionSubmissionServiceProvider);
-    final pendingTx = PendingTransactionEvent(
-      tempId: 'pending_${DateTime.now().millisecondsSinceEpoch}',
-      from: account.accountId,
-      to: widget.recipientAddress,
-      amount: widget.amount,
-      timestamp: DateTime.now(),
-      transactionState: TransactionState.created,
-      fee: widget.fee,
-      blockNumber: widget.blockHeight,
-    );
-
-    ref.read(pendingTransactionsProvider.notifier).add(pendingTx);
-
-    Future<Uint8List> submissionBuilder() async {
-      return await substrateService.submitExtrinsicWithExternalSignature(unsignedData, signature, publicKey);
-    }
-
-    TelemetryService().sendEvent('send_transfer_hardware');
-    await submissionService.submitAndTrackTransaction(submissionBuilder, pendingTx);
-  }
 
   Widget _buildConfirmState() {
     final formattedAmount = _formattingService.formatBalance(widget.amount);
@@ -570,6 +591,294 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
     );
   }
 
+  Widget _buildHardwareSignState() {
+    final unsignedData = _hardwareUnsignedData;
+
+    return SizedBox(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Close button
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(7),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                GestureDetector(
+                  onTap: widget.onClose,
+                  child: SizedBox(
+                    width: context.themeSize.overlayCloseIconSize,
+                    height: context.themeSize.overlayCloseIconSize,
+                    child: Icon(Icons.close, color: Colors.white, size: context.themeSize.overlayCloseIconSize),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 28),
+
+          // Hardware wallet icon and title
+          Column(
+            children: [
+              Center(
+                child: Image.asset(
+                  'assets/transaction/send_icon.png',
+                  width: context.isTablet ? 101 : 61,
+                  height: context.isTablet ? 92 : 52,
+                ),
+              ),
+              const SizedBox(height: 17),
+              Text('Scan with Keystone Wallet', textAlign: TextAlign.center, style: context.themeText.largeTitle),
+            ],
+          ),
+          const SizedBox(height: 28),
+
+          if (unsignedData == null)
+            SizedBox(
+              height: 250,
+              child: Center(child: CircularProgressIndicator(color: context.themeColors.primary)),
+            )
+          else
+            Container(
+              width: context.isTablet ? 300 : 250,
+              height: context.isTablet ? 300 : 250,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+              child: QrImageView(
+                data: '0x${hex.encode(unsignedData.encodedPayload)}',
+                version: QrVersions.auto,
+                size: double.infinity,
+                padding: EdgeInsets.zero,
+                backgroundColor: Colors.white,
+                eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: Colors.black),
+                dataModuleStyle: const QrDataModuleStyle(
+                  dataModuleShape: QrDataModuleShape.square,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+
+          const Spacer(),
+          // Continue button
+          SizedBox(
+            width: context.themeSize.sendOverlayContainerWidth,
+            child: Button(
+              variant: ButtonVariant.neutral,
+              label: 'Next',
+              onPressed: unsignedData == null ? null : _goToHardwareScanStep,
+            ),
+          ),
+          SizedBox(height: context.themeSize.bottomButtonSpacing),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHardwareScanState() {
+    final unsignedData = _hardwareUnsignedData;
+
+    return SizedBox(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Back + close
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(7),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                GestureDetector(
+                  onTap: () => setState(() => currentState = SendOverlayState.hardwareSign),
+                  child: SizedBox(
+                    width: context.themeSize.overlayCloseIconSize,
+                    height: context.themeSize.overlayCloseIconSize,
+                    child: Icon(Icons.arrow_back, color: Colors.white, size: context.themeSize.overlayCloseIconSize),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: widget.onClose,
+                  child: SizedBox(
+                    width: context.themeSize.overlayCloseIconSize,
+                    height: context.themeSize.overlayCloseIconSize,
+                    child: Icon(Icons.close, color: Colors.white, size: context.themeSize.overlayCloseIconSize),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 28),
+
+          // Hardware wallet icon and title
+          Column(
+            children: [
+              Center(
+                child: Image.asset(
+                  'assets/transaction/send_icon.png',
+                  width: context.isTablet ? 101 : 61,
+                  height: context.isTablet ? 92 : 52,
+                ),
+              ),
+              const SizedBox(height: 17),
+              Text('SCAN SIGNATURE', textAlign: TextAlign.center, style: context.themeText.largeTitle),
+            ],
+          ),
+          const SizedBox(height: 28),
+
+          if (unsignedData == null)
+            SizedBox(
+              height: 320,
+              child: Center(child: CircularProgressIndicator(color: context.themeColors.primary)),
+            )
+          else if (_isHardwareSubmitting)
+            SizedBox(
+              height: 320,
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(color: context.themeColors.primary),
+                    const SizedBox(height: 16),
+                    Text('Submitting...', style: context.themeText.paragraph),
+                  ],
+                ),
+              ),
+            )
+          else
+            SizedBox(
+              height: 320,
+              child: Stack(
+                children: [
+                  MobileScanner(
+                    controller: _signatureScannerController,
+                    onDetect: (capture) {
+                      if (_hasScannedSignature) return;
+                      for (final barcode in capture.barcodes) {
+                        final v = barcode.rawValue;
+                        if (v == null) continue;
+                        _hasScannedSignature = true;
+                        _onHardwareSignatureScanned(v);
+                        break;
+                      }
+                    },
+                  ),
+                  Container(
+                    decoration: ShapeDecoration(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: const BorderSide(color: Color(0xFF0CE6ED), width: 2),
+                      ),
+                    ),
+                    margin: const EdgeInsets.all(50),
+                  ),
+                  Positioned(
+                    bottom: 16,
+                    left: 0,
+                    right: 0,
+                    child: Text(
+                      'Position the QR code within the frame',
+                      textAlign: TextAlign.center,
+                      style: context.themeText.paragraph?.copyWith(color: context.themeColors.textPrimary.useOpacity(0.8)),
+                    ),
+                  ),
+                  if (AppConstants.debugHardwareWallet)
+                    Positioned(
+                      bottom: 56,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: TextButton(
+                          onPressed: _simulateHardwareSignature,
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.red.useOpacity(0.7),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          ),
+                          child: const Text('DEBUG: SIMULATE SIGNATURE'),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+          const Spacer(),
+          if (_errorMessage != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                _errorMessage!,
+                style: context.themeText.detail?.copyWith(color: context.themeColors.textError),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          SizedBox(height: context.themeSize.bottomButtonSpacing),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _processHardwareSignature(String signatureQR, UnsignedTransactionData unsignedData, Account account) async {
+    try {
+      final signatureHex = signatureQR.replaceAll('0x', '').replaceAll('0X', '');
+      final signatureBytes = hex.decode(signatureHex);
+
+      if (signatureBytes.length < 64) {
+        throw Exception('Invalid signature length');
+      }
+
+      // For Dilithium, the signature + public key are combined in the signatureBytes.
+      // We pass the full blob as signature and an empty list as public key,
+      // because submitExtrinsicWithExternalSignature will concatenate them back anyway.
+      final signature = Uint8List.fromList(signatureBytes);
+      final publicKey = Uint8List(0);
+
+      final substrateService = SubstrateService();
+      final submissionService = ref.read(transactionSubmissionServiceProvider);
+      final pendingTx = PendingTransactionEvent(
+        tempId: 'pending_${DateTime.now().millisecondsSinceEpoch}',
+        from: account.accountId,
+        to: widget.recipientAddress,
+        amount: widget.amount,
+        timestamp: DateTime.now(),
+        transactionState: TransactionState.created,
+        fee: widget.fee,
+        blockNumber: widget.blockHeight,
+      );
+
+      ref.read(pendingTransactionsProvider.notifier).add(pendingTx);
+
+      Future<Uint8List> submissionBuilder() async {
+        return await substrateService.submitExtrinsicWithExternalSignature(unsignedData, signature, publicKey);
+      }
+
+      RecentAddressesService().addAddress(widget.recipientAddress);
+
+      TelemetryService().sendEvent('send_transfer_hardware');
+      await submissionService.submitAndTrackTransaction(submissionBuilder, pendingTx);
+
+      if (mounted) {
+        setState(() {
+          currentState = SendOverlayState.complete;
+          _isSending = false;
+          _isHardwareSubmitting = false;
+        });
+      }
+    } catch (e) {
+      print('Hardware signature processing failed: $e');
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Signature processing failed: ${e.toString()}';
+          _isHardwareSubmitting = false;
+          _hasScannedSignature = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     Widget content;
@@ -582,6 +891,12 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
         break;
       case SendOverlayState.complete:
         content = _buildCompleteState();
+        break;
+      case SendOverlayState.hardwareSign:
+        content = _buildHardwareSignState();
+        break;
+      case SendOverlayState.hardwareScan:
+        content = _buildHardwareScanState();
         break;
     }
     final effectiveSheetHeightFraction = context.isSmallHeight ? 0.9 : AppConstants.sendingSheetHeightFraction;
