@@ -122,7 +122,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
     try {
       final accountsService = AccountsService();
       await accountsService.removeAccount(widget.account);
-      
+
       // Invalidate providers to refresh UI
       // Use ref.read() for actions, but in this case ref is available on ConsumerState
       // We don't need to read the providers, just invalidate them
@@ -130,7 +130,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
       ref.invalidate(activeAccountProvider);
       ref.invalidate(accountAssociationsProvider);
       ref.invalidate(balanceProviderFamily(widget.account.accountId));
-      
+
       if (mounted) {
         Navigator.of(context).pop(true); // Return true to indicate change
       }

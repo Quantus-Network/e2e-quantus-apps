@@ -37,10 +37,7 @@ class TransactionQRDisplayScreen extends StatelessWidget {
                     width: context.isTablet ? 300 : 250,
                     height: context.isTablet ? 300 : 250,
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
                     child: QrImageView(
                       data: hexPayload,
                       version: QrVersions.auto,
@@ -67,11 +64,7 @@ class TransactionQRDisplayScreen extends StatelessWidget {
               ),
             ),
           ),
-          Button(
-            variant: ButtonVariant.primary,
-            label: 'Done',
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
+          Button(variant: ButtonVariant.primary, label: 'Done', onPressed: () => Navigator.of(context).pop(true)),
           SizedBox(height: context.themeSize.bottomButtonSpacing),
         ],
       ),

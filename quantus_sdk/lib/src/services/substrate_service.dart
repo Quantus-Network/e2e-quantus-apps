@@ -151,8 +151,7 @@ class SubstrateService {
     throw Exception('Failed to submit extrinsic after $maxRetries retries.');
   }
 
-  Future<ExtrinsicData> getExtrinsicPayload(Account account, RuntimeCall call,
-      {bool isSigned = true}) async {
+  Future<ExtrinsicData> getExtrinsicPayload(Account account, RuntimeCall call, {bool isSigned = true}) async {
     final [runtimeVersion, genesisHash, blockNumber, blockHash, nonce] = await Future.wait([
       _rpcEndpointService.rpcTask((uri) async {
         final provider = Provider.fromUri(uri);
@@ -225,7 +224,7 @@ class SubstrateService {
       ).encodeResonance(registry, ResonanceSignatureType.resonance);
 
       return ExtrinsicData(payload: extrinsic, blockNumber: blockNumber, blockHash: blockHash, nonce: nonce);
-    } 
+    }
   }
 
   Future<UnsignedTransactionData> getUnsignedTransactionPayload(Account account, RuntimeCall call) async {

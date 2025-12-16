@@ -34,21 +34,21 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
       // This will fail if the current account is actually a hardware wallet without a local key
       // But for testing the flow with a local account pretending to be hardware, this is what we want.
       final debugWallet = await account.getKeypair();
-      
+
       // 2. Sign the payload using the debug wallet
       // We use signMessage which returns the raw signature
       final signature = crypto.signMessage(keypair: debugWallet, message: widget.payloadToSign!);
-      
+
       // 3. Combine signature and public key (this is what the hardware wallet should return)
       final signatureWithPublicKey = Uint8List(signature.length + debugWallet.publicKey.length);
       signatureWithPublicKey.setAll(0, signature);
       signatureWithPublicKey.setAll(signature.length, debugWallet.publicKey);
-      
+
       // 4. Encode as hex string (simulating QR code content)
       final hexSignature = '0x${hex.encode(signatureWithPublicKey)}';
-      
+
       print('Simulated Hardware Signature: $hexSignature');
-      
+
       // 5. Return the result as if it was scanned
       if (mounted) {
         Navigator.pop(context, hexSignature);
@@ -146,7 +146,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
               style: context.themeText.paragraph?.copyWith(color: context.themeColors.textPrimary.useOpacity(0.8)),
             ),
           ),
-          
+
           // Debug Simulation Button (Only visible in debug mode or if payload is provided)
           if (widget.payloadToSign != null)
             Positioned(

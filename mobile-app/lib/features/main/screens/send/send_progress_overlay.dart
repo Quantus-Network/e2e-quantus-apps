@@ -173,11 +173,7 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
       call = balancesService.getBalanceTransferCall(widget.recipientAddress, widget.amount);
     } else {
       final delay = qp.Timestamp(BigInt.from(widget.reversibleTimeSeconds) * BigInt.from(1000));
-      call = reversibleTransfersService.getReversibleTransferCall(
-        widget.recipientAddress,
-        widget.amount,
-        delay,
-      );
+      call = reversibleTransfersService.getReversibleTransferCall(widget.recipientAddress, widget.amount, delay);
     }
 
     final unsignedData = await substrateService.getUnsignedTransactionPayload(account, call);
@@ -186,9 +182,7 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
 
     final qrDisplayResult = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
-        builder: (context) => TransactionQRDisplayScreen(payloadToSign: unsignedData.payloadToSign),
-      ),
+      MaterialPageRoute(builder: (context) => TransactionQRDisplayScreen(payloadToSign: unsignedData.payloadToSign)),
     );
 
     if (qrDisplayResult != true || !mounted) {
@@ -197,7 +191,10 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
 
     final signatureQR = await Navigator.push<String>(
       context,
-      MaterialPageRoute(builder: (context) => QRScannerScreen(payloadToSign: unsignedData.payloadToSign), fullscreenDialog: true),
+      MaterialPageRoute(
+        builder: (context) => QRScannerScreen(payloadToSign: unsignedData.payloadToSign),
+        fullscreenDialog: true,
+      ),
     );
 
     if (signatureQR == null || !mounted) {
@@ -232,11 +229,7 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
     ref.read(pendingTransactionsProvider.notifier).add(pendingTx);
 
     final submissionBuilder = () async {
-      return await substrateService.submitExtrinsicWithExternalSignature(
-        unsignedData,
-        signature,
-        publicKey,
-      );
+      return await substrateService.submitExtrinsicWithExternalSignature(unsignedData, signature, publicKey);
     };
 
     TelemetryService().sendEvent('send_transfer_hardware');

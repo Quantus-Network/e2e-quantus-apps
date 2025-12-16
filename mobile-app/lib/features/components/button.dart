@@ -150,10 +150,7 @@ class Button extends StatelessWidget {
             ),
           ),
           child: Center(
-            child: Text(
-              label,
-              style: effectiveTextStyle.copyWith(color: context.themeColors.buttonDanger),
-            ),
+            child: Text(label, style: effectiveTextStyle.copyWith(color: context.themeColors.buttonDanger)),
           ),
         );
         break;
