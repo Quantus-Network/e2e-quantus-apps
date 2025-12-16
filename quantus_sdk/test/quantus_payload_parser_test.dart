@@ -42,9 +42,30 @@ void main() {
       final result = QuantusPayloadParser.parsePayload(payload);
 
       expect(result, isNotNull);
-      expect(result!.amount, expectedAmount); // 0.9 QUS with 10 decimals
+      expect(result!.amount, expectedAmount);
       expect(result.isReversible, false);
       expect(result.reversibleTimeframe, null);
+      expect(result.toAddress, expectedTargetAddress);
+    });
+
+
+// flutter: Showing confirmation for amount (BigInt): 1440000000000
+// Reverisble transfer to qzn5St24cMsjE4JKYdXLBctusWj5zom67dnrW22SweAahLGeG
+// delay 5 minutes = 300 seconds.
+// flutter: KAT raw encoded payload: 0d04007416854906f03a9dff66e3270a736c44e15970ac03a638471523a03069f276ca0040b0464f010000000000000000000001e093040000000000d5010c00007400000002000000826beefbe2be72645ff376f18de745ac196dc77637436090de4174180706118efeebb9b31159a679a1e49ccc34d363b5d4a00b836ad4f85cbba8c6274ac2566800
+    test('Real world reversible transfer (1.44 QUAN, delay 5 minutes)', () {
+      final hexPayload = '0d04007416854906f03a9dff66e3270a736c44e15970ac03a638471523a03069f276ca0040b0464f010000000000000000000001e093040000000000d5010c00007400000002000000826beefbe2be72645ff376f18de745ac196dc77637436090de4174180706118efeebb9b31159a679a1e49ccc34d363b5d4a00b836ad4f85cbba8c6274ac2566800';
+      final expectedTargetAddress = 'qzn5St24cMsjE4JKYdXLBctusWj5zom67dnrW22SweAahLGeG';
+      final expectedAmount = BigInt.from(1440000000000);
+      final expectedReversibleTimeframe = 5 * 60 * 1000; // 5 minutes in millisecond
+      final payload = Uint8List.fromList(hex.decode(hexPayload));
+
+      final result = QuantusPayloadParser.parsePayload(payload);
+
+      expect(result, isNotNull);
+      expect(result!.amount, expectedAmount);
+      expect(result.isReversible, true);
+      expect(result.reversibleTimeframe, expectedReversibleTimeframe);
       expect(result.toAddress, expectedTargetAddress);
     });
 
