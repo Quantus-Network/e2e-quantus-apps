@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -5,6 +6,7 @@ import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
+import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
@@ -20,7 +22,7 @@ class AddHardwareAccountScreen extends ConsumerStatefulWidget {
 }
 
 class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScreen> {
-  final _name = TextEditingController();
+  final _name = TextEditingController(text: 'Keystone Wallet');
   final _address = TextEditingController();
 
   final _accountsService = AccountsService();
@@ -29,6 +31,22 @@ class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScr
 
   bool _isSaving = false;
   String? _error;
+
+  Future<void> _scanQRCode() async {
+    final result = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (context) => const QRScannerScreen(), fullscreenDialog: true),
+    );
+    if (result != null && mounted) {
+      _address.text = result.trim();
+      if (_error != null) setState(() => _error = null);
+    }
+  }
+
+  void _fillDebugAddress() {
+    _address.text = 'qzn5St24cMsjE4JKYdXLBctusWj5zom67dnrW22SweAahLGeG';
+    if (_error != null) setState(() => _error = null);
+  }
 
   Future<void> _save() async {
     final name = _name.text.trim();
@@ -102,6 +120,28 @@ class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScr
             onChanged: (_) {
               if (_error != null) setState(() => _error = null);
             },
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: Button(
+                  variant: ButtonVariant.neutral,
+                  label: 'Scan QR Code',
+                  onPressed: _scanQRCode,
+                ),
+              ),
+              if (kDebugMode) ...[
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Button(
+                    variant: ButtonVariant.neutral,
+                    label: 'Debug Fill',
+                    onPressed: _fillDebugAddress,
+                  ),
+                ),
+              ],
+            ],
           ),
           if (_error != null) ...[
             const SizedBox(height: 10),
