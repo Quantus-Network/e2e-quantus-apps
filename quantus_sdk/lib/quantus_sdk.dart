@@ -52,6 +52,7 @@ export 'src/services/substrate_service.dart';
 export 'src/services/taskmaster_service.dart';
 export 'src/extensions/account_extension.dart';
 export 'src/quantus_signing_payload.dart';
+export 'src/quantus_payload_parser.dart';
 
 class QuantusSdk {
   /// Initialise the SDK (loads Rust FFI, etc).

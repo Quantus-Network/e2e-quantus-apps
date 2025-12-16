@@ -18,6 +18,7 @@ import 'package:resonance_network_wallet/providers/pending_transactions_provider
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:flutter/foundation.dart';
 
 enum SendOverlayState { confirm, progress, complete, hardwareSign, hardwareScan }
 
@@ -216,6 +217,7 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
       final signatureWithPublicKey = Uint8List(signature.length + debugWallet.publicKey.length);
       signatureWithPublicKey.setAll(0, signature);
       signatureWithPublicKey.setAll(signature.length, debugWallet.publicKey);
+      // printKatValues(unsignedData, signatureWithPublicKey);
       await _onHardwareSignatureScanned('0x${hex.encode(signatureWithPublicKey)}');
     } catch (e) {
       if (!mounted) return;
@@ -932,4 +934,19 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
       ),
     );
   }
+
+  // This is to generate test values for unit tests. 
+  // We don't really need the signature - we only really want to test parsing. 
+  void printKatValues(UnsignedTransactionData unsignedData, Uint8List signatureWithPublicKey) {
+    print('KAT raw encoded payload: ${hex.encode(unsignedData.encodedPayloadRaw)}');
+    // Print hex in chunks to avoid console truncation
+    final hexString = hex.encode(signatureWithPublicKey);
+    print('KAT signatureWithPublicKey (${hexString.length} chars):');
+    for (var i = 0; i < hexString.length; i += 64) {
+      final end = (i + 64 < hexString.length) ? i + 64 : hexString.length;
+      print('  ${hexString.substring(i, end)}');
+    }
+    debugPrint('KAT signatureWithPublicKey: ${hex.encode(signatureWithPublicKey)}');
+  }
+
 }
