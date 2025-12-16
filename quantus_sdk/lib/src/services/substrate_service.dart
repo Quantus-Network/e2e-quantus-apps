@@ -244,7 +244,7 @@ class SubstrateService {
     final [specVersion, transactionVersion] = [runtimeVersion.specVersion, runtimeVersion.transactionVersion];
     final encodedCall = call.encode();
 
-    final payloadToSign = SigningPayload(
+    final payloadToSign = QuantusSigningPayload(
       method: encodedCall,
       specVersion: specVersion,
       transactionVersion: transactionVersion,

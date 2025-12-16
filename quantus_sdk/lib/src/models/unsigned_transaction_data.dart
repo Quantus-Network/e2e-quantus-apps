@@ -1,13 +1,20 @@
 import 'dart:typed_data';
 
 import 'package:polkadart/polkadart.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 class UnsignedTransactionData {
-  final SigningPayload payloadToSign;
+  final QuantusSigningPayload payloadToSign;
   final Uint8List signer;
   final dynamic registry;
 
-  Uint8List get encodedPayload => payloadToSign.encode(registry);
+  Uint8List get encodedPayloadRaw => payloadToSign.encodeRaw(registry);
+
+  Uint8List get encodedPayloadToSign {
+    final payloadEncoded = encodedPayloadRaw;
+    print('payloadEncoded Size: ${payloadEncoded.length}');
+    return payloadEncoded.length > 256 ? const Blake2bHasher(32).hash(payloadEncoded) : payloadEncoded;
+  }    
 
   UnsignedTransactionData({
     required this.payloadToSign,

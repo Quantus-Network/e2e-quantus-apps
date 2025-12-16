@@ -212,7 +212,7 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
 
     try {
       final debugWallet = await account.getKeypair();
-      final signature = signMessage(keypair: debugWallet, message: unsignedData.encodedPayload);
+      final signature = signMessage(keypair: debugWallet, message: unsignedData.encodedPayloadToSign);
       final signatureWithPublicKey = Uint8List(signature.length + debugWallet.publicKey.length);
       signatureWithPublicKey.setAll(0, signature);
       signatureWithPublicKey.setAll(signature.length, debugWallet.publicKey);
@@ -647,7 +647,7 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
               child: QrImageView(
-                data: '0x${hex.encode(unsignedData.encodedPayload)}',
+                data: '0x${hex.encode(unsignedData.encodedPayloadRaw)}',
                 version: QrVersions.auto,
                 size: double.infinity,
                 padding: EdgeInsets.zero,
