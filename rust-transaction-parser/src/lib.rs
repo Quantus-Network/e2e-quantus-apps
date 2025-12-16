@@ -8,7 +8,7 @@ pub struct TransactionInfo {
     pub to_address: String,
     pub amount: u128,
     pub is_reversible: bool,
-    pub reversible_timeframe: Option<u32>,
+    pub reversible_timeframe: Option<u64>,
 }
 
 impl fmt::Display for TransactionInfo {
@@ -18,7 +18,7 @@ impl fmt::Display for TransactionInfo {
                self.to_address, amount_str, self.is_reversible)?;
 
         if self.is_reversible && self.reversible_timeframe.is_some() {
-            write!(f, "\n  Reversible Timeframe: {} blocks", self.reversible_timeframe.unwrap())?;
+            write!(f, "\n  Reversible Timeframe: {} milliseconds ", self.reversible_timeframe.unwrap())?;
         }
 
         Ok(())
@@ -108,7 +108,7 @@ impl QuantusPayloadParser {
             4 => { // schedule_transfer_with_delay
                 let dest = Self::parse_multi_address(&mut input)?;
                 let amount: u128 = Decode::decode(&mut input).ok()?;
-                let delay = Self::parse_block_number_or_timestamp(&mut input)?;
+                let delay: u64 = Self::parse_block_number_or_timestamp(&mut input)?;
                 Some(TransactionInfo {
                     to_address: dest,
                     amount,
@@ -149,17 +149,17 @@ impl QuantusPayloadParser {
         }
     }
 
-    fn parse_block_number_or_timestamp(input: &mut &[u8]) -> Option<u32> {
+    fn parse_block_number_or_timestamp(input: &mut &[u8]) -> Option<u64> {
         let variant: u8 = Decode::decode(input).ok()?;
 
         match variant {
             0 => { // BlockNumber(u32)
                 let block_number: u32 = Decode::decode(input).ok()?;
-                Some(block_number)
+                Some(block_number as u64)
             }
             1 => { // Timestamp(u64)
                 let timestamp: u64 = Decode::decode(input).ok()?;
-                Some(timestamp as u32)
+                Some(timestamp)
             }
             _ => None,
         }
@@ -195,7 +195,7 @@ mod tests {
         let payload = hex::decode(hex_payload).unwrap();
         let _expected_address = "qzn5St24cMsjE4JKYdXLBctusWj5zom67dnrW22SweAahLGeG";
         let expected_amount = 1440000000000u128;
-        let expected_delay = 300000u32; // 5 minutes in milliseconds
+        let expected_delay = 300000u64; // 5 minutes in milliseconds
 
         let result = QuantusPayloadParser::parse_payload(&payload);
 
