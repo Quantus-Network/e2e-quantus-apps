@@ -12,7 +12,8 @@ class UnsignedTransactionData {
 
   Uint8List get encodedPayloadToSign {
     final payloadEncoded = encodedPayloadRaw;
-    print('payloadEncoded Size: ${payloadEncoded.length}');
+    // print('payloadEncoded Size: ${payloadEncoded.length}');
+    // payloadEncoded Size: 119 for a normal transfer - the 256 case may be rare.
     return payloadEncoded.length > 256 ? const Blake2bHasher(32).hash(payloadEncoded) : payloadEncoded;
   }    
 
