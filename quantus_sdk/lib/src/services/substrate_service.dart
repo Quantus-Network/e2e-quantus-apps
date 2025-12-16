@@ -40,6 +40,9 @@ class SubstrateService {
       });
 
       print('getFee: $result');
+      if (result.error != null) {
+        throw Exception('RPC Error: ${result.error}');
+      }
       final partialFeeString = result.result['partialFee'] as String;
       final partialFee = BigInt.parse(partialFeeString);
       print('partialFee: $partialFee');
@@ -96,9 +99,11 @@ class SubstrateService {
   }
 
   Future<ExtrinsicFeeData> getFeeForCall(Account account, RuntimeCall call) async {
-    final extrinsic = await getExtrinsicPayload(account, call);
+    // We use a dummy signature for fee estimation to avoid prompting for password/device.
+    // The node needs a properly formatted signed extrinsic to estimate fees, even if the signature is invalid.
+    final extrinsic = await getExtrinsicPayload(account, call, isSigned: false);
     final fee = await getFee(extrinsic.payload);
-    return ExtrinsicFeeData(fee: fee, extrinsicData: extrinsic);
+    return ExtrinsicFeeData(fee: fee, blockHash: extrinsic.blockHash, blockNumber: extrinsic.blockNumber);
   }
 
   /// Submit a fully formatted extrinsic for block inclusion.
@@ -146,13 +151,8 @@ class SubstrateService {
     throw Exception('Failed to submit extrinsic after $maxRetries retries.');
   }
 
-  Future<ExtrinsicData> getExtrinsicPayload(Account account, RuntimeCall call) async {
-    final mnemonic = await account.getMnemonic();
-    if (mnemonic == null) {
-      throw Exception('Mnemonic not found for signing.');
-    }
-    final senderWallet = HdWalletService().keyPairAtIndex(mnemonic, account.index);
-
+  Future<ExtrinsicData> getExtrinsicPayload(Account account, RuntimeCall call,
+      {bool isSigned = true}) async {
     final [runtimeVersion, genesisHash, blockNumber, blockHash, nonce] = await Future.wait([
       _rpcEndpointService.rpcTask((uri) async {
         final provider = Provider.fromUri(uri);
@@ -162,7 +162,7 @@ class SubstrateService {
       _getGenesisHash(),
       _getBlockNumber(),
       _getBlockHash(),
-      _getNextAccountNonce(senderWallet),
+      _getNextAccountNonceFromAddress(account.accountId),
     ]);
 
     final [specVersion, transactionVersion] = [runtimeVersion.specVersion, runtimeVersion.transactionVersion];
@@ -187,26 +187,121 @@ class SubstrateService {
 
     final payload = payloadToSign.encode(registry);
 
-    final signature = crypto.signMessage(keypair: senderWallet, message: payload);
-    final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, senderWallet.publicKey);
+    if (isSigned) {
+      final mnemonic = await account.getMnemonic();
+      if (mnemonic == null) {
+        throw Exception('Mnemonic not found for signing.');
+      }
+      final senderWallet = HdWalletService().keyPairAtIndex(mnemonic, account.index);
 
-    final extrinsic = ResonanceExtrinsicPayload(
-      signer: Uint8List.fromList(senderWallet.addressBytes),
-      method: encodedCall,
-      signature: signatureWithPublicKeyBytes,
-      eraPeriod: 64,
-      blockNumber: blockNumber,
-      nonce: nonce,
-      tip: 0,
-    ).encodeResonance(registry, ResonanceSignatureType.resonance);
+      final signature = crypto.signMessage(keypair: senderWallet, message: payload);
+      final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, senderWallet.publicKey);
 
-    return ExtrinsicData(payload: extrinsic, blockNumber: blockNumber, blockHash: blockHash, nonce: nonce);
+      final extrinsic = ResonanceExtrinsicPayload(
+        signer: Uint8List.fromList(senderWallet.addressBytes),
+        method: encodedCall,
+        signature: signatureWithPublicKeyBytes,
+        eraPeriod: 64,
+        blockNumber: blockNumber,
+        nonce: nonce,
+        tip: 0,
+      ).encodeResonance(registry, ResonanceSignatureType.resonance);
+
+      return ExtrinsicData(payload: extrinsic, blockNumber: blockNumber, blockHash: blockHash, nonce: nonce);
+    } else {
+      // Use a dummy signature for fee estimation
+      // 7219 is the size of the Dilithium signature + public key
+      final dummySignature = Uint8List(7219);
+      final signerBytes = getAccountId32(account.accountId);
+
+      final extrinsic = ResonanceExtrinsicPayload(
+        signer: signerBytes,
+        method: encodedCall,
+        signature: dummySignature,
+        eraPeriod: 64,
+        blockNumber: blockNumber,
+        nonce: nonce,
+        tip: 0,
+      ).encodeResonance(registry, ResonanceSignatureType.resonance);
+
+      return ExtrinsicData(payload: extrinsic, blockNumber: blockNumber, blockHash: blockHash, nonce: nonce);
+    } 
   }
 
-  Future<int> _getNextAccountNonce(Keypair senderWallet) async {
+  Future<UnsignedTransactionData> getUnsignedTransactionPayload(Account account, RuntimeCall call) async {
+    final accountIdBytes = crypto.ss58ToAccountId(s: account.accountId);
+
+    final [runtimeVersion, genesisHash, blockNumber, blockHash, nonce] = await Future.wait([
+      _rpcEndpointService.rpcTask((uri) async {
+        final provider = Provider.fromUri(uri);
+        final stateApi = StateApi(provider);
+        return await stateApi.getRuntimeVersion();
+      }),
+      _getGenesisHash(),
+      _getBlockNumber(),
+      _getBlockHash(),
+      _getNextAccountNonceFromAddress(account.accountId),
+    ]);
+
+    final [specVersion, transactionVersion] = [runtimeVersion.specVersion, runtimeVersion.transactionVersion];
+    final encodedCall = call.encode();
+
+    final payloadToSign = SigningPayload(
+      method: encodedCall,
+      specVersion: specVersion,
+      transactionVersion: transactionVersion,
+      genesisHash: genesisHash,
+      blockHash: blockHash,
+      blockNumber: blockNumber,
+      eraPeriod: 64,
+      nonce: nonce,
+      tip: 0,
+    );
+
+    final registry = await _rpcEndpointService.rpcTask((uri) async {
+      final provider = Provider.fromUri(uri);
+      return Schrodinger(provider).registry;
+    });
+
+    final payload = payloadToSign.encode(registry);
+
+    return UnsignedTransactionData(
+      payloadToSign: payload,
+      signer: accountIdBytes,
+      method: encodedCall,
+      eraPeriod: 64,
+      blockNumber: blockNumber,
+      blockHash: blockHash,
+      nonce: nonce,
+      tip: 0,
+      registry: registry,
+    );
+  }
+
+  Future<Uint8List> submitExtrinsicWithExternalSignature(
+    UnsignedTransactionData unsignedData,
+    Uint8List signature,
+    Uint8List publicKey,
+  ) async {
+    final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, publicKey);
+
+    final extrinsic = ResonanceExtrinsicPayload(
+      signer: unsignedData.signer,
+      method: unsignedData.method,
+      signature: signatureWithPublicKeyBytes,
+      eraPeriod: unsignedData.eraPeriod,
+      blockNumber: unsignedData.blockNumber,
+      nonce: unsignedData.nonce,
+      tip: unsignedData.tip,
+    ).encodeResonance(unsignedData.registry, ResonanceSignatureType.resonance);
+
+    return await _submitExtrinsic(extrinsic);
+  }
+
+  Future<int> _getNextAccountNonceFromAddress(String address) async {
     final nonceResult = await _rpcEndpointService.rpcTask((uri) async {
       final provider = Provider.fromUri(uri);
-      return await provider.send('system_accountNextIndex', [senderWallet.ss58Address]);
+      return await provider.send('system_accountNextIndex', [address]);
     });
     return int.parse(nonceResult.result.toString());
   }
