@@ -16,6 +16,8 @@
 ///   print(txInfo); // Shows formatted transaction details
 /// }
 /// ```
+library;
+
 import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
@@ -65,9 +67,11 @@ class QuantusPayloadParser {
       // Read the call data (remaining bytes)
       final callData = input.readBytes(input.remainingLength ?? 0);
 
-      if (palletIndex == 2) { // Balances pallet
+      if (palletIndex == 2) {
+        // Balances pallet
         return _parseBalancesCall(callData);
-      } else if (palletIndex == 13) { // ReversibleTransfers pallet
+      } else if (palletIndex == 13) {
+        // ReversibleTransfers pallet
         return _parseReversibleTransfersCall(callData);
       }
 
@@ -84,22 +88,16 @@ class QuantusPayloadParser {
       final input = Input.fromBytes(callData);
       final callIndex = U8Codec.codec.decode(input);
 
-      if (callIndex == 0) { // transfer_allow_death
+      if (callIndex == 0) {
+        // transfer_allow_death
         final dest = _parseMultiAddress(input);
         final amount = CompactBigIntCodec.codec.decode(input);
-        return TransactionInfo(
-          toAddress: dest,
-          amount: amount,
-          isReversible: false,
-        );
-      } else if (callIndex == 3) { // transfer_keep_alive
+        return TransactionInfo(toAddress: dest, amount: amount, isReversible: false);
+      } else if (callIndex == 3) {
+        // transfer_keep_alive
         final dest = _parseMultiAddress(input);
         final amount = CompactBigIntCodec.codec.decode(input);
-        return TransactionInfo(
-          toAddress: dest,
-          amount: amount,
-          isReversible: false,
-        );
+        return TransactionInfo(toAddress: dest, amount: amount, isReversible: false);
       }
     } catch (e) {
       print('Error parsing balances call: $e');
@@ -112,7 +110,8 @@ class QuantusPayloadParser {
       final input = Input.fromBytes(callData);
       final callIndex = U8Codec.codec.decode(input);
 
-      if (callIndex == 3) { // schedule_transfer
+      if (callIndex == 3) {
+        // schedule_transfer
         final dest = _parseMultiAddress(input);
         final amount = U128Codec.codec.decode(input);
         return TransactionInfo(
@@ -121,37 +120,30 @@ class QuantusPayloadParser {
           isReversible: true,
           reversibleTimeframe: null, // Uses configured delay
         );
-      } else if (callIndex == 4) { // schedule_transfer_with_delay
+      } else if (callIndex == 4) {
+        // schedule_transfer_with_delay
         final dest = _parseMultiAddress(input);
         final amount = U128Codec.codec.decode(input);
         final delay = _parseBlockNumberOrTimestamp(input);
-        return TransactionInfo(
-          toAddress: dest,
-          amount: amount,
-          isReversible: true,
-          reversibleTimeframe: delay,
-        );
-      } else if (callIndex == 5) { // schedule_asset_transfer
-        final assetId = U32Codec.codec.decode(input);
-        final dest = _parseMultiAddress(input);
-        final amount = U128Codec.codec.decode(input);
-        return TransactionInfo(
-          toAddress: dest,
-          amount: amount,
-          isReversible: true,
-          reversibleTimeframe: null, // Uses configured delay
-        );
-      } else if (callIndex == 6) { // schedule_asset_transfer_with_delay
-        final assetId = U32Codec.codec.decode(input);
-        final dest = _parseMultiAddress(input);
-        final amount = U128Codec.codec.decode(input);
-        final delay = _parseBlockNumberOrTimestamp(input);
-        return TransactionInfo(
-          toAddress: dest,
-          amount: amount,
-          isReversible: true,
-          reversibleTimeframe: delay,
-        );
+        return TransactionInfo(toAddress: dest, amount: amount, isReversible: true, reversibleTimeframe: delay);
+      // } else if (callIndex == 5) {
+      //   // schedule_asset_transfer
+      //   final assetId = U32Codec.codec.decode(input);
+      //   final dest = _parseMultiAddress(input);
+      //   final amount = U128Codec.codec.decode(input);
+      //   return TransactionInfo(
+      //     toAddress: dest,
+      //     amount: amount,
+      //     isReversible: true,
+      //     reversibleTimeframe: null, // Uses configured delay
+      //   );
+      // } else if (callIndex == 6) {
+      //   // schedule_asset_transfer_with_delay
+      //   final assetId = U32Codec.codec.decode(input);
+      //   final dest = _parseMultiAddress(input);
+      //   final amount = U128Codec.codec.decode(input);
+      //   final delay = _parseBlockNumberOrTimestamp(input);
+      //   return TransactionInfo(toAddress: dest, amount: amount, isReversible: true, reversibleTimeframe: delay);
       }
     } catch (e) {
       print('Error parsing reversible transfers call: $e');
@@ -187,11 +179,13 @@ class QuantusPayloadParser {
   static int? _parseBlockNumberOrTimestamp(Input input) {
     final variant = U8Codec.codec.decode(input);
 
-    if (variant == 0) { // BlockNumber(u32)
+    if (variant == 0) {
+      // BlockNumber(u32)
       return U32Codec.codec.decode(input);
-    } else if (variant == 1) { // Timestamp(u64)
+    } else if (variant == 1) {
+      // Timestamp(u64)
       final timestamp = U64Codec.codec.decode(input);
-      return timestamp.toInt(); 
+      return timestamp.toInt();
     }
 
     return null;

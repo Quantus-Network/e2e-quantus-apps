@@ -261,11 +261,7 @@ class SubstrateService {
       return Schrodinger(provider).registry;
     });
 
-    return UnsignedTransactionData(
-      payloadToSign: payloadToSign,
-      signer: accountIdBytes,
-      registry: registry,
-    );
+    return UnsignedTransactionData(payloadToSign: payloadToSign, signer: accountIdBytes, registry: registry);
   }
 
   Future<Uint8List> submitExtrinsicWithExternalSignature(

@@ -15,11 +15,7 @@ class UnsignedTransactionData {
     // print('payloadEncoded Size: ${payloadEncoded.length}');
     // payloadEncoded Size: 119 for a normal transfer - the 256 case may be rare.
     return payloadEncoded.length > 256 ? const Blake2bHasher(32).hash(payloadEncoded) : payloadEncoded;
-  }    
+  }
 
-  UnsignedTransactionData({
-    required this.payloadToSign,
-    required this.signer,
-    required this.registry,
-  });
+  UnsignedTransactionData({required this.payloadToSign, required this.signer, required this.registry});
 }

@@ -6,7 +6,6 @@ import 'package:polkadart/polkadart.dart';
 import 'package:polkadart/scale_codec.dart';
 
 class QuantusSigningPayload extends SigningPayload {
-
   ///
   /// Create a new instance of [SigningPayload]
   ///
@@ -25,13 +24,13 @@ class QuantusSigningPayload extends SigningPayload {
     super.customSignedExtensions,
   }) : super();
 
-
-  // This code is 1:1 the same as the original SigningPayload.encode, but we don't hash the result so the HW wallet can parse and display the call correctly. 
+  // This code is 1:1 the same as the original SigningPayload.encode, but we don't hash the result so the HW wallet can parse and display the call correctly.
   // Based on Polkadart v0.7.3 SigningPayload.encode()
   Uint8List encodeRaw(dynamic registry) {
     if (customSignedExtensions.isNotEmpty && registry is! Registry) {
       throw Exception(
-          'Custom signed extensions are not supported on this registry. Please use registry from `runtimeMetadata.chainInfo.scaleCodec.registry`.');
+        'Custom signed extensions are not supported on this registry. Please use registry from `runtimeMetadata.chainInfo.scaleCodec.registry`.',
+      );
     }
     final ByteOutput tempOutput = ByteOutput();
 
@@ -56,8 +55,7 @@ class QuantusSigningPayload extends SigningPayload {
     {
       if (registry.getSignedExtensionTypes() is Map) {
         // Usage here for the Registry from the polkadart_scale_codec
-        signedExtensionKeys =
-            (registry.getSignedExtensionTypes() as Map<String, Codec<dynamic>>).keys.toList();
+        signedExtensionKeys = (registry.getSignedExtensionTypes() as Map<String, Codec<dynamic>>).keys.toList();
       } else {
         // Usage here for the generated lib from the polkadart_cli
         signedExtensionKeys = (registry.getSignedExtensionTypes() as List<dynamic>).cast<String>();
@@ -99,14 +97,12 @@ class QuantusSigningPayload extends SigningPayload {
       // Do the keys preparation of signedExtensions
       if (registry.getSignedExtensionTypes() is Map) {
         // Usage here for the Registry from the polkadart_scale_codec
-        additionalSignedExtensionKeys =
-            (registry.getAdditionalSignedExtensionTypes() as Map<String, Codec<dynamic>>)
-                .keys
-                .toList();
+        additionalSignedExtensionKeys = (registry.getAdditionalSignedExtensionTypes() as Map<String, Codec<dynamic>>)
+            .keys
+            .toList();
       } else {
         // Usage here for the generated lib from the polkadart_cli
-        additionalSignedExtensionKeys =
-            (registry.getSignedExtensionExtra() as List<dynamic>).cast<String>();
+        additionalSignedExtensionKeys = (registry.getSignedExtensionExtra() as List<dynamic>).cast<String>();
       }
     }
 
@@ -133,8 +129,7 @@ class QuantusSigningPayload extends SigningPayload {
             // throw exception as this is encodable key and we need this key to be present in customSignedExtensions
             throw Exception('Key `$extension` is missing in customSignedExtensions.');
           }
-          additionalSignedExtensionMap[extension]
-              .encodeTo(customSignedExtensions[extension], tempOutput);
+          additionalSignedExtensionMap[extension].encodeTo(customSignedExtensions[extension], tempOutput);
         }
       }
     }
@@ -142,8 +137,8 @@ class QuantusSigningPayload extends SigningPayload {
     output.write(tempOutput.toBytes());
     final payloadEncoded = output.toBytes();
 
-    // This is the only difference between the original SigningPayload and the QuantusSigningPayload.encodeRaw. 
-    // We don't hash the result so the HW wallet can parse and display the call correctly. 
+    // This is the only difference between the original SigningPayload and the QuantusSigningPayload.encodeRaw.
+    // We don't hash the result so the HW wallet can parse and display the call correctly.
     return payloadEncoded;
     // See rust code: https://github.com/paritytech/polkadot-sdk/blob/e349fc9ef8354eea1bafc1040c20d6fe3189e1ec/substrate/primitives/runtime/src/generic/unchecked_extrinsic.rs#L253
     // return payloadEncoded.length > 256 ? Blake2bHasher(32).hash(payloadEncoded) : payloadEncoded;

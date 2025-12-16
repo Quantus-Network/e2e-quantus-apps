@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -257,7 +256,6 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
       );
     }
   }
-
 
   Widget _buildConfirmState() {
     final formattedAmount = _formattingService.formatBalance(widget.amount);
@@ -783,7 +781,9 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
                     child: Text(
                       'Position the QR code within the frame',
                       textAlign: TextAlign.center,
-                      style: context.themeText.paragraph?.copyWith(color: context.themeColors.textPrimary.useOpacity(0.8)),
+                      style: context.themeText.paragraph?.copyWith(
+                        color: context.themeColors.textPrimary.useOpacity(0.8),
+                      ),
                     ),
                   ),
                   if (AppConstants.debugHardwareWallet)
@@ -823,7 +823,11 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
     );
   }
 
-  Future<void> _processHardwareSignature(String signatureQR, UnsignedTransactionData unsignedData, Account account) async {
+  Future<void> _processHardwareSignature(
+    String signatureQR,
+    UnsignedTransactionData unsignedData,
+    Account account,
+  ) async {
     try {
       final signatureHex = signatureQR.replaceAll('0x', '').replaceAll('0X', '');
       final signatureBytes = hex.decode(signatureHex);
@@ -935,8 +939,8 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
     );
   }
 
-  // This is to generate test values for unit tests. 
-  // We don't really need the signature - we only really want to test parsing. 
+  // This is to generate test values for unit tests.
+  // We don't really need the signature - we only really want to test parsing.
   void printKatValues(UnsignedTransactionData unsignedData, Uint8List signatureWithPublicKey) {
     print('KAT raw encoded payload: ${hex.encode(unsignedData.encodedPayloadRaw)}');
     // Print hex in chunks to avoid console truncation
@@ -948,5 +952,4 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
     }
     debugPrint('KAT signatureWithPublicKey: ${hex.encode(signatureWithPublicKey)}');
   }
-
 }

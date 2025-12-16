@@ -26,14 +26,14 @@ void main() {
     });
 
     test('parses real world balance transfer (0.9 QUAN)', () {
-
-    // Test with real world value as follows
-    // final hexPayload = '020000ef5f320156894f0fde742921c6990bf446e82c89fae5a23e701900abcd92dfb40700282e8cd185012800007400000002000000826beefbe2be72645ff376f18de745ac196dc77637436090de4174180706118e3d3e081c6e3599f8ae31d404d9f087f50c25b4e08c35712e23470a60da5799ca00';
-    // final expectedAmount = (BigInt): 900000000000
-    // final expectedTargetAddress = 'qzps6MnSixszZAWiwcpjtw6uXBjWg2aEyrXBdp9thijzY1g86';
+      // Test with real world value as follows
+      // final hexPayload = '020000ef5f320156894f0fde742921c6990bf446e82c89fae5a23e701900abcd92dfb40700282e8cd185012800007400000002000000826beefbe2be72645ff376f18de745ac196dc77637436090de4174180706118e3d3e081c6e3599f8ae31d404d9f087f50c25b4e08c35712e23470a60da5799ca00';
+      // final expectedAmount = (BigInt): 900000000000
+      // final expectedTargetAddress = 'qzps6MnSixszZAWiwcpjtw6uXBjWg2aEyrXBdp9thijzY1g86';
 
       // Real world hex payload from production
-      final hexPayload = '020000ef5f320156894f0fde742921c6990bf446e82c89fae5a23e701900abcd92dfb40700282e8cd185012800007400000002000000826beefbe2be72645ff376f18de745ac196dc77637436090de4174180706118e3d3e081c6e3599f8ae31d404d9f087f50c25b4e08c35712e23470a60da5799ca00';
+      final hexPayload =
+          '020000ef5f320156894f0fde742921c6990bf446e82c89fae5a23e701900abcd92dfb40700282e8cd185012800007400000002000000826beefbe2be72645ff376f18de745ac196dc77637436090de4174180706118e3d3e081c6e3599f8ae31d404d9f087f50c25b4e08c35712e23470a60da5799ca00';
       final expectedTargetAddress = 'qzps6MnSixszZAWiwcpjtw6uXBjWg2aEyrXBdp9thijzY1g86';
       final expectedAmount = BigInt.from(900000000000);
       final payload = Uint8List.fromList(hex.decode(hexPayload));
@@ -47,13 +47,13 @@ void main() {
       expect(result.toAddress, expectedTargetAddress);
     });
 
-
-// flutter: Showing confirmation for amount (BigInt): 1440000000000
-// Reverisble transfer to qzn5St24cMsjE4JKYdXLBctusWj5zom67dnrW22SweAahLGeG
-// delay 5 minutes = 300 seconds.
-// flutter: KAT raw encoded payload: 0d04007416854906f03a9dff66e3270a736c44e15970ac03a638471523a03069f276ca0040b0464f010000000000000000000001e093040000000000d5010c00007400000002000000826beefbe2be72645ff376f18de745ac196dc77637436090de4174180706118efeebb9b31159a679a1e49ccc34d363b5d4a00b836ad4f85cbba8c6274ac2566800
+    // flutter: Showing confirmation for amount (BigInt): 1440000000000
+    // Reverisble transfer to qzn5St24cMsjE4JKYdXLBctusWj5zom67dnrW22SweAahLGeG
+    // delay 5 minutes = 300 seconds.
+    // flutter: KAT raw encoded payload: 0d04007416854906f03a9dff66e3270a736c44e15970ac03a638471523a03069f276ca0040b0464f010000000000000000000001e093040000000000d5010c00007400000002000000826beefbe2be72645ff376f18de745ac196dc77637436090de4174180706118efeebb9b31159a679a1e49ccc34d363b5d4a00b836ad4f85cbba8c6274ac2566800
     test('Real world reversible transfer (1.44 QUAN, delay 5 minutes)', () {
-      final hexPayload = '0d04007416854906f03a9dff66e3270a736c44e15970ac03a638471523a03069f276ca0040b0464f010000000000000000000001e093040000000000d5010c00007400000002000000826beefbe2be72645ff376f18de745ac196dc77637436090de4174180706118efeebb9b31159a679a1e49ccc34d363b5d4a00b836ad4f85cbba8c6274ac2566800';
+      final hexPayload =
+          '0d04007416854906f03a9dff66e3270a736c44e15970ac03a638471523a03069f276ca0040b0464f010000000000000000000001e093040000000000d5010c00007400000002000000826beefbe2be72645ff376f18de745ac196dc77637436090de4174180706118efeebb9b31159a679a1e49ccc34d363b5d4a00b836ad4f85cbba8c6274ac2566800';
       final expectedTargetAddress = 'qzn5St24cMsjE4JKYdXLBctusWj5zom67dnrW22SweAahLGeG';
       final expectedAmount = BigInt.from(1440000000000);
       final expectedReversibleTimeframe = 5 * 60 * 1000; // 5 minutes in millisecond
@@ -68,7 +68,6 @@ void main() {
       expect(result.toAddress, expectedTargetAddress);
     });
 
-
     test('parses reversible transfer', () {
       // Create a mock reversible transfer payload
       // Pallet index 13 (ReversibleTransfers), call index 3 (schedule_transfer)
@@ -77,7 +76,22 @@ void main() {
         3, // call index
         0, // MultiAddress::Id
         ...List.filled(32, 2), // mock account ID (32 bytes)
-        0x00, 0xa0, 0x72, 0x4e, 0x18, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // amount (16 bytes, little endian) - 10000000000000 as u128
+        0x00,
+        0xa0,
+        0x72,
+        0x4e,
+        0x18,
+        0x09,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00, // amount (16 bytes, little endian) - 10000000000000 as u128
       ]);
 
       final result = QuantusPayloadParser.parsePayload(payload);
@@ -97,7 +111,22 @@ void main() {
         4, // call index
         0, // MultiAddress::Id
         ...List.filled(32, 3), // mock account ID (32 bytes)
-        0x00, 0xa0, 0x72, 0x4e, 0x18, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // amount (16 bytes, little endian) - 10000000000000 as u128
+        0x00,
+        0xa0,
+        0x72,
+        0x4e,
+        0x18,
+        0x09,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00, // amount (16 bytes, little endian) - 10000000000000 as u128
         0, // BlockNumber variant
         100, 0, 0, 0, // delay: 100 blocks
       ]);
