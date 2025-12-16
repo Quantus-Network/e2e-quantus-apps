@@ -108,7 +108,7 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
         return;
       }
 
-      if (account.accountType == AccountType.keystone) {
+      if (account.accountType == AccountType.keystone || AppConstants.debugHardwareWallet) {
         await _handleHardwareWalletTransaction(account);
       } else {
         await _handleLocalWalletTransaction(account);

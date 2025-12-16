@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:quantus_sdk/src/extensions/account_extension.dart';
 
 class QRScannerScreen extends StatefulWidget {
   final List<int>? payloadToSign; // Optional payload for debug simulation
@@ -27,8 +28,12 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     }
 
     try {
-      // 1. Get the debug wallet (Crystal Alice)
-      final debugWallet = crypto.crystalAlice();
+      // 1. Get the current active account's wallet to sign (simulate hardware wallet)
+      final account = (await SettingsService().getActiveAccount())!;
+      // For debug simulation, we assume we can get the keypair of the current account
+      // This will fail if the current account is actually a hardware wallet without a local key
+      // But for testing the flow with a local account pretending to be hardware, this is what we want.
+      final debugWallet = await account.getKeypair();
       
       // 2. Sign the payload using the debug wallet
       // We use signMessage which returns the raw signature

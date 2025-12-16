@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
+import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
+import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
@@ -38,6 +41,94 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     });
   }
 
+  Widget _buildDisconnectWalletButton() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      child: Button(
+        label: 'Disconnect Wallet',
+        onPressed: _showDisconnectConfirmation,
+        variant: ButtonVariant.dangerOutline,
+      ),
+    );
+  }
+
+  void _showDisconnectConfirmation() {
+    showAppModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 16),
+              decoration: ShapeDecoration(
+                color: Colors.black,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: IconButton(
+                        icon: Icon(Icons.close, size: context.themeSize.overlayCloseIconSize),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text('Disconnect Wallet?', style: context.themeText.mediumTitle),
+                    const SizedBox(height: 13),
+                    Text(
+                      'This will remove this account from your wallet. If this is the last account for this hardware wallet, the wallet connection will be removed.',
+                      style: context.themeText.smallParagraph,
+                    ),
+                    const SizedBox(height: 28),
+                    Button(
+                      variant: ButtonVariant.danger,
+                      label: 'Disconnect',
+                      onPressed: () async {
+                        Navigator.of(context).pop();
+                        await _disconnectWallet();
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text(
+                          'Cancel',
+                          style: context.themeText.smallParagraph?.copyWith(decoration: TextDecoration.underline),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _disconnectWallet() async {
+    try {
+      final accountsService = AccountsService();
+      await accountsService.removeAccount(widget.account);
+      
+      if (mounted) {
+        Navigator.of(context).pop(true); // Return true to indicate change
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to disconnect: $e')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
@@ -66,6 +157,9 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
               _buildAddressSection(),
               const SizedBox(height: 20),
               _buildSecuritySection(),
+              const SizedBox(height: 20),
+              if (widget.account.accountType == AccountType.keystone) _buildDisconnectWalletButton(),
+              const SizedBox(height: 30),
             ],
           ),
         ],
