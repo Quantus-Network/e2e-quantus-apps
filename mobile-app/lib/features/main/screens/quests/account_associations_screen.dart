@@ -14,6 +14,7 @@ import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_associations_providers.dart';
+import 'package:resonance_network_wallet/providers/raider_quest_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
@@ -134,6 +135,7 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
 
       case AppLifecycleState.resumed:
         ref.invalidate(accountAssociationsProvider);
+        ref.invalidate(raiderSubmissionsProvider);
         break;
     }
   }
