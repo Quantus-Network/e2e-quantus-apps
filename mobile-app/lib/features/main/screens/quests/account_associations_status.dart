@@ -91,9 +91,13 @@ class AccountAssociationsStatus extends ConsumerWidget {
             style: context.themeText.detail?.copyWith(color: context.themeColors.textError),
           ),
           const SizedBox(height: 12),
-          Button(variant: ButtonVariant.neutral, label: 'Try again', onPressed: () {
-            refreshAssociationsData(ref);
-          }),
+          Button(
+            variant: ButtonVariant.neutral,
+            label: 'Try again',
+            onPressed: () {
+              refreshAssociationsData(ref);
+            },
+          ),
         ],
       ),
     );

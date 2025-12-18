@@ -35,9 +35,9 @@ class RaiderSubmissionsNotifier extends StateNotifier<AsyncValue<RaiderSubmissio
   }
 }
 
-final raiderSubmissionsProvider = StateNotifierProvider<RaiderSubmissionsNotifier, AsyncValue<RaiderSubmissionsState>>(
-  (ref) {
-    final activeAccount = ref.watch(activeAccountProvider).value;
-    return RaiderSubmissionsNotifier(activeAccount);
-  },
-);
+final raiderSubmissionsProvider = StateNotifierProvider<RaiderSubmissionsNotifier, AsyncValue<RaiderSubmissionsState>>((
+  ref,
+) {
+  final activeAccount = ref.watch(activeAccountProvider).value;
+  return RaiderSubmissionsNotifier(activeAccount);
+});
