@@ -20,9 +20,7 @@ class RaidQuest {
       id: json['id'] as int,
       name: json['name'] as String,
       startDate: DateTime.parse(json['start_date'] as String),
-      endDate: json['end_date'] != null
-          ? DateTime.parse(json['end_date'] as String)
-          : null,
+      endDate: json['end_date'] != null ? DateTime.parse(json['end_date'] as String) : null,
       updatedAt: DateTime.parse(json['updated_at'] as String),
       createdAt: DateTime.parse(json['created_at'] as String),
     );
