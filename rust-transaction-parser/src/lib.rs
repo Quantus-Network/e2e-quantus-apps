@@ -1,7 +1,5 @@
 use parity_scale_codec::{Decode, Compact};
 use std::fmt;
-use blake2::{Blake2b512, Digest};
-use base58::ToBase58;
 
 #[derive(Debug, PartialEq)]
 pub struct TransactionInfo {
@@ -29,26 +27,16 @@ pub struct QuantusPayloadParser;
 
 impl QuantusPayloadParser {
     pub fn bytes_to_ss58(bytes: &[u8]) -> String {
-        const SS58_PREFIX: u8 = 189; // Quantus SS58 prefix
-
-        // Create the payload: prefix + public key
-        let mut payload = vec![SS58_PREFIX];
-        payload.extend_from_slice(bytes);
-
-        // Calculate checksum using Blake2b512
-        let mut hasher = Blake2b512::new();
-        hasher.update(b"SS58PRE");
-        hasher.update(&payload);
-        let hash = hasher.finalize();
-
-        // Take first 2 bytes of hash as checksum
-        let checksum = &hash[..2];
-
-        // Append checksum to payload
-        payload.extend_from_slice(checksum);
-
-        // Base58 encode
-        payload.to_base58()
+        const SS58_PREFIX: u16 = 189; // Quantus SS58 prefix
+        
+        if bytes.len() != 32 {
+            panic!("AccountId32 must be 32 bytes");
+        }
+        
+        let mut account_id_bytes = [0u8; 32];
+        account_id_bytes.copy_from_slice(bytes);
+        
+        ss58::encode(&account_id_bytes, ss58::Ss58AddressFormat::Custom(SS58_PREFIX))
     }
 
     pub fn parse_payload(payload: &[u8]) -> Result<TransactionInfo, String> {
@@ -159,7 +147,7 @@ mod tests {
     fn test_parse_real_world_balance_transfer() {
         let hex_payload = "020000ef5f320156894f0fde742921c6990bf446e82c89fae5a23e701900abcd92dfb40700282e8cd185012800007400000002000000826beefbe2be72645ff376f18de745ac196dc77637436090de4174180706118e3d3e081c6e3599f8ae31d404d9f087f50c25b4e08c35712e23470a60da5799ca00";
         let payload = hex::decode(hex_payload).unwrap();
-        let _expected_address = "qzps6MnSixszZAWiwcpjtw6uXBjWg2aEyrXBdp9thijzY1g86";
+        let expected_address = "qzps6MnSixszZAWiwcpjtw6uXBjWg2aEyrXBdp9thijzY1g86";
         let expected_amount = 900000000000u128;
 
         let result = QuantusPayloadParser::parse_payload(&payload);
@@ -169,15 +157,14 @@ mod tests {
         assert_eq!(tx.amount, expected_amount);
         assert_eq!(tx.is_reversible, false);
         assert_eq!(tx.reversible_timeframe, None);
-        // Note: SS58 encoding needs proper implementation for exact address match
-        // assert_eq!(tx.to_address, expected_address);
+        assert_eq!(tx.to_address, expected_address);
     }
 
     #[test]
     fn test_parse_real_world_reversible_transfer() {
         let hex_payload = "0d04007416854906f03a9dff66e3270a736c44e15970ac03a638471523a03069f276ca0040b0464f010000000000000000000001e093040000000000d5010c00007400000002000000826beefbe2be72645ff376f18de745ac196dc77637436090de4174180706118efeebb9b31159a679a1e49ccc34d363b5d4a00b836ad4f85cbba8c6274ac2566800";
         let payload = hex::decode(hex_payload).unwrap();
-        let _expected_address = "qzn5St24cMsjE4JKYdXLBctusWj5zom67dnrW22SweAahLGeG";
+        let expected_address = "qzn5St24cMsjE4JKYdXLBctusWj5zom67dnrW22SweAahLGeG";
         let expected_amount = 1440000000000u128;
         let expected_delay = 300000u64; // 5 minutes in milliseconds
 
@@ -188,7 +175,6 @@ mod tests {
         assert_eq!(tx.amount, expected_amount);
         assert_eq!(tx.is_reversible, true);
         assert_eq!(tx.reversible_timeframe, Some(expected_delay));
-        // Note: SS58 encoding needs proper implementation for exact address match
-        // assert_eq!(tx.to_address, expected_address);
+        assert_eq!(tx.to_address, expected_address);
     }
 }
