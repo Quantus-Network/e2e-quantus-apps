@@ -5,7 +5,6 @@ edition = "2021"
 
 [dependencies]
 parity-scale-codec = { version = "3.6", default-features = false, features = ["derive", "full"] }
-ss58-registry = "1.44"
 ss58 = "0.0.3"
 base58 = "0.2"
 blake2 = "0.10"
