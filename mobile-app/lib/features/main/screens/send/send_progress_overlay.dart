@@ -646,8 +646,12 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
               height: context.isTablet ? 300 : 250,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
-              child: QrImageView(
-                data: '0x${hex.encode(unsignedData.encodedPayloadRaw)}',
+              child: Builder(
+                builder: (context) {
+                  final qrData = '0x${hex.encode(unsignedData.encodedPayloadRaw)}';
+                  debugPrint('QR Code payload: $qrData');
+                  return QrImageView(
+                    data: qrData,
                 version: QrVersions.auto,
                 size: double.infinity,
                 padding: EdgeInsets.zero,
@@ -657,6 +661,8 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
                   dataModuleShape: QrDataModuleShape.square,
                   color: Colors.black,
                 ),
+                  );
+                },
               ),
             ),
 
