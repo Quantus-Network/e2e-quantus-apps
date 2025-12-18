@@ -32,6 +32,7 @@ export 'src/models/transaction_state.dart';
 // note we have to hide some things here because they're exported by substrate service
 // should probably expise all of crypto.dart through substrateservice instead
 export 'src/rust/api/crypto.dart' hide crystalAlice, crystalCharlie, crystalBob;
+export 'src/rust/api/ur.dart';
 export 'src/services/account_discovery_service.dart';
 export 'src/services/accounts_service.dart';
 export 'src/services/address_formatting_service.dart';

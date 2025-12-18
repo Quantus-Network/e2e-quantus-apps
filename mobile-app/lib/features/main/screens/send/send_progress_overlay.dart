@@ -1,5 +1,4 @@
 import 'dart:ui';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,60 +21,12 @@ import 'package:flutter/foundation.dart';
 
 enum SendOverlayState { confirm, progress, complete, hardwareSign, hardwareScan }
 
-String _base32Encode(Uint8List data) {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-  final buffer = StringBuffer();
-  
-  int bits = 0;
-  int value = 0;
-  
-  for (final byte in data) {
-    value = (value << 8) | byte;
-    bits += 8;
-    
-    while (bits >= 5) {
-      buffer.write(alphabet[(value >> (bits - 5)) & 31]);
-      bits -= 5;
-    }
-  }
-  
-  if (bits > 0) {
-    buffer.write(alphabet[(value << (5 - bits)) & 31]);
-  }
-  
-  return buffer.toString();
-}
-
-Uint8List _base32Decode(String encoded) {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-  final map = <int, int>{};
-  for (var i = 0; i < alphabet.length; i++) {
-    map[alphabet.codeUnitAt(i)] = i;
-  }
-  
-  final result = <int>[];
-  int bits = 0;
-  int value = 0;
-  
-  for (final char in encoded.codeUnits) {
-    final index = map[char];
-    if (index == null) continue;
-    
-    value = (value << 5) | index;
-    bits += 5;
-    
-    if (bits >= 8) {
-      result.add((value >> (bits - 8)) & 255);
-      bits -= 8;
-    }
-  }
-  
-  return Uint8List.fromList(result);
-}
-
 String encodePayloadAsUr(List<int> payload) {
-  final base32Encoded = _base32Encode(Uint8List.fromList(payload));
-  return 'UR:QUANTUS-SIGN-REQUEST/1-1/$base32Encoded';
+  final urParts = encodeUr(data: payload);
+  if (urParts.isEmpty) {
+    throw Exception('Failed to encode UR: empty result');
+  }
+  return urParts.first;
 }
 
 class SendConfirmationOverlay extends ConsumerStatefulWidget {
@@ -896,14 +847,8 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
       
       if (signatureQR.startsWith('UR:')) {
         try {
-          final parts = signatureQR.split('/');
-          if (parts.length >= 3 && parts[0] == 'UR:QUANTUS-SIGN-RESPONSE') {
-            final base32Encoded = parts[2];
-            final decoded = _base32Decode(base32Encoded);
-            signatureHex = hex.encode(decoded);
-          } else {
-            throw Exception('Invalid UR format');
-          }
+          final decoded = decodeUr(urParts: [signatureQR]);
+          signatureHex = hex.encode(decoded);
         } catch (e) {
           throw Exception('Invalid UR format: $e');
         }
