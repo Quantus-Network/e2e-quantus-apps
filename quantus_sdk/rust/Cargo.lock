@@ -2335,7 +2335,7 @@ dependencies = [
 [[package]]
 name = "quantus_ur"
 version = "0.1.0"
-source = "git+https://github.com/Quantus-Network/quantus_ur.git?tag=1.0.1#5d3b9efef60727c8c4f8e598c5d573ce5bb396c1"
+source = "git+https://github.com/Quantus-Network/quantus_ur.git?tag=1.0.2#c7ce48e6a3783ad04942c9f29c98d4dde01e8ddd"
 dependencies = [
  "hex",
  "minicbor",

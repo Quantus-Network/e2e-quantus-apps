@@ -11,3 +11,6 @@ Uint8List decodeUr({required List<String> urParts}) =>
 
 List<String> encodeUr({required List<int> data}) =>
     RustLib.instance.api.crateApiUrEncodeUr(data: data);
+
+bool isCompleteUr({required List<String> urParts}) =>
+    RustLib.instance.api.crateApiUrIsCompleteUr(urParts: urParts);
