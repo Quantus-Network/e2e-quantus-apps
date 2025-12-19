@@ -62,6 +62,7 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
   bool _isHardwareSubmitting = false;
   final MobileScannerController _signatureScannerController = MobileScannerController();
   bool _hasScannedSignature = false;
+  final Set<String> _collectedUrParts = {};
 
   void goHome() {
     if (!mounted) return;
@@ -131,6 +132,7 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
       }
 
       if (account.accountType == AccountType.keystone || AppConstants.debugHardwareWallet) {
+        _collectedUrParts.clear();
         await _startHardwareFlow(account);
         return;
       } else {
@@ -180,6 +182,7 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
       _hardwareUnsignedData = null;
       _isHardwareSubmitting = false;
       _hasScannedSignature = false;
+      _collectedUrParts.clear();
     });
 
     final substrateService = SubstrateService();
@@ -197,10 +200,11 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
       currentState = SendOverlayState.hardwareScan;
       _hasScannedSignature = false;
       _isHardwareSubmitting = false;
+      _collectedUrParts.clear();
     });
   }
 
-  Future<void> _onHardwareSignatureScanned(String signatureQR) async {
+  Future<void> _onHardwareSignatureScanned(List<String> signatureQRParts) async {
     if (_isHardwareSubmitting) return;
     final unsignedData = _hardwareUnsignedData;
     final account = _hardwareAccount;
@@ -210,7 +214,7 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
       _isHardwareSubmitting = true;
     });
 
-    await _processHardwareSignature(signatureQR, unsignedData, account);
+    await _processHardwareSignature(signatureQRParts, unsignedData, account);
   }
 
   Future<void> _simulateHardwareSignature() async {
@@ -225,13 +229,14 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
       signatureWithPublicKey.setAll(0, signature);
       signatureWithPublicKey.setAll(signature.length, debugWallet.publicKey);
       // printKatValues(unsignedData, signatureWithPublicKey);
-      await _onHardwareSignatureScanned('0x${hex.encode(signatureWithPublicKey)}');
+      await _onHardwareSignatureScanned(['0x${hex.encode(signatureWithPublicKey)}']);
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _errorMessage = 'Simulation failed: $e';
         _hasScannedSignature = false;
         _isHardwareSubmitting = false;
+        _collectedUrParts.clear();
       });
     }
   }
@@ -769,12 +774,24 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
                   MobileScanner(
                     controller: _signatureScannerController,
                     onDetect: (capture) {
-                      if (_hasScannedSignature) return;
+                      if (_hasScannedSignature || _isHardwareSubmitting) return;
                       for (final barcode in capture.barcodes) {
                         final v = barcode.rawValue;
                         if (v == null) continue;
-                        _hasScannedSignature = true;
-                        _onHardwareSignatureScanned(v);
+                        
+                        if (v.startsWith('UR:')) {
+                          final wasNew = _collectedUrParts.add(v);
+                          if (wasNew) {
+                            setState(() {});
+                            if (isCompleteUr(urParts: _collectedUrParts.toList())) {
+                              _hasScannedSignature = true;
+                              _onHardwareSignatureScanned(_collectedUrParts.toList());
+                            }
+                          }
+                        } else {
+                          _hasScannedSignature = true;
+                          _onHardwareSignatureScanned([v]);
+                        }
                         break;
                       }
                     },
@@ -792,12 +809,31 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
                     bottom: 16,
                     left: 0,
                     right: 0,
-                    child: Text(
-                      'Position the QR code within the frame',
-                      textAlign: TextAlign.center,
-                      style: context.themeText.paragraph?.copyWith(
-                        color: context.themeColors.textPrimary.useOpacity(0.8),
-                      ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_collectedUrParts.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              'Scanned ${_collectedUrParts.length} part${_collectedUrParts.length == 1 ? '' : 's'}...',
+                              textAlign: TextAlign.center,
+                              style: context.themeText.paragraph?.copyWith(
+                                color: context.themeColors.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        Text(
+                          _collectedUrParts.isEmpty
+                              ? 'Position the QR code within the frame'
+                              : 'Keep scanning until all parts are collected',
+                          textAlign: TextAlign.center,
+                          style: context.themeText.paragraph?.copyWith(
+                            color: context.themeColors.textPrimary.useOpacity(0.8),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   if (AppConstants.debugHardwareWallet)
@@ -838,21 +874,22 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
   }
 
   Future<void> _processHardwareSignature(
-    String signatureQR,
+    List<String> signatureQRParts,
     UnsignedTransactionData unsignedData,
     Account account,
   ) async {
     try {
-      String signatureHex = signatureQR;
+      String signatureHex;
       
-      if (signatureQR.startsWith('UR:')) {
+      if (signatureQRParts.isNotEmpty && signatureQRParts.first.startsWith('UR:')) {
         try {
-          final decoded = decodeUr(urParts: [signatureQR]);
+          final decoded = decodeUr(urParts: signatureQRParts);
           signatureHex = hex.encode(decoded);
         } catch (e) {
           throw Exception('Invalid UR format: $e');
         }
       } else {
+        final signatureQR = signatureQRParts.first;
         signatureHex = signatureQR.replaceAll('0x', '').replaceAll('0X', '');
       }
       
@@ -906,6 +943,7 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
           _errorMessage = 'Signature processing failed: ${e.toString()}';
           _isHardwareSubmitting = false;
           _hasScannedSignature = false;
+          _collectedUrParts.clear();
         });
       }
     }
