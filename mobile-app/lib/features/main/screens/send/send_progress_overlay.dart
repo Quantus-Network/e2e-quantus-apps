@@ -788,9 +788,6 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
                               _onHardwareSignatureScanned(_collectedUrParts.toList());
                             }
                           }
-                        } else {
-                          _hasScannedSignature = true;
-                          _onHardwareSignatureScanned([v]);
                         }
                         break;
                       }
@@ -889,8 +886,7 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
           throw Exception('Invalid UR format: $e');
         }
       } else {
-        final signatureQR = signatureQRParts.first;
-        signatureHex = signatureQR.replaceAll('0x', '').replaceAll('0X', '');
+        throw Exception('Invalid signature format');
       }
       
       final signatureBytes = hex.decode(signatureHex);
