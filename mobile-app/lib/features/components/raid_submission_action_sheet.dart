@@ -13,6 +13,7 @@ import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/raider_quest_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
+import 'package:resonance_network_wallet/utils/validators.dart';
 
 class RaidSubmissionActionSheet extends ConsumerStatefulWidget {
   const RaidSubmissionActionSheet({super.key});
@@ -46,8 +47,8 @@ class _RaidSubmissionActionSheetState extends ConsumerState<RaidSubmissionAction
     String targetInput = _targetTweetController.text.trim();
     String replyInput = _replyTweetController.text.trim();
 
-    bool targetTweetIsValid = isValidXStatusUrl(targetInput);
-    bool replyTweetIsValid = isValidXStatusUrl(replyInput);
+    bool targetTweetIsValid = Validators.isValidXStatusUrl(targetInput);
+    bool replyTweetIsValid = Validators.isValidXStatusUrl(replyInput);
 
     String errMsg = 'Invalid X status link.';
 
@@ -57,12 +58,6 @@ class _RaidSubmissionActionSheetState extends ConsumerState<RaidSubmissionAction
       _targetErrorMsg = targetTweetIsValid ? null : errMsg;
       _replyErrorMsg = replyTweetIsValid ? null : errMsg;
     });
-  }
-
-  bool isValidXStatusUrl(String url) {
-    final regex = RegExp(r'^https?:\/\/(www\.)?x\.com\/[A-Za-z0-9_]{1,15}\/status\/\d{10,25}(\?.*)?$');
-
-    return regex.hasMatch(url);
   }
 
   void _closeSheet() {
