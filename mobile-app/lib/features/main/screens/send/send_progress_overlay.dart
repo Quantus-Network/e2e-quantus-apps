@@ -876,20 +876,17 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
     Account account,
   ) async {
     try {
-      String signatureHex;
+      Uint8List signatureBytes;
       
       if (signatureQRParts.isNotEmpty && signatureQRParts.first.startsWith('UR:')) {
         try {
-          final decoded = decodeUr(urParts: signatureQRParts);
-          signatureHex = hex.encode(decoded);
+          signatureBytes = decodeUr(urParts: signatureQRParts);
         } catch (e) {
           throw Exception('Invalid UR format: $e');
         }
       } else {
         throw Exception('Invalid signature format');
       }
-      
-      final signatureBytes = hex.decode(signatureHex);
 
       if (signatureBytes.length < 64) {
         throw Exception('Invalid signature length');
@@ -898,7 +895,7 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
       // For Dilithium, the signature + public key are combined in the signatureBytes.
       // We pass the full blob as signature and an empty list as public key,
       // because submitExtrinsicWithExternalSignature will concatenate them back anyway.
-      final signature = Uint8List.fromList(signatureBytes);
+      final signature = signatureBytes;
       final publicKey = Uint8List(0);
 
       final substrateService = SubstrateService();
