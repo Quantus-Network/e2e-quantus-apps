@@ -138,6 +138,21 @@ pub fn derive_hd_path(seed: Vec<u8>, path: String) -> Vec<u8> {
     return ext.secret().to_vec();
 }
 
+#[flutter_rust_bridge::frb(sync)]
+pub fn public_key_bytes() -> usize {
+    ml_dsa_87::PUBLICKEYBYTES
+}
+
+#[flutter_rust_bridge::frb(sync)]
+pub fn secret_key_bytes() -> usize {
+    ml_dsa_87::SECRETKEYBYTES
+}
+
+#[flutter_rust_bridge::frb(sync)]
+pub fn signature_bytes() -> usize {
+    ml_dsa_87::SIGNBYTES
+}
+
 #[flutter_rust_bridge::frb(init)]
 pub fn init_app() {
     // Default utilities - feel free to customize

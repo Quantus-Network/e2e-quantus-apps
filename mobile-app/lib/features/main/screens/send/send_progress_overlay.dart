@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:polkadart/substrate/substrate.dart';
 import 'package:quantus_sdk/generated/schrodinger/types/qp_scheduler/block_number_or_timestamp.dart' as qp;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
@@ -63,6 +64,19 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
   final MobileScannerController _signatureScannerController = MobileScannerController();
   bool _hasScannedSignature = false;
   final Set<String> _collectedUrParts = {};
+  
+  int? _getTotalFragmentCount() {
+    if (_collectedUrParts.isEmpty) return null;
+    
+    for (final part in _collectedUrParts) {
+      final match = RegExp(r'/(\d+)-(\d+)/').firstMatch(part);
+      if (match != null) {
+        final total = int.tryParse(match.group(2) ?? '');
+        if (total != null && total > 0) return total;
+      }
+    }
+    return null;
+  }
 
   void goHome() {
     if (!mounted) return;
@@ -774,20 +788,40 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
                   MobileScanner(
                     controller: _signatureScannerController,
                     onDetect: (capture) {
-                      if (_hasScannedSignature || _isHardwareSubmitting) return;
+                      debugPrint('QR Scanner: onDetect called');
+                      if (_hasScannedSignature || _isHardwareSubmitting) {
+                        debugPrint('QR Scanner: Already scanned or submitting, ignoring');
+                        return;
+                      }
+                      debugPrint('QR Scanner: Processing ${capture.barcodes.length} barcode(s)');
                       for (final barcode in capture.barcodes) {
                         final v = barcode.rawValue;
-                        if (v == null) continue;
+                        debugPrint('QR Scanner: Raw value: ${v?.substring(0, v.length > 100 ? 100 : v.length)}${v != null && v.length > 100 ? '...' : ''}');
+                        if (v == null) {
+                          debugPrint('QR Scanner: Null value, skipping');
+                          continue;
+                        }
                         
                         if (v.startsWith('UR:')) {
+                          debugPrint('QR Scanner: UR code detected');
                           final wasNew = _collectedUrParts.add(v);
+                          debugPrint('QR Scanner: Was new part: $wasNew, Total parts: ${_collectedUrParts.length}');
                           if (wasNew) {
+                            final total = _getTotalFragmentCount();
+                            debugPrint('QR Scanner: Total fragments: $total');
                             setState(() {});
-                            if (isCompleteUr(urParts: _collectedUrParts.toList())) {
+                            final isComplete = isCompleteUr(urParts: _collectedUrParts.toList());
+                            debugPrint('QR Scanner: Is complete: $isComplete');
+                            if (isComplete) {
+                              debugPrint('QR Scanner: All parts collected, processing signature');
                               _hasScannedSignature = true;
                               _onHardwareSignatureScanned(_collectedUrParts.toList());
                             }
+                          } else {
+                            debugPrint('QR Scanner: Duplicate part, ignoring');
                           }
+                        } else {
+                          debugPrint('QR Scanner: Non-UR code detected, ignoring');
                         }
                         break;
                       }
@@ -813,7 +847,14 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
                           Padding(
                             padding: const EdgeInsets.only(bottom: 8),
                             child: Text(
-                              'Scanned ${_collectedUrParts.length} part${_collectedUrParts.length == 1 ? '' : 's'}...',
+                              () {
+                                final scanned = _collectedUrParts.length;
+                                final total = _getTotalFragmentCount();
+                                if (total != null) {
+                                  return 'Scanned $scanned of $total fragments';
+                                }
+                                return 'Scanned $scanned fragment${scanned == 1 ? '' : 's'}...';
+                              }(),
                               textAlign: TextAlign.center,
                               style: context.themeText.paragraph?.copyWith(
                                 color: context.themeColors.primary,
@@ -888,15 +929,22 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
         throw Exception('Invalid signature format');
       }
 
-      if (signatureBytes.length < 64) {
-        throw Exception('Invalid signature length');
+// print('signatureSize: ${hex.encode(signatureBytes)}');
+print('sig PK hash: ${hex.encode(const Blake2bHasher(32).hash(signatureBytes))}');
+
+
+      final expectedTotalSize = signatureSize + publicKeySize;
+
+      if (signatureBytes.length != expectedTotalSize) {
+        throw Exception('Invalid signature length: expected $expectedTotalSize bytes, got ${signatureBytes.length}');
       }
 
-      // For Dilithium, the signature + public key are combined in the signatureBytes.
-      // We pass the full blob as signature and an empty list as public key,
-      // because submitExtrinsicWithExternalSignature will concatenate them back anyway.
-      final signature = signatureBytes;
-      final publicKey = Uint8List(0);
+
+
+      final signature = signatureBytes.sublist(0, signatureSize);
+      final publicKey = signatureBytes.sublist(signatureSize);
+
+print('sig hash: ${hex.encode(const Blake2bHasher(32).hash(signature))}');
 
       final substrateService = SubstrateService();
       final submissionService = ref.read(transactionSubmissionServiceProvider);
