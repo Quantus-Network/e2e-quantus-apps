@@ -245,6 +245,74 @@ class TaskmasterService {
     }
   }
 
+  Future<void> addRaidSubmission(String targetTweetLink, String replyTweetLink) async {
+    print('add raid submission $targetTweetLink and $replyTweetLink');
+
+    final raiderSubmissionsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/raid-quests/submissions');
+    final Map<String, dynamic> requestBody = {'target_tweet_link': targetTweetLink, 'tweet_reply_link': replyTweetLink};
+
+    final http.Response response = await _authenticatedHttpClient.post(
+      raiderSubmissionsEndpoint,
+      body: jsonEncode(requestBody),
+    );
+
+    if (response.statusCode != 201) {
+      throw Exception('Error ${response.statusCode}: ${response.body}');
+    }
+  }
+
+  Future<void> removeRaidSubmission(String id) async {
+    print('Remove raid submission $id');
+
+    final raiderSubmissionsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/raid-quests/submissions/$id');
+    final Map<String, dynamic> requestBody = {};
+
+    final http.Response response = await _authenticatedHttpClient.delete(
+      raiderSubmissionsEndpoint,
+      body: jsonEncode(requestBody),
+    );
+
+    if (response.statusCode != 204) {
+      throw Exception('Error ${response.statusCode}: ${response.body}');
+    }
+  }
+
+  Future<RaiderSubmissionsState> getActiveRaidRaiderSubmissions() async {
+    final activeAccount = await getMainAccount();
+    print('getActiveRaidRaiderSubmissions ${activeAccount.accountId}');
+    final raiderSubmissionsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/raid-quests/submissions/me');
+
+    final http.Response response = await _authenticatedHttpClient.get(
+      raiderSubmissionsEndpoint,
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    final Map<String, dynamic> responseBody = jsonDecode(response.body);
+
+    if (response.statusCode == 404) {
+      final error = (responseBody['error'] as String?)?.toLowerCase();
+
+      if (error == 'no active raid is found') {
+        return const NoActiveRaid();
+      } else if (error == "user doesn't have x association") {
+        return const NoTwitterLinked();
+      }
+    }
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Get raider submissions http request failed with status: ${response.statusCode}. Body: ${response.body}',
+      );
+    }
+
+    final data = responseBody['data'] as Map<String, dynamic>?;
+
+    return RaiderSubmissionsOk(
+      activeRaid: RaidQuest.fromJson(data?['current_raid']),
+      submissions: List<String>.from(data?['submissions']),
+    );
+  }
+
   Future<void> associateEthAddress(String ethAddress) async {
     print('associateEthAddress $ethAddress');
 
