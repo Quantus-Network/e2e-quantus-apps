@@ -31,7 +31,6 @@ class _RaidSubmissionActionSheetState extends ConsumerState<RaidSubmissionAction
   bool _isSubmitting = false;
   bool _isDisabled = true;
 
-  String? _targetErrorMsg;
   String? _replyErrorMsg;
   String? _errorMsg;
 
@@ -44,18 +43,15 @@ class _RaidSubmissionActionSheetState extends ConsumerState<RaidSubmissionAction
   }
 
   void _checkFormValidity() {
-    String targetInput = _targetTweetController.text.trim();
     String replyInput = _replyTweetController.text.trim();
 
-    bool targetTweetIsValid = Validators.isValidXStatusUrl(targetInput);
     bool replyTweetIsValid = Validators.isValidXStatusUrl(replyInput);
 
     String errMsg = 'Invalid X status link.';
 
     setState(() {
-      _isDisabled = !targetTweetIsValid || !replyTweetIsValid;
+      _isDisabled =  !replyTweetIsValid;
       _errorMsg = null;
-      _targetErrorMsg = targetTweetIsValid ? null : errMsg;
       _replyErrorMsg = replyTweetIsValid ? null : errMsg;
     });
   }
@@ -64,13 +60,13 @@ class _RaidSubmissionActionSheetState extends ConsumerState<RaidSubmissionAction
     Navigator.of(context).pop();
   }
 
-  Future<void> _handleSubmit(String targetLink, String replyLink) async {
+  Future<void> _handleSubmit(String replyLink) async {
     setState(() {
       _isSubmitting = true;
     });
 
     try {
-      await _taskmasterService.addRaidSubmission(targetLink, replyLink);
+      await _taskmasterService.addRaidSubmission(replyLink);
       if (mounted) {
         context.showSuccessSnackbar(title: 'Success submitted!', message: 'Success adding raid submission!');
       }
@@ -134,22 +130,6 @@ class _RaidSubmissionActionSheetState extends ConsumerState<RaidSubmissionAction
         ),
         const SizedBox(height: 12),
         CustomTextField(
-          controller: _targetTweetController,
-          labelText: 'Target Tweet Link',
-          fillColor: context.themeColors.background,
-          trailing: InkWell(
-            onTap: () async {
-              final data = await Clipboard.getData('text/plain');
-              if (data != null && data.text != null) {
-                _targetTweetController.text = data.text!;
-              }
-            },
-            child: SvgPicture.asset('assets/paste_icon_1.svg', width: context.isTablet ? 24 : 18),
-          ),
-          errorMsg: _targetErrorMsg,
-        ),
-        const SizedBox(height: 8),
-        CustomTextField(
           controller: _replyTweetController,
           labelText: 'Reply Tweet Link',
           fillColor: context.themeColors.background,
@@ -185,7 +165,7 @@ class _RaidSubmissionActionSheetState extends ConsumerState<RaidSubmissionAction
             isDisabled: _isDisabled,
             variant: ButtonVariant.primary,
             onPressed: () {
-              _handleSubmit(_targetTweetController.text, _replyTweetController.text);
+              _handleSubmit(_replyTweetController.text);
             },
           ),
         ),
