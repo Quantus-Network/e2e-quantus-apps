@@ -50,7 +50,7 @@ class _RaidSubmissionActionSheetState extends ConsumerState<RaidSubmissionAction
     String errMsg = 'Invalid X status link.';
 
     setState(() {
-      _isDisabled =  !replyTweetIsValid;
+      _isDisabled = !replyTweetIsValid;
       _errorMsg = null;
       _replyErrorMsg = replyTweetIsValid ? null : errMsg;
     });
