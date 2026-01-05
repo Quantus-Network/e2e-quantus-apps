@@ -380,7 +380,7 @@ class TaskmasterService {
       body: _getXAssociationsBody(username),
     );
 
-    if (response.statusCode != 200) {
+    if (response.statusCode != 204) {
       throw Exception('Associate X http request failed with status: ${response.statusCode}. Body: ${response.body}');
     }
   }
