@@ -217,13 +217,15 @@ class _NavbarState extends ConsumerState<Navbar> {
   }
 
   Widget _buildBody() {
+    bool playPromoVideo = _selectedIndex == 3;
+
     return IndexedStack(
       index: _selectedIndex,
       children: [
         const WalletMain(),
         const TransactionsScreen(),
         const SettingsScreen(),
-        QuestsScreen(key: _questsScreenKey),
+        QuestsScreen(key: _questsScreenKey, playPromoVideo: playPromoVideo),
       ],
     );
   }
