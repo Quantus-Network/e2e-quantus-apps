@@ -129,6 +129,7 @@ class TaskMasterAuthClient {
 class TaskmasterService {
   final _referralEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/referrals');
   final _ethAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/associations/eth');
+  final _xAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/associations/x');
 
   final String _minerStatsQuery = r'''
     query MinerStats($ids: [String!]!) {
@@ -160,6 +161,12 @@ class TaskmasterService {
 
   String _getEthAssociationsBody(String ethAddress) {
     final Map<String, dynamic> requestBody = {'eth_address': ethAddress};
+
+    return jsonEncode(requestBody);
+  }
+
+  String _getXAssociationsBody(String username) {
+    final Map<String, dynamic> requestBody = {'username': username};
 
     return jsonEncode(requestBody);
   }
@@ -245,11 +252,11 @@ class TaskmasterService {
     }
   }
 
-  Future<void> addRaidSubmission(String targetTweetLink, String replyTweetLink) async {
-    print('add raid submission $targetTweetLink and $replyTweetLink');
+  Future<void> addRaidSubmission(String replyTweetLink) async {
+    print('add raid submission $replyTweetLink');
 
     final raiderSubmissionsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/raid-quests/submissions');
-    final Map<String, dynamic> requestBody = {'target_tweet_link': targetTweetLink, 'tweet_reply_link': replyTweetLink};
+    final Map<String, dynamic> requestBody = {'tweet_reply_link': replyTweetLink};
 
     final http.Response response = await _authenticatedHttpClient.post(
       raiderSubmissionsEndpoint,
@@ -365,11 +372,23 @@ class TaskmasterService {
     return OAuthLink.fromJson(json);
   }
 
+  Future<void> associateXHandle(String username) async {
+    print('associateXHandle $username');
+
+    final http.Response response = await _authenticatedHttpClient.post(
+      _xAssociationsEndpoint,
+      body: _getXAssociationsBody(username),
+    );
+
+    if (response.statusCode != 204) {
+      throw Exception('Associate X http request failed with status: ${response.statusCode}. Body: ${response.body}');
+    }
+  }
+
   Future<void> dissociateXAccount() async {
     print('dissociateXAccount');
-    final xAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/associations/x');
 
-    final http.Response response = await _authenticatedHttpClient.delete(xAssociationsEndpoint);
+    final http.Response response = await _authenticatedHttpClient.delete(_xAssociationsEndpoint);
 
     if (response.statusCode != 204) {
       throw Exception('Dissociate X http request failed with status: ${response.statusCode}. Body: ${response.body}');
