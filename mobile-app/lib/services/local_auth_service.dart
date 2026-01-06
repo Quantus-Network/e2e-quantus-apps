@@ -95,8 +95,7 @@ class LocalAuthService {
       );
 
       if (didAuthenticate) {
-        // Update last successful auth time
-        _settingsService.setLastSuccessfulAuthTime(DateTime.now());
+        _cleanLastPausedTime();
       }
 
       return didAuthenticate;
@@ -174,25 +173,32 @@ class LocalAuthService {
       final bool isEnabled = isLocalAuthEnabled();
       if (!isEnabled) return false;
 
-      final DateTime? lastAuthTime = _settingsService.getLastSuccessfulAuthTime();
+      final DateTime? lastPausedTime = _settingsService.getLastPausedTime();
 
-      if (lastAuthTime == null) return true;
+      if (lastPausedTime == null) return false;
 
       final int timeoutDurationInMinutes = getAuthTimeoutMinutes();
 
       final Duration authTimeout = Duration(minutes: timeoutDurationInMinutes);
 
-      print(
-        // ignore: lines_longer_than_80_chars
-        'auth time difference: ${DateTime.now().difference(lastAuthTime).inSeconds}',
-      );
+      print('lastPausedTime: $lastPausedTime');
+      print('now: ${DateTime.now()}');
+      print('auth time difference: ${DateTime.now().difference(lastPausedTime).inSeconds}');
 
-      final isTimeout = DateTime.now().difference(lastAuthTime) > authTimeout;
+      final isTimeout = DateTime.now().difference(lastPausedTime) > authTimeout;
       return isTimeout;
     } catch (e) {
       debugPrint('Error checking if authentication is required: $e');
       return true; // Err on the side of caution
     }
+  }
+
+  void updateLastPausedTime() {
+    _settingsService.setLastPausedTime(DateTime.now());
+  }
+
+  void _cleanLastPausedTime() {
+    _settingsService.cleanLastPausedTime();
   }
 
   /// Stop local authentication (useful for cleanup)

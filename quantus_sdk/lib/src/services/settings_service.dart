@@ -24,6 +24,7 @@ class SettingsService {
   // Local authentication keys
   static const String _isLocalAuthEnabledKey = 'is_local_auth_enabled';
   static const String _lastSuccessfulAuthKey = 'last_successful_auth';
+  static const String _lastPausedTimeKey = 'last_paused_time';
   static const String _authTimeoutKey = 'auth_timeout';
 
   // referral status
@@ -223,6 +224,22 @@ class SettingsService {
 
   void setLastSuccessfulAuthTime(DateTime time) {
     _prefs.setString(_lastSuccessfulAuthKey, time.toIso8601String());
+  }
+
+  DateTime? getLastPausedTime() {
+    final String? lastPausedString = _prefs.getString(_lastPausedTimeKey);
+    if (lastPausedString == null) return null;
+
+    final DateTime lastPaused = DateTime.parse(lastPausedString);
+    return lastPaused;
+  }
+
+  void setLastPausedTime(DateTime time) {
+    _prefs.setString(_lastPausedTimeKey, time.toIso8601String());
+  }
+
+  void cleanLastPausedTime() {
+    _prefs.remove(_lastPausedTimeKey);
   }
 
   /// Do not call this directly - call local auth service getAuthTimeoutMinutes() instead.
