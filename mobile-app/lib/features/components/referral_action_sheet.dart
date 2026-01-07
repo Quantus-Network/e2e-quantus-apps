@@ -170,6 +170,19 @@ class _ReferralActionSheetState extends State<ReferralActionSheet> {
           ),
         ),
 
+        const SizedBox(height: 24),
+        SizedBox(
+          width: context.isTablet ? 465 : null,
+          child: Button(
+            label: 'Skip',
+            isLoading: _isSubmitting,
+            variant: ButtonVariant.glassOutline,
+            onPressed: () {
+              _closeSheet();
+            },
+          ),
+        ),
+
         SizedBox(height: context.themeSize.bottomButtonSpacing),
       ],
     );
