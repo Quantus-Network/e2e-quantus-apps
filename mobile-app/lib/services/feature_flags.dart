@@ -7,12 +7,15 @@ class FeatureFlags {
   FeatureFlags._internal();
 
   static const bool enableTestButtons = false; // Only show in debug mode
+  static const bool showKeystoneHardwareWallet = false; // turn keystone hw wallet on and off
 
   /// Instance method for provider usage
   bool isEnabled(String featureName) {
     switch (featureName) {
       case 'test_buttons':
         return enableTestButtons;
+      case 'keystone_hardware_wallet':
+        return showKeystoneHardwareWallet;
       default:
         return false;
     }

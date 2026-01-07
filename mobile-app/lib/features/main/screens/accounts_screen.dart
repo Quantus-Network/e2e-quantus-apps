@@ -19,6 +19,7 @@ import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/services/feature_flags.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 enum _WalletMoreAction { createWallet, importWallet, addHardwareWallet }
@@ -101,8 +102,11 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     final items = [
       Item(value: _WalletMoreAction.createWallet, label: 'Create new wallet'),
       Item(value: _WalletMoreAction.importWallet, label: 'Import wallet'),
-      Item(value: _WalletMoreAction.addHardwareWallet, label: 'Add hardware wallet'),
     ];
+
+    if (FeatureFlags.isFeatureEnabled('keystone_hardware_wallet')) {
+      items.add(Item(value: _WalletMoreAction.addHardwareWallet, label: 'Add hardware wallet'));
+    }
 
     showSelectActionSheet<_WalletMoreAction>(context, items, (item) async {
       final result = await (switch (item.value) {

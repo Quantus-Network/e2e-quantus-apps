@@ -96,7 +96,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final accountsAsync = ref.read(accountsProvider);
     accountsAsync.whenData((accounts) {
       final walletIndices = getNonHardwareWalletIndices(accounts);
-      
+
       if (walletIndices.isEmpty) {
         showTopSnackBar(context, title: 'No Wallets', message: 'No wallets with recovery phrases found.');
         return;
@@ -105,17 +105,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (walletIndices.length == 1) {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => ShowRecoveryPhraseScreen(walletIndex: walletIndices.first),
-          ),
+          MaterialPageRoute(builder: (context) => ShowRecoveryPhraseScreen(walletIndex: walletIndices.first)),
         );
       } else {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const SelectWalletForRecoveryPhraseScreen(),
-          ),
-        );
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const SelectWalletForRecoveryPhraseScreen()));
       }
     });
   }
@@ -184,9 +177,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           },
         ),
         const SizedBox(height: 22),
-        _buildSettingsItem(context, 'Show Recovery Phrase', () {
-          _navigateToRecoveryPhrase();
-        }),
+        ListItem(
+          title: 'Show Recovery Phrase',
+          onTap: () {
+            _navigateToRecoveryPhrase();
+          },
+        ),
         const SizedBox(height: 22),
         ListItem(
           title: 'Referral',
