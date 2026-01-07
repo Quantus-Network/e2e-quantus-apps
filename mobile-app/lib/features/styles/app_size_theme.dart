@@ -24,6 +24,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
   final double txDetailsIconHeight;
   final double txDetailsIconWidth;
   final double copyIconSize;
+  final double pasteIconSize;
   final double timePickerSubtitleWidth;
   final double bottomButtonSpacing;
 
@@ -50,6 +51,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
     required this.txDetailsIconHeight,
     required this.txDetailsIconWidth,
     required this.copyIconSize,
+    required this.pasteIconSize,
     required this.timePickerSubtitleWidth,
     required this.bottomButtonSpacing,
   });
@@ -78,6 +80,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
         txDetailsIconHeight: 43.0,
         txDetailsIconWidth: 51.0,
         copyIconSize: 20.0,
+        pasteIconSize: 18.0,
         timePickerSubtitleWidth: 249,
         bottomButtonSpacing: 16,
       );
@@ -106,6 +109,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
         txDetailsIconHeight: 82.0,
         txDetailsIconWidth: 91.0,
         copyIconSize: 28.0,
+        pasteIconSize: 24.0,
         timePickerSubtitleWidth: 400,
         bottomButtonSpacing: 16,
       );
@@ -134,6 +138,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
     double? txDetailsIconHeight,
     double? txDetailsIconWidth,
     double? copyIconSize,
+    double? pasteIconSize,
     double? timePickerSubtitleWidth,
     double? bottomButtonSpacing,
     double? buttonsHorizontalSpacing,
@@ -162,6 +167,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
       txDetailsIconHeight: txDetailsIconHeight ?? this.txDetailsIconHeight,
       txDetailsIconWidth: txDetailsIconWidth ?? this.txDetailsIconWidth,
       copyIconSize: copyIconSize ?? this.copyIconSize,
+      pasteIconSize: pasteIconSize ?? this.pasteIconSize,
       timePickerSubtitleWidth: timePickerSubtitleWidth ?? this.timePickerSubtitleWidth,
       bottomButtonSpacing: bottomButtonSpacing ?? this.bottomButtonSpacing,
     );
@@ -197,6 +203,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
       txDetailsIconHeight: txDetailsIconHeight + (other.txDetailsIconHeight - txDetailsIconHeight) * t,
       txDetailsIconWidth: txDetailsIconWidth + (other.txDetailsIconWidth - txDetailsIconWidth) * t,
       copyIconSize: copyIconSize + (other.copyIconSize - copyIconSize) * t,
+      pasteIconSize: pasteIconSize + (other.pasteIconSize - pasteIconSize) * t,
       timePickerSubtitleWidth: timePickerSubtitleWidth + (other.timePickerSubtitleWidth - timePickerSubtitleWidth) * t,
       bottomButtonSpacing: bottomButtonSpacing + (other.bottomButtonSpacing - bottomButtonSpacing) * t,
     );
