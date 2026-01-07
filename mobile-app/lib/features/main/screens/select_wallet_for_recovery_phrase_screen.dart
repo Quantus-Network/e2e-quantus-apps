@@ -38,7 +38,7 @@ class _SelectWalletForRecoveryPhraseScreenState extends ConsumerState<SelectWall
         ),
         data: (accounts) {
           final walletIndices = getNonHardwareWalletIndices(accounts);
-          
+
           if (walletIndices.isEmpty) {
             return Center(
               child: Text(
@@ -67,9 +67,7 @@ class _SelectWalletForRecoveryPhraseScreenState extends ConsumerState<SelectWall
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => ShowRecoveryPhraseScreen(walletIndex: walletIndex),
-          ),
+          MaterialPageRoute(builder: (context) => ShowRecoveryPhraseScreen(walletIndex: walletIndex)),
         );
       },
       child: Container(

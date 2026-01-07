@@ -126,24 +126,24 @@ class QuantusPayloadParser {
         final amount = U128Codec.codec.decode(input);
         final delay = _parseBlockNumberOrTimestamp(input);
         return TransactionInfo(toAddress: dest, amount: amount, isReversible: true, reversibleTimeframe: delay);
-      // } else if (callIndex == 5) {
-      //   // schedule_asset_transfer
-      //   final assetId = U32Codec.codec.decode(input);
-      //   final dest = _parseMultiAddress(input);
-      //   final amount = U128Codec.codec.decode(input);
-      //   return TransactionInfo(
-      //     toAddress: dest,
-      //     amount: amount,
-      //     isReversible: true,
-      //     reversibleTimeframe: null, // Uses configured delay
-      //   );
-      // } else if (callIndex == 6) {
-      //   // schedule_asset_transfer_with_delay
-      //   final assetId = U32Codec.codec.decode(input);
-      //   final dest = _parseMultiAddress(input);
-      //   final amount = U128Codec.codec.decode(input);
-      //   final delay = _parseBlockNumberOrTimestamp(input);
-      //   return TransactionInfo(toAddress: dest, amount: amount, isReversible: true, reversibleTimeframe: delay);
+        // } else if (callIndex == 5) {
+        //   // schedule_asset_transfer
+        //   final assetId = U32Codec.codec.decode(input);
+        //   final dest = _parseMultiAddress(input);
+        //   final amount = U128Codec.codec.decode(input);
+        //   return TransactionInfo(
+        //     toAddress: dest,
+        //     amount: amount,
+        //     isReversible: true,
+        //     reversibleTimeframe: null, // Uses configured delay
+        //   );
+        // } else if (callIndex == 6) {
+        //   // schedule_asset_transfer_with_delay
+        //   final assetId = U32Codec.codec.decode(input);
+        //   final dest = _parseMultiAddress(input);
+        //   final amount = U128Codec.codec.decode(input);
+        //   final delay = _parseBlockNumberOrTimestamp(input);
+        //   return TransactionInfo(toAddress: dest, amount: amount, isReversible: true, reversibleTimeframe: delay);
       }
     } catch (e) {
       print('Error parsing reversible transfers call: $e');

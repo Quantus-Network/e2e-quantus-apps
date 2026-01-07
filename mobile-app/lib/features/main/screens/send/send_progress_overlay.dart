@@ -1,9 +1,12 @@
 import 'dart:ui';
 
+import 'package:convert/convert.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:polkadart/substrate/substrate.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/generated/schrodinger/types/qp_scheduler/block_number_or_timestamp.dart' as qp;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
@@ -11,14 +14,10 @@ import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
-import 'package:convert/convert.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
-import 'package:flutter/foundation.dart';
 
 enum SendOverlayState { confirm, progress, complete, hardwareSign, hardwareScan }
 
@@ -64,10 +63,10 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
   final MobileScannerController _signatureScannerController = MobileScannerController();
   bool _hasScannedSignature = false;
   final Set<String> _collectedUrParts = {};
-  
+
   int? _getTotalFragmentCount() {
     if (_collectedUrParts.isEmpty) return null;
-    
+
     for (final part in _collectedUrParts) {
       final match = RegExp(r'/(\d+)-(\d+)/').firstMatch(part);
       if (match != null) {
@@ -679,15 +678,15 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
                   debugPrint('QR Code payload: $qrData');
                   return QrImageView(
                     data: qrData,
-                version: QrVersions.auto,
-                size: double.infinity,
-                padding: EdgeInsets.zero,
-                backgroundColor: Colors.white,
-                eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: Colors.black),
-                dataModuleStyle: const QrDataModuleStyle(
-                  dataModuleShape: QrDataModuleShape.square,
-                  color: Colors.black,
-                ),
+                    version: QrVersions.auto,
+                    size: double.infinity,
+                    padding: EdgeInsets.zero,
+                    backgroundColor: Colors.white,
+                    eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: Colors.black),
+                    dataModuleStyle: const QrDataModuleStyle(
+                      dataModuleShape: QrDataModuleShape.square,
+                      color: Colors.black,
+                    ),
                   );
                 },
               ),
@@ -796,12 +795,14 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
                       debugPrint('QR Scanner: Processing ${capture.barcodes.length} barcode(s)');
                       for (final barcode in capture.barcodes) {
                         final v = barcode.rawValue;
-                        debugPrint('QR Scanner: Raw value: ${v?.substring(0, v.length > 100 ? 100 : v.length)}${v != null && v.length > 100 ? '...' : ''}');
+                        debugPrint(
+                          'QR Scanner: Raw value: ${v?.substring(0, v.length > 100 ? 100 : v.length)}${v != null && v.length > 100 ? '...' : ''}',
+                        );
                         if (v == null) {
                           debugPrint('QR Scanner: Null value, skipping');
                           continue;
                         }
-                        
+
                         if (v.startsWith('UR:')) {
                           debugPrint('QR Scanner: UR code detected');
                           final wasNew = _collectedUrParts.add(v);
@@ -918,7 +919,7 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
   ) async {
     try {
       Uint8List signatureBytes;
-      
+
       if (signatureQRParts.isNotEmpty && signatureQRParts.first.startsWith('UR:')) {
         try {
           signatureBytes = decodeUr(urParts: signatureQRParts);
@@ -929,9 +930,8 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
         throw Exception('Invalid signature format');
       }
 
-// print('signatureSize: ${hex.encode(signatureBytes)}');
-print('sig PK hash: ${hex.encode(const Blake2bHasher(32).hash(signatureBytes))}');
-
+      // print('signatureSize: ${hex.encode(signatureBytes)}');
+      // print('sig PK hash: ${hex.encode(const Blake2bHasher(32).hash(signatureBytes))}');
 
       final expectedTotalSize = signatureSize + publicKeySize;
 
@@ -939,12 +939,8 @@ print('sig PK hash: ${hex.encode(const Blake2bHasher(32).hash(signatureBytes))}'
         throw Exception('Invalid signature length: expected $expectedTotalSize bytes, got ${signatureBytes.length}');
       }
 
-
-
       final signature = signatureBytes.sublist(0, signatureSize);
       final publicKey = signatureBytes.sublist(signatureSize);
-
-print('sig hash: ${hex.encode(const Blake2bHasher(32).hash(signature))}');
 
       final substrateService = SubstrateService();
       final submissionService = ref.read(transactionSubmissionServiceProvider);
@@ -1042,19 +1038,5 @@ print('sig hash: ${hex.encode(const Blake2bHasher(32).hash(signature))}');
         ),
       ),
     );
-  }
-
-  // This is to generate test values for unit tests.
-  // We don't really need the signature - we only really want to test parsing.
-  void printKatValues(UnsignedTransactionData unsignedData, Uint8List signatureWithPublicKey) {
-    print('KAT raw encoded payload: ${hex.encode(unsignedData.encodedPayloadRaw)}');
-    // Print hex in chunks to avoid console truncation
-    final hexString = hex.encode(signatureWithPublicKey);
-    print('KAT signatureWithPublicKey (${hexString.length} chars):');
-    for (var i = 0; i < hexString.length; i += 64) {
-      final end = (i + 64 < hexString.length) ? i + 64 : hexString.length;
-      print('  ${hexString.substring(i, end)}');
-    }
-    debugPrint('KAT signatureWithPublicKey: ${hex.encode(signatureWithPublicKey)}');
   }
 }

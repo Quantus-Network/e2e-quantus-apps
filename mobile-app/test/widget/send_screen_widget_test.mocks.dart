@@ -11,10 +11,8 @@ import 'package:mockito/src/dummies.dart' as _i5;
 import 'package:polkadart/polkadart.dart' as _i8;
 import 'package:quantus_sdk/generated/schrodinger/types/pallet_reversible_transfers/high_security_account_data.dart'
     as _i9;
-import 'package:quantus_sdk/generated/schrodinger/types/pallet_reversible_transfers/pending_transfer.dart'
-    as _i10;
-import 'package:quantus_sdk/generated/schrodinger/types/qp_scheduler/block_number_or_timestamp.dart'
-    as _i7;
+import 'package:quantus_sdk/generated/schrodinger/types/pallet_reversible_transfers/pending_transfer.dart' as _i10;
+import 'package:quantus_sdk/generated/schrodinger/types/qp_scheduler/block_number_or_timestamp.dart' as _i7;
 import 'package:quantus_sdk/quantus_sdk.dart' as _i2;
 import 'package:quantus_sdk/src/models/account.dart' as _i4;
 
@@ -33,36 +31,27 @@ import 'package:quantus_sdk/src/models/account.dart' as _i4;
 // ignore_for_file: subtype_of_sealed_class
 
 class _FakeKeypair_0 extends _i1.SmartFake implements _i2.Keypair {
-  _FakeKeypair_0(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+  _FakeKeypair_0(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
-class _FakeExtrinsicFeeData_1 extends _i1.SmartFake
-    implements _i2.ExtrinsicFeeData {
-  _FakeExtrinsicFeeData_1(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+class _FakeExtrinsicFeeData_1 extends _i1.SmartFake implements _i2.ExtrinsicFeeData {
+  _FakeExtrinsicFeeData_1(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
 class _FakeExtrinsicData_2 extends _i1.SmartFake implements _i2.ExtrinsicData {
-  _FakeExtrinsicData_2(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+  _FakeExtrinsicData_2(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
-class _FakeUnsignedTransactionData_3 extends _i1.SmartFake
-    implements _i2.UnsignedTransactionData {
-  _FakeUnsignedTransactionData_3(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+class _FakeUnsignedTransactionData_3 extends _i1.SmartFake implements _i2.UnsignedTransactionData {
+  _FakeUnsignedTransactionData_3(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
 class _FakeBalances_4 extends _i1.SmartFake implements _i2.Balances {
-  _FakeBalances_4(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+  _FakeBalances_4(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
-class _FakeReversibleTransfers_5 extends _i1.SmartFake
-    implements _i2.ReversibleTransfers {
-  _FakeReversibleTransfers_5(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+class _FakeReversibleTransfers_5 extends _i1.SmartFake implements _i2.ReversibleTransfers {
+  _FakeReversibleTransfers_5(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
 /// A class which mocks [SettingsService].
@@ -110,10 +99,7 @@ class MockSettingsService extends _i1.Mock implements _i2.SettingsService {
 
   @override
   List<_i4.Account> getAccountsToMigrate() =>
-      (super.noSuchMethod(
-            Invocation.method(#getAccountsToMigrate, []),
-            returnValue: <_i4.Account>[],
-          )
+      (super.noSuchMethod(Invocation.method(#getAccountsToMigrate, []), returnValue: <_i4.Account>[])
           as List<_i4.Account>);
 
   @override
@@ -163,22 +149,13 @@ class MockSettingsService extends _i1.Mock implements _i2.SettingsService {
 
   @override
   _i3.Future<_i4.Account?> getActiveAccount() =>
-      (super.noSuchMethod(
-            Invocation.method(#getActiveAccount, []),
-            returnValue: _i3.Future<_i4.Account?>.value(),
-          )
+      (super.noSuchMethod(Invocation.method(#getActiveAccount, []), returnValue: _i3.Future<_i4.Account?>.value())
           as _i3.Future<_i4.Account?>);
 
   @override
-  _i3.Future<_i4.Account?> getAccount({
-    required int? walletIndex,
-    required int? index,
-  }) =>
+  _i3.Future<_i4.Account?> getAccount({required int? walletIndex, required int? index}) =>
       (super.noSuchMethod(
-            Invocation.method(#getAccount, [], {
-              #walletIndex: walletIndex,
-              #index: index,
-            }),
+            Invocation.method(#getAccount, [], {#walletIndex: walletIndex, #index: index}),
             returnValue: _i3.Future<_i4.Account?>.value(),
           )
           as _i3.Future<_i4.Account?>);
@@ -193,28 +170,19 @@ class MockSettingsService extends _i1.Mock implements _i2.SettingsService {
 
   @override
   _i3.Future<bool> getHasWallet() =>
-      (super.noSuchMethod(
-            Invocation.method(#getHasWallet, []),
-            returnValue: _i3.Future<bool>.value(false),
-          )
+      (super.noSuchMethod(Invocation.method(#getHasWallet, []), returnValue: _i3.Future<bool>.value(false))
           as _i3.Future<bool>);
 
   @override
   _i3.Future<bool> isWalletLoggedOut() =>
-      (super.noSuchMethod(
-            Invocation.method(#isWalletLoggedOut, []),
-            returnValue: _i3.Future<bool>.value(false),
-          )
+      (super.noSuchMethod(Invocation.method(#isWalletLoggedOut, []), returnValue: _i3.Future<bool>.value(false))
           as _i3.Future<bool>);
 
   @override
   String getMnemonicKey(int? walletIndex) =>
       (super.noSuchMethod(
             Invocation.method(#getMnemonicKey, [walletIndex]),
-            returnValue: _i5.dummyValue<String>(
-              this,
-              Invocation.method(#getMnemonicKey, [walletIndex]),
-            ),
+            returnValue: _i5.dummyValue<String>(this, Invocation.method(#getMnemonicKey, [walletIndex])),
           )
           as String);
 
@@ -229,10 +197,7 @@ class MockSettingsService extends _i1.Mock implements _i2.SettingsService {
 
   @override
   _i3.Future<String?> getMnemonic(int? walletIndex) =>
-      (super.noSuchMethod(
-            Invocation.method(#getMnemonic, [walletIndex]),
-            returnValue: _i3.Future<String?>.value(),
-          )
+      (super.noSuchMethod(Invocation.method(#getMnemonic, [walletIndex]), returnValue: _i3.Future<String?>.value())
           as _i3.Future<String?>);
 
   @override
@@ -246,18 +211,12 @@ class MockSettingsService extends _i1.Mock implements _i2.SettingsService {
 
   @override
   _i3.Future<int?> getReversibleTimeSeconds() =>
-      (super.noSuchMethod(
-            Invocation.method(#getReversibleTimeSeconds, []),
-            returnValue: _i3.Future<int?>.value(),
-          )
+      (super.noSuchMethod(Invocation.method(#getReversibleTimeSeconds, []), returnValue: _i3.Future<int?>.value())
           as _i3.Future<int?>);
 
   @override
   _i3.Future<bool?> getBool(String? key) =>
-      (super.noSuchMethod(
-            Invocation.method(#getBool, [key]),
-            returnValue: _i3.Future<bool?>.value(),
-          )
+      (super.noSuchMethod(Invocation.method(#getBool, [key]), returnValue: _i3.Future<bool?>.value())
           as _i3.Future<bool?>);
 
   @override
@@ -271,29 +230,20 @@ class MockSettingsService extends _i1.Mock implements _i2.SettingsService {
 
   @override
   _i3.Future<String?> getString(String? key) =>
-      (super.noSuchMethod(
-            Invocation.method(#getString, [key]),
-            returnValue: _i3.Future<String?>.value(),
-          )
+      (super.noSuchMethod(Invocation.method(#getString, [key]), returnValue: _i3.Future<String?>.value())
           as _i3.Future<String?>);
 
   @override
-  void setLastSuccessfulAuthTime(DateTime? time) => super.noSuchMethod(
-    Invocation.method(#setLastSuccessfulAuthTime, [time]),
-    returnValueForMissingStub: null,
-  );
+  void setLastSuccessfulAuthTime(DateTime? time) =>
+      super.noSuchMethod(Invocation.method(#setLastSuccessfulAuthTime, [time]), returnValueForMissingStub: null);
 
   @override
-  void setLastPausedTime(DateTime? time) => super.noSuchMethod(
-    Invocation.method(#setLastPausedTime, [time]),
-    returnValueForMissingStub: null,
-  );
+  void setLastPausedTime(DateTime? time) =>
+      super.noSuchMethod(Invocation.method(#setLastPausedTime, [time]), returnValueForMissingStub: null);
 
   @override
-  void cleanLastPausedTime() => super.noSuchMethod(
-    Invocation.method(#cleanLastPausedTime, []),
-    returnValueForMissingStub: null,
-  );
+  void cleanLastPausedTime() =>
+      super.noSuchMethod(Invocation.method(#cleanLastPausedTime, []), returnValueForMissingStub: null);
 
   @override
   void setAuthTimeout(int? timeoutDurationInMinutes) => super.noSuchMethod(
@@ -302,34 +252,18 @@ class MockSettingsService extends _i1.Mock implements _i2.SettingsService {
   );
 
   @override
-  void setAuthEnabled(bool? enabled) => super.noSuchMethod(
-    Invocation.method(#setAuthEnabled, [enabled]),
-    returnValueForMissingStub: null,
-  );
+  void setAuthEnabled(bool? enabled) =>
+      super.noSuchMethod(Invocation.method(#setAuthEnabled, [enabled]), returnValueForMissingStub: null);
 
   @override
-  bool isAuthEnabled() =>
-      (super.noSuchMethod(
-            Invocation.method(#isAuthEnabled, []),
-            returnValue: false,
-          )
-          as bool);
+  bool isAuthEnabled() => (super.noSuchMethod(Invocation.method(#isAuthEnabled, []), returnValue: false) as bool);
 
   @override
-  bool hasOldAccounts() =>
-      (super.noSuchMethod(
-            Invocation.method(#hasOldAccounts, []),
-            returnValue: false,
-          )
-          as bool);
+  bool hasOldAccounts() => (super.noSuchMethod(Invocation.method(#hasOldAccounts, []), returnValue: false) as bool);
 
   @override
   List<_i4.Account> getOldAccounts() =>
-      (super.noSuchMethod(
-            Invocation.method(#getOldAccounts, []),
-            returnValue: <_i4.Account>[],
-          )
-          as List<_i4.Account>);
+      (super.noSuchMethod(Invocation.method(#getOldAccounts, []), returnValue: <_i4.Account>[]) as List<_i4.Account>);
 
   @override
   _i3.Future<void> clearOldAccounts() =>
@@ -350,10 +284,7 @@ class MockSettingsService extends _i1.Mock implements _i2.SettingsService {
           as _i3.Future<void>);
 
   @override
-  void resetForTest() => super.noSuchMethod(
-    Invocation.method(#resetForTest, []),
-    returnValueForMissingStub: null,
-  );
+  void resetForTest() => super.noSuchMethod(Invocation.method(#resetForTest, []), returnValueForMissingStub: null);
 
   @override
   _i3.Future<void> clearAll() =>
@@ -366,69 +297,43 @@ class MockSettingsService extends _i1.Mock implements _i2.SettingsService {
 
   @override
   bool referralCheckCompleted() =>
-      (super.noSuchMethod(
-            Invocation.method(#referralCheckCompleted, []),
-            returnValue: false,
-          )
-          as bool);
+      (super.noSuchMethod(Invocation.method(#referralCheckCompleted, []), returnValue: false) as bool);
 
   @override
-  void setReferralCheckCompleted() => super.noSuchMethod(
-    Invocation.method(#setReferralCheckCompleted, []),
-    returnValueForMissingStub: null,
-  );
+  void setReferralCheckCompleted() =>
+      super.noSuchMethod(Invocation.method(#setReferralCheckCompleted, []), returnValueForMissingStub: null);
 
   @override
-  void clearReferralCheckCompletedFlag() => super.noSuchMethod(
-    Invocation.method(#clearReferralCheckCompletedFlag, []),
-    returnValueForMissingStub: null,
-  );
+  void clearReferralCheckCompletedFlag() =>
+      super.noSuchMethod(Invocation.method(#clearReferralCheckCompletedFlag, []), returnValueForMissingStub: null);
 
   @override
-  void setReferralCode(String? code) => super.noSuchMethod(
-    Invocation.method(#setReferralCode, [code]),
-    returnValueForMissingStub: null,
-  );
+  void setReferralCode(String? code) =>
+      super.noSuchMethod(Invocation.method(#setReferralCode, [code]), returnValueForMissingStub: null);
 
   @override
   bool hasWatchedQuestsPromo() =>
-      (super.noSuchMethod(
-            Invocation.method(#hasWatchedQuestsPromo, []),
-            returnValue: false,
-          )
-          as bool);
+      (super.noSuchMethod(Invocation.method(#hasWatchedQuestsPromo, []), returnValue: false) as bool);
 
   @override
-  void setQuestsPromoWatched() => super.noSuchMethod(
-    Invocation.method(#setQuestsPromoWatched, []),
-    returnValueForMissingStub: null,
-  );
+  void setQuestsPromoWatched() =>
+      super.noSuchMethod(Invocation.method(#setQuestsPromoWatched, []), returnValueForMissingStub: null);
 
   @override
-  void clearQuestsPromoWatchedFlag() => super.noSuchMethod(
-    Invocation.method(#clearQuestsPromoWatchedFlag, []),
-    returnValueForMissingStub: null,
-  );
+  void clearQuestsPromoWatchedFlag() =>
+      super.noSuchMethod(Invocation.method(#clearQuestsPromoWatchedFlag, []), returnValueForMissingStub: null);
 
   @override
   bool existingUserSeenPromoVideo() =>
-      (super.noSuchMethod(
-            Invocation.method(#existingUserSeenPromoVideo, []),
-            returnValue: false,
-          )
-          as bool);
+      (super.noSuchMethod(Invocation.method(#existingUserSeenPromoVideo, []), returnValue: false) as bool);
 
   @override
-  void setExistingUserSeenPromoVideo() => super.noSuchMethod(
-    Invocation.method(#setExistingUserSeenPromoVideo, []),
-    returnValueForMissingStub: null,
-  );
+  void setExistingUserSeenPromoVideo() =>
+      super.noSuchMethod(Invocation.method(#setExistingUserSeenPromoVideo, []), returnValueForMissingStub: null);
 
   @override
-  void clearExistingUserSeenPromoVideoFlag() => super.noSuchMethod(
-    Invocation.method(#clearExistingUserSeenPromoVideoFlag, []),
-    returnValueForMissingStub: null,
-  );
+  void clearExistingUserSeenPromoVideoFlag() =>
+      super.noSuchMethod(Invocation.method(#clearExistingUserSeenPromoVideoFlag, []), returnValueForMissingStub: null);
 }
 
 /// A class which mocks [SubstrateService].
@@ -444,10 +349,7 @@ class MockSubstrateService extends _i1.Mock implements _i2.SubstrateService {
       (super.noSuchMethod(
             Invocation.method(#getFee, [signedExtrinsic]),
             returnValue: _i3.Future<BigInt>.value(
-              _i5.dummyValue<BigInt>(
-                this,
-                Invocation.method(#getFee, [signedExtrinsic]),
-              ),
+              _i5.dummyValue<BigInt>(this, Invocation.method(#getFee, [signedExtrinsic])),
             ),
           )
           as _i3.Future<BigInt>);
@@ -457,10 +359,7 @@ class MockSubstrateService extends _i1.Mock implements _i2.SubstrateService {
       (super.noSuchMethod(
             Invocation.method(#queryUserBalance, []),
             returnValue: _i3.Future<BigInt>.value(
-              _i5.dummyValue<BigInt>(
-                this,
-                Invocation.method(#queryUserBalance, []),
-              ),
+              _i5.dummyValue<BigInt>(this, Invocation.method(#queryUserBalance, [])),
             ),
           )
           as _i3.Future<BigInt>);
@@ -470,10 +369,7 @@ class MockSubstrateService extends _i1.Mock implements _i2.SubstrateService {
       (super.noSuchMethod(
             Invocation.method(#queryBalance, [address]),
             returnValue: _i3.Future<BigInt>.value(
-              _i5.dummyValue<BigInt>(
-                this,
-                Invocation.method(#queryBalance, [address]),
-              ),
+              _i5.dummyValue<BigInt>(this, Invocation.method(#queryBalance, [address])),
             ),
           )
           as _i3.Future<BigInt>);
@@ -482,43 +378,24 @@ class MockSubstrateService extends _i1.Mock implements _i2.SubstrateService {
   _i2.Keypair nonHDdilithiumKeypairFromMnemonic(String? senderSeed) =>
       (super.noSuchMethod(
             Invocation.method(#nonHDdilithiumKeypairFromMnemonic, [senderSeed]),
-            returnValue: _FakeKeypair_0(
-              this,
-              Invocation.method(#nonHDdilithiumKeypairFromMnemonic, [
-                senderSeed,
-              ]),
-            ),
+            returnValue: _FakeKeypair_0(this, Invocation.method(#nonHDdilithiumKeypairFromMnemonic, [senderSeed])),
           )
           as _i2.Keypair);
 
   @override
-  _i3.Future<_i2.ExtrinsicFeeData> getFeeForCall(
-    _i4.Account? account,
-    _i2.RuntimeCall? call,
-  ) =>
+  _i3.Future<_i2.ExtrinsicFeeData> getFeeForCall(_i4.Account? account, _i2.RuntimeCall? call) =>
       (super.noSuchMethod(
             Invocation.method(#getFeeForCall, [account, call]),
             returnValue: _i3.Future<_i2.ExtrinsicFeeData>.value(
-              _FakeExtrinsicFeeData_1(
-                this,
-                Invocation.method(#getFeeForCall, [account, call]),
-              ),
+              _FakeExtrinsicFeeData_1(this, Invocation.method(#getFeeForCall, [account, call])),
             ),
           )
           as _i3.Future<_i2.ExtrinsicFeeData>);
 
   @override
-  _i3.Future<_i6.Uint8List> submitExtrinsic(
-    _i4.Account? account,
-    _i2.RuntimeCall? call, {
-    int? maxRetries = 3,
-  }) =>
+  _i3.Future<_i6.Uint8List> submitExtrinsic(_i4.Account? account, _i2.RuntimeCall? call, {int? maxRetries = 3}) =>
       (super.noSuchMethod(
-            Invocation.method(
-              #submitExtrinsic,
-              [account, call],
-              {#maxRetries: maxRetries},
-            ),
+            Invocation.method(#submitExtrinsic, [account, call], {#maxRetries: maxRetries}),
             returnValue: _i3.Future<_i6.Uint8List>.value(_i6.Uint8List(0)),
           )
           as _i3.Future<_i6.Uint8List>);
@@ -530,39 +407,22 @@ class MockSubstrateService extends _i1.Mock implements _i2.SubstrateService {
     bool? isSigned = true,
   }) =>
       (super.noSuchMethod(
-            Invocation.method(
-              #getExtrinsicPayload,
-              [account, call],
-              {#isSigned: isSigned},
-            ),
+            Invocation.method(#getExtrinsicPayload, [account, call], {#isSigned: isSigned}),
             returnValue: _i3.Future<_i2.ExtrinsicData>.value(
               _FakeExtrinsicData_2(
                 this,
-                Invocation.method(
-                  #getExtrinsicPayload,
-                  [account, call],
-                  {#isSigned: isSigned},
-                ),
+                Invocation.method(#getExtrinsicPayload, [account, call], {#isSigned: isSigned}),
               ),
             ),
           )
           as _i3.Future<_i2.ExtrinsicData>);
 
   @override
-  _i3.Future<_i2.UnsignedTransactionData> getUnsignedTransactionPayload(
-    _i4.Account? account,
-    _i2.RuntimeCall? call,
-  ) =>
+  _i3.Future<_i2.UnsignedTransactionData> getUnsignedTransactionPayload(_i4.Account? account, _i2.RuntimeCall? call) =>
       (super.noSuchMethod(
             Invocation.method(#getUnsignedTransactionPayload, [account, call]),
             returnValue: _i3.Future<_i2.UnsignedTransactionData>.value(
-              _FakeUnsignedTransactionData_3(
-                this,
-                Invocation.method(#getUnsignedTransactionPayload, [
-                  account,
-                  call,
-                ]),
-              ),
+              _FakeUnsignedTransactionData_3(this, Invocation.method(#getUnsignedTransactionPayload, [account, call])),
             ),
           )
           as _i3.Future<_i2.UnsignedTransactionData>);
@@ -574,11 +434,7 @@ class MockSubstrateService extends _i1.Mock implements _i2.SubstrateService {
     _i6.Uint8List? publicKey,
   ) =>
       (super.noSuchMethod(
-            Invocation.method(#submitExtrinsicWithExternalSignature, [
-              unsignedData,
-              signature,
-              publicKey,
-            ]),
+            Invocation.method(#submitExtrinsicWithExternalSignature, [unsignedData, signature, publicKey]),
             returnValue: _i3.Future<_i6.Uint8List>.value(_i6.Uint8List(0)),
           )
           as _i3.Future<_i6.Uint8List>);
@@ -597,45 +453,31 @@ class MockSubstrateService extends _i1.Mock implements _i2.SubstrateService {
       (super.noSuchMethod(
             Invocation.method(#generateMnemonic, []),
             returnValue: _i3.Future<String>.value(
-              _i5.dummyValue<String>(
-                this,
-                Invocation.method(#generateMnemonic, []),
-              ),
+              _i5.dummyValue<String>(this, Invocation.method(#generateMnemonic, [])),
             ),
           )
           as _i3.Future<String>);
 
   @override
   bool isValidSS58Address(String? address) =>
-      (super.noSuchMethod(
-            Invocation.method(#isValidSS58Address, [address]),
-            returnValue: false,
-          )
-          as bool);
+      (super.noSuchMethod(Invocation.method(#isValidSS58Address, [address]), returnValue: false) as bool);
 
   @override
   String bytesToHex(_i6.Uint8List? bytes) =>
       (super.noSuchMethod(
             Invocation.method(#bytesToHex, [bytes]),
-            returnValue: _i5.dummyValue<String>(
-              this,
-              Invocation.method(#bytesToHex, [bytes]),
-            ),
+            returnValue: _i5.dummyValue<String>(this, Invocation.method(#bytesToHex, [bytes])),
           )
           as String);
 
   @override
-  void dispose() => super.noSuchMethod(
-    Invocation.method(#dispose, []),
-    returnValueForMissingStub: null,
-  );
+  void dispose() => super.noSuchMethod(Invocation.method(#dispose, []), returnValueForMissingStub: null);
 }
 
 /// A class which mocks [HumanReadableChecksumService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockHumanReadableChecksumService extends _i1.Mock
-    implements _i2.HumanReadableChecksumService {
+class MockHumanReadableChecksumService extends _i1.Mock implements _i2.HumanReadableChecksumService {
   MockHumanReadableChecksumService() {
     _i1.throwOnMissingStub(this);
   }
@@ -650,34 +492,20 @@ class MockHumanReadableChecksumService extends _i1.Mock
           as _i3.Future<void>);
 
   @override
-  _i3.Future<String> getHumanReadableName(
-    String? address, {
-    dynamic upperCase = true,
-  }) =>
+  _i3.Future<String> getHumanReadableName(String? address, {dynamic upperCase = true}) =>
       (super.noSuchMethod(
-            Invocation.method(
-              #getHumanReadableName,
-              [address],
-              {#upperCase: upperCase},
-            ),
+            Invocation.method(#getHumanReadableName, [address], {#upperCase: upperCase}),
             returnValue: _i3.Future<String>.value(
               _i5.dummyValue<String>(
                 this,
-                Invocation.method(
-                  #getHumanReadableName,
-                  [address],
-                  {#upperCase: upperCase},
-                ),
+                Invocation.method(#getHumanReadableName, [address], {#upperCase: upperCase}),
               ),
             ),
           )
           as _i3.Future<String>);
 
   @override
-  void dispose() => super.noSuchMethod(
-    Invocation.method(#dispose, []),
-    returnValueForMissingStub: null,
-  );
+  void dispose() => super.noSuchMethod(Invocation.method(#dispose, []), returnValueForMissingStub: null);
 }
 
 /// A class which mocks [BalancesService].
@@ -689,41 +517,21 @@ class MockBalancesService extends _i1.Mock implements _i2.BalancesService {
   }
 
   @override
-  _i3.Future<_i6.Uint8List> balanceTransfer(
-    _i4.Account? account,
-    String? targetAddress,
-    BigInt? amount,
-  ) =>
+  _i3.Future<_i6.Uint8List> balanceTransfer(_i4.Account? account, String? targetAddress, BigInt? amount) =>
       (super.noSuchMethod(
-            Invocation.method(#balanceTransfer, [
-              account,
-              targetAddress,
-              amount,
-            ]),
+            Invocation.method(#balanceTransfer, [account, targetAddress, amount]),
             returnValue: _i3.Future<_i6.Uint8List>.value(_i6.Uint8List(0)),
           )
           as _i3.Future<_i6.Uint8List>);
 
   @override
-  _i3.Future<_i2.ExtrinsicFeeData> getBalanceTransferFee(
-    _i4.Account? account,
-    String? targetAddress,
-    BigInt? amount,
-  ) =>
+  _i3.Future<_i2.ExtrinsicFeeData> getBalanceTransferFee(_i4.Account? account, String? targetAddress, BigInt? amount) =>
       (super.noSuchMethod(
-            Invocation.method(#getBalanceTransferFee, [
-              account,
-              targetAddress,
-              amount,
-            ]),
+            Invocation.method(#getBalanceTransferFee, [account, targetAddress, amount]),
             returnValue: _i3.Future<_i2.ExtrinsicFeeData>.value(
               _FakeExtrinsicFeeData_1(
                 this,
-                Invocation.method(#getBalanceTransferFee, [
-                  account,
-                  targetAddress,
-                  amount,
-                ]),
+                Invocation.method(#getBalanceTransferFee, [account, targetAddress, amount]),
               ),
             ),
           )
@@ -733,13 +541,7 @@ class MockBalancesService extends _i1.Mock implements _i2.BalancesService {
   _i2.Balances getBalanceTransferCall(String? targetAddress, BigInt? amount) =>
       (super.noSuchMethod(
             Invocation.method(#getBalanceTransferCall, [targetAddress, amount]),
-            returnValue: _FakeBalances_4(
-              this,
-              Invocation.method(#getBalanceTransferCall, [
-                targetAddress,
-                amount,
-              ]),
-            ),
+            returnValue: _FakeBalances_4(this, Invocation.method(#getBalanceTransferCall, [targetAddress, amount])),
           )
           as _i2.Balances);
 }
@@ -747,8 +549,7 @@ class MockBalancesService extends _i1.Mock implements _i2.BalancesService {
 /// A class which mocks [ReversibleTransfersService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockReversibleTransfersService extends _i1.Mock
-    implements _i2.ReversibleTransfersService {
+class MockReversibleTransfersService extends _i1.Mock implements _i2.ReversibleTransfersService {
   MockReversibleTransfersService() {
     _i1.throwOnMissingStub(this);
   }
@@ -760,11 +561,7 @@ class MockReversibleTransfersService extends _i1.Mock
     required _i7.BlockNumberOrTimestamp? delay,
   }) =>
       (super.noSuchMethod(
-            Invocation.method(#setHighSecurity, [], {
-              #account: account,
-              #guardian: guardian,
-              #delay: delay,
-            }),
+            Invocation.method(#setHighSecurity, [], {#account: account, #guardian: guardian, #delay: delay}),
             returnValue: _i3.Future<_i6.Uint8List>.value(_i6.Uint8List(0)),
           )
           as _i3.Future<_i6.Uint8List>);
@@ -822,16 +619,12 @@ class MockReversibleTransfersService extends _i1.Mock
             returnValue: _i3.Future<_i2.ExtrinsicFeeData>.value(
               _FakeExtrinsicFeeData_1(
                 this,
-                Invocation.method(
-                  #getReversibleTransferWithDelayFeeEstimate,
-                  [],
-                  {
-                    #account: account,
-                    #recipientAddress: recipientAddress,
-                    #amount: amount,
-                    #delaySeconds: delaySeconds,
-                  },
-                ),
+                Invocation.method(#getReversibleTransferWithDelayFeeEstimate, [], {
+                  #account: account,
+                  #recipientAddress: recipientAddress,
+                  #amount: amount,
+                  #delaySeconds: delaySeconds,
+                }),
               ),
             ),
           )
@@ -844,18 +637,10 @@ class MockReversibleTransfersService extends _i1.Mock
     _i7.BlockNumberOrTimestamp? delay,
   ) =>
       (super.noSuchMethod(
-            Invocation.method(#getReversibleTransferCall, [
-              recipientAddress,
-              amount,
-              delay,
-            ]),
+            Invocation.method(#getReversibleTransferCall, [recipientAddress, amount, delay]),
             returnValue: _FakeReversibleTransfers_5(
               this,
-              Invocation.method(#getReversibleTransferCall, [
-                recipientAddress,
-                amount,
-                delay,
-              ]),
+              Invocation.method(#getReversibleTransferCall, [recipientAddress, amount, delay]),
             ),
           )
           as _i2.ReversibleTransfers);
@@ -886,32 +671,21 @@ class MockReversibleTransfersService extends _i1.Mock
     required List<int>? transactionId,
   }) =>
       (super.noSuchMethod(
-            Invocation.method(#cancelReversibleTransfer, [], {
-              #account: account,
-              #transactionId: transactionId,
-            }),
+            Invocation.method(#cancelReversibleTransfer, [], {#account: account, #transactionId: transactionId}),
             returnValue: _i3.Future<_i6.Uint8List>.value(_i6.Uint8List(0)),
           )
           as _i3.Future<_i6.Uint8List>);
 
   @override
-  _i3.Future<_i6.Uint8List> executeTransfer({
-    required _i4.Account? account,
-    required List<int>? transactionId,
-  }) =>
+  _i3.Future<_i6.Uint8List> executeTransfer({required _i4.Account? account, required List<int>? transactionId}) =>
       (super.noSuchMethod(
-            Invocation.method(#executeTransfer, [], {
-              #account: account,
-              #transactionId: transactionId,
-            }),
+            Invocation.method(#executeTransfer, [], {#account: account, #transactionId: transactionId}),
             returnValue: _i3.Future<_i6.Uint8List>.value(_i6.Uint8List(0)),
           )
           as _i3.Future<_i6.Uint8List>);
 
   @override
-  _i3.Future<_i9.HighSecurityAccountData?> getAccountReversibilityConfig(
-    String? address,
-  ) =>
+  _i3.Future<_i9.HighSecurityAccountData?> getAccountReversibilityConfig(String? address) =>
       (super.noSuchMethod(
             Invocation.method(#getAccountReversibilityConfig, [address]),
             returnValue: _i3.Future<_i9.HighSecurityAccountData?>.value(),
@@ -919,9 +693,7 @@ class MockReversibleTransfersService extends _i1.Mock
           as _i3.Future<_i9.HighSecurityAccountData?>);
 
   @override
-  _i3.Future<_i10.PendingTransfer?> getPendingTransfer(
-    List<int>? transactionId,
-  ) =>
+  _i3.Future<_i10.PendingTransfer?> getPendingTransfer(List<int>? transactionId) =>
       (super.noSuchMethod(
             Invocation.method(#getPendingTransfer, [transactionId]),
             returnValue: _i3.Future<_i10.PendingTransfer?>.value(),
@@ -930,10 +702,7 @@ class MockReversibleTransfersService extends _i1.Mock
 
   @override
   _i3.Future<int> getAccountPendingIndex(String? address) =>
-      (super.noSuchMethod(
-            Invocation.method(#getAccountPendingIndex, [address]),
-            returnValue: _i3.Future<int>.value(0),
-          )
+      (super.noSuchMethod(Invocation.method(#getAccountPendingIndex, [address]), returnValue: _i3.Future<int>.value(0))
           as _i3.Future<int>);
 
   @override
@@ -945,14 +714,10 @@ class MockReversibleTransfersService extends _i1.Mock
           as _i3.Future<bool>);
 
   @override
-  _i3.Future<List<_i10.PendingTransfer>> getAccountPendingTransfers(
-    String? address,
-  ) =>
+  _i3.Future<List<_i10.PendingTransfer>> getAccountPendingTransfers(String? address) =>
       (super.noSuchMethod(
             Invocation.method(#getAccountPendingTransfers, [address]),
-            returnValue: _i3.Future<List<_i10.PendingTransfer>>.value(
-              <_i10.PendingTransfer>[],
-            ),
+            returnValue: _i3.Future<List<_i10.PendingTransfer>>.value(<_i10.PendingTransfer>[]),
           )
           as _i3.Future<List<_i10.PendingTransfer>>);
 
@@ -960,9 +725,7 @@ class MockReversibleTransfersService extends _i1.Mock
   _i3.Future<Map<String, dynamic>> getConstants() =>
       (super.noSuchMethod(
             Invocation.method(#getConstants, []),
-            returnValue: _i3.Future<Map<String, dynamic>>.value(
-              <String, dynamic>{},
-            ),
+            returnValue: _i3.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
           )
           as _i3.Future<Map<String, dynamic>>);
 }
@@ -970,8 +733,7 @@ class MockReversibleTransfersService extends _i1.Mock
 /// A class which mocks [NumberFormattingService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockNumberFormattingService extends _i1.Mock
-    implements _i2.NumberFormattingService {
+class MockNumberFormattingService extends _i1.Mock implements _i2.NumberFormattingService {
   MockNumberFormattingService() {
     _i1.throwOnMissingStub(this);
   }
@@ -987,22 +749,14 @@ class MockNumberFormattingService extends _i1.Mock
             Invocation.method(
               #formatBalance,
               [balance],
-              {
-                #maxDecimals: maxDecimals,
-                #addThousandsSeparators: addThousandsSeparators,
-                #addSymbol: addSymbol,
-              },
+              {#maxDecimals: maxDecimals, #addThousandsSeparators: addThousandsSeparators, #addSymbol: addSymbol},
             ),
             returnValue: _i5.dummyValue<String>(
               this,
               Invocation.method(
                 #formatBalance,
                 [balance],
-                {
-                  #maxDecimals: maxDecimals,
-                  #addThousandsSeparators: addThousandsSeparators,
-                  #addSymbol: addSymbol,
-                },
+                {#maxDecimals: maxDecimals, #addThousandsSeparators: addThousandsSeparators, #addSymbol: addSymbol},
               ),
             ),
           )
@@ -1010,6 +764,5 @@ class MockNumberFormattingService extends _i1.Mock
 
   @override
   BigInt? parseAmount(String? formattedAmount) =>
-      (super.noSuchMethod(Invocation.method(#parseAmount, [formattedAmount]))
-          as BigInt?);
+      (super.noSuchMethod(Invocation.method(#parseAmount, [formattedAmount])) as BigInt?);
 }
