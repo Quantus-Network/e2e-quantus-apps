@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
+import 'package:resonance_network_wallet/features/components/copy_icon.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/segmented_control.dart';
@@ -578,9 +579,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
                                   const SizedBox(width: 6),
                                   Padding(
                                     padding: const EdgeInsets.only(top: 1.0),
-                                    child: Icon(
-                                      Icons.copy,
-                                      size: context.themeSize.settingMenuShareIconSize,
+                                    child: CopyIcon(
                                       color: context.themeColors.checksum.useOpacity(0.7),
                                     ),
                                   ),

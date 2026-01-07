@@ -1,9 +1,9 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
+import 'package:resonance_network_wallet/features/components/copy_icon.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
@@ -174,7 +174,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
                               ),
                               InkWell(
                                 onTap: _copyChecksum,
-                                child: SvgPicture.asset('assets/copy_icon.svg', width: context.isTablet ? 24 : 16),
+                                child: const CopyIcon(),
                               ),
                             ],
                           );
@@ -201,7 +201,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
                         ),
                         InkWell(
                           onTap: _copyAddress,
-                          child: SvgPicture.asset('assets/copy_icon.svg', width: context.isTablet ? 24 : 16),
+                          child: const CopyIcon(),
                         ),
                       ],
                     ),
