@@ -23,7 +23,9 @@ class Account {
       index: json['index'] as int,
       name: json['name'] as String,
       accountId: json['accountId'] as String,
-      accountType: AccountType.values.byName(json['accountType'] as String? ?? AccountType.local.name),
+      accountType: AccountType.values.byName(
+        json['accountType'] as String? ?? AccountType.local.name,
+      ),
     );
   }
 
@@ -37,12 +39,19 @@ class Account {
     };
   }
 
-  Account copyWith({int? walletIndex, int? index, String? name, String? accountId, int? uiPosition}) {
+  Account copyWith({
+    int? walletIndex,
+    int? index,
+    String? name,
+    String? accountId,
+    AccountType? accountType,
+  }) {
     return Account(
       walletIndex: walletIndex ?? this.walletIndex,
       index: index ?? this.index,
       name: name ?? this.name,
       accountId: accountId ?? this.accountId,
+      accountType: accountType ?? this.accountType,
     );
   }
 }

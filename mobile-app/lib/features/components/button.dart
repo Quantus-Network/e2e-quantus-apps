@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
@@ -43,6 +44,7 @@ class Button extends StatelessWidget {
     final bool disabled = onPressed == null || isLoading || isDisabled;
 
     final effectiveTextStyle = textStyle ?? context.themeText.smallTitle!;
+    final disabledBtnColor = context.themeColors.buttonDisabled.useOpacity(0.6);
 
     final buttonContent = Center(
       child: isLoading
@@ -56,7 +58,7 @@ class Button extends StatelessWidget {
               child: Text(
                 label,
                 style: disabled
-                    ? effectiveTextStyle.copyWith(color: context.themeColors.textMuted)
+                    ? effectiveTextStyle.copyWith(color: Colors.black)
                     : effectiveTextStyle.copyWith(color: _getTitleColor(context, variant)),
               ),
             ),
@@ -70,7 +72,7 @@ class Button extends StatelessWidget {
           width: width,
           padding: padding,
           decoration: ShapeDecoration(
-            color: disabled ? context.themeColors.buttonDisabled : null,
+            color: disabled ? disabledBtnColor : null,
             gradient: !disabled
                 ? LinearGradient(
                     begin: const Alignment(0.00, -1.00),
@@ -98,7 +100,7 @@ class Button extends StatelessWidget {
           width: width,
           padding: padding,
           decoration: ShapeDecoration(
-            color: disabled ? context.themeColors.buttonDisabled : context.themeColors.buttonNeutral,
+            color: disabled ? disabledBtnColor : context.themeColors.buttonNeutral,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius)),
           ),
           child: buttonContent,
@@ -114,7 +116,7 @@ class Button extends StatelessWidget {
               width: width,
               padding: padding,
               decoration: ShapeDecoration(
-                color: disabled ? context.themeColors.buttonDisabled : context.themeColors.buttonGlass,
+                color: disabled ? disabledBtnColor : context.themeColors.buttonGlass,
                 shape: RoundedRectangleBorder(
                   side: disabled ? BorderSide.none : BorderSide(color: context.themeColors.buttonNeutral),
                   borderRadius: BorderRadius.circular(buttonRadius),
@@ -131,7 +133,7 @@ class Button extends StatelessWidget {
           width: width,
           padding: padding,
           decoration: ShapeDecoration(
-            color: disabled ? context.themeColors.buttonDisabled : context.themeColors.buttonDanger,
+            color: disabled ? disabledBtnColor : context.themeColors.buttonDanger,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius)),
           ),
           child: buttonContent,
@@ -160,7 +162,7 @@ class Button extends StatelessWidget {
           width: width,
           padding: padding,
           decoration: ShapeDecoration(
-            color: disabled ? context.themeColors.buttonDisabled : context.themeColors.buttonSuccess,
+            color: disabled ? disabledBtnColor : context.themeColors.buttonSuccess,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius)),
           ),
           child: buttonContent,
@@ -176,7 +178,7 @@ class Button extends StatelessWidget {
               width: width,
               padding: padding,
               decoration: ShapeDecoration(
-                color: disabled ? context.themeColors.buttonDisabled : context.themeColors.buttonGlass,
+                color: disabled ? disabledBtnColor : context.themeColors.buttonGlass,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius)),
               ),
               child: buttonContent,

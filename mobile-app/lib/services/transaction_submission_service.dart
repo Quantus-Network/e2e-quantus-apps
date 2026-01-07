@@ -177,6 +177,7 @@ class TransactionSubmissionService {
               TransactionState.failed,
               error: 'Failed to submit after $maxRetries attempts: $e',
             );
+        _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
       }
     }
   }

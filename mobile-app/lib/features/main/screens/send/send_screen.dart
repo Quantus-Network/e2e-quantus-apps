@@ -10,7 +10,6 @@ import 'package:resonance_network_wallet/features/components/custom_text_field.d
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/segmented_control.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
-import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/recent_addresses.dart';
@@ -454,10 +453,6 @@ class SendScreenState extends ConsumerState<SendScreen> {
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
-      decorations: [
-        const Positioned(top: 120, left: -30, child: Sphere(variant: 1, size: 144.23)),
-        Positioned(top: context.containerHalfHeight, right: -40, child: const Sphere(variant: 2, size: 194)),
-      ],
       appBar: WalletAppBar(title: 'Send'),
       child: Consumer(
         builder: (context, ref, child) {
