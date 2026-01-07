@@ -291,6 +291,6 @@ class _NavbarState extends ConsumerState<Navbar> {
     String? referralCode = showReferral ? ReferralService().getReferralCode() : null;
 
     // ignore: use_build_context_synchronously
-    showReferralFormActionSheet(context, referralCode: referralCode);
+    showReferralFormActionSheet(context, false, referralCode: referralCode);
   }
 }

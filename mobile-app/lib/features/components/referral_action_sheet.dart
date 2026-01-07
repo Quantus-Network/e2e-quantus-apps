@@ -14,8 +14,9 @@ import 'package:resonance_network_wallet/shared/extensions/media_query_data_exte
 
 class ReferralActionSheet extends StatefulWidget {
   final String? referralCode;
+  final bool loadReferralStatus;
 
-  const ReferralActionSheet({super.key, this.referralCode});
+  const ReferralActionSheet({super.key, required this.loadReferralStatus, this.referralCode});
 
   @override
   State<ReferralActionSheet> createState() => _ReferralActionSheetState();
@@ -28,14 +29,16 @@ class _ReferralActionSheetState extends State<ReferralActionSheet> {
   String? _checksum;
   bool _isSubmitting = false;
   bool _isDisabled = true;
-  bool _isLoading = true;
+  bool _isLoading = false;
   String? _errorMsg;
 
   @override
   void initState() {
     super.initState();
 
-    _loadReferralData();
+    if (widget.loadReferralStatus) {
+      _loadReferralData();
+    }
 
     _referralCodeController.addListener(() {
       setState(() {
@@ -69,6 +72,10 @@ class _ReferralActionSheetState extends State<ReferralActionSheet> {
   }
 
   Future<void> _loadReferralData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     _checksum = await _referralService.getReferralData();
 
     setState(() {
@@ -279,7 +286,7 @@ class _ReferralActionSheetState extends State<ReferralActionSheet> {
   }
 }
 
-void showReferralFormActionSheet(BuildContext context, {String? referralCode}) {
+void showReferralFormActionSheet(BuildContext context, loadReferralStatus, {String? referralCode}) {
   showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,
@@ -306,7 +313,7 @@ void showReferralFormActionSheet(BuildContext context, {String? referralCode}) {
             filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
             child: Container(
               color: Colors.black.useOpacity(0.3),
-              child: ReferralActionSheet(referralCode: referralCode),
+              child: ReferralActionSheet(loadReferralStatus: loadReferralStatus, referralCode: referralCode),
             ),
           ),
         ),

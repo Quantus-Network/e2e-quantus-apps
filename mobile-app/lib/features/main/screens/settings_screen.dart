@@ -164,7 +164,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ListItem(
           title: 'Referral',
           onTap: () {
-            showReferralFormActionSheet(context);
+            showReferralFormActionSheet(context, true);
           },
         ),
       ],

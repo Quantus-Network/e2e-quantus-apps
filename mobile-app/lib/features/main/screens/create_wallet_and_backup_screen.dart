@@ -108,7 +108,12 @@ class CreateWalletAndBackupScreenState extends ConsumerState<CreateWalletAndBack
       final accounts = asyncAccounts.value ?? <Account>[]; // Extract data or empty list
       if (accounts.isEmpty) {
         await _accountsService.addAccount(Account(index: 0, name: _accountName.value.text, accountId: _address));
-        await _referralService.submitAddressToBackend();
+        try {
+          // this is more like a shortcut - it will happen anyway any time we try to log in.
+          _referralService.submitAddressToBackend();
+        } catch (e) {
+          print('Failed to submit address to backend: $e');
+        }
       }
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
