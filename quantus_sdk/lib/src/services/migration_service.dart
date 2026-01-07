@@ -9,6 +9,7 @@ import 'package:quantus_sdk/src/services/settings_service.dart';
 class MigrationService {
   final SettingsService _settingsService;
   final HdWalletService _hdWalletService;
+  final int baseWalletIndex = 0;
 
   MigrationService(this._settingsService, this._hdWalletService);
 
@@ -20,7 +21,7 @@ class MigrationService {
   /// Get migration data including old accounts with their public keys
   Future<List<MigrationAccountData>> getMigrationData() async {
     final oldAccounts = _settingsService.getOldAccounts();
-    final mnemonic = await _settingsService.getMnemonic();
+    final mnemonic = await _settingsService.getMnemonic(baseWalletIndex);
 
     if (mnemonic == null) {
       throw Exception('No mnemonic found for migration');
@@ -54,6 +55,7 @@ class MigrationService {
       );
 
       final newAccount = Account(
+        walletIndex: baseWalletIndex,
         index: data.oldAccount.index,
         name: data.oldAccount.name,
         accountId: data.newAccountId,
@@ -76,9 +78,14 @@ class MigrationService {
   /// Debug method to create test old accounts
   Future<void> createDebugOldAccounts() async {
     final debugAccounts = [
-      const Account(index: -1, name: 'Primary Account', accountId: 'qznd1YWbgQrviV76psu5n8d24mHSuHtAc9JmJLB42gTELksvQ'),
-      const Account(index: 0, name: 'Account 0', accountId: 'debug_id_0'),
-      const Account(index: 1, name: 'Account 1', accountId: 'debug_id_1'),
+      const Account(
+        walletIndex: 0,
+        index: -1,
+        name: 'Primary Account',
+        accountId: 'qznd1YWbgQrviV76psu5n8d24mHSuHtAc9JmJLB42gTELksvQ',
+      ),
+      const Account(walletIndex: 0, index: 0, name: 'Account 0', accountId: 'debug_id_0'),
+      const Account(walletIndex: 0, index: 1, name: 'Account 1', accountId: 'debug_id_1'),
     ];
 
     final jsonData = jsonEncode(debugAccounts.map((a) => a.toJson()).toList());

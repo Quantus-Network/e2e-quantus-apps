@@ -30,14 +30,17 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
     SubstrateService(),
   );
 
-  Future<void> _discoverAccounts(String mnemonic) async {
+  Future<void> _discoverAccounts(String mnemonic, int walletIndex) async {
     if (!mounted) return;
     setState(() {
       _isDiscovering = true;
     });
 
     try {
-      final discoveredAccounts = await _accountDiscoveryService.discoverAccounts(mnemonic: mnemonic);
+      final discoveredAccounts = await _accountDiscoveryService.discoverAccounts(
+        mnemonic: mnemonic,
+        walletIndex: walletIndex,
+      );
 
       final existingAccountsSet = (await _accountsService.getAccounts()).map((e) => e.accountId).toSet();
 
@@ -59,7 +62,7 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
     }
   }
 
-  Future<void> _importWallet() async {
+  Future<void> _importWallet({required int walletIndex}) async {
     setState(() {
       _isLoading = true;
       _errorMessage = '';
@@ -81,10 +84,12 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
       }
 
       final key = HdWalletService().keyPairAtIndex(mnemonic, 0);
-      await _settingsService.setMnemonic(mnemonic);
-      await _accountsService.addAccount(Account(index: 0, name: 'Account 1', accountId: key.ss58Address));
+      await _settingsService.setMnemonic(mnemonic, walletIndex);
+      await _accountsService.addAccount(
+        Account(walletIndex: walletIndex, index: 0, name: 'Account 1', accountId: key.ss58Address),
+      );
 
-      await _discoverAccounts(mnemonic);
+      await _discoverAccounts(mnemonic, walletIndex);
       // We set check status to true so we will not prompt user to input refferal code.
       // This is because we know they can only import if they have gone through create process.
       _settingsService.setReferralCheckCompleted();
@@ -190,7 +195,7 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
             Button(
               variant: ButtonVariant.primary,
               label: 'Import Wallet',
-              onPressed: _importWallet,
+              onPressed: () => _importWallet(walletIndex: 0),
               isLoading: _isLoading,
             ),
           SizedBox(height: context.themeSize.bottomButtonSpacing),

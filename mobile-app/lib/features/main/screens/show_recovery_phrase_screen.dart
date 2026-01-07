@@ -12,7 +12,9 @@ import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class ShowRecoveryPhraseScreen extends StatefulWidget {
-  const ShowRecoveryPhraseScreen({super.key});
+  const ShowRecoveryPhraseScreen({super.key, this.walletIndex = 0});
+
+  final int walletIndex;
 
   @override
   State<ShowRecoveryPhraseScreen> createState() => _ShowRecoveryPhraseScreenState();
@@ -30,7 +32,7 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
   }
 
   Future<void> _loadMnemonic() async {
-    final mnemonic = await _settingsService.getMnemonic();
+    final mnemonic = await _settingsService.getMnemonic(widget.walletIndex);
     if (mnemonic != null) {
       setState(() {
         _recoveryPhrase = mnemonic.split(' ');

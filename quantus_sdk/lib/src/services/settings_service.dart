@@ -53,7 +53,7 @@ class SettingsService {
     final oldAccountId = _prefs.getString('account_id');
     if (oldAccountId != null) {
       final oldWalletName = _prefs.getString('wallet_name') ?? 'Account 1';
-      final account = Account(index: 0, name: oldWalletName, accountId: oldAccountId);
+      final account = Account(walletIndex: 0, index: 0, name: oldWalletName, accountId: oldAccountId);
       await saveAccounts([account]);
       await setActiveAccount(account);
       // Clean up old keys after migration
@@ -179,13 +179,15 @@ class SettingsService {
     return accounts.isEmpty;
   }
 
+  String getMnemonicKey(int walletIndex) => walletIndex == 0 ? 'mnemonic' : 'mnemonic_$walletIndex';
+
   // Mnemonic Settings - Using secure storage
-  Future<void> setMnemonic(String mnemonic) async {
-    await _secureStorage.write(key: 'mnemonic', value: mnemonic);
+  Future<void> setMnemonic(String mnemonic, int walletIndex) async {
+    await _secureStorage.write(key: getMnemonicKey(walletIndex), value: mnemonic);
   }
 
-  Future<String?> getMnemonic() async {
-    return await _secureStorage.read(key: 'mnemonic');
+  Future<String?> getMnemonic(int walletIndex) async {
+    return await _secureStorage.read(key: getMnemonicKey(walletIndex));
   }
 
   // Reversible Time Settings

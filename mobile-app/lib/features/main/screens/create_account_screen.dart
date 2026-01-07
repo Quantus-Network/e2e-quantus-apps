@@ -76,7 +76,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
       _isLoading = true;
     });
     try {
-      final account = await _accountsService.createNewAccount();
+      final account = await _accountsService.createNewAccount(walletIndex: 0);
       final checkphrase = await _checksumService.getHumanReadableName(account.accountId);
 
       if (mounted) {

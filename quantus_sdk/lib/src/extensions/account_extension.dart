@@ -7,6 +7,6 @@ extension HDWalletAccount on Account {
   }
 
   Future<String?> getMnemonic() async {
-    return SettingsService().getMnemonic();
+    return SettingsService().getMnemonic(walletIndex);
   }
 }
