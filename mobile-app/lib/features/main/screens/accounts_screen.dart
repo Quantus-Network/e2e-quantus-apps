@@ -19,8 +19,8 @@ import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/services/feature_flags.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/utils/feature_flags.dart';
 
 enum _WalletMoreAction { createWallet, importWallet, addHardwareWallet }
 
@@ -70,7 +70,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     });
     try {
       final accounts = ref.read(accountsProvider).value ?? <Account>[];
-      final selectedWallet = _selectedWalletIndex ?? (accounts.isNotEmpty ? accounts.first.walletIndex : 0);
+      int selectedWallet = getSelectedWalletIndex(accounts);
       final grouped = _groupByWallet(accounts);
       final selectedWalletAccounts = grouped[selectedWallet] ?? const <Account>[];
 
@@ -95,6 +95,11 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     }
   }
 
+  int getSelectedWalletIndex(List<Account> accounts) {
+    final selectedWallet = _selectedWalletIndex ?? (accounts.isNotEmpty ? accounts.first.walletIndex : 0);
+    return selectedWallet;
+  }
+
   Future<void> _openWalletMoreActions() async {
     final accounts = ref.read(accountsProvider).value ?? <Account>[];
     final nextWalletIndex = _nextWalletIndex(accounts);
@@ -104,7 +109,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
       Item(value: _WalletMoreAction.importWallet, label: 'Import wallet'),
     ];
 
-    if (FeatureFlags.isFeatureEnabled('keystone_hardware_wallet')) {
+    if (FeatureFlags.showKeystoneHardwareWallet) {
       items.add(Item(value: _WalletMoreAction.addHardwareWallet, label: 'Add hardware wallet'));
     }
 
@@ -171,38 +176,10 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   String _walletActionLabel() {
     final accounts = ref.watch(accountsProvider).value ?? <Account>[];
     final grouped = _groupByWallet(accounts);
-    final selectedWallet = _selectedWalletIndex ?? (accounts.isNotEmpty ? accounts.first.walletIndex : 0);
+    final selectedWallet = getSelectedWalletIndex(accounts);
     final selectedAccounts = grouped[selectedWallet] ?? const <Account>[];
     return _isHardwareWallet(selectedAccounts) ? 'Add Hardware Account' : 'Add Account';
   }
-
-  // Widget _buildWalletSelector() {
-  //   final accounts = ref.watch(accountsProvider).value ?? <Account>[];
-  //   final grouped = _groupByWallet(accounts);
-  //   if (grouped.length <= 1) return const SizedBox(height: 0);
-
-  //   final walletIndexes = grouped.keys.toList()..sort();
-  //   final initialWallet = _selectedWalletIndex ?? walletIndexes.first;
-
-  //   final items = walletIndexes
-  //       .map((ix) => Item<int>(value: ix, label: _walletLabel(ix, grouped[ix] ?? const <Account>[])))
-  //       .toList();
-
-  //   return Padding(
-  //     padding: const EdgeInsets.only(top: 8, bottom: 10),
-  //     child: Align(
-  //       alignment: Alignment.centerLeft,
-  //       child: Select<int>(
-  //         width: 220,
-  //         items: items,
-  //         initialValue: initialWallet,
-  //         onSelect: (item) {
-  //           setState(() => _selectedWalletIndex = item.value);
-  //         },
-  //       ),
-  //     ),
-  //   );
-  // }
 
   Widget _buildAccountsList() {
     final accountsAsync = ref.watch(accountsProvider);

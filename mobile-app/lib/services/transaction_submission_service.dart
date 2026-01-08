@@ -309,9 +309,7 @@ class TransactionSubmissionService {
           filteredPaginationControllerProviderFamily(AccountIdListCache.get([accountId])).notifier,
         );
         if (newTransaction != null) {
-          if (newTransaction.from == accountId || newTransaction.to == accountId) {
-            controller.addTransactionToHistory(newTransaction);
-          }
+          controller.addTransactionToHistory(newTransaction);
         }
         controller.silentRefresh();
       }
