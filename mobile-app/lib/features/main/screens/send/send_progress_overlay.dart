@@ -116,6 +116,8 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
         return;
       }
 
+      RecentAddressesService().addAddress(widget.recipientAddress);
+
       if (account.accountType == AccountType.keystone || AppConstants.debugHardwareWallet) {
         await _startHardwareFlow(account);
         return;
@@ -125,8 +127,6 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
           currentState = SendOverlayState.progress;
         });
         await _handleLocalWalletTransaction(account);
-
-        RecentAddressesService().addAddress(widget.recipientAddress);
 
         if (mounted) {
           setState(() {
@@ -281,8 +281,6 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
       Future<Uint8List> submissionBuilder() async {
         return await substrateService.submitExtrinsicWithExternalSignature(unsignedData, signature, publicKey);
       }
-
-      RecentAddressesService().addAddress(widget.recipientAddress);
 
       TelemetryService().sendEvent('send_transfer_hardware');
       await submissionService.submitAndTrackTransaction(submissionBuilder, pendingTx);
