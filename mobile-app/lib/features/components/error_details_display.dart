@@ -162,15 +162,9 @@ class _ErrorDetailsSheetState extends State<ErrorDetailsSheet> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         if (_copied)
-                          Icon(
-                            Icons.check,
-                            size: context.isTablet ? 20 : 18,
-                            color: context.themeColors.buttonSuccess,
-                          )
+                          Icon(Icons.check, size: context.isTablet ? 20 : 18, color: context.themeColors.buttonSuccess)
                         else
-                          CopyIcon(
-                            color: context.themeColors.textPrimary,
-                          ),
+                          CopyIcon(color: context.themeColors.textPrimary),
                         const SizedBox(width: 8),
                         Text(
                           _copied ? 'Copied!' : 'Copy Error',

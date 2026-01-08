@@ -172,10 +172,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
                                   textAlign: TextAlign.center,
                                 ),
                               ),
-                              InkWell(
-                                onTap: _copyChecksum,
-                                child: const CopyIcon(),
-                              ),
+                              InkWell(onTap: _copyChecksum, child: const CopyIcon()),
                             ],
                           );
                         }
@@ -199,10 +196,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
                             style: context.themeText.smallParagraph,
                           ),
                         ),
-                        InkWell(
-                          onTap: _copyAddress,
-                          child: const CopyIcon(),
-                        ),
+                        InkWell(onTap: _copyAddress, child: const CopyIcon()),
                       ],
                     ),
                   ],

@@ -579,9 +579,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
                                   const SizedBox(width: 6),
                                   Padding(
                                     padding: const EdgeInsets.only(top: 1.0),
-                                    child: CopyIcon(
-                                      color: context.themeColors.checksum.useOpacity(0.7),
-                                    ),
+                                    child: CopyIcon(color: context.themeColors.checksum.useOpacity(0.7)),
                                   ),
                                 ],
                               ),
