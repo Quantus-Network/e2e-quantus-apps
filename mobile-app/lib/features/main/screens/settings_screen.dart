@@ -12,6 +12,7 @@ import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/authentication_settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/notifications_settings_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/select_wallet_for_recovery_phrase_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/show_recovery_phrase_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
@@ -22,6 +23,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -88,6 +90,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         return ResetConfirmationBottomSheet(onReset: _resetAndClearData);
       },
     );
+  }
+
+  void _navigateToRecoveryPhrase() {
+    final accountsAsync = ref.read(accountsProvider);
+    accountsAsync.whenData((accounts) {
+      final walletIndices = getNonHardwareWalletIndices(accounts);
+
+      if (walletIndices.isEmpty) {
+        showTopSnackBar(context, title: 'No Wallets', message: 'No wallets with recovery phrases found.');
+        return;
+      }
+
+      if (walletIndices.length == 1) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => ShowRecoveryPhraseScreen(walletIndex: walletIndices.first)),
+        );
+      } else {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const SelectWalletForRecoveryPhraseScreen()));
+      }
+    });
   }
 
   @override
@@ -157,7 +180,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ListItem(
           title: 'Show Recovery Phrase',
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const ShowRecoveryPhraseScreen()));
+            _navigateToRecoveryPhrase();
           },
         ),
         const SizedBox(height: 22),

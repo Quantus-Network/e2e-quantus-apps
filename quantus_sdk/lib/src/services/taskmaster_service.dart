@@ -147,7 +147,6 @@ class TaskmasterService {
 
   final SettingsService _settingsService = SettingsService();
   final HdWalletService _hd = HdWalletService();
-  final _mainAccountIndex = 0;
   TokenInfo? _tokenInfo;
   String? get accessToken => _tokenInfo?.accessToken;
   bool get isLoggedIn => _tokenInfo != null && !_tokenInfo!.isExpired;
@@ -415,7 +414,7 @@ class TaskmasterService {
   }
 
   Future<Account> getMainAccount() async {
-    final account = await _settingsService.getAccount(_mainAccountIndex);
+    final account = await _settingsService.getAccount(walletIndex: 0, index: 0);
     if (account == null) {
       throw Exception('No main account - this method should probably not be called when logged out');
     }

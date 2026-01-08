@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,7 +11,6 @@ import 'package:resonance_network_wallet/features/main/screens/send/send_screen.
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
 import '../extensions.dart';
-
 // Generate the mocks
 @GenerateMocks([
   SettingsService,
@@ -59,10 +56,7 @@ void main() {
     when(mockChecksumService.getHumanReadableName(any)).thenAnswer((_) async => 'Alice');
 
     // --- 4. Balances/Fee Stubs ---
-    final dummyFeeData = ExtrinsicFeeData(
-      fee: BigInt.from(1000000),
-      extrinsicData: ExtrinsicData(blockNumber: 100, nonce: 1, blockHash: '0xHash', payload: Uint8List(0)),
-    );
+    final dummyFeeData = ExtrinsicFeeData(fee: BigInt.from(1000000), blockHash: '0xHash', blockNumber: 100);
 
     when(mockBalancesService.getBalanceTransferFee(any, any, any)).thenAnswer((_) async => dummyFeeData);
 

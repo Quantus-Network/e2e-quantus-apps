@@ -12,7 +12,10 @@ import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 
 class ImportWalletScreen extends ConsumerStatefulWidget {
-  const ImportWalletScreen({super.key});
+  const ImportWalletScreen({super.key, this.walletIndex = 0, this.popOnComplete = false});
+
+  final int walletIndex;
+  final bool popOnComplete;
 
   @override
   ImportWalletScreenState createState() => ImportWalletScreenState();
@@ -39,7 +42,7 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
     try {
       final discoveredAccounts = await _accountDiscoveryService.discoverAccounts(
         mnemonic: mnemonic,
-        walletIndex: walletIndex,
+        walletIndex: widget.walletIndex,
       );
 
       final existingAccountsSet = (await _accountsService.getAccounts()).map((e) => e.accountId).toSet();
@@ -99,6 +102,10 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
       _settingsService.setExistingUserSeenPromoVideo();
 
       if (context.mounted && mounted) {
+        if (widget.popOnComplete) {
+          Navigator.of(context).pop(true);
+          return;
+        }
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
@@ -195,7 +202,7 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
             Button(
               variant: ButtonVariant.primary,
               label: 'Import Wallet',
-              onPressed: () => _importWallet(walletIndex: 0),
+              onPressed: () => _importWallet(walletIndex: widget.walletIndex),
               isLoading: _isLoading,
             ),
           SizedBox(height: context.themeSize.bottomButtonSpacing),

@@ -1,5 +1,6 @@
 class AppConstants {
   static const globalDebug = false;
+
   static const String appName = 'Quantus Wallet';
   static const String tokenSymbol = 'QU'; // fetch this from chain eventually
   static const String shareUrl = 'https://linktr.ee/quantusnetwork';
@@ -52,4 +53,8 @@ class AppConstants {
 
   // Default sheet height in percentage of screen height
   static const double sendingSheetHeightFraction = 0.72;
+
+  // This starts the hardware wallet flow using a soft wallet - quite useful for debugging
+  // hardware wallet flow without using a hardware wallet.
+  static const debugHardwareWallet = false;
 }

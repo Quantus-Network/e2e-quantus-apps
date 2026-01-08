@@ -1,4 +1,8 @@
+import 'dart:typed_data';
+
+import 'package:convert/convert.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -77,6 +81,27 @@ void main() {
       final accountId2 = toAccountId(obj: keyPair2);
       expect(accountId1, knownAccountHdIndex0);
       expect(accountId2, knownAccountHdIndex1);
+    });
+    test('test for known values2', () {
+      const mnemonic1 = 'human snow truck virus now jaguar wall brisk shoe craft gravity diesel';
+
+      const knownAccountId = 'qzmuHhD8p2dvndwkbjw5htDvaptyis5rEVc7v5BmqR3pfQ7QN'; // schroedinger chain spec
+      final keypair = HdWalletService().keyPairAtIndex(mnemonic1, 0);
+      final accountId = toAccountId(obj: keypair);
+      expect(accountId, knownAccountId);
+
+      // this is a real scale encoded payload.
+      const hexPayload =
+          '0200007416854906f03a9dff66e3270a736c44e15970ac03a638471523a03069f276ca0700e876481755010000007400000002000000826beefbe2be72645ff376f18de745ac196dc77637436090de4174180706118e5a77ae1c95817ee664cf733fafa7baa8e6244b396a54e57a5bc414b24c52800600';
+      final payload = hex.decode(hexPayload);
+      final signature = signMessage(keypair: keypair, message: payload);
+      final isValid = verifyMessage(keypair: keypair, message: payload, signature: signature);
+      expect(isValid, true);
+      print('signature: ${hex.encode(signature)}');
+      final hashedSignature = const Blake2bHasher(32).hash(signature);
+      final hashedPayload = const Blake2bHasher(32).hash(Uint8List.fromList(payload));
+      print('hashedSignature: ${hex.encode(hashedSignature)}');
+      print('hashedPayload: ${hex.encode(hashedPayload)}');
     });
   });
 }

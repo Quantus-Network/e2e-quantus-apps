@@ -73,7 +73,6 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
               for (final barcode in barcodes) {
                 if (barcode.rawValue != null) {
                   _hasScanned = true; // Set flag before popping
-                  print('Popping QR scanner with: ${barcode.rawValue}');
                   Navigator.pop(context, barcode.rawValue);
                   break;
                 }

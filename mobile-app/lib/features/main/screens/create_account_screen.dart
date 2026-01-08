@@ -17,8 +17,9 @@ import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.
 
 class CreateAccountScreen extends ConsumerStatefulWidget {
   final Account? accountToEdit;
+  final int walletIndex;
 
-  const CreateAccountScreen({super.key, this.accountToEdit});
+  const CreateAccountScreen({super.key, this.accountToEdit, this.walletIndex = 0});
 
   @override
   ConsumerState<CreateAccountScreen> createState() => _CreateAccountScreenState();
@@ -77,7 +78,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
       _isLoading = true;
     });
     try {
-      final account = await _accountsService.createNewAccount(walletIndex: 0);
+      final account = await _accountsService.createNewAccount(walletIndex: widget.walletIndex);
       final checkphrase = await _checksumService.getHumanReadableName(account.accountId);
 
       if (mounted) {

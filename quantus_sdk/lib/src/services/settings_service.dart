@@ -20,6 +20,7 @@ class SettingsService {
   static const String _oldAccountsKeyV2 = 'accounts_v2';
   static const String _oldAccountsKeyV1 = 'accounts';
   static const String _activeAccountIndexKey = 'active_account_index';
+  static const String _activeAccountIdKey = 'active_account_id';
 
   // Local authentication keys
   static const String _isLocalAuthEnabledKey = 'is_local_auth_enabled';
@@ -47,7 +48,9 @@ class SettingsService {
     final accountsJson = _prefs.getString(_accountsKey);
     if (accountsJson != null) {
       final decoded = jsonDecode(accountsJson) as List<dynamic>;
-      return decoded.map((e) => Account.fromJson(e)).toList()..sort((a, b) => a.index.compareTo(b.index));
+      return decoded.map((e) => Account.fromJson(e)).toList()..sort(
+        (a, b) => a.walletIndex != b.walletIndex ? a.walletIndex.compareTo(b.walletIndex) : a.index.compareTo(b.index),
+      );
     }
     // Migration for existing single-account users
     final oldAccountId = _prefs.getString('account_id');
@@ -94,7 +97,9 @@ class SettingsService {
   Future<void> addAccount(Account account) async {
     final accounts = await getAccounts();
     // Check for duplicates by index or accountId before adding
-    if (!accounts.any((a) => a.index == account.index || a.accountId == account.accountId)) {
+    if (!accounts.any(
+      (a) => (a.walletIndex == account.walletIndex && a.index == account.index) || a.accountId == account.accountId,
+    )) {
       accounts.add(account);
       await saveAccounts(accounts);
       if (accounts.length == 1) {
@@ -108,7 +113,7 @@ class SettingsService {
 
   Future<void> updateAccount(Account account) async {
     final accounts = await getAccounts();
-    final index = accounts.indexWhere((a) => a.index == account.index);
+    final index = accounts.indexWhere((a) => a.accountId == account.accountId);
     if (index != -1) {
       accounts[index] = account;
       await saveAccounts(accounts);
@@ -120,50 +125,67 @@ class SettingsService {
     if (accounts.length == 1) {
       throw Exception('Cant remove last account!');
     }
-    if (account.index == 0) {
-      throw Exception("Can't remove the root account");
+    if (account.accountId == await _getActiveAccountId()) {
+      await _setActiveAccountId(accounts[0].accountId);
     }
-    if (account.index == _getActiveAccountIndex()) {
-      _setActiveAccountIndex(accounts[0].index);
-    }
-    accounts.removeWhere((a) => a.index == account.index);
+    accounts.removeWhere((a) => a.accountId == account.accountId);
     await saveAccounts(accounts);
   }
 
   Future<void> setActiveAccount(Account account) async {
-    final accountExists = await getAccount(account.index);
-    if (accountExists != null) {
-      _setActiveAccountIndex(account.index);
+    final exists = (await getAccounts()).any((a) => a.accountId == account.accountId);
+    if (exists) {
+      await _setActiveAccountId(account.accountId);
     } else {
       throw Exception('Account index does not exist');
     }
+  }
+
+  Future<String?> _getActiveAccountId() async {
+    final id = _prefs.getString(_activeAccountIdKey);
+    if (id != null && id.isNotEmpty) return id;
+
+    final legacyIndex = _getActiveAccountIndex();
+    final accounts = await getAccounts();
+    if (accounts.isEmpty) return null;
+    final legacyAccount = accounts.firstWhere(
+      (a) => a.walletIndex == 0 && a.index == legacyIndex,
+      orElse: () => accounts.first,
+    );
+
+    await _setActiveAccountId(legacyAccount.accountId);
+    return legacyAccount.accountId;
   }
 
   int _getActiveAccountIndex() {
     return _prefs.getInt(_activeAccountIndexKey) ?? 0;
   }
 
-  void _setActiveAccountIndex(int index) {
-    final oldIndex = _getActiveAccountIndex();
-    if (index != oldIndex) {
-      _prefs.setInt(_activeAccountIndexKey, index);
+  Future<void> _setActiveAccountId(String accountId) async {
+    final oldId = _prefs.getString(_activeAccountIdKey);
+    if (oldId != accountId) {
+      await _prefs.setString(_activeAccountIdKey, accountId);
     }
   }
 
   Future<Account?> getActiveAccount() async {
-    final activeIndex = _getActiveAccountIndex();
-    return getAccount(activeIndex);
+    final activeAccountId = await _getActiveAccountId();
+    final accounts = await getAccounts();
+    final ix = accounts.indexWhere((a) => a.accountId == activeAccountId);
+    return ix != -1 ? accounts[ix] : (accounts.isNotEmpty ? accounts.first : null);
   }
 
-  Future<Account?> getAccount(int index) async {
+  Future<Account?> getAccount({required int walletIndex, required int index}) async {
     final accounts = await getAccounts();
-    final ix = accounts.indexWhere((a) => a.index == index);
+    final ix = accounts.indexWhere((a) => a.walletIndex == walletIndex && a.index == index);
     return ix != -1 ? accounts[ix] : null;
   }
 
-  Future<int> getNextFreeAccountIndex() async {
+  Future<int> getNextFreeAccountIndex(int walletIndex) async {
     final accounts = await getAccounts();
-    final maxIndex = accounts.map((a) => a.index).reduce((a, b) => a > b ? a : b);
+    final walletAccounts = accounts.where((a) => a.walletIndex == walletIndex && a.index >= 0).toList();
+    if (walletAccounts.isEmpty) return 0;
+    final maxIndex = walletAccounts.map((a) => a.index).reduce((a, b) => a > b ? a : b);
     return maxIndex + 1;
   }
 

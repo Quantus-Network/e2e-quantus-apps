@@ -5,16 +5,24 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/features/components/select.dart';
+import 'package:resonance_network_wallet/features/components/select_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/account_settings_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/add_hardware_account_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/create_wallet_and_backup_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/import_wallet_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/services/feature_flags.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+
+enum _WalletMoreAction { createWallet, importWallet, addHardwareWallet }
 
 class AccountsScreen extends ConsumerStatefulWidget {
   const AccountsScreen({super.key});
@@ -28,13 +36,55 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   final NumberFormattingService _formattingService = NumberFormattingService();
 
   bool _isCreatingAccount = false;
+  int? _selectedWalletIndex;
+
+  bool _isHardwareWallet(List<Account> accounts) {
+    return accounts.isNotEmpty && accounts.every((a) => a.accountType == AccountType.keystone);
+  }
+
+  int _nextWalletIndex(List<Account> accounts) {
+    if (accounts.isEmpty) return 0;
+    final maxIndex = accounts.map((a) => a.walletIndex).reduce((a, b) => a > b ? a : b);
+    return maxIndex + 1;
+  }
+
+  Map<int, List<Account>> _groupByWallet(List<Account> accounts) {
+    final grouped = <int, List<Account>>{};
+    for (final a in accounts) {
+      grouped.putIfAbsent(a.walletIndex, () => []).add(a);
+    }
+    for (final entry in grouped.entries) {
+      entry.value.sort((a, b) => a.index.compareTo(b.index));
+    }
+    return Map.fromEntries(grouped.entries.toList()..sort((a, b) => a.key.compareTo(b.key)));
+  }
+
+  String _walletLabel(int walletIndex, List<Account> accounts) {
+    if (_isHardwareWallet(accounts)) return 'Hardware Wallet';
+    return 'Wallet ${walletIndex + 1}';
+  }
 
   Future<void> _createNewAccount() async {
     setState(() {
       _isCreatingAccount = true;
     });
     try {
-      await Navigator.push<bool?>(context, MaterialPageRoute(builder: (context) => const CreateAccountScreen()));
+      final accounts = ref.read(accountsProvider).value ?? <Account>[];
+      int selectedWallet = getSelectedWalletIndex(accounts);
+      final grouped = _groupByWallet(accounts);
+      final selectedWalletAccounts = grouped[selectedWallet] ?? const <Account>[];
+
+      if (_isHardwareWallet(selectedWalletAccounts)) {
+        await Navigator.push<bool?>(
+          context,
+          MaterialPageRoute(builder: (context) => AddHardwareAccountScreen(walletIndex: selectedWallet)),
+        );
+      } else {
+        await Navigator.push<bool?>(
+          context,
+          MaterialPageRoute(builder: (context) => CreateAccountScreen(walletIndex: selectedWallet)),
+        );
+      }
       // Providers will automatically refresh when a new account is added
     } finally {
       if (mounted) {
@@ -43,6 +93,52 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
         });
       }
     }
+  }
+
+  int getSelectedWalletIndex(List<Account> accounts) {
+    final selectedWallet = _selectedWalletIndex ?? (accounts.isNotEmpty ? accounts.first.walletIndex : 0);
+    return selectedWallet;
+  }
+
+  Future<void> _openWalletMoreActions() async {
+    final accounts = ref.read(accountsProvider).value ?? <Account>[];
+    final nextWalletIndex = _nextWalletIndex(accounts);
+
+    final items = [
+      Item(value: _WalletMoreAction.createWallet, label: 'Create new wallet'),
+      Item(value: _WalletMoreAction.importWallet, label: 'Import wallet'),
+    ];
+
+    if (FeatureFlags.isFeatureEnabled('keystone_hardware_wallet')) {
+      items.add(Item(value: _WalletMoreAction.addHardwareWallet, label: 'Add hardware wallet'));
+    }
+
+    showSelectActionSheet<_WalletMoreAction>(context, items, (item) async {
+      final result = await (switch (item.value) {
+        _WalletMoreAction.createWallet => Navigator.push<bool?>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CreateWalletAndBackupScreen(walletIndex: nextWalletIndex, popOnComplete: true),
+          ),
+        ),
+        _WalletMoreAction.importWallet => Navigator.push<bool?>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ImportWalletScreen(walletIndex: nextWalletIndex, popOnComplete: true),
+          ),
+        ),
+        _WalletMoreAction.addHardwareWallet => Navigator.push<bool?>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AddHardwareAccountScreen(walletIndex: nextWalletIndex, isNewWallet: true),
+          ),
+        ),
+      });
+      if (result == true && mounted) {
+        ref.invalidate(accountsProvider);
+        ref.invalidate(activeAccountProvider);
+      }
+    });
   }
 
   @override
@@ -56,14 +152,18 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
         ),
         const Positioned(left: -40, bottom: 0, child: Sphere(variant: 7, size: 240.681)),
       ],
-      appBar: WalletAppBar(title: 'Your Accounts'),
+      appBar: WalletAppBar(
+        title: 'Your Accounts',
+        actions: [IconButton(onPressed: _openWalletMoreActions, icon: const Icon(Icons.more_horiz))],
+      ),
       child: Column(
         children: [
+          // _buildWalletSelector(),
           Expanded(child: _buildAccountsList()),
 
           Button(
             variant: ButtonVariant.glassOutline,
-            label: 'Create New Account',
+            label: _walletActionLabel(),
             onPressed: _isCreatingAccount ? null : _createNewAccount,
           ),
 
@@ -71,6 +171,14 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
         ],
       ),
     );
+  }
+
+  String _walletActionLabel() {
+    final accounts = ref.watch(accountsProvider).value ?? <Account>[];
+    final grouped = _groupByWallet(accounts);
+    final selectedWallet = getSelectedWalletIndex(accounts);
+    final selectedAccounts = grouped[selectedWallet] ?? const <Account>[];
+    return _isHardwareWallet(selectedAccounts) ? 'Add Hardware Account' : 'Add Account';
   }
 
   Widget _buildAccountsList() {
@@ -98,16 +206,60 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
             child: Text('Failed to load active account: $error', style: const TextStyle(color: Colors.white70)),
           ),
           data: (activeAccount) {
-            return ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 16.0),
-              itemCount: accounts.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 25),
-              itemBuilder: (context, index) {
-                final account = accounts[index];
+            if (_selectedWalletIndex == null) {
+              final initial = activeAccount?.walletIndex ?? accounts.first.walletIndex;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted && _selectedWalletIndex == null) setState(() => _selectedWalletIndex = initial);
+              });
+            }
+
+            final grouped = _groupByWallet(accounts);
+            if (grouped.length <= 1) {
+              final walletAccounts = grouped.values.first;
+              return ListView.separated(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                itemCount: walletAccounts.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 25),
+                itemBuilder: (context, index) {
+                  final account = walletAccounts[index];
+                  final bool isActive = account.accountId == activeAccount?.accountId;
+                  return _buildAccountListItem(account, isActive, index);
+                },
+              );
+            }
+
+            final selectedWallet = _selectedWalletIndex ?? grouped.keys.first;
+            final children = <Widget>[];
+            var sectionIndex = 0;
+            for (final entry in grouped.entries) {
+              final walletIndex = entry.key;
+              final walletAccounts = entry.value;
+
+              if (sectionIndex > 0) children.add(const SizedBox(height: 18));
+              children.add(
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Text(
+                    _walletLabel(walletIndex, walletAccounts),
+                    style: context.themeText.detail?.copyWith(
+                      color: walletIndex == selectedWallet
+                          ? context.themeColors.textPrimary
+                          : context.themeColors.textMuted,
+                    ),
+                  ),
+                ),
+              );
+
+              for (var i = 0; i < walletAccounts.length; i++) {
+                if (i > 0) children.add(const SizedBox(height: 25));
+                final account = walletAccounts[i];
                 final bool isActive = account.accountId == activeAccount?.accountId;
-                return _buildAccountListItem(account, isActive, index);
-              },
-            );
+                children.add(_buildAccountListItem(account, isActive, i));
+              }
+              sectionIndex++;
+            }
+
+            return ListView(padding: const EdgeInsets.symmetric(vertical: 16.0), children: children);
           },
         );
       },

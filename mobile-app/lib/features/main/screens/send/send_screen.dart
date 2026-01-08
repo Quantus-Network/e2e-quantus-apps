@@ -296,7 +296,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
 
       setState(() {
         _networkFee = estimatedFee.fee;
-        _blockHeight = estimatedFee.extrinsicData.blockNumber;
+        _blockHeight = estimatedFee.blockNumber;
         _isFetchingFee = false;
         _hasAmountError = SendScreenLogic.hasAmountError(
           amount: _amount,
@@ -349,7 +349,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
 
       // we keep track of block number so we can set it on pending transactions
       setState(() {
-        _blockHeight = estimatedFee.extrinsicData.blockNumber;
+        _blockHeight = estimatedFee.blockNumber;
       });
 
       final maxSendableAmount = SendScreenLogic.calculateMaxSendableAmount(

@@ -23,7 +23,10 @@ import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 
 class CreateWalletAndBackupScreen extends ConsumerStatefulWidget {
-  const CreateWalletAndBackupScreen({super.key});
+  const CreateWalletAndBackupScreen({super.key, this.walletIndex = 0, this.popOnComplete = false});
+
+  final int walletIndex;
+  final bool popOnComplete;
 
   @override
   CreateWalletAndBackupScreenState createState() => CreateWalletAndBackupScreenState();
@@ -101,18 +104,17 @@ class CreateWalletAndBackupScreenState extends ConsumerState<CreateWalletAndBack
     setState(() {
       _isSubmitting = true;
     });
-    final walletIndex = 0;
     try {
-      await _settingsService.setMnemonic(_mnemonic, walletIndex);
+      await _settingsService.setMnemonic(_mnemonic, widget.walletIndex);
 
       final asyncAccounts = ref.read(accountsProvider); // Gets notifier state
       final accounts = asyncAccounts.value ?? <Account>[]; // Extract data or empty list
-      if (accounts.isEmpty) {
+      final hasRootForWallet = accounts.any((a) => a.walletIndex == widget.walletIndex && a.index == 0);
+      if (!hasRootForWallet) {
         await _accountsService.addAccount(
-          Account(walletIndex: walletIndex, index: 0, name: _accountName.value.text, accountId: _address),
+          Account(walletIndex: widget.walletIndex, index: 0, name: _accountName.value.text, accountId: _address),
         );
         try {
-          // this is more like a shortcut - it will happen anyway any time we try to log in.
           _referralService.submitAddressToBackend();
         } catch (e) {
           print('Failed to submit address to backend: $e');
@@ -122,6 +124,10 @@ class CreateWalletAndBackupScreenState extends ConsumerState<CreateWalletAndBack
       ref.invalidate(activeAccountProvider);
 
       if (mounted) {
+        if (widget.popOnComplete) {
+          Navigator.of(context).pop(true);
+          return;
+        }
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
