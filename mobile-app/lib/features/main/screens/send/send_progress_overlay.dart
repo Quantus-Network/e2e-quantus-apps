@@ -197,6 +197,8 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
     await _processHardwareSignature(signatureQRParts, unsignedData, account);
   }
 
+  // Simulate by generating a signature locally - allows us to test the signature flow without a hardware wallet
+  // we just pretend one of our wallets is a hardware wallet.. 
   Future<void> _simulateHardwareSignature() async {
     final unsignedData = _hardwareUnsignedData;
     final account = _hardwareAccount;
@@ -204,16 +206,8 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
 
     try {
       final hwService = ref.read(hardwareWalletServiceProvider);
-      // Simulate by generating a signature locally (ONLY FOR DEBUG)
       final signatureWithPublicKey = await hwService.simulateSignature(account, unsignedData);
 
-      // We pass it as a fake UR-like string or hex for processing,
-      // but _processHardwareSignature expects UR parts usually.
-      // Ideally we'd encode this back to UR to fully test the flow,
-      // but reusing the bytes directly or mocking the scan result is easier.
-      // For now, let's just pass the hex as a single part which our service might reject if strict,
-      // but let's assume we handle it or modify the test slightly.
-      // Actually, let's create a valid UR for it:
       final ur = hwService.encodePayloadAsUr(signatureWithPublicKey);
       await _onHardwareSignatureScanned([ur]);
     } catch (e) {
