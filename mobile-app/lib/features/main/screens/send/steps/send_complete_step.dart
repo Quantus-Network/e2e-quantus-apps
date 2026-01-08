@@ -153,4 +153,3 @@ class SendCompleteStep extends StatelessWidget {
     );
   }
 }
-

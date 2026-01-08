@@ -14,12 +14,7 @@ class HardwareSignStep extends ConsumerWidget {
   final VoidCallback onClose;
   final VoidCallback onNext;
 
-  const HardwareSignStep({
-    super.key,
-    required this.unsignedData,
-    required this.onClose,
-    required this.onNext,
-  });
+  const HardwareSignStep({super.key, required this.unsignedData, required this.onClose, required this.onNext});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

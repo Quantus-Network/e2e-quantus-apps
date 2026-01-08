@@ -7,10 +7,7 @@ import 'package:resonance_network_wallet/shared/extensions/media_query_data_exte
 class SendProgressStep extends StatelessWidget {
   final VoidCallback onClose;
 
-  const SendProgressStep({
-    super.key,
-    required this.onClose,
-  });
+  const SendProgressStep({super.key, required this.onClose});
 
   @override
   Widget build(BuildContext context) {
@@ -54,4 +51,3 @@ class SendProgressStep extends StatelessWidget {
     );
   }
 }
-

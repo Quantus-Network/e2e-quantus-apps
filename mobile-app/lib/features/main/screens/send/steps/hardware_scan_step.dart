@@ -47,7 +47,7 @@ class _HardwareScanStepState extends ConsumerState<HardwareScanStep> {
     if (_hasScannedSignature || widget.isSubmitting) {
       return;
     }
-    
+
     final hwService = ref.read(hardwareWalletServiceProvider);
 
     for (final barcode in capture.barcodes) {
@@ -58,19 +58,19 @@ class _HardwareScanStepState extends ConsumerState<HardwareScanStep> {
 
       if (v.startsWith('UR:')) {
         final wasNew = _collectedUrParts.add(v);
-        
+
         if (wasNew) {
           // final total = hwService.getTotalFragmentCount(_collectedUrParts.toList());
           // debugPrint('QR Scanner: Total fragments: $total');
           setState(() {});
-          
+
           final isComplete = hwService.isComplete(_collectedUrParts.toList());
           if (isComplete) {
             _hasScannedSignature = true;
             widget.onSignatureScanned(_collectedUrParts.toList());
           }
         }
-      } 
+      }
       break;
     }
   }
@@ -145,10 +145,7 @@ class _HardwareScanStepState extends ConsumerState<HardwareScanStep> {
               height: 320,
               child: Stack(
                 children: [
-                  MobileScanner(
-                    controller: _signatureScannerController,
-                    onDetect: _handleDetect,
-                  ),
+                  MobileScanner(controller: _signatureScannerController, onDetect: _handleDetect),
                   Container(
                     decoration: ShapeDecoration(
                       shape: RoundedRectangleBorder(

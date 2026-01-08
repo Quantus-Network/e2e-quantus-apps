@@ -7,7 +7,6 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 /// Service for handling hardware wallet interactions, specifically Keystone.
 /// This includes UR (Uniform Resources) encoding/decoding and signature verification.
 class HardwareWalletService {
-  
   /// Encodes a payload (bytes) into a single UR string.
   /// Throws if encoding fails.
   String encodePayloadAsUr(List<int> payload) {
@@ -15,8 +14,8 @@ class HardwareWalletService {
     if (urParts.isEmpty) {
       throw Exception('Failed to encode UR: empty result');
     }
-    // Keystone usually expects a single part for simple transactions, 
-    // or handles multipart if the payload is large. 
+    // Keystone usually expects a single part for simple transactions,
+    // or handles multipart if the payload is large.
     // encodeUr returns a list of parts.
     return urParts.first;
   }
@@ -30,7 +29,7 @@ class HardwareWalletService {
   /// Parses the total fragment count from a UR part string (e.g., "UR:Type/1-5/...").
   int? getTotalFragmentCount(List<String> urParts) {
     if (urParts.isEmpty) return null;
-    
+
     for (final part in urParts) {
       // Regex to find the sequence indicator like "1-5" in the UR string
       final match = RegExp(r'/(\d+)-(\d+)/').firstMatch(part);
@@ -47,10 +46,10 @@ class HardwareWalletService {
     if (signatureQRParts.isEmpty) {
       throw Exception('No signature parts provided');
     }
-    
+
     // Check if it's a UR format
     if (!signatureQRParts.first.toUpperCase().startsWith('UR:')) {
-       throw Exception('Invalid signature format: Not a UR code');
+      throw Exception('Invalid signature format: Not a UR code');
     }
 
     try {
@@ -66,9 +65,7 @@ class HardwareWalletService {
     final expectedTotalSize = signatureSize + publicKeySize;
 
     if (signatureBytes.length != expectedTotalSize) {
-      throw Exception(
-        'Invalid signature length: expected $expectedTotalSize bytes, got ${signatureBytes.length}'
-      );
+      throw Exception('Invalid signature length: expected $expectedTotalSize bytes, got ${signatureBytes.length}');
     }
 
     final signature = signatureBytes.sublist(0, signatureSize);
@@ -81,11 +78,11 @@ class HardwareWalletService {
   Future<Uint8List> simulateSignature(Account account, UnsignedTransactionData unsignedData) async {
     final debugWallet = await account.getKeypair();
     final signature = signMessage(keypair: debugWallet, message: unsignedData.encodedPayloadToSign);
-    
+
     final signatureWithPublicKey = Uint8List(signature.length + debugWallet.publicKey.length);
     signatureWithPublicKey.setAll(0, signature);
     signatureWithPublicKey.setAll(signature.length, debugWallet.publicKey);
-    
+
     return signatureWithPublicKey;
   }
 }
@@ -93,4 +90,3 @@ class HardwareWalletService {
 final hardwareWalletServiceProvider = Provider<HardwareWalletService>((ref) {
   return HardwareWalletService();
 });
-
