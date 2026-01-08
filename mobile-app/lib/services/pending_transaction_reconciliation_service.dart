@@ -229,11 +229,9 @@ class PendingTransactionReconciliationService {
     // Update to inHistory state first to show completion
     _ref.read(pendingTransactionsProvider.notifier).updateState(pendingTx.id, TransactionState.inHistory);
 
-    // Remove after a short delay to let UI show the completion
-    Timer(const Duration(seconds: 1), () {
-      _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
-      print('PendingReconciliation: Removed pending transaction ${pendingTx.id}');
-    });
+    // Remove immediately to avoid duplicates since we found it in history
+    _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
+    print('PendingReconciliation: Removed pending transaction ${pendingTx.id}');
   }
 
   /// Marks a pending transaction as failed
