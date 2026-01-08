@@ -198,7 +198,7 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
   }
 
   // Simulate by generating a signature locally - allows us to test the signature flow without a hardware wallet
-  // we just pretend one of our wallets is a hardware wallet.. 
+  // we just pretend one of our wallets is a hardware wallet..
   Future<void> _simulateHardwareSignature() async {
     final unsignedData = _hardwareUnsignedData;
     final account = _hardwareAccount;
