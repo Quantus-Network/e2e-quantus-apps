@@ -11,6 +11,7 @@ import '../types/pallet_reversible_transfers/pending_transfer.dart' as _i5;
 import '../types/primitive_types/h256.dart' as _i4;
 import '../types/qp_scheduler/block_number_or_timestamp.dart' as _i10;
 import '../types/quantus_runtime/runtime_call.dart' as _i9;
+import '../types/sp_arithmetic/per_things/permill.dart' as _i13;
 import '../types/sp_core/crypto/account_id32.dart' as _i2;
 import '../types/sp_runtime/multiaddress/multi_address.dart' as _i12;
 
@@ -402,4 +403,9 @@ class Constants {
 
   /// The minimum delay period allowed for reversible transactions, in milliseconds.
   final BigInt minDelayPeriodMoment = BigInt.from(12000);
+
+  /// Volume fee taken from reversed transactions for high-security accounts only,
+  /// expressed as a Permill (e.g., Permill::from_percent(1) = 1%). Regular accounts incur no
+  /// fees.
+  final _i13.Permill volumeFee = 10000;
 }

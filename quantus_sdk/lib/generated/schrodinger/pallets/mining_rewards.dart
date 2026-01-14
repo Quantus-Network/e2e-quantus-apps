@@ -42,7 +42,7 @@ class Constants {
   final BigInt minerBlockReward = BigInt.from(10000000000000);
 
   /// The base block reward given to treasury
-  final BigInt treasuryBlockReward = BigInt.from(1000000000000);
+  final BigInt treasuryBlockReward = BigInt.zero;
 
   /// The treasury pallet ID
   final _i5.PalletId treasuryPalletId = const <int>[112, 121, 47, 116, 114, 115, 114, 121];

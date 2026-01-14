@@ -15,7 +15,8 @@ import 'package:resonance_network_wallet/providers/high_security_form_provider.d
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class HighSecuritySafeguardWindowWizard extends ConsumerStatefulWidget {
-  const HighSecuritySafeguardWindowWizard({super.key});
+  final Account account;
+  const HighSecuritySafeguardWindowWizard({super.key, required this.account});
 
   @override
   ConsumerState<HighSecuritySafeguardWindowWizard> createState() => _HighSecuritySafeguardWindowWizardState();
@@ -25,7 +26,7 @@ class _HighSecuritySafeguardWindowWizardState extends ConsumerState<HighSecurity
   @override
   Widget build(BuildContext context) {
     final formNotifier = ref.read(highSecurityFormProvider.notifier);
-    final safeguardTimeSeconds = ref.watch(highSecurityFormProvider).safeguardWindow;
+    final safeguardTimeSeconds = ref.watch(highSecurityFormProvider).safeguardWindow.inSeconds;
 
     final int secondsInADay = 86400;
     final int secondsInAMonth = secondsInADay * 30; // 86400 seconds/day * 30 days/month
@@ -53,7 +54,7 @@ class _HighSecuritySafeguardWindowWizardState extends ConsumerState<HighSecurity
             ],
           ),
           const SizedBox(height: 32),
-          GradientText('SAFEGUARD WINDOW', colors: context.themeColors.aquaBlue, style: context.themeText.largeTitle),
+          GradientText.highSecurity('SAFEGUARD WINDOW', context),
           const SizedBox(height: 4),
           Text(
             'The time window in which the Guardian  can deny or intercept a transaction.',
@@ -127,7 +128,10 @@ class _HighSecuritySafeguardWindowWizardState extends ConsumerState<HighSecurity
                   variant: ButtonVariant.neutral,
                   label: 'Next',
                   onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const HighSecuritySummaryWizard()));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => HighSecuritySummaryWizard(account: widget.account)),
+                    );
                   },
                 ),
               ),

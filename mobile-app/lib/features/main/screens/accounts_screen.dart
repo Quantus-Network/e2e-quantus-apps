@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
+import 'package:resonance_network_wallet/features/components/account_tag.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/select.dart';
@@ -144,6 +145,22 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     });
   }
 
+  Future<void> _refreshAccounts() async {
+    // Invalidate main accounts provider
+    ref.invalidate(accountsProvider);
+
+    // Invalidate per-account providers
+    final accounts = ref.read(accountsProvider).valueOrNull ?? [];
+    for (final account in accounts) {
+      ref.invalidate(isHighSecurityProvider(account));
+      ref.invalidate(entrustedAccountsProvider(account));
+      ref.invalidate(balanceProviderFamily(account.accountId));
+    }
+
+    // Wait for accounts to reload
+    await ref.read(accountsProvider.notifier).stream.firstWhere((state) => !state.isLoading);
+  }
+
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
@@ -219,15 +236,18 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
             final grouped = _groupByWallet(accounts);
             if (grouped.length <= 1) {
               final walletAccounts = grouped.values.first;
-              return ListView.separated(
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                itemCount: walletAccounts.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 25),
-                itemBuilder: (context, index) {
-                  final account = walletAccounts[index];
-                  final bool isActive = account.accountId == activeAccount?.accountId;
-                  return _buildAccountListItem(account, isActive, index);
-                },
+              return RefreshIndicator(
+                onRefresh: _refreshAccounts,
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  itemCount: walletAccounts.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 25),
+                  itemBuilder: (context, index) {
+                    final account = walletAccounts[index];
+                    final bool isActive = account.accountId == activeAccount?.accountId;
+                    return _buildAccountListItem(account, isActive, index);
+                  },
+                ),
               );
             }
 
@@ -262,7 +282,10 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
               sectionIndex++;
             }
 
-            return ListView(padding: const EdgeInsets.symmetric(vertical: 16.0), children: children);
+            return RefreshIndicator(
+              onRefresh: _refreshAccounts,
+              child: ListView(padding: const EdgeInsets.symmetric(vertical: 16.0), children: children),
+            );
           },
         );
       },
@@ -276,6 +299,9 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     final entrustedNodes = entrustedAccountsData.map((entrusted) => TreeNode<Account>(data: entrusted)).toList();
 
     final double constraintMaxHeight = min(entrustedNodes.length * 52, 104);
+
+    final isHighSecurityAsync = ref.watch(isHighSecurityProvider(account));
+    final isHighSecurity = isHighSecurityAsync.value ?? false;
 
     return InkWell(
       onTap: () async {
@@ -325,8 +351,23 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                                 color: isActive ? Colors.black : Colors.white,
                                               ),
                                             ),
-                                            if (entrustedNodes.isNotEmpty)
-                                              const AccountTag('Guardian', color: Color(0xFF9747FF)),
+                                            Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                if (isHighSecurity)
+                                                  AccountTag(
+                                                    text: 'High Security',
+                                                    color: context.themeColors.accountTagEntrusted,
+                                                  ),
+                                                if (isHighSecurity && entrustedNodes.isNotEmpty)
+                                                  const SizedBox(width: 6),
+                                                if (entrustedNodes.isNotEmpty)
+                                                  AccountTag(
+                                                    text: 'Guardian',
+                                                    color: context.themeColors.accountTagGuardian,
+                                                  ),
+                                              ],
+                                            ),
                                           ],
                                         ),
                                         Text(
@@ -434,6 +475,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                 account: account,
                                 balance: _formattingService.formatBalance(balance, addSymbol: true),
                                 checksumName: checksumName,
+                                isHighSecurity: isHighSecurity,
                               ),
                             ),
                           );
@@ -468,7 +510,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(entrusted.name, style: context.themeText.smallParagraph),
-                                  const AccountTag('Entrusted'),
+                                  AccountTag(text: 'Entrusted', color: context.themeColors.accountTagEntrusted),
                                 ],
                               ),
                             ),
@@ -499,6 +541,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                         account: entrusted,
                                         balance: _formattingService.formatBalance(balance, addSymbol: true),
                                         checksumName: checksumName,
+                                        isHighSecurity: true,
                                       ),
                                     ),
                                   );
@@ -524,28 +567,6 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class AccountTag extends StatelessWidget {
-  final String label;
-  final Color? color;
-
-  const AccountTag(this.label, {super.key, this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color ?? const Color(0xFFFFD541), // Default to Entrusted color (Yellow-ish)
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        label,
-        style: context.themeText.tiny?.copyWith(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 10),
       ),
     );
   }

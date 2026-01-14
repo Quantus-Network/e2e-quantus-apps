@@ -1,15 +1,17 @@
+import 'package:quantus_sdk/quantus_sdk.dart';
+
 class HighSecurityData {
-  final String guardianAddress;
-  final int safeguardWindow;
+  final String guardianAccountId;
+  final Duration safeguardWindow;
 
   const HighSecurityData({
-    this.guardianAddress = '',
-    this.safeguardWindow = 10 * 60 * 60, // 10 hours in seconds
+    this.guardianAccountId = '',
+    this.safeguardWindow = const Duration(hours: 10), // 10 hours in seconds
   });
 
-  HighSecurityData copyWith({String? guardianAddress, int? safeguardWindow}) {
+  HighSecurityData copyWith({Account? account, String? guardianAddress, Duration? safeguardWindow}) {
     return HighSecurityData(
-      guardianAddress: guardianAddress ?? this.guardianAddress,
+      guardianAccountId: guardianAddress ?? guardianAccountId,
       safeguardWindow: safeguardWindow ?? this.safeguardWindow,
     );
   }

@@ -4,16 +4,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
-import 'package:resonance_network_wallet/features/main/screens/high_security/high_security_cancel_warning_sheet.dart';
 import 'package:resonance_network_wallet/features/main/screens/high_security/high_security_created_sheet.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/entrusted_account_provider.dart';
 import 'package:resonance_network_wallet/providers/high_security_form_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class HighSecurityConfirmationSheet extends ConsumerStatefulWidget {
-  const HighSecurityConfirmationSheet({super.key});
+  final Account account;
+  const HighSecurityConfirmationSheet({super.key, required this.account});
 
   @override
   ConsumerState<HighSecurityConfirmationSheet> createState() => _HighSecurityConfirmationSheetState();
@@ -21,7 +24,6 @@ class HighSecurityConfirmationSheet extends ConsumerStatefulWidget {
 
 class _HighSecurityConfirmationSheetState extends ConsumerState<HighSecurityConfirmationSheet> {
   final HighSecurityService _highSecurityService = HighSecurityService();
-  final SettingsService _settingsService = SettingsService();
 
   BigInt? _networkFee;
   bool _isSubmitting = false;
@@ -31,10 +33,30 @@ class _HighSecurityConfirmationSheetState extends ConsumerState<HighSecurityConf
       _isSubmitting = true;
     });
 
-    final formData = ref.read(highSecurityFormProvider);
-    final activeAccount = (await _settingsService.getActiveAccount())!;
+    final highSecurityData = ref.read(highSecurityFormProvider);
 
-    await _highSecurityService.setupHighSecurityAccount(activeAccount, formData);
+    print('delay: ${highSecurityData.safeguardWindow}');
+
+    final res = await _highSecurityService.setHighSecurity(
+      widget.account,
+      highSecurityData.guardianAccountId,
+      highSecurityData.safeguardWindow,
+    );
+    print('setHighSecurity result: $res');
+
+    ref.invalidate(isHighSecurityProvider(widget.account));
+    ref.invalidate(entrustedAccountsProvider(widget.account));
+    ref.invalidate(balanceProviderFamily(widget.account.accountId));
+
+    // Also invalidate the guardian account if we own it, so it updates its entrusted list
+    final accounts = ref.read(accountsProvider).valueOrNull;
+    if (accounts != null) {
+      for (final account in accounts) {
+        if (account.accountId == highSecurityData.guardianAccountId) {
+          ref.invalidate(entrustedAccountsProvider(account));
+        }
+      }
+    }
 
     setState(() {
       _isSubmitting = false;
@@ -46,14 +68,17 @@ class _HighSecurityConfirmationSheetState extends ConsumerState<HighSecurityConf
   }
 
   void _cancelSetup() {
-    showHighSecurityCancelWarningSheet(context);
+    Navigator.pop(context);
   }
 
   void _fetchNetworkFee() async {
-    final activeAccount = (await _settingsService.getActiveAccount())!;
-    final formData = ref.read(highSecurityFormProvider);
+    final highSecurityData = ref.read(highSecurityFormProvider);
 
-    final fee = await _highSecurityService.getHighSecuritySetupFee(activeAccount, formData);
+    final fee = await _highSecurityService.getHighSecuritySetupFee(
+      widget.account,
+      highSecurityData.guardianAccountId,
+      highSecurityData.safeguardWindow,
+    );
 
     setState(() {
       _networkFee = fee.fee;
@@ -128,7 +153,7 @@ class _HighSecurityConfirmationSheetState extends ConsumerState<HighSecurityConf
               children: [
                 Text('Network Fee', style: context.themeText.detail?.copyWith(fontWeight: FontWeight.w600)),
                 Text(
-                  '${_networkFee ?? 'Fetching...'} ${AppConstants.tokenSymbol}',
+                  '${NumberFormattingService().formatBalance(_networkFee ?? BigInt.zero, maxDecimals: 5)} ${AppConstants.tokenSymbol}',
                   style: context.themeText.detail?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ],
@@ -159,7 +184,7 @@ class _HighSecurityConfirmationSheetState extends ConsumerState<HighSecurityConf
   }
 }
 
-void showHighSecurityConfirmationSheet(BuildContext context) {
+void showHighSecurityConfirmationSheet(BuildContext context, Account account) {
   showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,
@@ -186,7 +211,10 @@ void showHighSecurityConfirmationSheet(BuildContext context) {
           right: 0,
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-            child: Container(color: Colors.black.useOpacity(0.3), child: const HighSecurityConfirmationSheet()),
+            child: Container(
+              color: Colors.black.useOpacity(0.3),
+              child: HighSecurityConfirmationSheet(account: account),
+            ),
           ),
         ),
       ],

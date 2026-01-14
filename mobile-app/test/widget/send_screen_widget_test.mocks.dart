@@ -554,17 +554,17 @@ class MockReversibleTransfersService extends _i1.Mock implements _i2.ReversibleT
     _i1.throwOnMissingStub(this);
   }
 
-  @override
-  _i3.Future<_i6.Uint8List> setHighSecurity({
-    required _i4.Account? account,
-    required _i4.Account? guardian,
-    required _i7.BlockNumberOrTimestamp? delay,
-  }) =>
-      (super.noSuchMethod(
-            Invocation.method(#setHighSecurity, [], {#account: account, #guardian: guardian, #delay: delay}),
-            returnValue: _i3.Future<_i6.Uint8List>.value(_i6.Uint8List(0)),
-          )
-          as _i3.Future<_i6.Uint8List>);
+  // @override
+  // _i3.Future<_i6.Uint8List> setHighSecurity({
+  //   required _i4.Account? account,
+  //   required _i4.Account? guardian,
+  //   required _i7.BlockNumberOrTimestamp? delay,
+  // }) =>
+  //     (super.noSuchMethod(
+  //           Invocation.method(#setHighSecurity, [], {#account: account, #guardian: guardian, #delay: delay}),
+  //           returnValue: _i3.Future<_i6.Uint8List>.value(_i6.Uint8List(0)),
+  //         )
+  //         as _i3.Future<_i6.Uint8List>);
 
   @override
   _i3.Future<_i6.Uint8List> scheduleReversibleTransfer({
@@ -676,7 +676,7 @@ class MockReversibleTransfersService extends _i1.Mock implements _i2.ReversibleT
           )
           as _i3.Future<_i6.Uint8List>);
 
-  @override
+  // @override
   _i3.Future<_i6.Uint8List> executeTransfer({required _i4.Account? account, required List<int>? transactionId}) =>
       (super.noSuchMethod(
             Invocation.method(#executeTransfer, [], {#account: account, #transactionId: transactionId}),
@@ -685,7 +685,7 @@ class MockReversibleTransfersService extends _i1.Mock implements _i2.ReversibleT
           as _i3.Future<_i6.Uint8List>);
 
   @override
-  _i3.Future<_i9.HighSecurityAccountData?> getAccountReversibilityConfig(String? address) =>
+  _i3.Future<_i9.HighSecurityAccountData?> getHighSecurityConfig(String? address) =>
       (super.noSuchMethod(
             Invocation.method(#getAccountReversibilityConfig, [address]),
             returnValue: _i3.Future<_i9.HighSecurityAccountData?>.value(),
@@ -705,7 +705,7 @@ class MockReversibleTransfersService extends _i1.Mock implements _i2.ReversibleT
       (super.noSuchMethod(Invocation.method(#getAccountPendingIndex, [address]), returnValue: _i3.Future<int>.value(0))
           as _i3.Future<int>);
 
-  @override
+  // @override
   _i3.Future<bool> isReversibilityEnabled(String? address) =>
       (super.noSuchMethod(
             Invocation.method(#isReversibilityEnabled, [address]),

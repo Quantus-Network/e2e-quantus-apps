@@ -35,6 +35,15 @@ final balancesServiceProvider = Provider<BalancesService>((ref) {
   return BalancesService();
 });
 
+final highSecurityServiceProvider = Provider<HighSecurityService>((ref) {
+  return HighSecurityService();
+});
+
+final isHighSecurityProvider = FutureProvider.family<bool, Account>((ref, account) async {
+  final highSecurityService = ref.watch(highSecurityServiceProvider);
+  return await highSecurityService.isHighSecurity(account);
+});
+
 final balanceProviderFamily = FutureProvider.family<BigInt, String>((ref, accountId) async {
   final substrateService = ref.watch(substrateServiceProvider);
   print('query balance for $accountId');
@@ -107,5 +116,10 @@ BigInt _calculatePendingOutgoing(List<PendingTransactionEvent> pendingTransactio
 
   return totalOutgoing;
 }
+
+final highSecurityConfigProvider = FutureProvider.family<HighSecurityData?, Account>((ref, account) async {
+  final service = ref.watch(highSecurityServiceProvider);
+  return service.getHighSecurityConfig(account.accountId);
+});
 
 // Deprecated legacy history providers removed in favor of unified pagination

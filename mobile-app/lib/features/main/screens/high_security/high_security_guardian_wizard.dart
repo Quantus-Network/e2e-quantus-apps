@@ -17,14 +17,28 @@ import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/high_security_form_provider.dart';
 
+final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
+
 class HighSecurityGuardianWizard extends ConsumerStatefulWidget {
-  const HighSecurityGuardianWizard({super.key});
+  final Account account;
+  const HighSecurityGuardianWizard({super.key, required this.account});
 
   @override
   ConsumerState<HighSecurityGuardianWizard> createState() => _HighSecurityGuardianWizardState();
 }
 
 class _HighSecurityGuardianWizardState extends ConsumerState<HighSecurityGuardianWizard> {
+  late final TextEditingController _guardianController;
+
+  // return null if the address is not valid
+  Future<String?> _getHumanCheckphrase(String address) async {
+    if (SubstrateService().isValidSS58Address(address)) {
+      return await _checksumService.getHumanReadableName(address);
+    } else {
+      return null;
+    }
+  }
+
   Future<void> _scanQRCode() async {
     final formNotifier = ref.read(highSecurityFormProvider.notifier);
 
@@ -35,23 +49,26 @@ class _HighSecurityGuardianWizardState extends ConsumerState<HighSecurityGuardia
 
     if (scannedAddress != null && mounted) {
       formNotifier.updateGuardianAddress(scannedAddress);
+      _guardianController.text = scannedAddress;
     }
   }
 
   @override
   void initState() {
     super.initState();
+    _guardianController = TextEditingController(text: ref.read(highSecurityFormProvider).guardianAccountId);
   }
 
   @override
   void dispose() {
+    _guardianController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final formNotifier = ref.read(highSecurityFormProvider.notifier);
-    final guardianAddress = ref.watch(highSecurityFormProvider).guardianAddress;
+    final guardianAddress = ref.watch(highSecurityFormProvider).guardianAccountId;
 
     final bool isDisabled = guardianAddress.isEmpty;
 
@@ -71,7 +88,7 @@ class _HighSecurityGuardianWizardState extends ConsumerState<HighSecurityGuardia
             ],
           ),
           const SizedBox(height: 32),
-          GradientText('THEFT DETERRENCE', colors: context.themeColors.aquaBlue, style: context.themeText.largeTitle),
+          GradientText.highSecurity('THEFT DETERRENCE', context),
           const SizedBox(height: 4),
           Text(
             'Intercept any transaction or “pull” all funds in the case of theft.',
@@ -104,6 +121,7 @@ class _HighSecurityGuardianWizardState extends ConsumerState<HighSecurityGuardia
                   final data = await Clipboard.getData('text/plain');
                   if (data != null && data.text != null) {
                     formNotifier.updateGuardianAddress(data.text!);
+                    _guardianController.text = data.text!;
                   }
                 },
                 child: const WalletActionButton(assetPath: 'assets/paste_icon_1.svg'),
@@ -118,15 +136,37 @@ class _HighSecurityGuardianWizardState extends ConsumerState<HighSecurityGuardia
           const SizedBox(height: 13),
           CustomTextField(
             variant: TextFieldVariant.secondary,
-            initialValue: guardianAddress,
+            controller: _guardianController,
             onChanged: formNotifier.updateGuardianAddress,
             hintText: 'Enter address',
+            fillColor: context.themeColors.darkGray,
           ),
-          const SizedBox(height: 13),
-          Text(
-            'The harder the Guardian account is to access the higher the security. An address on a cold storage wallet is the most secure.',
-            style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.textMuted),
-          ),
+          if (guardianAddress.isNotEmpty)
+            FutureBuilder<String?>(
+              key: ValueKey(guardianAddress),
+              future: _getHumanCheckphrase(guardianAddress),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox.shrink();
+                }
+                if (snapshot.hasError || !snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      'Invalid address',
+                      style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.textError),
+                    ),
+                  );
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    snapshot.data!,
+                    style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.checksum),
+                  ),
+                );
+              },
+            ),
           const Expanded(child: SizedBox()),
           Row(
             spacing: 36,
@@ -147,7 +187,9 @@ class _HighSecurityGuardianWizardState extends ConsumerState<HighSecurityGuardia
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const HighSecuritySafeguardWindowWizard()),
+                      MaterialPageRoute(
+                        builder: (context) => HighSecuritySafeguardWindowWizard(account: widget.account),
+                      ),
                     );
                   },
                 ),
