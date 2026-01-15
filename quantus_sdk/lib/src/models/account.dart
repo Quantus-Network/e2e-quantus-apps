@@ -1,12 +1,15 @@
 import 'package:flutter/foundation.dart';
+import 'package:quantus_sdk/src/models/base_account.dart';
 
 enum AccountType { local, keystone, external }
 
 @immutable
-class Account {
+class Account implements BaseAccount {
   final int walletIndex;
   final int index; // derivation index
+  @override
   final String name;
+  @override
   final String accountId; // address
   final AccountType accountType;
   const Account({
@@ -24,16 +27,6 @@ class Account {
       name: json['name'] as String,
       accountId: json['accountId'] as String,
       accountType: AccountType.values.byName(json['accountType'] as String? ?? AccountType.local.name),
-    );
-  }
-
-  factory Account.fromSs58Address(String ss58Address) {
-    return Account(
-      walletIndex: -1,
-      index: -2,
-      accountId: ss58Address,
-      name: 'External Account',
-      accountType: AccountType.external,
     );
   }
 

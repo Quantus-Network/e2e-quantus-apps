@@ -51,12 +51,20 @@ class HighSecurityService {
     return await _reversibleTransfersService.isGuardian(account.accountId);
   }
 
-  Future<List<Account>> getEntrustedAccounts(Account account) async {
+  Future<List<EntrustedAccount>> getEntrustedAccounts(Account account) async {
     final accounts = await AccountsService().getAccounts();
-    Account? mapExistingAccount(String ss58Address) => accounts.firstWhereOrNull((a) => a.accountId == ss58Address);
-    return (await _reversibleTransfersService.getInterceptedAccounts(
-      account.accountId,
-    )).map((account) => mapExistingAccount(account) ?? Account.fromSs58Address(account)).toList();
+    String getAccountName(String ss58Address) =>
+        accounts.firstWhereOrNull((a) => a.accountId == ss58Address)?.name ?? 'Entrusted Account';
+    return (await _reversibleTransfersService.getInterceptedAccounts(account.accountId))
+        .map(
+          (accountId) => EntrustedAccount(
+            parentAccountId: account.accountId,
+            index: 0,
+            name: getAccountName(accountId),
+            accountId: accountId,
+          ),
+        )
+        .toList();
   }
 
   Future<HighSecurityData?> getHighSecurityConfig(String address) async {

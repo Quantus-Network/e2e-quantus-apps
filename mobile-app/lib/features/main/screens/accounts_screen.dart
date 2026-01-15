@@ -295,7 +295,9 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     final entrustedAccountsAsync = ref.watch(entrustedAccountsProvider(account));
     final entrustedAccountsData = entrustedAccountsAsync.value ?? [];
 
-    final entrustedNodes = entrustedAccountsData.map((entrusted) => TreeNode<Account>(data: entrusted)).toList();
+    final entrustedNodes = entrustedAccountsData
+        .map((entrusted) => TreeNode<EntrustedAccount>(data: entrusted))
+        .toList();
 
     final double constraintMaxHeight = min(entrustedNodes.length * 52, 104);
 
@@ -488,7 +490,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
               if (entrustedNodes.isNotEmpty)
                 ConstrainedBox(
                   constraints: BoxConstraints(maxHeight: constraintMaxHeight),
-                  child: TreeListView<Account>(
+                  child: TreeListView<EntrustedAccount>(
                     showExpandCollapse: false,
                     nodes: entrustedNodes,
                     nodeBuilder: (context, node, depth) {
@@ -509,7 +511,9 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(5),
                                 onTap: () async {
-                                  await ref.read(activeAccountProvider.notifier).setActiveAccount(entrusted);
+                                  print('onTap: ${entrusted.accountId}');
+
+                                  // ignore: use_build_context_synchronously
                                   if (mounted) Navigator.pop(context);
                                 },
                                 child: Padding(

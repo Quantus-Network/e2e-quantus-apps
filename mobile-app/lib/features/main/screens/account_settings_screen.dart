@@ -27,7 +27,7 @@ import 'package:resonance_network_wallet/shared/extensions/svg_extensions.dart';
 import 'package:resonance_network_wallet/utils/feature_flags.dart';
 
 class AccountSettingsScreen extends ConsumerStatefulWidget {
-  final Account account;
+  final BaseAccount account;
   final String balance;
   final String checksumName;
   final bool isHighSecurity;
@@ -45,9 +45,11 @@ class AccountSettingsScreen extends ConsumerStatefulWidget {
 
 class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
   void _editAccountName() {
+    if (widget.account is! Account) return;
+    
     Navigator.push<bool?>(
       context,
-      MaterialPageRoute(builder: (context) => CreateAccountScreen(accountToEdit: widget.account)),
+      MaterialPageRoute(builder: (context) => CreateAccountScreen(accountToEdit: widget.account as Account)),
     ).then((result) {
       if (result == true && mounted) {
         // Pop this screen with a result to force a refresh on the previous one
@@ -130,9 +132,11 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
   }
 
   Future<void> _disconnectWallet() async {
+    if (widget.account is! Account) return;
+    
     try {
       final accountsService = AccountsService();
-      await accountsService.removeAccount(widget.account);
+      await accountsService.removeAccount(widget.account as Account);
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
       ref.invalidate(accountAssociationsProvider);
@@ -175,8 +179,8 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
               _buildShareSection(),
               const SizedBox(height: 20),
               _buildAddressSection(),
-              if (FeatureFlags.enableHighSecurity) ...[const SizedBox(height: 20), _buildHighSecuritySection(context)],
-              if (widget.account.accountType == AccountType.keystone) ...[
+              if (FeatureFlags.enableHighSecurity && widget.account is Account) ...[const SizedBox(height: 20), _buildHighSecuritySection(context)],
+              if (widget.account is Account && (widget.account as Account).accountType == AccountType.keystone) ...[
                 const SizedBox(height: 20),
                 _buildDisconnectWalletButton(),
               ],
@@ -205,7 +209,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
   }
 
   Widget _buildAccountHeader() {
-    final isHighSecurity = widget.isHighSecurity && FeatureFlags.enableHighSecurity;
+    final isHighSecurity = widget.isHighSecurity && FeatureFlags.enableHighSecurity && widget.account is Account;
     return _buildSettingCard(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10.0),
@@ -213,13 +217,14 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
           children: [
             const SizedBox(height: 10),
             InkWell(
-              onTap: _editAccountName,
+              onTap: widget.account is Account ? _editAccountName : null,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(widget.account.name, style: context.themeText.smallTitle),
                   const SizedBox(width: 8),
-                  const Icon(Icons.edit, color: Colors.white70, size: 16),
+                  if (widget.account is Account)
+                    const Icon(Icons.edit, color: Colors.white70, size: 16),
                 ],
               ),
             ),
@@ -291,6 +296,8 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
   }
 
   Widget _buildHighSecuritySection(BuildContext context) {
+    if (widget.account is! Account) return const SizedBox();
+
     final isHighSecurity = widget.isHighSecurity && FeatureFlags.enableHighSecurity;
     final textColor = isHighSecurity ? context.themeColors.textSecondary : context.themeColors.textPrimary;
     final secondRowTextColor = isHighSecurity ? context.themeColors.darkGray : context.themeColors.textPrimary;
@@ -306,8 +313,8 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
             context,
             MaterialPageRoute(
               builder: (context) => isHighSecurity
-                  ? HighSecurityDetailsScreen(account: widget.account)
-                  : HighSecurityGetStartedScreen(account: widget.account),
+                  ? HighSecurityDetailsScreen(account: widget.account as Account)
+                  : HighSecurityGetStartedScreen(account: widget.account as Account),
             ),
           );
         },
