@@ -197,12 +197,12 @@ class _UpdateXScreenState extends ConsumerState<UpdateXScreen> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    '2. Update your bio to include @QuantusNetwork',
+                    '2. Update your name to include Quantus',
                     style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.inputLabel),
                   ),
                   const SizedBox(height: 8),
                   Button(
-                    label: 'Edit Bio',
+                    label: 'Edit Name',
                     variant: ButtonVariant.neutral,
                     onPressed: _launchUpdateBio,
                     isDisabled: isHandleEmpty,
