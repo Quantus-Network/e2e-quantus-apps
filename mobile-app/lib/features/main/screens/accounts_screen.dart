@@ -244,8 +244,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                   separatorBuilder: (context, index) => const SizedBox(height: 25),
                   itemBuilder: (context, index) {
                     final account = walletAccounts[index];
-                    final bool isActive = account.accountId == activeAccount?.accountId;
-                    return _buildAccountListItem(account, isActive, index);
+                    return _buildAccountListItem(account, activeAccount, index);
                   },
                 ),
               );
@@ -276,8 +275,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
               for (var i = 0; i < walletAccounts.length; i++) {
                 if (i > 0) children.add(const SizedBox(height: 25));
                 final account = walletAccounts[i];
-                final bool isActive = account.accountId == activeAccount?.accountId;
-                children.add(_buildAccountListItem(account, isActive, i));
+                children.add(_buildAccountListItem(account, activeAccount, i));
               }
               sectionIndex++;
             }
@@ -292,7 +290,8 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     );
   }
 
-  Widget _buildAccountListItem(Account account, bool isActive, int index) {
+  Widget _buildAccountListItem(Account account, Account? activeAccount, int index) {
+    final bool isActive = account.accountId == activeAccount?.accountId;
     final entrustedAccountsAsync = ref.watch(entrustedAccountsProvider(account));
     final entrustedAccountsData = entrustedAccountsAsync.value ?? [];
 
@@ -494,24 +493,40 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                     nodes: entrustedNodes,
                     nodeBuilder: (context, node, depth) {
                       final entrusted = node.data;
+                      final isEntrustedActive = entrusted.accountId == activeAccount?.accountId;
+
                       return Row(
                         children: [
                           Expanded(
-                            child: Container(
-                              decoration: ShapeDecoration(
-                                color: context.themeColors.darkGray,
-                                shape: RoundedRectangleBorder(
-                                  side: const BorderSide(color: Color(0x26FFFFFF)),
-                                  borderRadius: BorderRadius.circular(5),
-                                ),
+                            child: Material(
+                              color: isEntrustedActive
+                                  ? context.themeColors.surfaceActive
+                                  : context.themeColors.darkGray,
+                              shape: RoundedRectangleBorder(
+                                side: const BorderSide(color: Color(0x26FFFFFF)),
+                                borderRadius: BorderRadius.circular(5),
                               ),
-                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(entrusted.name, style: context.themeText.smallParagraph),
-                                  AccountTag(text: 'Entrusted', color: context.themeColors.accountTagEntrusted),
-                                ],
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(5),
+                                onTap: () async {
+                                  await ref.read(activeAccountProvider.notifier).setActiveAccount(entrusted);
+                                  if (mounted) Navigator.pop(context);
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        entrusted.name,
+                                        style: context.themeText.smallParagraph?.copyWith(
+                                          color: isEntrustedActive ? Colors.black : Colors.white,
+                                        ),
+                                      ),
+                                      AccountTag(text: 'Entrusted', color: context.themeColors.accountTagEntrusted),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                           ),
