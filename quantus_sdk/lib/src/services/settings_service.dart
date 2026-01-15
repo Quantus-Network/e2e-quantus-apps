@@ -15,6 +15,7 @@ class SettingsService {
   // New keys for multi-account support
   static const String _accountsKey = 'accounts_v4';
   static const String _accountsToMigrateKey = 'accounts_to_migrate';
+  static const String _addressBookKey = 'address_book';
 
   static const String _oldAccountsKeyV3 = 'accounts_v3';
   static const String _oldAccountsKeyV2 = 'accounts_v2';
@@ -187,6 +188,40 @@ class SettingsService {
     if (walletAccounts.isEmpty) return 0;
     final maxIndex = walletAccounts.map((a) => a.index).reduce((a, b) => a > b ? a : b);
     return maxIndex + 1;
+  }
+
+  // --- Address Book Methods ---
+
+  Future<Map<String, String>> getAddressBook() async {
+    final jsonStr = _prefs.getString(_addressBookKey);
+    if (jsonStr == null) return {};
+    try {
+      final decoded = jsonDecode(jsonStr) as Map<String, dynamic>;
+      return decoded.map((key, value) => MapEntry(key, value as String));
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<void> saveAddressBook(Map<String, String> addressBook) async {
+    await _prefs.setString(_addressBookKey, jsonEncode(addressBook));
+  }
+
+  Future<void> setAddressName(String address, String name) async {
+    final addressBook = await getAddressBook();
+    addressBook[address] = name;
+    await saveAddressBook(addressBook);
+  }
+
+  Future<String?> getAddressName(String address) async {
+    final addressBook = await getAddressBook();
+    return addressBook[address];
+  }
+
+  Future<void> removeAddressName(String address) async {
+    final addressBook = await getAddressBook();
+    addressBook.remove(address);
+    await saveAddressBook(addressBook);
   }
 
   // --- End Multi-Account Methods ---
