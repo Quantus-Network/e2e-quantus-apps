@@ -56,10 +56,10 @@ class HighSecurityService {
     String getAccountName(String ss58Address) =>
         accounts.firstWhereOrNull((a) => a.accountId == ss58Address)?.name ?? 'Entrusted Account';
     return (await _reversibleTransfersService.getInterceptedAccounts(account.accountId))
-        .map(
-          (accountId) => EntrustedAccount(
+        .mapIndexed(
+          (index, accountId) => EntrustedAccount(
             parentAccountId: account.accountId,
-            index: 0,
+            index: index,
             name: getAccountName(accountId),
             accountId: accountId,
           ),
