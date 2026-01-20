@@ -56,7 +56,7 @@ final accountsProvider = StateNotifierProvider<AccountsNotifier, AsyncValue<List
   return AccountsNotifier(accountsService);
 });
 
-class ActiveAccountNotifier extends StateNotifier<AsyncValue<Account?>> {
+class ActiveAccountNotifier extends StateNotifier<AsyncValue<DisplayAccount?>> {
   final SettingsService _settingsService;
 
   ActiveAccountNotifier(this._settingsService) : super(const AsyncValue.loading()) {
@@ -66,15 +66,15 @@ class ActiveAccountNotifier extends StateNotifier<AsyncValue<Account?>> {
   Future<void> _loadActiveAccount() async {
     try {
       final account = await _settingsService.getActiveAccount();
-      print('loaded active account: ${account?.index} ${account?.name}');
+      print('loaded active account: ${account?.account.name}');
       state = AsyncValue.data(account);
     } catch (e, st) {
-      print('error loading acctive account: $e $st');
+      print('error loading active account: $e $st');
       state = AsyncValue.error(e, st);
     }
   }
 
-  Future<void> setActiveAccount(Account account) async {
+  Future<void> setActiveAccount(DisplayAccount account) async {
     try {
       await _settingsService.setActiveAccount(account);
       state = AsyncValue.data(account);
@@ -88,7 +88,7 @@ class ActiveAccountNotifier extends StateNotifier<AsyncValue<Account?>> {
   }
 }
 
-final activeAccountProvider = StateNotifierProvider<ActiveAccountNotifier, AsyncValue<Account?>>((ref) {
+final activeAccountProvider = StateNotifierProvider<ActiveAccountNotifier, AsyncValue<DisplayAccount?>>((ref) {
   final settingsService = ref.watch(settingsServiceProvider);
   return ActiveAccountNotifier(settingsService);
 });

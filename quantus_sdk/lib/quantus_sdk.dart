@@ -15,6 +15,7 @@ export 'src/extensions/keypair_extensions.dart';
 export 'src/extensions/string_extensions.dart';
 // UI-related exports
 export 'src/models/account.dart';
+export 'src/models/base_account.dart';
 export 'src/models/high_security_data.dart';
 export 'src/models/account_stats.dart';
 export 'src/models/account_associations.dart';
@@ -58,6 +59,8 @@ export 'src/services/taskmaster_service.dart';
 export 'src/extensions/account_extension.dart';
 export 'src/quantus_signing_payload.dart';
 export 'src/quantus_payload_parser.dart';
+export 'src/models/entrusted_account.dart';
+export 'src/models/display_account.dart';
 
 class QuantusSdk {
   /// Initialise the SDK (loads Rust FFI, etc).

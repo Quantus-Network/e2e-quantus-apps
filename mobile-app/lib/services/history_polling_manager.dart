@@ -84,16 +84,16 @@ class HistoryPollingManager {
   void _refreshBalance({required bool showLoading}) {
     if (showLoading) {
       // For manual refresh - invalidate balance providers to show loading
-      final activeAccount = _ref.read(activeAccountProvider).value;
-      if (activeAccount != null) {
+      final activeDisplayAccount = _ref.read(activeAccountProvider).value;
+      if (activeDisplayAccount != null) {
         _ref.invalidate(balanceProviderFamily);
       }
       _ref.invalidate(balanceProviderRaw); // Invalidate raw balance for loading state
-      // balanceProvider (effective) will auto-update when raw balance changes
+      // displayBalanceProvider (effective) will auto-update when raw balance changes
     } else {
       // For silent refresh - just invalidate family to refresh data silently
       _ref.invalidate(balanceProviderFamily);
-      // balanceProvider (effective) will auto-update when raw balance changes
+      // displayBalanceProvider (effective) will auto-update when raw balance changes
     }
   }
 

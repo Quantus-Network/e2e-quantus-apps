@@ -24,7 +24,7 @@ final activeAccountTransactionsProvider = Provider<AsyncValue<CombinedTransactio
           ),
         );
       }
-      return ref.watch(filteredTransactionsProviderFamily(AccountIdListCache.get([activeAccount.accountId])));
+      return ref.watch(filteredTransactionsProviderFamily(AccountIdListCache.get([activeAccount.account.accountId])));
     },
     loading: () => const AsyncValue.loading(),
     error: (err, stack) => AsyncValue.error(err, stack),

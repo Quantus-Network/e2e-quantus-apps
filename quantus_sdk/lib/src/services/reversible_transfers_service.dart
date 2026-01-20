@@ -257,6 +257,10 @@ class ReversibleTransfersService {
     }
   }
 
+  Future<Uint8List> interceptTransaction({required Account guardianAccount, required H256 transactionId}) async {
+    return cancelReversibleTransfer(account: guardianAccount, transactionId: transactionId);
+  }
+
   /// Check if account is a guardian (interceptor) for any accounts
   Future<bool> isGuardian(String address) async {
     print('isGuardian: $address');
@@ -271,11 +275,18 @@ class ReversibleTransfersService {
       final quantusApi = Schrodinger(_substrateService.provider!);
       final accountId = crypto.ss58ToAccountId(s: guardianAddress);
       final interceptedAccounts = await quantusApi.query.reversibleTransfers.interceptorIndex(accountId);
-      return interceptedAccounts.map((id) {
+
+      List<String> result = interceptedAccounts.map((id) {
         final address = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(id));
         print('intercepted account: $address');
         return address;
       }).toList();
+
+      // for testing , add random valid address...
+      if (result.isNotEmpty) {
+        result.add('qzkaf6wMjRqXzWyBuxc6VwfYtUmjUF5tqJXsFs47PXspR67wh');
+      }
+      return result;
     } catch (e) {
       throw Exception('Failed to get intercepted accounts: $e');
     }

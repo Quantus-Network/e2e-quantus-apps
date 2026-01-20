@@ -10,9 +10,11 @@ import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/notifications_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/send/send_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/account_details.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/action_button.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/history_section.dart';
+import 'package:resonance_network_wallet/features/components/emergency_button.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
@@ -41,6 +43,26 @@ class _WalletMainState extends ConsumerState<WalletMain> {
     super.dispose();
   }
 
+  Future<void> _refreshData() async {
+    // Refresh balances with loading indicator
+    final activeDisplayAccount = ref.read(activeAccountProvider).value;
+    if (activeDisplayAccount != null) {
+      ref.invalidate(balanceProviderFamily);
+      // Trigger a loading refresh on the filtered controller
+      // used by active transactions
+      await ref
+          .read(
+            filteredPaginationControllerProviderFamily(
+              AccountIdListCache.get([activeDisplayAccount.account.accountId]),
+            ).notifier,
+          )
+          .loadingRefresh();
+    }
+    ref.invalidate(balanceProviderRaw);
+    // Invalidate combined active display account provider to recompute
+    ref.invalidate(activeAccountTransactionsProvider);
+  }
+
   void _processIntentIfAvailable() {
     final sharedAccount = ref.read(sharedAccountIntentProvider);
 
@@ -57,14 +79,14 @@ class _WalletMainState extends ConsumerState<WalletMain> {
   Widget build(BuildContext context) {
     _processIntentIfAvailable();
 
-    final activeAccountAsync = ref.watch(activeAccountProvider);
+    final activeDisplayAccountAsync = ref.watch(activeAccountProvider);
     final balanceAsync = ref.watch(balanceProvider);
     final activeAccountTransactionsAsync = ref.watch(activeAccountTransactionsProvider);
     final hasNotifications = ref.watch(notificationProvider).isNotEmpty;
 
-    return activeAccountAsync.when(
-      data: (activeAccount) {
-        if (activeAccount == null) {
+    return activeDisplayAccountAsync.when(
+      data: (activeDisplayAccount) {
+        if (activeDisplayAccount == null) {
           return const Center(child: Text('No active account. Please log in.')); // Safe empty state
         }
         return ScaffoldBase.refreshable(
@@ -119,25 +141,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
             ),
           ],
           scrollController: _scrollController,
-          onRefresh: () async {
-            // Refresh balances with loading indicator
-            final activeAccount = ref.read(activeAccountProvider).value;
-            if (activeAccount != null) {
-              ref.invalidate(balanceProviderFamily);
-              // Trigger a loading refresh on the filtered controller
-              // used by active transactions
-              await ref
-                  .read(
-                    filteredPaginationControllerProviderFamily(
-                      AccountIdListCache.get([activeAccount.accountId]),
-                    ).notifier,
-                  )
-                  .loadingRefresh();
-            }
-            ref.invalidate(balanceProviderRaw);
-            // Invalidate combined active account provider to recompute
-            ref.invalidate(activeAccountTransactionsProvider);
-          },
+          onRefresh: _refreshData,
           slivers: [
             SliverToBoxAdapter(
               child: Column(
@@ -146,7 +150,10 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      AccountDetails(activeAccount: activeAccount),
+                      AccountDetails(
+                        activeAccount: activeDisplayAccount.account,
+                        isEntrustedAccount: activeDisplayAccount is EntrustedDisplayAccount,
+                      ),
                       const SizedBox(height: 20),
                       balanceAsync.when(
                         data: (balance) => Text.rich(
@@ -187,30 +194,37 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                     ],
                   ),
                   const SizedBox(height: 18),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ActionButton(
-                        type: ActionType.send,
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/send');
-                        },
-                      ),
-                      const SizedBox(width: 33),
-                      ActionButton(
-                        type: ActionType.receive,
-                        onPressed: () {
-                          showReceiveSheet(context);
-                        },
-                      ),
-                    ],
-                  ),
+                  if (activeDisplayAccount is RegularAccount)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ActionButton(
+                          type: ActionType.send,
+                          onPressed: () {
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => const SendScreen()));
+                          },
+                        ),
+                        const SizedBox(width: 33),
+                        ActionButton(
+                          type: ActionType.receive,
+                          onPressed: () {
+                            showReceiveSheet(context);
+                          },
+                        ),
+                      ],
+                    )
+                  else if (activeDisplayAccount is EntrustedDisplayAccount)
+                    const EmergencyButton(),
                   const SizedBox(height: 30),
                 ],
               ),
             ),
             SliverToBoxAdapter(
-              child: HistorySection(allTransactionsAsync: activeAccountTransactionsAsync, activeAccount: activeAccount),
+              child: HistorySection(
+                allTransactionsAsync: activeAccountTransactionsAsync,
+                activeAccount: activeDisplayAccount.account,
+                onRetry: _refreshData,
+              ),
             ),
           ],
         );

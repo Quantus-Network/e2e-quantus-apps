@@ -68,8 +68,8 @@ class NotificationIntegrationService {
         if (balance <= existentialDeposit) {
           // Example threshold
           final activeAccount = _ref.read(activeAccountProvider).value;
-          if (activeAccount != null) {
-            _notifyLowBalance(activeAccount, activeAccount.accountId);
+          if (activeAccount is RegularAccount) {
+            _notifyLowBalance(activeAccount.account, activeAccount.account.accountId);
           }
         }
       });

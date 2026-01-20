@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hex/hex.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/reversible_timer.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
@@ -18,11 +17,21 @@ import 'package:resonance_network_wallet/providers/pending_cancellations_provide
 import 'package:resonance_network_wallet/services/reversible_transfer_monitoring_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+enum ReversibleTransactionMode { reversible, guardianIntercept }
 
 class ReversibleTransactionActionSheet extends ConsumerStatefulWidget {
   final ReversibleTransferEvent transaction;
+  final ReversibleTransactionMode mode;
+  final EntrustedAccount? entrustedAccount;
 
-  const ReversibleTransactionActionSheet({super.key, required this.transaction});
+  const ReversibleTransactionActionSheet({
+    super.key,
+    required this.transaction,
+    this.mode = ReversibleTransactionMode.reversible,
+    this.entrustedAccount,
+  });
 
   @override
   ConsumerState<ReversibleTransactionActionSheet> createState() => _ReversibleTransactionActionSheetState();
@@ -31,7 +40,7 @@ class ReversibleTransactionActionSheet extends ConsumerStatefulWidget {
 enum _SheetState { initial, confirmCancel, cancelled }
 
 class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTransactionActionSheet> {
-  _SheetState _sheetState = _SheetState.initial;
+  late _SheetState _sheetState;
   bool _isCancelling = false;
 
   late Timer _timer;
@@ -52,25 +61,32 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
   @override
   void initState() {
     super.initState();
-    _remainingTime = widget.transaction.scheduledAt.difference(DateTime.now());
-    if (_remainingTime.isNegative) {
+    if (widget.transaction.status == ReversibleTransferStatus.CANCELLED) {
+      _sheetState = _SheetState.cancelled;
       _remainingTime = Duration.zero;
-    }
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-      setState(() {
-        if (_remainingTime > Duration.zero) {
-          _remainingTime = _remainingTime - const Duration(seconds: 1);
-        } else {
-          timer.cancel();
-          // Maybe close the sheet or show a different state when timer ends.
-          // For now, just stopping the timer.
-        }
+      _timer = Timer(const Duration(seconds: 1), () {
+        // Timer for cancelled transactions - no action needed
       });
-    });
+    } else {
+      _sheetState = _SheetState.initial;
+      _remainingTime = widget.transaction.scheduledAt.difference(DateTime.now());
+      if (_remainingTime.isNegative) {
+        _remainingTime = Duration.zero;
+      }
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+        setState(() {
+          if (_remainingTime > Duration.zero) {
+            _remainingTime = _remainingTime - const Duration(seconds: 1);
+          } else {
+            timer.cancel();
+          }
+        });
+      });
+    }
   }
 
   @override
@@ -82,6 +98,58 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
   String _formatAmount(BigInt amount) {
     return _formattingService.formatBalance(amount, addSymbol: true);
   }
+
+  Widget _buildActionButton({
+    required String label,
+    required Color backgroundColor,
+    required Color textColor,
+    required VoidCallback? onPressed,
+    bool isDisabled = false,
+  }) {
+    return GestureDetector(
+      onTap: isDisabled ? null : onPressed,
+      child: Opacity(
+        opacity: isDisabled ? 0.6 : 1.0,
+        child: Container(
+          height: 45,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: ShapeDecoration(
+            color: backgroundColor,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: context.themeText.smallTitle?.copyWith(color: textColor, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  bool get _isGuardianIntercept => widget.mode == ReversibleTransactionMode.guardianIntercept;
+
+  String get _iconPath => _isGuardianIntercept ? 'assets/high_security/intercept_icon.svg' : 'assets/hourglass.svg';
+
+  String get _title => _isGuardianIntercept ? 'Intercept Transaction' : 'Reversible Transaction';
+
+  String get _subtitle =>
+      _isGuardianIntercept ? 'Pull this transaction to your account' : 'Reverse or keep your transaction';
+
+  Color get _titleColor => _isGuardianIntercept ? context.themeColors.yellow : context.themeColors.checksum;
+
+  Color get _confirmationTextColor => _isGuardianIntercept ? context.themeColors.yellow : context.themeColors.textMuted;
+
+  String get _confirmButtonLabel => _isGuardianIntercept ? 'Intercept' : 'Reverse';
+
+  String get _confirmationText => _isGuardianIntercept
+      ? 'Are you sure you want to intercept this transaction and pull it to your account?'
+      : 'Are you sure you want to reverse this tx?';
+
+  Color get _confirmButtonColor => _isGuardianIntercept ? context.themeColors.yellow : context.themeColors.buttonDanger;
+
+  Color get _confirmButtonTextColor => _isGuardianIntercept ? const Color(0xFF0B0F14) : Colors.white;
 
   @override
   Widget build(BuildContext context) {
@@ -139,7 +207,7 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildHeader('assets/hourglass.svg', 'Reversible Transaction', 'Reverse or keep your transaction', true),
+        _buildHeader(_iconPath, _title, _subtitle, true),
         const SizedBox(height: 20),
         Container(
           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -158,6 +226,9 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
   }
 
   Widget _buildCancelledView() {
+    if (_isGuardianIntercept) {
+      return _buildInterceptedView();
+    }
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -168,6 +239,96 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
         const SizedBox(height: 20),
         _buildTransactionDetails(),
       ],
+    );
+  }
+
+  Widget _buildInterceptedView() {
+    final hasExtrinsicHash = widget.transaction.extrinsicHash != null;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          width: 305,
+          padding: const EdgeInsets.only(top: 24, left: 15, right: 15),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            spacing: 16,
+            children: [
+              SvgPicture.asset('assets/high_security/intercept_icon.svg', width: 38, height: 35),
+              SizedBox(
+                width: 265,
+                child: Text(
+                  'Transaction Intercepted',
+                  textAlign: TextAlign.center,
+                  style: context.themeText.smallTitle?.copyWith(
+                    color: context.themeColors.yellow,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 15),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 15),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 12,
+            children: [
+              SizedBox(
+                width: 275,
+                child: Text(
+                  'This amount has been pulled to your guardian account',
+                  textAlign: TextAlign.center,
+                  style: context.themeText.paragraph?.copyWith(
+                    color: const Color(0xFFD4D3E0),
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ),
+              _buildDetailRow('Amount', _formatAmount(widget.transaction.amount)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 15),
+        if (hasExtrinsicHash) _buildViewExplorerLink(),
+      ],
+    );
+  }
+
+  Widget _buildViewExplorerLink() {
+    return GestureDetector(
+      onTap: () async {
+        final Uri url = Uri.parse(
+          '${AppConstants.explorerEndpoint}/reversible-transactions/${widget.transaction.extrinsicHash}',
+        );
+        await launchUrl(url);
+      },
+      child: SizedBox(
+        width: 136,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 18,
+          children: [
+            Text(
+              'View in Explorer',
+              textAlign: TextAlign.center,
+              style: context.themeText.detail?.copyWith(color: const Color(0xFF16CECE), fontWeight: FontWeight.w600),
+            ),
+            const Icon(Icons.open_in_new, size: 12, color: Color(0xFF16CECE)),
+          ],
+        ),
+      ),
     );
   }
 
@@ -192,11 +353,11 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
               Text(
                 title,
                 style: context.themeText.smallTitle?.copyWith(
-                  color: titleIsGreen ? context.themeColors.checksum : context.themeColors.textPrimary,
+                  color: titleIsGreen ? _titleColor : context.themeColors.textPrimary,
                 ),
               ),
               if (subtitle.isNotEmpty)
-                Text(subtitle, style: context.themeText.detail?.copyWith(color: const Color(0xFFD9D9D9))),
+                Text(subtitle, style: context.themeText.detail?.copyWith(color: const Color(0xFFD4D3E0))),
             ],
           ),
         ),
@@ -270,9 +431,10 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
-          child: Button(
-            variant: ButtonVariant.neutral,
+          child: _buildActionButton(
             label: 'Keep',
+            backgroundColor: context.themeColors.buttonNeutral,
+            textColor: context.themeColors.textSecondary,
             onPressed: () {
               Navigator.of(context).pop();
             },
@@ -280,9 +442,10 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
         ),
         const SizedBox(width: 22),
         Expanded(
-          child: Button(
-            variant: ButtonVariant.danger,
-            label: 'Reverse',
+          child: _buildActionButton(
+            label: _confirmButtonLabel,
+            backgroundColor: _isGuardianIntercept ? _confirmButtonColor : context.themeColors.buttonDanger,
+            textColor: _isGuardianIntercept ? _confirmButtonTextColor : Colors.white,
             onPressed: () {
               setState(() {
                 _sheetState = _SheetState.confirmCancel;
@@ -301,12 +464,9 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
         SizedBox(
           width: 305,
           child: Text(
-            'Are you sure you want to reverse this tx?',
+            _confirmationText,
             textAlign: TextAlign.center,
-            style: context.themeText.paragraph?.copyWith(
-              color: context.themeColors.textMuted,
-              fontWeight: FontWeight.w600,
-            ),
+            style: context.themeText.paragraph?.copyWith(color: _confirmationTextColor, fontWeight: FontWeight.w400),
           ),
         ),
         const SizedBox(height: 29),
@@ -317,9 +477,10 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
             children: [
               Expanded(
                 flex: 4,
-                child: Button(
-                  variant: ButtonVariant.neutral,
+                child: _buildActionButton(
                   label: 'Keep',
+                  backgroundColor: context.themeColors.buttonNeutral,
+                  textColor: context.themeColors.textSecondary,
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
@@ -328,9 +489,10 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
               const SizedBox(width: 22),
               Expanded(
                 flex: 5,
-                child: Button(
-                  variant: ButtonVariant.danger,
-                  label: 'Reverse',
+                child: _buildActionButton(
+                  label: _confirmButtonLabel,
+                  backgroundColor: _isGuardianIntercept ? _confirmButtonColor : context.themeColors.buttonDanger,
+                  textColor: _isGuardianIntercept ? _confirmButtonTextColor : Colors.white,
                   onPressed: _cancelTransaction,
                   isDisabled: _isReverseDisabled,
                 ),
@@ -356,7 +518,25 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
       }
       final transactionId = HEX.decode(txId);
 
-      await _reversibleTransfersService.cancelReversibleTransfer(account: senderAccount, transactionId: transactionId);
+      if (_isGuardianIntercept) {
+        final guardianAccount = widget.entrustedAccount != null
+            ? await HighSecurityService().getGuardianAccount(widget.entrustedAccount!)
+            : null;
+        if (guardianAccount == null) {
+          throw Exception(
+            'Guardian account not found. Entrusted Account must be set! ${widget.entrustedAccount?.parentAccountId}',
+          );
+        }
+        await _reversibleTransfersService.interceptTransaction(
+          guardianAccount: guardianAccount,
+          transactionId: transactionId,
+        );
+      } else {
+        await _reversibleTransfersService.cancelReversibleTransfer(
+          account: senderAccount.account as Account,
+          transactionId: transactionId,
+        );
+      }
 
       // Update providers/UI and start polling to reflect cancellation quickly
       try {
@@ -387,7 +567,9 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
         _remainingTime = Duration.zero;
         _sheetState = _SheetState.cancelled;
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('Failed to cancel transaction: $e');
+      debugPrint('Stack trace: $stackTrace');
       // ignore: use_build_context_synchronously
       if (mounted) context.showErrorSnackbar(title: 'Failed to cancel', message: e.toString());
     } finally {

@@ -56,6 +56,7 @@ dependencies:
   flutter_local_notifications: ^19.5.0
   timezone: ^0.10.1
   flutter_timezone: ^5.0.1
+  collection: ^1.19.1
 
 dev_dependencies:
   flutter_test:
@@ -97,6 +98,8 @@ flutter:
     - assets/high_security/security_icon_big.svg
     - assets/high_security/step_indicator_active_icon.svg
     - assets/high_security/step_indicator_icon.svg
+    - assets/high_security/big_red_button_icon.png
+    - assets/high_security/intercept_icon.svg
 
   fonts:
     - family: Fira Code

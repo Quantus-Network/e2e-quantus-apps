@@ -59,7 +59,7 @@ final balanceProviderRaw = Provider<AsyncValue<BigInt>>((ref) {
       if (activeAccount == null) {
         return AsyncValue.data(BigInt.zero);
       }
-      return ref.watch(balanceProviderFamily(activeAccount.accountId));
+      return ref.watch(balanceProviderFamily(activeAccount.account.accountId));
     },
     loading: () => const AsyncValue.loading(),
     error: (err, stack) => AsyncValue.error(err, stack),
@@ -83,7 +83,7 @@ final balanceProvider = Provider<AsyncValue<BigInt>>((ref) {
         return AsyncValue.data(BigInt.zero);
       }
 
-      final pendingOutgoing = _calculatePendingOutgoing(pendingTransactions, activeAccount.accountId);
+      final pendingOutgoing = _calculatePendingOutgoing(pendingTransactions, activeAccount.account.accountId);
       final effectiveBalance = blockchainBalance - pendingOutgoing;
       final result = effectiveBalance >= BigInt.zero ? effectiveBalance : BigInt.zero;
       _cachedBalance = result;
@@ -118,7 +118,10 @@ BigInt _calculatePendingOutgoing(List<PendingTransactionEvent> pendingTransactio
 }
 
 // fetch high security config
-final highSecurityConfigProvider = FutureProvider.family<HighSecurityData?, Account>((ref, account) async {
+final highSecurityConfigProvider = FutureProvider.family<HighSecurityData?, BaseAccount?>((ref, account) async {
+  if (account == null) {
+    return null;
+  }
   final service = ref.read(highSecurityServiceProvider);
   return service.getHighSecurityConfig(account.accountId);
 });
