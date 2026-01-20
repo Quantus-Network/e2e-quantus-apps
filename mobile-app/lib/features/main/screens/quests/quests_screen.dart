@@ -9,8 +9,8 @@ import 'package:resonance_network_wallet/features/components/scaffold_base.dart'
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/main/screens/quests/account_associations_status.dart';
-import 'package:resonance_network_wallet/features/main/screens/quests/king_of_the_raider_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/quests/king_of_the_shill_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/quests/referrals_quest_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/quests/optin_position_status.dart';
 import 'package:resonance_network_wallet/features/main/screens/quests/quest_title.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
@@ -219,16 +219,16 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
         SliverList(
           delegate: SliverChildListDelegate([
             ListItem(
-              title: 'King of The Raider',
+              title: 'King of The Shill',
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const KingOfTheRaiderScreen()));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const KingOfTheShillScreen()));
               },
             ),
             const SizedBox(height: 12),
             ListItem(
-              title: 'King of The Shill',
+              title: 'Referrals',
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const KingOfTheShillScreen()));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const ReferralsQuestScreen()));
               },
             ),
           ]),
