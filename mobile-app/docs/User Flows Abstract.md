@@ -234,6 +234,9 @@ Numbers correspond to the Implementation spec for cross-reference.
 
 This section covers multiple related capabilities for account/wallet management.
 
+A wallet is a new mnemonic
+An account is a HD derived account on a wallet, each wallet can have unlimited accounts.
+
 ---
 
 ## 13a. Add Wallet
