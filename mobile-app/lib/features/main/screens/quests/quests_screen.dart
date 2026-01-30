@@ -38,12 +38,18 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
   @override
   Widget build(BuildContext context) {
     final associationsAsync = ref.watch(accountAssociationsProvider);
-    final hasCompletedSetup = associationsAsync.maybeWhen(
-      data: (associations) => associations.ethAddress != null || associations.xUsername != null,
+
+    final hasEthAddress = associationsAsync.maybeWhen(
+      data: (associations) => associations.ethAddress != null,
       orElse: () => false,
     );
 
-    final showTooltip = !hasCompletedSetup && _showSetupTooltip;
+    final hasXUsername = associationsAsync.maybeWhen(
+      data: (associations) => associations.xUsername != null,
+      orElse: () => false,
+    );
+
+    final showTooltip = !hasEthAddress && _showSetupTooltip;
 
     return ScaffoldBase.refreshable(
       backgroundColor: const Color(0xFF0C1014),
@@ -58,9 +64,9 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 24),
-              _buildHeader(context, hasCompletedSetup, showTooltip),
+              _buildHeader(context, hasEthAddress, showTooltip),
               const SizedBox(height: 48),
-              _buildQuestCards(context, hasCompletedSetup),
+              _buildQuestCards(context, hasEthAddress, hasXUsername),
             ],
           ),
         ),
@@ -68,7 +74,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool hasCompletedSetup, bool showTooltip) {
+  Widget _buildHeader(BuildContext context, bool hasEthAddress, bool showTooltip) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
@@ -89,7 +95,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                 ),
                 child: Text(
-                  hasCompletedSetup ? 'Setup' : 'Complete Setup',
+                  hasEthAddress ? 'Setup' : 'Complete Setup',
                   style: context.themeText.smallParagraph,
                 ),
               ),
@@ -141,11 +147,12 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
     );
   }
 
-  Widget _buildQuestCards(BuildContext context, bool hasCompletedSetup) {
+  Widget _buildQuestCards(BuildContext context, bool hasEthAddress, bool hasXUsername) {
     return Column(
       children: [
         QuestCard.referFriends(
-          isDisabled: !hasCompletedSetup,
+          isDisabled: !hasEthAddress,
+          onDisabledTap: () => showCompleteSetupActionSheet(context),
           onTap: () {
             Navigator.push(
               context,
@@ -155,7 +162,8 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
         ),
         const SizedBox(height: 40),
         QuestCard.kingOfTheShill(
-          isDisabled: !hasCompletedSetup,
+          isDisabled: !hasXUsername,
+          onDisabledTap: () => showCompleteSetupActionSheet(context),
           onTap: () {
             Navigator.push(
               context,

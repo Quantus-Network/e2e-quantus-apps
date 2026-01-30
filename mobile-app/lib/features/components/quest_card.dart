@@ -7,13 +7,13 @@ class QuestCard extends StatelessWidget {
   final String description;
   final String actionLabel;
   final VoidCallback? onTap;
+  final VoidCallback? onDisabledTap;
   final List<Color> gradientColors;
   final List<double>? gradientStops;
   final AlignmentGeometry gradientCenter;
   final Color borderColor;
   final bool isDisabled;
 
-  // Background rectangle positioning
   final double bgRectLeft;
   final double bgRectTop;
   final double bgRectWidth;
@@ -25,6 +25,7 @@ class QuestCard extends StatelessWidget {
     required this.description,
     required this.actionLabel,
     required this.onTap,
+    this.onDisabledTap,
     required this.gradientColors,
     this.gradientStops,
     required this.gradientCenter,
@@ -38,6 +39,7 @@ class QuestCard extends StatelessWidget {
 
   factory QuestCard.referFriends({
     required VoidCallback? onTap,
+    VoidCallback? onDisabledTap,
     bool isDisabled = false,
   }) {
     return QuestCard(
@@ -45,18 +47,17 @@ class QuestCard extends StatelessWidget {
       description: 'Earn for every friend who joins\nQuantus using your link.',
       actionLabel: 'View Referrals',
       onTap: onTap,
+      onDisabledTap: onDisabledTap,
       gradientColors: const [
         Color(0xFF0C1014),
         Color(0xFF0000FF),
         Color(0xFFED4CCE),
         Color(0xFFFFE91F),
       ],
-      // Exact stops from Figma: 45%, 53%, 62%, 65%
       gradientStops: const [0.45, 0.53, 0.62, 0.65],
       gradientCenter: const Alignment(0.77, 0.22),
       borderColor: const Color(0x7F6734BA),
       isDisabled: isDisabled,
-      // Default positioning for Refer Friends
       bgRectLeft: -127,
       bgRectTop: -198,
     );
@@ -64,24 +65,26 @@ class QuestCard extends StatelessWidget {
 
   factory QuestCard.kingOfTheShill({
     required VoidCallback? onTap,
+    VoidCallback? onDisabledTap,
     bool isDisabled = false,
   }) {
     return QuestCard(
       title: 'KING OF THE SHILL',
-      description: 'Participate in social raids and earn rewards for verified posts.',
+      description: isDisabled 
+          ? 'Link your X account to participate!' 
+          : 'Participate in social raids and earn rewards for verified posts.',
       actionLabel: 'View Raids',
       onTap: onTap,
+      onDisabledTap: onDisabledTap,
       gradientColors: const [
         Color(0xFF0C1014),
         Color(0xFFED4CCE),
         Color(0xFFFFE91F),
       ],
-      // Exact stops from Figma: 45%, 54%, 57%
       gradientStops: const [0.45, 0.54, 0.57],
       gradientCenter: const Alignment(0.77, 0.22),
       borderColor: const Color(0x7F773F56),
       isDisabled: isDisabled,
-      // Same positioning for now, but exposed for adjustment
       bgRectLeft: -127,
       bgRectTop: -198,
     );
@@ -90,7 +93,7 @@ class QuestCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: isDisabled ? null : onTap,
+      onTap: isDisabled ? onDisabledTap : onTap,
       child: Opacity(
         opacity: isDisabled ? 0.5 : 1.0,
         child: Container(

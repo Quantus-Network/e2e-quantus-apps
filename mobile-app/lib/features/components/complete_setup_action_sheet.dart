@@ -173,7 +173,7 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'COMPLETE ACCOUNT SETUP',
+                  'ACCOUNT SETUP',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -208,6 +208,47 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
     );
   }
 
+  void _showUnlinkConfirmation({
+    required String title,
+    required Future<void> Function() onConfirm,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isDismissible: true,
+      backgroundColor: const Color(0xFF0C1014),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => _UnlinkConfirmationSheet(
+        title: title,
+        onConfirm: onConfirm,
+        dangerColor: context.themeColors.buttonDanger,
+      ),
+    );
+  }
+
+  Future<void> _handleUnlinkEth() async {
+    await _taskmasterService.dissociateEthAddress();
+    _ethAddressController.clear();
+    _originalEthAddress = null;
+    ref.invalidate(accountAssociationsProvider);
+    if (mounted) {
+      context.showSuccessSnackbar(title: 'Success', message: 'ETH address unlinked');
+      setState(() {});
+    }
+  }
+
+  Future<void> _handleUnlinkX() async {
+    await _taskmasterService.dissociateXAccount();
+    _xHandleController.clear();
+    _originalXUsername = null;
+    ref.invalidate(accountAssociationsProvider);
+    if (mounted) {
+      context.showSuccessSnackbar(title: 'Success', message: 'X account unlinked');
+      setState(() {});
+    }
+  }
+
   Widget _buildForm() {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -218,12 +259,22 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
           title: 'Connect your wallet',
           controller: _ethAddressController,
           hintText: 'Enter ETH Address',
+          canUnlink: _originalEthAddress != null,
+          onUnlink: () => _showUnlinkConfirmation(
+            title: 'ETH Address',
+            onConfirm: _handleUnlinkEth,
+          ),
         ),
         const SizedBox(height: 32),
         _buildInputSection(
           title: 'Connect your X handle',
           controller: _xHandleController,
           hintText: 'Enter username',
+          canUnlink: _originalXUsername != null,
+          onUnlink: () => _showUnlinkConfirmation(
+            title: 'X Account',
+            onConfirm: _handleUnlinkX,
+          ),
         ),
         const SizedBox(height: 32),
         _buildBioSection(),
@@ -235,6 +286,8 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
     required String title,
     required TextEditingController controller,
     required String hintText,
+    bool canUnlink = false,
+    VoidCallback? onUnlink,
   }) {
     return Container(
       width: double.infinity,
@@ -269,25 +322,40 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
-            child: TextField(
-              controller: controller,
-              autocorrect: false,
-              textCapitalization: TextCapitalization.none,
-              style: const TextStyle(
-                color: Color(0xFFF4F6F9),
-                fontSize: 14,
-                fontFamily: 'Fira Code',
-                fontWeight: FontWeight.w400,
-              ),
-              decoration: InputDecoration.collapsed(
-                hintText: '|$hintText',
-                hintStyle: const TextStyle(
-                  color: Color(0x7FF4F6F9),
-                  fontSize: 14,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w400,
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: controller,
+                    autocorrect: false,
+                    textCapitalization: TextCapitalization.none,
+                    style: const TextStyle(
+                      color: Color(0xFFF4F6F9),
+                      fontSize: 14,
+                      fontFamily: 'Fira Code',
+                      fontWeight: FontWeight.w400,
+                    ),
+                    decoration: InputDecoration.collapsed(
+                      hintText: '|$hintText',
+                      hintStyle: const TextStyle(
+                        color: Color(0x7FF4F6F9),
+                        fontSize: 14,
+                        fontFamily: 'Fira Code',
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                if (canUnlink)
+                  GestureDetector(
+                    onTap: onUnlink,
+                    child: Icon(
+                      Icons.close,
+                      size: 18,
+                      color: context.themeColors.buttonDanger,
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
@@ -423,6 +491,126 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
                     ),
                   ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _UnlinkConfirmationSheet extends StatefulWidget {
+  final String title;
+  final Future<void> Function() onConfirm;
+  final Color dangerColor;
+
+  const _UnlinkConfirmationSheet({
+    required this.title,
+    required this.onConfirm,
+    required this.dangerColor,
+  });
+
+  @override
+  State<_UnlinkConfirmationSheet> createState() => _UnlinkConfirmationSheetState();
+}
+
+class _UnlinkConfirmationSheetState extends State<_UnlinkConfirmationSheet> {
+  bool _isUnlinking = false;
+
+  Future<void> _handleUnlink() async {
+    setState(() => _isUnlinking = true);
+    try {
+      await widget.onConfirm();
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isUnlinking = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: widget.dangerColor),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Unlink ${widget.title}?',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontFamily: 'Fira Code',
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Are you sure you want to unlink your ${widget.title}?',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.5),
+                fontSize: 14,
+                fontFamily: 'Inter',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            GestureDetector(
+              onTap: _isUnlinking ? null : _handleUnlink,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: ShapeDecoration(
+                  color: widget.dangerColor,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(42)),
+                ),
+                alignment: Alignment.center,
+                child: _isUnlinking
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : const Text(
+                        'Unlink',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontFamily: 'Fira Code',
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: _isUnlinking ? null : () => Navigator.pop(context),
+              child: Opacity(
+                opacity: _isUnlinking ? 0.5 : 1.0,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: ShapeDecoration(
+                    color: const Color(0x33F4F6F9),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(42)),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: Color(0xFFF4F6F9),
+                      fontSize: 16,
+                      fontFamily: 'Fira Code',
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
