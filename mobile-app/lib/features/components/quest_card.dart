@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
@@ -11,6 +13,7 @@ class QuestCard extends StatelessWidget {
   final List<Color> gradientColors;
   final List<double>? gradientStops;
   final AlignmentGeometry gradientCenter;
+  final double gradientRadius;
   final Color borderColor;
   final bool isDisabled;
 
@@ -29,6 +32,7 @@ class QuestCard extends StatelessWidget {
     required this.gradientColors,
     this.gradientStops,
     required this.gradientCenter,
+    required this.gradientRadius,
     required this.borderColor,
     this.isDisabled = false,
     this.bgRectLeft = -127,
@@ -45,8 +49,9 @@ class QuestCard extends StatelessWidget {
       onTap: onTap,
       onDisabledTap: onDisabledTap,
       gradientColors: const [Color(0xFF0C1014), Color(0xFF0000FF), Color(0xFFED4CCE), Color(0xFFFFE91F)],
-      gradientStops: const [0.45, 0.53, 0.62, 0.65],
-      gradientCenter: const Alignment(0.77, 0.22),
+      gradientStops: const [0.55, 0.62, 0.68, 0.72],
+      gradientCenter: const Alignment(0.6, -0.7),
+      gradientRadius: 1.29,
       borderColor: const Color(0x7F6734BA),
       isDisabled: isDisabled,
       bgRectLeft: -127,
@@ -68,8 +73,9 @@ class QuestCard extends StatelessWidget {
       onTap: onTap,
       onDisabledTap: onDisabledTap,
       gradientColors: const [Color(0xFF0C1014), Color(0xFFED4CCE), Color(0xFFFFE91F)],
-      gradientStops: const [0.45, 0.54, 0.57],
-      gradientCenter: const Alignment(0.77, 0.22),
+      gradientStops: const [0.55, 0.64, 0.68],
+      gradientCenter: const Alignment(0.7, -0.7),
+      gradientRadius: 1.3,
       borderColor: const Color(0x7F773F56),
       isDisabled: isDisabled,
       bgRectLeft: -127,
@@ -99,17 +105,20 @@ class QuestCard extends StatelessWidget {
               Positioned(
                 left: bgRectLeft,
                 top: bgRectTop,
-                child: Container(
-                  width: bgRectWidth,
-                  height: bgRectHeight,
-                  decoration: ShapeDecoration(
-                    gradient: RadialGradient(
-                      center: gradientCenter,
-                      radius: 1.39,
-                      colors: gradientColors,
-                      stops: gradientStops,
+                child: ImageFiltered(
+                  imageFilter: ImageFilter.blur(sigmaX: 52, sigmaY: 52),
+                  child: Container(
+                    width: bgRectWidth,
+                    height: bgRectHeight,
+                    decoration: ShapeDecoration(
+                      gradient: RadialGradient(
+                        center: gradientCenter,
+                        radius: gradientRadius,
+                        colors: gradientColors,
+                        stops: gradientStops,
+                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                     ),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                   ),
                 ),
               ),
