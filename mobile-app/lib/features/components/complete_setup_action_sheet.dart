@@ -30,8 +30,10 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
 
   bool _isSubmitting = false;
   bool _hasInitialized = false;
+  String? _originalEthAddress;
+  String? _originalXUsername;
 
-  bool get _isBioValid => _bioController.text.contains('@QuantusNetwork');
+  bool get _isBioValid => _bioController.text.trim().toLowerCase().contains('@quantusnetwork');
 
   @override
   void dispose() {
@@ -44,13 +46,15 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
   void _initializeData(AccountAssociations associations) {
     if (_hasInitialized) return;
 
+    _originalEthAddress = associations.ethAddress;
+    _originalXUsername = associations.xUsername;
+
     if (associations.ethAddress != null) {
       _ethAddressController.text = associations.ethAddress!;
     }
     if (associations.xUsername != null) {
       _xHandleController.text = associations.xUsername!;
     }
-    // Bio is not stored, so we leave it empty as per requirements.
 
     _hasInitialized = true;
   }
@@ -62,22 +66,25 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
     setState(() => _isSubmitting = true);
 
     try {
-      // 1. Opt-in to reward program (idempotent-ish, or safe to call)
-      // Requirement: "If it is a new user we set their opt in to true"
-      await _taskmasterService.optInRewardProgram();
+      final optInStatus = ref.read(optInPositionProvider);
+      final isAlreadyOptedIn = optInStatus.maybeWhen(
+        data: (position) => position.position > 0,
+        orElse: () => false,
+      );
 
-      // 2. Link ETH Address
-      if (ethAddress.isNotEmpty) {
+      if (!isAlreadyOptedIn) {
+        await _taskmasterService.optInRewardProgram();
+      }
+
+      if (ethAddress.isNotEmpty && ethAddress != _originalEthAddress) {
         await _taskmasterService.associateEthAddress(ethAddress);
       }
 
-      // 3. Link X Handle
-      if (xHandle.isNotEmpty) {
-        final handle = xHandle.startsWith('@') ? xHandle.substring(1) : xHandle;
-        await _taskmasterService.associateXHandle(handle);
+      final normalizedHandle = xHandle.startsWith('@') ? xHandle.substring(1) : xHandle;
+      if (normalizedHandle.isNotEmpty && normalizedHandle != _originalXUsername) {
+        await _taskmasterService.associateXHandle(normalizedHandle);
       }
 
-      // 4. Refresh data
       ref.invalidate(accountAssociationsProvider);
       ref.invalidate(optInPositionProvider);
 
@@ -111,7 +118,15 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
     });
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 40),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.9,
+      ),
+      padding: EdgeInsets.only(
+        left: 26,
+        right: 26,
+        top: 40,
+        bottom: 40 + MediaQuery.of(context).viewInsets.bottom,
+      ),
       decoration: const ShapeDecoration(
         color: Color(0xFF0C1014),
         shape: RoundedRectangleBorder(
@@ -126,18 +141,19 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
           ),
         ),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(),
-          const SizedBox(height: 64),
-          _buildForm(),
-          const SizedBox(height: 32), // Spacing before button
-          _buildLinkButton(),
-          SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
-        ],
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader(),
+            const SizedBox(height: 64),
+            _buildForm(),
+            const SizedBox(height: 32),
+            _buildLinkButton(),
+          ],
+        ),
       ),
     );
   }
@@ -255,6 +271,8 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
             ),
             child: TextField(
               controller: controller,
+              autocorrect: false,
+              textCapitalization: TextCapitalization.none,
               style: const TextStyle(
                 color: Color(0xFFF4F6F9),
                 fontSize: 14,
@@ -337,6 +355,8 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
             child: TextField(
               controller: _bioController,
               onChanged: (_) => setState(() {}),
+              autocorrect: false,
+              textCapitalization: TextCapitalization.none,
               style: const TextStyle(
                 color: Color(0xFFF4F6F9),
                 fontSize: 14,

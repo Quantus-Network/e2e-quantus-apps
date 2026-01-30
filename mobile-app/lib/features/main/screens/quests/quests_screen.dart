@@ -19,6 +19,7 @@ class QuestsScreen extends ConsumerStatefulWidget {
 
 class _QuestsScreenState extends ConsumerState<QuestsScreen> {
   final ScrollController _scrollController = ScrollController();
+  bool _showSetupTooltip = true;
 
   void refreshStatsData() {
     ref.invalidate(accountsStatsProvider);
@@ -28,6 +29,12 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
     ref.invalidate(accountAssociationsProvider);
   }
 
+  void _dismissTooltip() {
+    setState(() {
+      _showSetupTooltip = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final associationsAsync = ref.watch(accountAssociationsProvider);
@@ -35,6 +42,8 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
       data: (associations) => associations.ethAddress != null || associations.xUsername != null,
       orElse: () => false,
     );
+
+    final showTooltip = !hasCompletedSetup && _showSetupTooltip;
 
     return ScaffoldBase.refreshable(
       backgroundColor: const Color(0xFF0C1014),
@@ -49,7 +58,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 24),
-              _buildHeader(context, hasCompletedSetup),
+              _buildHeader(context, hasCompletedSetup, showTooltip),
               const SizedBox(height: 48),
               _buildQuestCards(context, hasCompletedSetup),
             ],
@@ -59,30 +68,76 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool hasCompletedSetup) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildHeader(BuildContext context, bool hasCompletedSetup, bool showTooltip) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Image.asset(
-          'assets/quests/quests_top_logo.png',
-          height: 24,
-          fit: BoxFit.contain,
-        ),
-        GestureDetector(
-          onTap: () => showCompleteSetupActionSheet(context),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: ShapeDecoration(
-              color: context.themeColors.settingCard,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Image.asset(
+              'assets/quests/quests_top_logo.png',
+              height: 24,
+              fit: BoxFit.contain,
             ),
+            GestureDetector(
+              onTap: () => showCompleteSetupActionSheet(context),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: ShapeDecoration(
+                  color: context.themeColors.settingCard,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                ),
+                child: Text(
+                  hasCompletedSetup ? 'Setup' : 'Complete Setup',
+                  style: context.themeText.smallParagraph,
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (showTooltip) ...[
+          const SizedBox(height: 8),
+          _buildSetupTooltip(),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSetupTooltip() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: ShapeDecoration(
+        color: const Color(0xFF0C1014),
+        shape: RoundedRectangleBorder(
+          side: const BorderSide(width: 1, color: Color(0x66F4F6F9)),
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(
+            width: 149,
             child: Text(
-              hasCompletedSetup ? 'Setup' : 'Complete Setup',
-              style: context.themeText.smallParagraph,
+              'Complete setup to unlock quests.',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontFamily: 'Fira Code',
+                fontWeight: FontWeight.w400,
+                height: 1.35,
+              ),
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: _dismissTooltip,
+            child: const Icon(Icons.close, color: Colors.white, size: 14),
+          ),
+        ],
+      ),
     );
   }
 
