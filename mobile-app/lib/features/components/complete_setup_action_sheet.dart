@@ -252,7 +252,7 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
     bool canUnlink = false,
     VoidCallback? onUnlink,
   }) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -320,21 +320,21 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
   }
 
   Widget _buildBioSection() {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
+          const SizedBox(
             width: double.infinity,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(
+                SizedBox(
                   width: 323,
                   child: Text(
                     'Verify your X account',
@@ -346,8 +346,8 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
                     ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                const SizedBox(
+                SizedBox(height: 4),
+                SizedBox(
                   width: 323,
                   child: Text(
                     'To confirm this account belongs to you, please update your X bio to include @QuantusNetwork',

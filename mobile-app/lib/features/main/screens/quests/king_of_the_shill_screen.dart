@@ -206,7 +206,7 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
                                   child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                                 ),
                               ),
-                              error: (_, __) => _buildStatsBox(0, 0),
+                              error: (_, _) => _buildStatsBox(0, 0),
                               data: (state) {
                                 if (state is RaiderSubmissionsOk) {
                                   return _buildStatsBox(state.submissions.length, 0);
@@ -264,7 +264,7 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: ShapeDecoration(
-        color: const Color(0xFF0C1014).withOpacity(0.4),
+        color: const Color(0xFF0C1014).useOpacity(0.4),
         shape: RoundedRectangleBorder(
           side: const BorderSide(width: 1, color: Color(0x33F4F6F9)),
           borderRadius: BorderRadius.circular(8),
@@ -332,7 +332,7 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
                 ),
               ),
             ),
-            error: (_, __) => Text(
+            error: (_, _) => Text(
               'Failed to load submissions',
               style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12, fontFamily: 'Inter'),
             ),
