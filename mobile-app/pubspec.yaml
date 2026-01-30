@@ -100,6 +100,7 @@ flutter:
     - assets/high_security/step_indicator_icon.svg
     - assets/high_security/big_red_button_icon.png
     - assets/high_security/intercept_icon.svg
+    - assets/quests/quests_top_logo.png
 
   fonts:
     - family: Fira Code

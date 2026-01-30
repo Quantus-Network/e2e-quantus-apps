@@ -2,23 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
-import 'package:resonance_network_wallet/features/components/list_item.dart';
+import 'package:resonance_network_wallet/features/components/complete_setup_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/loading_text_animation.dart';
+import 'package:resonance_network_wallet/features/components/quest_card.dart';
 import 'package:resonance_network_wallet/features/components/quests_promo_video.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
-import 'package:resonance_network_wallet/features/main/screens/quests/account_associations_status.dart';
 import 'package:resonance_network_wallet/features/main/screens/quests/king_of_the_shill_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/quests/referrals_quest_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/quests/optin_position_status.dart';
-import 'package:resonance_network_wallet/features/main/screens/quests/quest_title.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_associations_providers.dart';
 import 'package:resonance_network_wallet/providers/account_stats_providers.dart';
 import 'package:resonance_network_wallet/providers/opt_in_position_providers.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
-import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class QuestsScreen extends ConsumerStatefulWidget {
   final bool playPromoVideo;
@@ -121,14 +119,14 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
   Widget build(BuildContext context) {
     // Show loading state for users who haven't opted in to the reward program or if the promo video is not playing yet
     if (_isLoadingParticipation || !widget.playPromoVideo) {
-      return const ScaffoldBase(
+      return ScaffoldBase(
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             spacing: 12,
             children: [
-              QuestTitle(padding: EdgeInsetsGeometry.zero),
-              LoadingTextAnimation(),
+              Image.asset('assets/quests/quests_top_logo.png', height: 24),
+              const LoadingTextAnimation(),
             ],
           ),
         ),
@@ -137,7 +135,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
 
     if (!_isRewardProgramParticipant) {
       return Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: context.themeColors.background2,
         body: Stack(
           children: [
             QuestsPromoVideo(
@@ -182,7 +180,14 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
       );
     }
 
+    final associationsAsync = ref.watch(accountAssociationsProvider);
+    final hasCompletedSetup = associationsAsync.maybeWhen(
+      data: (associations) => associations.ethAddress != null || associations.xUsername != null,
+      orElse: () => false,
+    );
+
     return ScaffoldBase.refreshable(
+      backgroundColor: const Color(0xFF0C1014),
       onRefresh: () async {
         refreshStatsData();
         refreshAssociationsData();
@@ -195,45 +200,70 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
       slivers: [
         SliverToBoxAdapter(
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const QuestTitle(),
-              const OptinPositionStatus(),
-              SizedBox(height: context.isSmallHeight ? 18 : 37.0),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: 4,
-                children: [
-                  Text('Associated Accounts', style: context.themeText.smallParagraph, textAlign: TextAlign.start),
-                  const AccountAssociationsStatus(),
-                ],
-              ),
+              const SizedBox(height: 24),
+              _buildHeader(context, hasCompletedSetup),
+              const SizedBox(height: 48),
+              _buildQuestCards(context, hasCompletedSetup),
             ],
           ),
-        ),
-
-        SliverToBoxAdapter(child: SizedBox(height: context.isSmallHeight ? 18 : 37.0)),
-        SliverToBoxAdapter(child: Text('Quests', style: context.themeText.smallParagraph)),
-        const SliverToBoxAdapter(child: SizedBox(height: 4)),
-        SliverList(
-          delegate: SliverChildListDelegate([
-            ListItem(
-              title: 'King of The Shill',
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const KingOfTheShillScreen()));
-              },
-            ),
-            const SizedBox(height: 12),
-            ListItem(
-              title: 'Referrals',
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const ReferralsQuestScreen()));
-              },
-            ),
-          ]),
         ),
       ],
     );
   }
+
+  Widget _buildHeader(BuildContext context, bool hasCompletedSetup) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Image.asset(
+          'assets/quests/quests_top_logo.png',
+          height: 24,
+          fit: BoxFit.contain,
+        ),
+        GestureDetector(
+          onTap: () => showCompleteSetupActionSheet(context),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: ShapeDecoration(
+              color: context.themeColors.settingCard,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+            ),
+            child: Text(
+              hasCompletedSetup ? 'Setup' : 'Complete Setup',
+              style: context.themeText.smallParagraph,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuestCards(BuildContext context, bool hasCompletedSetup) {
+    return Column(
+      children: [
+        QuestCard.referFriends(
+          isDisabled: !hasCompletedSetup,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ReferralsQuestScreen()),
+            );
+          },
+        ),
+        const SizedBox(height: 40),
+        QuestCard.kingOfTheShill(
+          isDisabled: !hasCompletedSetup,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const KingOfTheShillScreen()),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
 }
