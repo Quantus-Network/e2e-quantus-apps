@@ -177,23 +177,25 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                 child: InnerShadowContainer.standard(
                   child: Stack(
                     children: [
-                      Positioned(
+                      Positioned.fill(
                         left: -156,
                         top: 72,
                         child: Container(
                           width: 531,
                           height: 531,
+                          clipBehavior: Clip.antiAlias,
                           decoration: ShapeDecoration(
                             gradient: const RadialGradient(
-                              center: Alignment.bottomLeft,
-                              radius: 1.2,
+                              center: Alignment(0.77, -0.77),
+                              radius: 1.8,
                               colors: [
-                                Color(0xFFFFE91F),
-                                Color(0xFFED4CCE),
-                                Color(0xFF0000FF),
                                 Color(0xFF0C1014),
+                                Color(0xFF0000FF),
+                                Color(0xFFED4CCE),
+                                Color(0xFFFFE91F),
+
                               ],
-                              stops: [0.1, 0.2, 0.4, 0.6],
+                              stops: [0.45, 0.53, 0.62, 0.65],
                             ),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                           ),
