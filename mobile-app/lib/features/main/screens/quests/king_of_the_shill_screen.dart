@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -150,18 +152,16 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
                   child: Stack(
                     children: [
                       Positioned.fill(
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            gradient: RadialGradient(
-                              center: Alignment(-0.8, 0.6),
-                              radius: 1.0,
-                              colors: [
-                                Color(0xFFFFE91F),
-                                Color(0xFFED4CCE),
-                                Color(0xFF0000FF),
-                                Color(0xFF0C1014),
-                              ],
-                              stops: [0.05, 0.15, 0.35, 0.6],
+                        child: ImageFiltered(
+                          imageFilter: ImageFilter.blur(sigmaX: 52, sigmaY: 52),
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              gradient: RadialGradient(
+                                center: Alignment(0.77, -0.56),
+                                radius: 2.8,
+                                colors: [Color(0xFF0C1014), Color(0xFFED4CCE), Color(0xFFFFE91F)],
+                                stops: [0.45, 0.54, 0.57],
+                              ),
                             ),
                           ),
                         ),
