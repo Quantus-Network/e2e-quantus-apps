@@ -47,6 +47,92 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
     }
   }
 
+  void _showHowItWorksDialog() {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.7),
+      builder: (context) => GestureDetector(
+        onTap: () => Navigator.of(context).pop(),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Center(
+            child: GestureDetector(
+              onTap: () {},
+              child: Container(
+                width: 280,
+                padding: const EdgeInsets.all(24),
+                decoration: ShapeDecoration(
+                  color: const Color(0xFF0C1014),
+                  shape: RoundedRectangleBorder(
+                    side: const BorderSide(width: 1, color: Color(0x66F4F6F9)),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'HOW IT WORKS',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontFamily: 'Fira Code',
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => Navigator.of(context).pop(),
+                          child: const Icon(Icons.close, color: Colors.white, size: 24),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+                    _buildStep('Step 1', 'Invite users using your unique code'),
+                    const SizedBox(height: 16),
+                    _buildStep('Step 2', 'They must create a Quantus Wallet. Referrals without wallet creation won\'t count'),
+                    const SizedBox(height: 16),
+                    _buildStep('Step 3', 'Climb the leaderboard. Rank updates automatically'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStep(String title, String description) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontFamily: 'Fira Code',
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          description,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.50),
+            fontSize: 14,
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -69,7 +155,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.info_outline, color: Colors.white),
-            onPressed: () {},
+            onPressed: _showHowItWorksDialog,
           ),
         ],
       ),
