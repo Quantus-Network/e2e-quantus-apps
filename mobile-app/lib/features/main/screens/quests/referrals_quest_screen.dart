@@ -122,7 +122,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                           height: 531,
                           decoration: ShapeDecoration(
                             gradient: const RadialGradient(
-                              center: Alignment.bottomCenter,
+                              center: Alignment.bottomLeft,
                               radius: 1.2,
                               colors: [
                                 Color(0xFFFFE91F),
@@ -130,7 +130,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                                 Color(0xFF0000FF),
                                 Color(0xFF0C1014),
                               ],
-                              stops: [0.0, 0.2, 0.5, 1.0],
+                              stops: [0.1, 0.2, 0.4, 0.6],
                             ),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                           ),
