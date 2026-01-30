@@ -69,36 +69,28 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.info_outline, color: Colors.white),
-            onPressed: () {
-              // TODO: Show info
-            },
+            onPressed: () {},
           ),
         ],
       ),
-      child: Column(
-        children: [
-          Expanded(
-            child: Stack(
-              children: [
-                // Main Card
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.only(bottom: 80), // Leave space for the button
-                  clipBehavior: Clip.antiAlias,
-                  decoration: ShapeDecoration(
-                    color: const Color(0xFF0C1014),
-                    shape: RoundedRectangleBorder(
-                      side: const BorderSide(
-                        width: 1,
-                        color: Color(0x7F6734BA),
-                      ),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                clipBehavior: Clip.antiAlias,
+                decoration: ShapeDecoration(
+                  color: const Color(0xFF0C1014),
+                  shape: RoundedRectangleBorder(
+                    side: const BorderSide(width: 1, color: Color(0x7F6734BA)),
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                  child: InnerShadowContainer.standard(
-                    child: Stack(
+                ),
+                child: InnerShadowContainer.standard(
+                  child: Stack(
                     children: [
-                      // Gradient Blob
                       Positioned(
                         left: -156,
                         top: 72,
@@ -121,14 +113,11 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                           ),
                         ),
                       ),
-                      
-                      // Content
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Header Section
                             Center(
                               child: Column(
                                 children: [
@@ -155,32 +144,23 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                                 ],
                               ),
                             ),
-                            
                             const SizedBox(height: 40),
-                            
-                          // Avatars Row (Placeholders)
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              _buildAvatar(const [Color(0xFF0000FF), Color(0xFF0C1014)]),
-                              Transform.translate(offset: const Offset(-16, 0), child: _buildAvatar(const [Color(0xFF8B0000), Color(0xFFED4CCE)])),
-                              Transform.translate(offset: const Offset(-32, 0), child: _buildAvatar(const [Color(0xFFFFD700), Color(0xFFFFE91F)])),
-                            ],
-                          ),
-                                    
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _buildAvatar(const [Color(0xFF0000FF), Color(0xFF0C1014)]),
+                                Transform.translate(offset: const Offset(-16, 0), child: _buildAvatar(const [Color(0xFF8B0000), Color(0xFFED4CCE)])),
+                                Transform.translate(offset: const Offset(-32, 0), child: _buildAvatar(const [Color(0xFFFFD700), Color(0xFFFFE91F)])),
+                              ],
+                            ),
                             const SizedBox(height: 40),
-                                    
-                            // Stats Box
                             Container(
                               width: double.infinity,
                               padding: const EdgeInsets.all(16),
                               decoration: ShapeDecoration(
-                                color: const Color(0xFF0C1014).withOpacity(0.4),
+                                color: const Color(0xFF0C1014).useOpacity(0.4),
                                 shape: RoundedRectangleBorder(
-                                  side: const BorderSide(
-                                    width: 1,
-                                    color: Color(0x33F4F6F9),
-                                  ),
+                                  side: const BorderSide(width: 1, color: Color(0x33F4F6F9)),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 shadows: const [
@@ -188,7 +168,6 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                                     color: Color(0x3F000000),
                                     blurRadius: 4,
                                     offset: Offset(4, 4),
-                                    spreadRadius: 0,
                                   )
                                 ],
                               ),
@@ -196,14 +175,11 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                                 children: [
                                   _buildStatRow('Referrals', '$referralsCount', Colors.white),
                                   const SizedBox(height: 16),
-                                  _buildStatRow('Rank', '#-', const Color(0xFFED4CCE)), // Rank not available yet
+                                  _buildStatRow('Rank', '#-', const Color(0xFFED4CCE)),
                                 ],
                               ),
                             ),
-                                    
                             const Spacer(),
-                                    
-                            // Invite Code Section
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
@@ -217,13 +193,13 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 12),
-                                  GestureDetector(
+                                GestureDetector(
                                   onTap: _copyReferralCode,
                                   child: Container(
                                     width: double.infinity,
                                     padding: const EdgeInsets.all(14),
                                     decoration: ShapeDecoration(
-                                      color: const Color(0xFF6B46C1).useOpacity(0.8),
+                                      color:  Colors.white.useOpacity(0.3),
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                     ),
                                     child: Row(
@@ -249,47 +225,39 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                         ),
                       ),
                     ],
-                                    ),
                   ),
-                                ),
-
-                // Bottom Button
-                Positioned(
-                  bottom: 24,
-                  left: 0,
-                  right: 0,
-                  child: GestureDetector(
-                    onTap: _shareReferralLink,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: ShapeDecoration(
-                        color: const Color(0x33F4F6F9),
-                        shape: RoundedRectangleBorder(
-                          side: const BorderSide(
-                            width: 1,
-                            color: Color(0x33F4F6F9),
-                          ),
-                          borderRadius: BorderRadius.circular(42),
-                        ),
-                      ),
-                      alignment: Alignment.center,
-                      child: const Text(
-                        'Share Link',
-                        style: TextStyle(
-                          color: Color(0xFFF4F6F9),
-                          fontSize: 18,
-                          fontFamily: 'Fira Code',
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+            GestureDetector(
+              onTap: _shareReferralLink,
+              child: InnerShadowContainer.standard(
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: ShapeDecoration(
+                    color: const Color(0x33F4F6F9),
+                    shape: RoundedRectangleBorder(
+                      side: const BorderSide(width: 1, color: Color(0x33F4F6F9)),
+                      borderRadius: BorderRadius.circular(42),
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    'Share Link',
+                    style: TextStyle(
+                      color: Color(0xFFF4F6F9),
+                      fontSize: 18,
+                      fontFamily: 'Fira Code',
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
