@@ -73,14 +73,11 @@ flutter:
   assets:
     - .env
     - assets/
-    - assets/text/crypto_checksum_bip39.txt
     - assets/send_icon.png
     - assets/receive_icon.png
-    - assets/swap_icon_1.svg
     - assets/scan_1.svg
     - assets/paste_icon_1.svg
     - assets/active_dot.png
-    - assets/receive_line.svg
     - assets/bridge_icon.svg
     - assets/quantus_logo.svg
     - assets/hourglass.svg
@@ -92,8 +89,6 @@ flutter:
     - assets/logo/
     - assets/send_btn_decoration.png
     - assets/receive_btn_decoration.png
-    - assets/qq-logo.png
-    - assets/navbar/qcat_navbar_icon.png
     - assets/notification/notification_top_icon.png
     - assets/high_security/security_icon_big.svg
     - assets/high_security/step_indicator_active_icon.svg
