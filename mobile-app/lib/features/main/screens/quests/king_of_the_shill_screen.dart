@@ -200,7 +200,11 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
                             const SizedBox(height: 40),
                             raiderSubmissionsAsync.when(
                               loading: () => const Center(
-                                child: CircularProgressIndicator(color: Colors.white),
+                                child: SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                ),
                               ),
                               error: (_, __) => _buildStatsBox(0, 0),
                               data: (state) {
@@ -334,10 +338,14 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
             ),
           ),
           child: raiderSubmissionsAsync.when(
-            loading: () => const Center(
-              child: SizedBox(
-                height: 80,
-                child: CircularProgressIndicator(color: Colors.white),
+            loading: () => const SizedBox(
+              height: 80,
+              child: Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                ),
               ),
             ),
             error: (_, __) => Text(
