@@ -37,23 +37,14 @@ class QuestCard extends StatelessWidget {
     this.bgRectHeight = 531,
   });
 
-  factory QuestCard.referFriends({
-    required VoidCallback? onTap,
-    VoidCallback? onDisabledTap,
-    bool isDisabled = false,
-  }) {
+  factory QuestCard.referFriends({required VoidCallback? onTap, VoidCallback? onDisabledTap, bool isDisabled = false}) {
     return QuestCard(
       title: 'REFER FRIENDS',
       description: 'Earn for every friend who joins\nQuantus using your link.',
       actionLabel: 'View Referrals',
       onTap: onTap,
       onDisabledTap: onDisabledTap,
-      gradientColors: const [
-        Color(0xFF0C1014),
-        Color(0xFF0000FF),
-        Color(0xFFED4CCE),
-        Color(0xFFFFE91F),
-      ],
+      gradientColors: const [Color(0xFF0C1014), Color(0xFF0000FF), Color(0xFFED4CCE), Color(0xFFFFE91F)],
       gradientStops: const [0.45, 0.53, 0.62, 0.65],
       gradientCenter: const Alignment(0.77, 0.22),
       borderColor: const Color(0x7F6734BA),
@@ -70,17 +61,13 @@ class QuestCard extends StatelessWidget {
   }) {
     return QuestCard(
       title: 'KING OF THE SHILL',
-      description: isDisabled 
-          ? 'Link your X account to participate!' 
+      description: isDisabled
+          ? 'Link your X account to participate!'
           : 'Participate in social raids and earn rewards for verified posts.',
       actionLabel: 'View Raids',
       onTap: onTap,
       onDisabledTap: onDisabledTap,
-      gradientColors: const [
-        Color(0xFF0C1014),
-        Color(0xFFED4CCE),
-        Color(0xFFFFE91F),
-      ],
+      gradientColors: const [Color(0xFF0C1014), Color(0xFFED4CCE), Color(0xFFFFE91F)],
       gradientStops: const [0.45, 0.54, 0.57],
       gradientCenter: const Alignment(0.77, 0.22),
       borderColor: const Color(0x7F773F56),
@@ -159,16 +146,9 @@ class QuestCard extends StatelessWidget {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          actionLabel,
-                          style: context.themeText.smallTitle,
-                        ),
+                        Text(actionLabel, style: context.themeText.smallTitle),
                         const SizedBox(width: 8),
-                        Icon(
-                          Icons.arrow_forward,
-                          size: 18,
-                          color: context.themeColors.textPrimary,
-                        ),
+                        Icon(Icons.arrow_forward, size: 18, color: context.themeColors.textPrimary),
                       ],
                     ),
                   ],

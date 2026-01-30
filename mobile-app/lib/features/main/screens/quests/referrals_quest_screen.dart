@@ -93,7 +93,10 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                     const SizedBox(height: 32),
                     _buildStep('Step 1', 'Invite users using your unique code'),
                     const SizedBox(height: 16),
-                    _buildStep('Step 2', 'They must create a Quantus Wallet. Referrals without wallet creation won\'t count'),
+                    _buildStep(
+                      'Step 2',
+                      'They must create a Quantus Wallet. Referrals without wallet creation won\'t count',
+                    ),
                     const SizedBox(height: 16),
                     _buildStep('Step 3', 'Climb the leaderboard. Rank updates automatically'),
                   ],
@@ -188,13 +191,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                             gradient: const RadialGradient(
                               center: Alignment(0.77, -0.77),
                               radius: 1.8,
-                              colors: [
-                                Color(0xFF0C1014),
-                                Color(0xFF0000FF),
-                                Color(0xFFED4CCE),
-                                Color(0xFFFFE91F),
-
-                              ],
+                              colors: [Color(0xFF0C1014), Color(0xFF0000FF), Color(0xFFED4CCE), Color(0xFFFFE91F)],
                               stops: [0.45, 0.53, 0.62, 0.65],
                             ),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
@@ -237,8 +234,14 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 _buildAvatar(const [Color(0xFF0000FF), Color(0xFF0C1014)]),
-                                Transform.translate(offset: const Offset(-16, 0), child: _buildAvatar(const [Color(0xFF8B0000), Color(0xFFED4CCE)])),
-                                Transform.translate(offset: const Offset(-32, 0), child: _buildAvatar(const [Color(0xFFFFD700), Color(0xFFFFE91F)])),
+                                Transform.translate(
+                                  offset: const Offset(-16, 0),
+                                  child: _buildAvatar(const [Color(0xFF8B0000), Color(0xFFED4CCE)]),
+                                ),
+                                Transform.translate(
+                                  offset: const Offset(-32, 0),
+                                  child: _buildAvatar(const [Color(0xFFFFD700), Color(0xFFFFE91F)]),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 40),
@@ -252,11 +255,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 shadows: const [
-                                  BoxShadow(
-                                    color: Color(0x3F000000),
-                                    blurRadius: 4,
-                                    offset: Offset(4, 4),
-                                  )
+                                  BoxShadow(color: Color(0x3F000000), blurRadius: 4, offset: Offset(4, 4)),
                                 ],
                               ),
                               child: Column(
@@ -287,7 +286,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                                     width: double.infinity,
                                     padding: const EdgeInsets.all(14),
                                     decoration: ShapeDecoration(
-                                      color:  Colors.white.useOpacity(0.3),
+                                      color: Colors.white.useOpacity(0.3),
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                     ),
                                     child: Row(
@@ -355,17 +354,9 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
       width: 64,
       height: 64,
       decoration: ShapeDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: colors,
-        ),
+        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: colors),
         shape: const OvalBorder(
-          side: BorderSide(
-            width: 2.67,
-            strokeAlign: BorderSide.strokeAlignOutside,
-            color: Color(0xFF0C1014),
-          ),
+          side: BorderSide(width: 2.67, strokeAlign: BorderSide.strokeAlignOutside, color: Color(0xFF0C1014)),
         ),
       ),
     );
@@ -387,12 +378,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
         Text(
           value,
           textAlign: TextAlign.center,
-          style: TextStyle(
-            color: valueColor,
-            fontSize: 14,
-            fontFamily: 'Fira Code',
-            fontWeight: FontWeight.w400,
-          ),
+          style: TextStyle(color: valueColor, fontSize: 14, fontFamily: 'Fira Code', fontWeight: FontWeight.w400),
         ),
       ],
     );

@@ -269,13 +269,7 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
           side: const BorderSide(width: 1, color: Color(0x33F4F6F9)),
           borderRadius: BorderRadius.circular(8),
         ),
-        shadows: const [
-          BoxShadow(
-            color: Color(0x3F000000),
-            blurRadius: 4,
-            offset: Offset(4, 4),
-          )
-        ],
+        shadows: const [BoxShadow(color: Color(0x3F000000), blurRadius: 4, offset: Offset(4, 4))],
       ),
       child: Column(
         children: [
@@ -304,12 +298,7 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
         ),
         Text(
           value,
-          style: TextStyle(
-            color: valueColor,
-            fontSize: 14,
-            fontFamily: 'Fira Code',
-            fontWeight: FontWeight.w400,
-          ),
+          style: TextStyle(color: valueColor, fontSize: 14, fontFamily: 'Fira Code', fontWeight: FontWeight.w400),
         ),
       ],
     );
@@ -320,12 +309,7 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
       children: [
         const Text(
           'Past Submissions',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontFamily: 'Fira Code',
-            fontWeight: FontWeight.w500,
-          ),
+          style: TextStyle(color: Colors.white, fontSize: 14, fontFamily: 'Fira Code', fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 12),
         Container(
@@ -350,25 +334,15 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
             ),
             error: (_, __) => Text(
               'Failed to load submissions',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5),
-                fontSize: 12,
-                fontFamily: 'Inter',
-              ),
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12, fontFamily: 'Inter'),
             ),
             data: (state) {
               if (state is RaiderSubmissionsOk && state.submissions.isNotEmpty) {
-                return Column(
-                  children: state.submissions.take(4).map((url) => _buildSubmissionRow(url)).toList(),
-                );
+                return Column(children: state.submissions.take(4).map((url) => _buildSubmissionRow(url)).toList());
               }
               return Text(
                 'No submissions yet',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
-                  fontSize: 12,
-                  fontFamily: 'Inter',
-                ),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12, fontFamily: 'Inter'),
               );
             },
           ),
@@ -401,11 +375,7 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
           ),
           Text(
             _formatTimeAgo(url),
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
-              fontSize: 10,
-              fontFamily: 'Fira Code',
-            ),
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10, fontFamily: 'Fira Code'),
           ),
         ],
       ),
@@ -417,12 +387,7 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
       children: [
         const Text(
           'Submit Your Reply',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontFamily: 'Fira Code',
-            fontWeight: FontWeight.w500,
-          ),
+          style: TextStyle(color: Colors.white, fontSize: 14, fontFamily: 'Fira Code', fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 12),
         GestureDetector(

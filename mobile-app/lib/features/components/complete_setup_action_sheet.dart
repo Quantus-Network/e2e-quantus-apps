@@ -67,10 +67,7 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
 
     try {
       final optInStatus = ref.read(optInPositionProvider);
-      final isAlreadyOptedIn = optInStatus.maybeWhen(
-        data: (position) => position.position > 0,
-        orElse: () => false,
-      );
+      final isAlreadyOptedIn = optInStatus.maybeWhen(data: (position) => position.position > 0, orElse: () => false);
 
       if (!isAlreadyOptedIn) {
         await _taskmasterService.optInRewardProgram();
@@ -89,18 +86,12 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
       ref.invalidate(optInPositionProvider);
 
       if (mounted) {
-        context.showSuccessSnackbar(
-          title: 'Success',
-          message: 'Accounts linked successfully!',
-        );
+        context.showSuccessSnackbar(title: 'Success', message: 'Accounts linked successfully!');
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        context.showErrorSnackbar(
-          title: 'Error',
-          message: e.toString(),
-        );
+        context.showErrorSnackbar(title: 'Error', message: e.toString());
       }
     } finally {
       if (mounted) {
@@ -118,27 +109,13 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
     });
 
     return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.9,
-      ),
-      padding: EdgeInsets.only(
-        left: 26,
-        right: 26,
-        top: 40,
-        bottom: 40 + MediaQuery.of(context).viewInsets.bottom,
-      ),
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
+      padding: EdgeInsets.only(left: 26, right: 26, top: 40, bottom: 40 + MediaQuery.of(context).viewInsets.bottom),
       decoration: const ShapeDecoration(
         color: Color(0xFF0C1014),
         shape: RoundedRectangleBorder(
-          side: BorderSide(
-            width: 1,
-            strokeAlign: BorderSide.strokeAlignOutside,
-            color: Color(0x66F4F6F9),
-          ),
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
+          side: BorderSide(width: 1, strokeAlign: BorderSide.strokeAlignOutside, color: Color(0x66F4F6F9)),
+          borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
         ),
       ),
       child: SingleChildScrollView(
@@ -199,7 +176,7 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
           ),
           const SizedBox(width: 18),
           // Close button
-           GestureDetector(
+          GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Icon(Icons.close, color: context.themeColors.textPrimary, size: 24),
           ),
@@ -208,22 +185,14 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
     );
   }
 
-  void _showUnlinkConfirmation({
-    required String title,
-    required Future<void> Function() onConfirm,
-  }) {
+  void _showUnlinkConfirmation({required String title, required Future<void> Function() onConfirm}) {
     showModalBottomSheet(
       context: context,
       isDismissible: true,
       backgroundColor: const Color(0xFF0C1014),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (sheetContext) => _UnlinkConfirmationSheet(
-        title: title,
-        onConfirm: onConfirm,
-        dangerColor: context.themeColors.buttonDanger,
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (sheetContext) =>
+          _UnlinkConfirmationSheet(title: title, onConfirm: onConfirm, dangerColor: context.themeColors.buttonDanger),
     );
   }
 
@@ -260,10 +229,7 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
           controller: _ethAddressController,
           hintText: 'Enter ETH Address',
           canUnlink: _originalEthAddress != null,
-          onUnlink: () => _showUnlinkConfirmation(
-            title: 'ETH Address',
-            onConfirm: _handleUnlinkEth,
-          ),
+          onUnlink: () => _showUnlinkConfirmation(title: 'ETH Address', onConfirm: _handleUnlinkEth),
         ),
         const SizedBox(height: 32),
         _buildInputSection(
@@ -271,10 +237,7 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
           controller: _xHandleController,
           hintText: 'Enter username',
           canUnlink: _originalXUsername != null,
-          onUnlink: () => _showUnlinkConfirmation(
-            title: 'X Account',
-            onConfirm: _handleUnlinkX,
-          ),
+          onUnlink: () => _showUnlinkConfirmation(title: 'X Account', onConfirm: _handleUnlinkX),
         ),
         const SizedBox(height: 32),
         _buildBioSection(),
@@ -315,10 +278,7 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
             decoration: ShapeDecoration(
               color: const Color(0x0AF4F6F9),
               shape: RoundedRectangleBorder(
-                side: const BorderSide(
-                  width: 1,
-                  color: Color(0x19F4F6F9),
-                ),
+                side: const BorderSide(width: 1, color: Color(0x19F4F6F9)),
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -349,11 +309,7 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
                 if (canUnlink)
                   GestureDetector(
                     onTap: onUnlink,
-                    child: Icon(
-                      Icons.close,
-                      size: 18,
-                      color: context.themeColors.buttonDanger,
-                    ),
+                    child: Icon(Icons.close, size: 18, color: context.themeColors.buttonDanger),
                   ),
               ],
             ),
@@ -413,10 +369,7 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
             decoration: ShapeDecoration(
               color: const Color(0x0AF4F6F9),
               shape: RoundedRectangleBorder(
-                side: const BorderSide(
-                  width: 1,
-                  color: Color(0x19F4F6F9),
-                ),
+                side: const BorderSide(width: 1, color: Color(0x19F4F6F9)),
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -464,10 +417,7 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
               colors: [Color(0x7F0000FF), Color(0x19ED4CCE), Color(0x7FFFE91F)],
             ),
             shape: RoundedRectangleBorder(
-              side: const BorderSide(
-                width: 1,
-                color: Color(0x33F4F6F9),
-              ),
+              side: const BorderSide(width: 1, color: Color(0x33F4F6F9)),
               borderRadius: BorderRadius.circular(42),
             ),
           ),
@@ -476,10 +426,7 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
                 ? SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(
-                      color: context.themeColors.textPrimary,
-                      strokeWidth: 2,
-                    ),
+                    child: CircularProgressIndicator(color: context.themeColors.textPrimary, strokeWidth: 2),
                   )
                 : const Text(
                     'Link Accounts',
@@ -502,11 +449,7 @@ class _UnlinkConfirmationSheet extends StatefulWidget {
   final Future<void> Function() onConfirm;
   final Color dangerColor;
 
-  const _UnlinkConfirmationSheet({
-    required this.title,
-    required this.onConfirm,
-    required this.dangerColor,
-  });
+  const _UnlinkConfirmationSheet({required this.title, required this.onConfirm, required this.dangerColor});
 
   @override
   State<_UnlinkConfirmationSheet> createState() => _UnlinkConfirmationSheetState();
@@ -523,9 +466,9 @@ class _UnlinkConfirmationSheetState extends State<_UnlinkConfirmationSheet> {
     } catch (e) {
       if (mounted) {
         setState(() => _isUnlinking = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: widget.dangerColor),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: widget.dangerColor));
       }
     }
   }
@@ -550,11 +493,7 @@ class _UnlinkConfirmationSheetState extends State<_UnlinkConfirmationSheet> {
             const SizedBox(height: 8),
             Text(
               'Are you sure you want to unlink your ${widget.title}?',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5),
-                fontSize: 14,
-                fontFamily: 'Inter',
-              ),
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 14, fontFamily: 'Inter'),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),

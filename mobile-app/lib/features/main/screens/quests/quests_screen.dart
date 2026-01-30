@@ -81,11 +81,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Image.asset(
-              'assets/quests/quests_top_logo.png',
-              height: 24,
-              fit: BoxFit.contain,
-            ),
+            Image.asset('assets/quests/quests_top_logo.png', height: 24, fit: BoxFit.contain),
             GestureDetector(
               onTap: () => showCompleteSetupActionSheet(context),
               child: Container(
@@ -94,18 +90,12 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
                   color: context.themeColors.settingCard,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                 ),
-                child: Text(
-                  hasEthAddress ? 'Setup' : 'Complete Setup',
-                  style: context.themeText.smallParagraph,
-                ),
+                child: Text(hasEthAddress ? 'Setup' : 'Complete Setup', style: context.themeText.smallParagraph),
               ),
             ),
           ],
         ),
-        if (showTooltip) ...[
-          const SizedBox(height: 8),
-          _buildSetupTooltip(),
-        ],
+        if (showTooltip) ...[const SizedBox(height: 8), _buildSetupTooltip()],
       ],
     );
   }
@@ -154,10 +144,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
           isDisabled: !hasEthAddress,
           onDisabledTap: () => showCompleteSetupActionSheet(context),
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const ReferralsQuestScreen()),
-            );
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const ReferralsQuestScreen()));
           },
         ),
         const SizedBox(height: 40),
@@ -165,10 +152,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
           isDisabled: !hasXUsername,
           onDisabledTap: () => showCompleteSetupActionSheet(context),
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const KingOfTheShillScreen()),
-            );
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const KingOfTheShillScreen()));
           },
         ),
       ],
