@@ -107,7 +107,7 @@ class _NavbarState extends ConsumerState<Navbar> {
     NavItem('assets/navbar/history_icon_off.svg', 'assets/navbar/history_icon_on.svg', 'History'),
     NavItem('assets/navbar/floating_button.svg', 'assets/navbar/floating_button.svg', 'Send'),
     NavItem('assets/navbar/settings_icon_off.svg', 'assets/navbar/settings_icon_on.svg', 'Settings'),
-    NavItem('assets/navbar/qcat_navbar_icon.png', 'assets/navbar/qcat_navbar_icon.png', 'Quests'),
+    NavItem('assets/navbar/lightning_icon_off.svg', 'assets/navbar/lightning_icon_on.svg', 'Quests'),
   ];
 
   @override
