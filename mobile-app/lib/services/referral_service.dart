@@ -151,7 +151,7 @@ class ReferralService {
 
     String link = generateReferralLink(referralCode);
     String message =
-        "Most L1s aren't ready for quantum threats. This one is.\nI'm on the @QuantusNetwork testnet stacking early points for rewards.\nUse my referral link so we both earn points: $referralCode\n\nDownload the wallet & get in early\n$link";
+        "Most L1s aren't ready for quantum threats. This one is.\nI'm on the @QuantusNetwork testnet stacking early points for rewards.\nUse my referral link so we both earn points:\n$referralCode\n\nDownload the wallet & get in early\n\n$link";
 
     return ShareParams(
       text: message,
