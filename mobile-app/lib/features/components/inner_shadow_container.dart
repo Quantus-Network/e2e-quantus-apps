@@ -12,12 +12,20 @@ class InnerShadowContainer extends StatelessWidget {
     this.borderRadius = BorderRadius.zero,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      foregroundPainter: _InnerShadowPainter(shadows, borderRadius),
+  factory InnerShadowContainer.standard({required Widget child}) {
+    return InnerShadowContainer(
+      shadows: const [
+        BoxShadow(color: Color(0x19FFFFFF), offset: Offset(-2, -2), blurRadius: 12, spreadRadius: 2),
+        BoxShadow(color: Color(0x19FFFFFF), offset: Offset(2, 2), blurRadius: 12, spreadRadius: 2),
+      ],
+      borderRadius: BorderRadius.circular(4),
       child: child,
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(foregroundPainter: _InnerShadowPainter(shadows, borderRadius), child: child);
   }
 }
 
@@ -40,12 +48,12 @@ class _InnerShadowPainter extends CustomPainter {
         ..maskFilter = MaskFilter.blur(BlurStyle.normal, shadow.blurSigma);
 
       final outerRect = rect.inflate(shadow.blurRadius + shadow.spreadRadius + 20);
-      
+
       final path = Path()
         ..fillType = PathFillType.evenOdd
         ..addRect(outerRect)
         ..addRRect(rrect.shift(-shadow.offset));
-      
+
       canvas.drawPath(path, paint);
     }
   }
