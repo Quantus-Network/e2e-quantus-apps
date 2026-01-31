@@ -49,7 +49,7 @@ class MinerProcess {
   final int cpuWorkers;
   final int gpuDevices;
 
-  final int externalMinerPort;
+  final int minerListenPort;
   final int detectedGpuCount;
 
   // Track metrics state to prevent premature hashrate reset
@@ -88,7 +88,7 @@ class MinerProcess {
     this.cpuWorkers = 8,
     this.gpuDevices = 0,
     this.detectedGpuCount = 0,
-    this.externalMinerPort = 9833,
+    this.minerListenPort = 9833,
   }) {
     // Initialize services
     _statsService = MiningStatsService();
@@ -98,7 +98,6 @@ class MinerProcess {
 
     // Initialize external miner API client with metrics endpoint
     _externalMinerApiClient = ExternalMinerApiClient(
-      baseUrl: 'http://127.0.0.1:$externalMinerPort',
       metricsUrl: 'http://127.0.0.1:9900/metrics', // Standard metrics port
     );
 
@@ -124,6 +123,7 @@ class MinerProcess {
   Future<void> start() async {
     // First, ensure both binaries are available
     await BinaryManager.ensureNodeBinary();
+    await BinaryManager.ensureExternalMinerBinary();
 
     // Cleanup any existing processes first
     await _cleanupExistingNodeProcesses();
@@ -138,107 +138,7 @@ class MinerProcess {
     // Check if ports are available and cleanup if needed
     await _ensurePortsAvailable();
 
-    final externalMinerBinPath =
-        await BinaryManager.getExternalMinerBinaryFilePath();
-
-    await BinaryManager.ensureExternalMinerBinary();
-    final externalMinerBin = File(externalMinerBinPath);
-
-    if (!await externalMinerBin.exists()) {
-      throw Exception(
-        'External miner binary not found at $externalMinerBinPath',
-      );
-    }
-
-    // Start the external miner first with metrics enabled
-
-    final minerArgs = [
-      'serve',
-      '--port',
-      externalMinerPort.toString(),
-      '--cpu-workers',
-      cpuWorkers.toString(),
-      '--gpu-devices',
-      gpuDevices.toString(),
-      '--metrics-port',
-      await _getMetricsPort().then((port) => port.toString()),
-    ];
-
-    try {
-      _externalMinerProcess = await Process.start(
-        externalMinerBin.path,
-        minerArgs,
-      );
-    } catch (e) {
-      throw Exception('Failed to start external miner: $e');
-    }
-
-    // Set up external miner log handling
-    _externalMinerProcess!.stdout
-        .transform(utf8.decoder)
-        .transform(const LineSplitter())
-        .listen((line) {
-          final logEntry = LogEntry(
-            message: line,
-            timestamp: DateTime.now(),
-            source: 'quantus-miner',
-          );
-          _logsController.add(logEntry);
-          print('[ext-miner] $line');
-        });
-
-    _externalMinerProcess!.stderr
-        .transform(utf8.decoder)
-        .transform(const LineSplitter())
-        .listen((line) {
-          final logEntry = LogEntry(
-            message: line,
-            timestamp: DateTime.now(),
-            source: line.isMinerError ? 'quantus-miner-error' : 'quantus-miner',
-          );
-          _logsController.add(logEntry);
-          print('[ext-miner-err] $line');
-        });
-
-    // Monitor external miner process exit
-    _externalMinerProcess!.exitCode.then((exitCode) {
-      if (exitCode != 0) {
-        print('External miner process exited with code: $exitCode');
-      }
-    });
-
-    // Give the external miner a moment to start up
-    await Future.delayed(const Duration(seconds: 3));
-
-    // Check if external miner process is still alive
-    bool minerStillRunning = true;
-    try {
-      // Check if the process has exited by looking at its PID
-      final pid = _externalMinerProcess!.pid;
-      minerStillRunning = await _isProcessRunning(pid);
-    } catch (e) {
-      minerStillRunning = false;
-    }
-
-    if (!minerStillRunning) {
-      throw Exception('External miner process died during startup');
-    }
-
-    // Test if external miner is responding on the port
-    try {
-      final testClient = HttpClient();
-      testClient.connectionTimeout = const Duration(seconds: 5);
-      final request = await testClient.getUrl(
-        Uri.parse('http://127.0.0.1:$externalMinerPort'),
-      );
-      final response = await request.close();
-      await response.drain(); // Consume the response
-      testClient.close();
-    } catch (e) {
-      // External miner might still be starting up
-    }
-
-    // Now start the node process
+    // === START NODE FIRST (QUIC server) ===
     final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
     final basePath = p.join(quantusHome, 'node_data');
     await Directory(basePath).create(recursive: true);
@@ -292,8 +192,8 @@ class MinerProcess {
       'listen-addr=127.0.0.1:9933,methods=unsafe,cors=all',
       '--name',
       'QuantusMinerGUI',
-      '--external-miner-url',
-      'http://127.0.0.1:$externalMinerPort',
+      '--miner-listen-port',
+      minerListenPort.toString(),
       '--enable-peer-sharing',
     ];
 
@@ -303,39 +203,9 @@ class MinerProcess {
     _nodeProcess = await Process.start(bin.path, args);
     _stdoutFilter = LogFilterService();
     _stderrFilter = LogFilterService();
-    // Services are now initialized in constructor
 
     _stdoutFilter.reset();
     _stderrFilter.reset();
-
-    Future<void> syncBlockTargetWithPrometheusMetrics() async {
-      try {
-        final metrics = await _prometheusService.fetchMetrics();
-        if (metrics == null || metrics.targetBlock == null) return;
-        if (_statsService.currentStats.targetBlock >= metrics.targetBlock!) {
-          return;
-        }
-
-        _statsService.updateTargetBlock(metrics.targetBlock!);
-
-        onStatsUpdate?.call(_statsService.currentStats);
-      } catch (e) {
-        print('Failed to fetch target block height: $e');
-      }
-    }
-
-    // Start Prometheus polling for target block (every 3 seconds)
-    _syncStatusTimer?.cancel();
-    _syncStatusTimer = Timer.periodic(
-      const Duration(seconds: 3),
-      (timer) => syncBlockTargetWithPrometheusMetrics(),
-    );
-
-    // Start external miner API polling (every second)
-    _externalMinerApiClient.startPolling();
-
-    // Wait for node to be ready before starting RPC polling
-    _waitForNodeReadyThenStartRpc();
 
     // Process each log line
     void processLogLine(String line, String streamType) {
@@ -385,6 +255,119 @@ class MinerProcess {
         .listen((line) {
           processLogLine(line, 'stderr');
         });
+
+    Future<void> syncBlockTargetWithPrometheusMetrics() async {
+      try {
+        final metrics = await _prometheusService.fetchMetrics();
+        if (metrics == null || metrics.targetBlock == null) return;
+        if (_statsService.currentStats.targetBlock >= metrics.targetBlock!) {
+          return;
+        }
+
+        _statsService.updateTargetBlock(metrics.targetBlock!);
+
+        onStatsUpdate?.call(_statsService.currentStats);
+      } catch (e) {
+        print('Failed to fetch target block height: $e');
+      }
+    }
+
+    // Start Prometheus polling for target block (every 3 seconds)
+    _syncStatusTimer?.cancel();
+    _syncStatusTimer = Timer.periodic(
+      const Duration(seconds: 3),
+      (timer) => syncBlockTargetWithPrometheusMetrics(),
+    );
+
+    // Wait for node RPC to be ready before starting miner
+    await _waitForNodeRpcReady();
+
+    // === START MINER (QUIC client connects to node) ===
+    final externalMinerBinPath =
+        await BinaryManager.getExternalMinerBinaryFilePath();
+    final externalMinerBin = File(externalMinerBinPath);
+
+    if (!await externalMinerBin.exists()) {
+      throw Exception(
+        'External miner binary not found at $externalMinerBinPath',
+      );
+    }
+
+    final minerArgs = [
+      '--node-addr',
+      '127.0.0.1:$minerListenPort',
+      '--cpu-workers',
+      cpuWorkers.toString(),
+      '--gpu-devices',
+      gpuDevices.toString(),
+      '--metrics-port',
+      await _getMetricsPort().then((port) => port.toString()),
+    ];
+
+    try {
+      _externalMinerProcess = await Process.start(
+        externalMinerBin.path,
+        minerArgs,
+      );
+    } catch (e) {
+      throw Exception('Failed to start external miner: $e');
+    }
+
+    // Set up external miner log handling
+    _externalMinerProcess!.stdout
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen((line) {
+          final logEntry = LogEntry(
+            message: line,
+            timestamp: DateTime.now(),
+            source: 'quantus-miner',
+          );
+          _logsController.add(logEntry);
+          print('[ext-miner] $line');
+        });
+
+    _externalMinerProcess!.stderr
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen((line) {
+          final logEntry = LogEntry(
+            message: line,
+            timestamp: DateTime.now(),
+            source: line.isMinerError ? 'quantus-miner-error' : 'quantus-miner',
+          );
+          _logsController.add(logEntry);
+          print('[ext-miner-err] $line');
+        });
+
+    // Monitor external miner process exit
+    _externalMinerProcess!.exitCode.then((exitCode) {
+      if (exitCode != 0) {
+        print('External miner process exited with code: $exitCode');
+      }
+    });
+
+    // Give the external miner a moment to start up and connect
+    await Future.delayed(const Duration(seconds: 2));
+
+    // Check if external miner process is still alive
+    bool minerStillRunning = true;
+    try {
+      final pid = _externalMinerProcess!.pid;
+      minerStillRunning = await _isProcessRunning(pid);
+    } catch (e) {
+      minerStillRunning = false;
+    }
+
+    if (!minerStillRunning) {
+      throw Exception('External miner process died during startup');
+    }
+
+    // Start external miner API polling (every second)
+    _externalMinerApiClient.startPolling();
+
+    // Start RPC polling now that everything is ready
+    _chainRpcClient.startPolling();
   }
 
   void stop() {
@@ -672,14 +655,14 @@ class MinerProcess {
 
   /// Check if required ports are available and cleanup if needed
   Future<void> _ensurePortsAvailable() async {
-    // Check if external miner port (9833) is in use
-    if (await _isPortInUse(externalMinerPort)) {
-      await _killProcessOnPort(externalMinerPort);
+    // Check if node QUIC port (9833) is in use
+    if (await _isPortInUse(minerListenPort)) {
+      await _killProcessOnPort(minerListenPort);
       await Future.delayed(const Duration(seconds: 1));
 
-      if (await _isPortInUse(externalMinerPort)) {
+      if (await _isPortInUse(minerListenPort)) {
         throw Exception(
-          'Port $externalMinerPort is still in use after cleanup attempt',
+          'Port $minerListenPort is still in use after cleanup attempt',
         );
       }
     }
@@ -694,7 +677,6 @@ class MinerProcess {
         if (altMetricsPort != 9900) {
           // Update the metrics URL for the API client
           _externalMinerApiClient = ExternalMinerApiClient(
-            baseUrl: 'http://127.0.0.1:$externalMinerPort',
             metricsUrl: 'http://127.0.0.1:$altMetricsPort/metrics',
           );
           _externalMinerApiClient.onMetricsUpdate = _handleExternalMinerMetrics;
@@ -934,22 +916,21 @@ class MinerProcess {
     }
   }
 
-  /// Handle chain RPC information updates
-  /// Wait for the node RPC to be ready, then start polling
-  Future<void> _waitForNodeReadyThenStartRpc() async {
-    print('DEBUG: Waiting for node RPC to be ready...');
+  /// Wait for the node RPC to be ready (blocking)
+  /// Used to ensure node is ready before starting miner
+  Future<void> _waitForNodeRpcReady() async {
+    print('DEBUG: Waiting for node RPC to be ready before starting miner...');
 
     // Try to connect to RPC endpoint with exponential backoff
     int attempts = 0;
-    const maxAttempts = 20; // Up to ~2 minutes of retries
+    const maxAttempts = 30; // Up to ~3 minutes of retries
     Duration delay = const Duration(seconds: 2);
 
     while (attempts < maxAttempts) {
       try {
         final isReady = await _chainRpcClient.isReachable();
         if (isReady) {
-          print('DEBUG: Node RPC is ready! Starting chain RPC polling...');
-          _chainRpcClient.startPolling();
+          print('DEBUG: Node RPC is ready! Proceeding to start miner...');
           return;
         }
       } catch (e) {
@@ -970,10 +951,8 @@ class MinerProcess {
     }
 
     print(
-      'DEBUG: Failed to connect to node RPC after $maxAttempts attempts. Will retry with polling...',
+      'WARNING: Node RPC not ready after $maxAttempts attempts, proceeding to start miner anyway...',
     );
-    // Start polling anyway - the error handling in RPC client will manage failures
-    _chainRpcClient.startPolling();
   }
 
   void _handleChainInfoUpdate(ChainInfo info) {
