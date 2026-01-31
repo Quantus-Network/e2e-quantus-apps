@@ -51,6 +51,7 @@ class MinerProcess {
 
   final int minerListenPort;
   final int detectedGpuCount;
+  final String chainId;
 
   // Track metrics state to prevent premature hashrate reset
   double _lastValidHashrate = 0.0;
@@ -89,6 +90,7 @@ class MinerProcess {
     this.gpuDevices = 0,
     this.detectedGpuCount = 0,
     this.minerListenPort = 9833,
+    this.chainId = 'dev',
   }) {
     // Initialize services
     _statsService = MiningStatsService();
@@ -182,8 +184,8 @@ class MinerProcess {
       '--rewards-address',
       rewardsAddress,
       '--validator',
-      '--chain',
-      'dirac',
+      // Use --dev for local development, --chain for testnet/mainnet
+      if (chainId == 'dev') '--dev' else ...['--chain', chainId],
       '--port',
       '30333',
       '--prometheus-port',
@@ -859,7 +861,8 @@ class MinerProcess {
     try {
       // Get the quantus home directory path
       final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
-      final lockFilePath = '$quantusHome/node_data/chains/dirac/db/full/LOCK';
+      final lockFilePath =
+          '$quantusHome/node_data/chains/$chainId/db/full/LOCK';
       final lockFile = File(lockFilePath);
 
       if (await lockFile.exists()) {
@@ -869,7 +872,7 @@ class MinerProcess {
       }
 
       // Also check for other potential lock files
-      final dbDir = Directory('$quantusHome/node_data/chains/dirac/db/full');
+      final dbDir = Directory('$quantusHome/node_data/chains/$chainId/db/full');
       if (await dbDir.exists()) {
         await for (final entity in dbDir.list()) {
           if (entity is File && entity.path.contains('LOCK')) {
@@ -890,7 +893,7 @@ class MinerProcess {
   Future<void> _ensureDatabaseDirectoryAccess() async {
     try {
       final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
-      final dbPath = '$quantusHome/node_data/chains/dirac/db';
+      final dbPath = '$quantusHome/node_data/chains/$chainId/db';
       final dbDir = Directory(dbPath);
 
       // Create the directory if it doesn't exist
