@@ -2,6 +2,9 @@ import 'dart:io';
 
 import 'package:quantus_miner/src/config/miner_config.dart';
 import 'package:quantus_miner/src/services/binary_manager.dart';
+import 'package:quantus_miner/src/utils/app_logger.dart';
+
+final _log = log.withTag('ProcessCleanup');
 
 /// Service responsible for platform-specific process management operations.
 ///
@@ -43,7 +46,7 @@ class ProcessCleanupService {
   /// Returns true if the process was successfully killed or was already dead.
   static Future<bool> forceKillProcess(int pid, String processName) async {
     try {
-      print('ProcessCleanupService: Force killing $processName (PID: $pid)');
+      _log.d(' Force killing $processName (PID: $pid)');
 
       if (Platform.isWindows) {
         return await _forceKillWindowsProcess(pid, processName);
@@ -51,9 +54,7 @@ class ProcessCleanupService {
         return await _forceKillUnixProcess(pid, processName);
       }
     } catch (e) {
-      print(
-        'ProcessCleanupService: Error in forceKillProcess for $processName: $e',
-      );
+      _log.e('Error killing $processName', error: e);
       return false;
     }
   }
@@ -69,12 +70,10 @@ class ProcessCleanupService {
     ]);
 
     if (killResult.exitCode == 0) {
-      print(
-        'ProcessCleanupService: Successfully force killed $processName (PID: $pid)',
-      );
+      _log.d('Killed $processName (PID: $pid)');
     } else {
-      print(
-        'ProcessCleanupService: taskkill failed for $processName (PID: $pid), exit code: ${killResult.exitCode}',
+      _log.w(
+        'taskkill failed for $processName (PID: $pid), exit: ${killResult.exitCode}',
       );
     }
 
@@ -83,9 +82,7 @@ class ProcessCleanupService {
     // Verify process is dead
     final checkResult = await Process.run('tasklist', ['/FI', 'PID eq $pid']);
     if (checkResult.stdout.toString().contains(' $pid ')) {
-      print(
-        'ProcessCleanupService: WARNING - $processName (PID: $pid) may still be running',
-      );
+      _log.w('$processName (PID: $pid) may still be running');
 
       // Try by name as last resort
       final binaryName = processName.contains('miner')
@@ -95,9 +92,7 @@ class ProcessCleanupService {
       return false;
     }
 
-    print(
-      'ProcessCleanupService: Verified $processName (PID: $pid) is terminated',
-    );
+    _log.d('Verified $processName (PID: $pid) terminated');
     return true;
   }
 
@@ -106,12 +101,10 @@ class ProcessCleanupService {
     final killResult = await Process.run('kill', ['-9', pid.toString()]);
 
     if (killResult.exitCode == 0) {
-      print(
-        'ProcessCleanupService: Successfully force killed $processName (PID: $pid)',
-      );
+      _log.d('Killed $processName (PID: $pid)');
     } else {
-      print(
-        'ProcessCleanupService: kill command failed for $processName (PID: $pid), exit code: ${killResult.exitCode}',
+      _log.w(
+        'kill failed for $processName (PID: $pid), exit: ${killResult.exitCode}',
       );
     }
 
@@ -120,9 +113,7 @@ class ProcessCleanupService {
     // Verify process is dead
     final checkResult = await Process.run('kill', ['-0', pid.toString()]);
     if (checkResult.exitCode == 0) {
-      print(
-        'ProcessCleanupService: WARNING - $processName (PID: $pid) may still be running',
-      );
+      _log.w('$processName (PID: $pid) may still be running');
 
       // Try pkill as last resort
       final binaryName = processName.contains('miner')
@@ -132,9 +123,7 @@ class ProcessCleanupService {
       return false;
     }
 
-    print(
-      'ProcessCleanupService: Verified $processName (PID: $pid) is terminated',
-    );
+    _log.d('Verified $processName (PID: $pid) terminated');
     return true;
   }
 
@@ -172,9 +161,7 @@ class ProcessCleanupService {
         final result = await Process.run('netstat', ['-an']);
         return result.stdout.toString().contains(':$port');
       } catch (e2) {
-        print(
-          'ProcessCleanupService: Could not check port $port availability: $e2',
-        );
+        _log.d('Could not check port $port availability');
         return false;
       }
     }
@@ -269,11 +256,7 @@ class ProcessCleanupService {
       if (await isPortInUse(metricsPort)) {
         // Try to find an alternative port
         final altPort = await findAvailablePort(metricsPort + 1);
-        if (altPort != metricsPort + 1) {
-          print(
-            'ProcessCleanupService: Using alternative metrics port: $altPort',
-          );
-        }
+        _log.i('Using alternative metrics port: $altPort');
         result['metrics'] = altPort;
       }
     }
@@ -362,7 +345,7 @@ class ProcessCleanupService {
 
       if (await lockFile.exists()) {
         await lockFile.delete();
-        print('ProcessCleanupService: Deleted lock file: $lockFilePath');
+        _log.d(' Deleted lock file: $lockFilePath');
       }
 
       // Also check for other potential lock files
@@ -372,7 +355,7 @@ class ProcessCleanupService {
           if (entity is File && entity.path.contains('LOCK')) {
             try {
               await entity.delete();
-              print('ProcessCleanupService: Deleted lock file: ${entity.path}');
+              _log.d(' Deleted lock file: ${entity.path}');
             } catch (e) {
               // Ignore cleanup errors
             }
@@ -439,7 +422,7 @@ class ProcessCleanupService {
   /// This is a more aggressive cleanup used during app exit.
   static Future<void> killAllQuantusProcesses() async {
     try {
-      print('ProcessCleanupService: Killing all quantus processes...');
+      _log.d(' Killing all quantus processes...');
 
       if (Platform.isWindows) {
         await Process.run('taskkill', [
@@ -457,9 +440,9 @@ class ProcessCleanupService {
         await Process.run('pkill', ['-9', '-f', MinerConfig.minerBinaryName]);
       }
 
-      print('ProcessCleanupService: Cleanup commands executed');
+      _log.d(' Cleanup commands executed');
     } catch (e) {
-      print('ProcessCleanupService: Error killing processes: $e');
+      _log.d(' Error killing processes: $e');
     }
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:http/http.dart' as http;
+import 'package:quantus_miner/src/config/miner_config.dart';
 
 class ExternalMinerMetrics {
   final double hashRate;
@@ -41,7 +42,9 @@ class ExternalMinerApiClient {
   ExternalMinerApiClient({
     String? metricsUrl,
     this.timeout = const Duration(seconds: 5),
-  }) : metricsUrl = metricsUrl ?? 'http://127.0.0.1:9900/metrics',
+  }) : metricsUrl =
+           metricsUrl ??
+           MinerConfig.minerMetricsUrl(MinerConfig.defaultMinerMetricsPort),
        _httpClient = http.Client();
 
   /// Start polling for metrics every second

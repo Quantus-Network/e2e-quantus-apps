@@ -7,12 +7,15 @@ import 'package:quantus_miner/src/config/miner_config.dart';
 import 'package:quantus_miner/src/services/process_cleanup_service.dart';
 import 'package:quantus_miner/src/services/prometheus_service.dart';
 import 'package:quantus_miner/src/shared/extensions/log_string_extension.dart';
+import 'package:quantus_miner/src/utils/app_logger.dart';
 
 import './binary_manager.dart';
 import './chain_rpc_client.dart';
 import './external_miner_api_client.dart';
 import './log_filter_service.dart';
 import './mining_stats_service.dart';
+
+final _log = log.withTag('MinerProcess');
 
 class LogEntry {
   final String message;
@@ -146,13 +149,11 @@ class MinerProcess {
     final nodeKeyFileFromFileSystem = await BinaryManager.getNodeKeyFile();
     if (await nodeKeyFileFromFileSystem.exists()) {
       final stat = await nodeKeyFileFromFileSystem.stat();
-      print(
-        'DEBUG: nodeKeyFileFromFileSystem (${nodeKeyFileFromFileSystem.path}) exists (size: ${stat.size} bytes)',
+      _log.d(
+        'Node key file exists (${nodeKeyFileFromFileSystem.path}), size: ${stat.size} bytes',
       );
     } else {
-      print(
-        'DEBUG: nodeKeyFileFromFileSystem (${nodeKeyFileFromFileSystem.path}) does not exist.',
-      );
+      _log.d('Node key file does not exist: ${nodeKeyFileFromFileSystem.path}');
     }
 
     if (!await identityPath.exists()) {
@@ -167,7 +168,7 @@ class MinerProcess {
       }
       rewardsAddress = await rewardsPath.readAsString();
       rewardsAddress = rewardsAddress.trim(); // Remove any whitespace/newlines
-      print('DEBUG: Read rewards address from file: $rewardsAddress');
+      _log.d('Read rewards address: $rewardsAddress');
     } catch (e) {
       throw Exception(
         'Failed to read rewards address from file ${rewardsPath.path}: $e',
@@ -197,8 +198,7 @@ class MinerProcess {
       '--enable-peer-sharing',
     ];
 
-    print('DEBUG: Executing command:\n ${bin.path} ${args.join(' ')}');
-    print('DEBUG: Args: ${args.join('\n')}');
+    _log.d('Executing: ${bin.path} ${args.join(' ')}');
 
     _nodeProcess = await Process.start(bin.path, args);
     _stdoutFilter = LogFilterService();
@@ -238,7 +238,11 @@ class MinerProcess {
           source: source,
         );
         _logsController.add(logEntry);
-        print(source == 'node' ? '[node] $line' : '[node-error] $line');
+        if (source == 'node-error') {
+          _log.w('[node] $line');
+        } else {
+          _log.d('[node] $line');
+        }
       }
     }
 
@@ -268,7 +272,7 @@ class MinerProcess {
 
         onStatsUpdate?.call(_statsService.currentStats);
       } catch (e) {
-        print('Failed to fetch target block height: $e');
+        _log.w('Failed to fetch target block height', error: e);
       }
     }
 
@@ -324,7 +328,7 @@ class MinerProcess {
             source: 'quantus-miner',
           );
           _logsController.add(logEntry);
-          print('[ext-miner] $line');
+          _log.d('[miner] $line');
         });
 
     _externalMinerProcess!.stderr
@@ -337,13 +341,17 @@ class MinerProcess {
             source: line.isMinerError ? 'quantus-miner-error' : 'quantus-miner',
           );
           _logsController.add(logEntry);
-          print('[ext-miner-err] $line');
+          if (line.isMinerError) {
+            _log.w('[miner] $line');
+          } else {
+            _log.d('[miner] $line');
+          }
         });
 
     // Monitor external miner process exit
     _externalMinerProcess!.exitCode.then((exitCode) {
       if (exitCode != 0) {
-        print('External miner process exited with code: $exitCode');
+        _log.w('External miner exited with code: $exitCode');
       }
     });
 
@@ -371,7 +379,7 @@ class MinerProcess {
   }
 
   void stop() {
-    print('MinerProcess: stop() called. Killing processes.');
+    _log.i('Stopping mining processes...');
     _syncStatusTimer?.cancel();
     _externalMinerApiClient.stopPolling();
     _chainRpcClient.stopPolling();
@@ -379,70 +387,62 @@ class MinerProcess {
     // Kill external miner process first
     if (_externalMinerProcess != null) {
       try {
-        print(
-          'MinerProcess: Attempting to kill external miner process (PID: ${_externalMinerProcess!.pid})',
-        );
+        _log.d('Killing external miner (PID: ${_externalMinerProcess!.pid})');
 
         // Try graceful termination first
         _externalMinerProcess!.kill(ProcessSignal.sigterm);
 
         // Wait briefly for graceful shutdown
-        Future.delayed(const Duration(seconds: 2)).then((_) async {
+        Future.delayed(MinerConfig.gracefulShutdownTimeout).then((_) async {
           // Check if process is still running and force kill if necessary
           try {
             if (await _isProcessRunning(_externalMinerProcess!.pid)) {
-              print(
-                'MinerProcess: External miner still running, force killing...',
-              );
+              _log.d('External miner still running, force killing...');
               _externalMinerProcess!.kill(ProcessSignal.sigkill);
             }
           } catch (e) {
             // Process is already dead, which is what we want
-            print('MinerProcess: External miner process already terminated');
+            _log.d('External miner already terminated');
           }
         });
       } catch (e) {
-        print('MinerProcess: Error killing external miner process: $e');
+        _log.e('Error killing external miner', error: e);
         // Try force kill as backup
         try {
           _externalMinerProcess!.kill(ProcessSignal.sigkill);
         } catch (e2) {
-          print(
-            'MinerProcess: Error force killing external miner process: $e2',
-          );
+          _log.e('Error force killing external miner', error: e2);
         }
       }
     }
 
     // Kill node process
     try {
-      print(
-        'MinerProcess: Attempting to kill node process (PID: ${_nodeProcess.pid})',
-      );
+      _log.d('Killing node process (PID: ${_nodeProcess.pid})');
 
       // Try graceful termination first
       _nodeProcess.kill(ProcessSignal.sigterm);
 
       // Wait briefly for graceful shutdown
-      Future.delayed(const Duration(seconds: 2)).then((_) async {
+      Future.delayed(MinerConfig.gracefulShutdownTimeout).then((_) async {
         // Check if process is still running and force kill if necessary
         try {
           if (await _isProcessRunning(_nodeProcess.pid)) {
-            print('MinerProcess: Node process still running, force killing...');
+            _log.d('Node still running, force killing...');
             _nodeProcess.kill(ProcessSignal.sigkill);
           }
         } catch (e) {
           // Process is already dead, which is what we want
-          print('MinerProcess: Node process already terminated');
+          _log.d('Node already terminated');
         }
       });
     } catch (e) {
-      print('MinerProcess: Error killing node process: $e');
+      _log.e('Error killing node process', error: e);
       // Try force kill as backup
       try {
         _nodeProcess.kill(ProcessSignal.sigkill);
       } catch (e2) {
-        print('MinerProcess: Error force killing node process: $e2');
+        _log.e('Error force killing node process', error: e2);
       }
     }
 
@@ -454,7 +454,7 @@ class MinerProcess {
 
   /// Force stop both processes immediately with SIGKILL
   void forceStop() {
-    print('MinerProcess: forceStop() called. Force killing processes.');
+    _log.i('Force stopping all processes...');
     _syncStatusTimer?.cancel();
 
     final List<Future<void>> killFutures = [];
@@ -466,7 +466,7 @@ class MinerProcess {
       try {
         _externalMinerProcess!.kill(ProcessSignal.sigkill);
       } catch (e) {
-        print('MinerProcess: Error force killing external miner process: $e');
+        _log.e('Error force killing external miner', error: e);
       }
       _externalMinerProcess = null;
     }
@@ -477,14 +477,14 @@ class MinerProcess {
       killFutures.add(_forceKillProcess(nodePid, 'node'));
       _nodeProcess.kill(ProcessSignal.sigkill);
     } catch (e) {
-      print('MinerProcess: Error force killing node process: $e');
+      _log.e('Error force killing node', error: e);
     }
 
     // Wait for all kills to complete (with timeout)
     Future.wait(killFutures).timeout(
-      const Duration(seconds: 5),
+      MinerConfig.forceKillTimeout,
       onTimeout: () {
-        print('MinerProcess: Force kill operations timed out');
+        _log.w('Force kill operations timed out');
         return [];
       },
     );
@@ -603,18 +603,17 @@ class MinerProcess {
   /// Wait for the node RPC to be ready (blocking)
   /// Used to ensure node is ready before starting miner
   Future<void> _waitForNodeRpcReady() async {
-    print('DEBUG: Waiting for node RPC to be ready before starting miner...');
+    _log.d('Waiting for node RPC to be ready...');
 
     // Try to connect to RPC endpoint with exponential backoff
     int attempts = 0;
-    const maxAttempts = 30; // Up to ~3 minutes of retries
-    Duration delay = const Duration(seconds: 2);
+    Duration delay = MinerConfig.rpcInitialRetryDelay;
 
-    while (attempts < maxAttempts) {
+    while (attempts < MinerConfig.maxRpcRetries) {
       try {
         final isReady = await _chainRpcClient.isReachable();
         if (isReady) {
-          print('DEBUG: Node RPC is ready! Proceeding to start miner...');
+          _log.i('Node RPC is ready');
           return;
         }
       } catch (e) {
@@ -622,32 +621,32 @@ class MinerProcess {
       }
 
       attempts++;
-      print(
-        'DEBUG: Node RPC not ready yet (attempt $attempts/$maxAttempts), waiting ${delay.inSeconds}s...',
+      _log.d(
+        'Node RPC not ready (attempt $attempts/${MinerConfig.maxRpcRetries}), waiting ${delay.inSeconds}s...',
       );
 
       await Future.delayed(delay);
 
-      // Exponential backoff, but cap at 10 seconds
-      if (delay.inSeconds < 10) {
+      // Exponential backoff, but cap at max retry delay
+      if (delay < MinerConfig.rpcMaxRetryDelay) {
         delay = Duration(seconds: (delay.inSeconds * 1.5).round());
+        if (delay > MinerConfig.rpcMaxRetryDelay) {
+          delay = MinerConfig.rpcMaxRetryDelay;
+        }
       }
     }
 
-    print(
-      'WARNING: Node RPC not ready after $maxAttempts attempts, proceeding to start miner anyway...',
+    _log.w(
+      'Node RPC not ready after ${MinerConfig.maxRpcRetries} attempts, proceeding anyway...',
     );
   }
 
   void _handleChainInfoUpdate(ChainInfo info) {
-    print(
-      'DEBUG: Successfully received chain info - Peers: ${info.peerCount}, Block: ${info.currentBlock}',
-    );
+    _log.d('Chain info: peers=${info.peerCount}, block=${info.currentBlock}');
 
     // Update peer count from RPC (most accurate)
     if (info.peerCount >= 0) {
       _statsService.updatePeerCount(info.peerCount);
-      print('DEBUG: Updated peer count to: ${info.peerCount}');
     }
 
     // Update chain name from RPC
@@ -659,9 +658,6 @@ class MinerProcess {
       info.currentBlock,
       info.targetBlock ?? info.currentBlock,
     );
-    print(
-      'DEBUG: Updated blocks - current: ${info.currentBlock}, target: ${info.targetBlock ?? info.currentBlock}, syncing: ${info.isSyncing}, chain: ${info.chainName}',
-    );
 
     onStatsUpdate?.call(_statsService.currentStats);
   }
@@ -670,7 +666,7 @@ class MinerProcess {
   void _handleChainRpcError(String error) {
     // Only log significant RPC errors, not connection issues during startup
     if (!error.contains('Connection refused') && !error.contains('timeout')) {
-      print('Chain RPC error: $error');
+      _log.w('Chain RPC error: $error');
     }
   }
 

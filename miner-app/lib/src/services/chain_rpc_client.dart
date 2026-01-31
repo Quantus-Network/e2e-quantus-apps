@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:quantus_miner/src/config/miner_config.dart';
 
 class ChainInfo {
   final int peerCount;
@@ -31,10 +32,9 @@ class ChainRpcClient {
   final http.Client _httpClient;
   int _requestId = 1;
 
-  ChainRpcClient({
-    this.rpcUrl = 'http://127.0.0.1:9933',
-    this.timeout = const Duration(seconds: 10),
-  }) : _httpClient = http.Client();
+  ChainRpcClient({String? rpcUrl, this.timeout = const Duration(seconds: 10)})
+    : rpcUrl = rpcUrl ?? MinerConfig.nodeRpcUrl(MinerConfig.defaultNodeRpcPort),
+      _httpClient = http.Client();
 
   /// Get comprehensive chain information
   Future<ChainInfo?> getChainInfo() async {

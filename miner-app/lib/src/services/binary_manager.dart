@@ -4,6 +4,9 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
+import 'package:quantus_miner/src/utils/app_logger.dart';
+
+final _log = log.withTag('BinaryManager');
 
 class DownloadProgress {
   final int downloadedBytes;
@@ -99,7 +102,7 @@ class BinaryManager {
       final json = jsonDecode(content) as Map<String, dynamic>;
       return BinaryVersion.fromJson(json);
     } catch (e) {
-      print('Error reading node version file: $e');
+      _log.d('Error reading node version file: $e');
       return null;
     }
   }
@@ -117,7 +120,7 @@ class BinaryManager {
       final json = jsonDecode(content) as Map<String, dynamic>;
       return BinaryVersion.fromJson(json);
     } catch (e) {
-      print('Error reading miner version file: $e');
+      _log.d('Error reading miner version file: $e');
       return null;
     }
   }
