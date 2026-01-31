@@ -1,11 +1,13 @@
 import 'dart:io';
 
+import 'package:quantus_miner/src/config/miner_config.dart';
 import 'package:quantus_miner/src/services/binary_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MinerSettingsService {
   static const String _keyCpuWorkers = 'cpu_workers';
   static const String _keyGpuDevices = 'gpu_devices';
+  static const String _keyChainId = 'chain_id';
 
   Future<void> saveCpuWorkers(int cpuWorkers) async {
     final prefs = await SharedPreferences.getInstance();
@@ -25,6 +27,33 @@ class MinerSettingsService {
   Future<int?> getGpuDevices() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt(_keyGpuDevices);
+  }
+
+  /// Save the selected chain ID.
+  Future<void> saveChainId(String chainId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyChainId, chainId);
+  }
+
+  /// Get the saved chain ID, returns default if not set.
+  Future<String> getChainId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedChainId = prefs.getString(_keyChainId);
+    if (savedChainId == null) {
+      return MinerConfig.defaultChainId;
+    }
+    // Validate that the chain ID is still valid
+    final validIds = MinerConfig.availableChains.map((c) => c.id).toList();
+    if (!validIds.contains(savedChainId)) {
+      return MinerConfig.defaultChainId;
+    }
+    return savedChainId;
+  }
+
+  /// Get the ChainConfig for the saved chain ID.
+  Future<ChainConfig> getChainConfig() async {
+    final chainId = await getChainId();
+    return MinerConfig.getChainById(chainId);
   }
 
   Future<void> logout() async {

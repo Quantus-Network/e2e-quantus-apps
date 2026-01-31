@@ -9,6 +9,7 @@ import 'features/setup/rewards_address_setup_screen.dart';
 import 'features/miner/miner_dashboard_screen.dart';
 import 'src/services/binary_manager.dart';
 import 'src/services/miner_process.dart';
+import 'src/services/process_cleanup_service.dart';
 
 import 'package:quantus_sdk/quantus_sdk.dart';
 
@@ -37,22 +38,8 @@ class GlobalMinerManager {
       }
     }
 
-    // Kill any remaining quantus processes
-    await _killQuantusProcesses();
-  }
-
-  static Future<void> _killQuantusProcesses() async {
-    try {
-      print('GlobalMinerManager: Killing quantus processes by name...');
-
-      // Kill all quantus processes
-      await Process.run('pkill', ['-9', '-f', 'quantus-node']);
-      await Process.run('pkill', ['-9', '-f', 'quantus-miner']);
-
-      print('GlobalMinerManager: Cleanup commands executed');
-    } catch (e) {
-      print('GlobalMinerManager: Error killing processes by name: $e');
-    }
+    // Kill any remaining quantus processes using the cleanup service
+    await ProcessCleanupService.killAllQuantusProcesses();
   }
 }
 

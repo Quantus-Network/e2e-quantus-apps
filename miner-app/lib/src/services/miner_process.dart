@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
+import 'package:quantus_miner/src/config/miner_config.dart';
+import 'package:quantus_miner/src/services/process_cleanup_service.dart';
 import 'package:quantus_miner/src/services/prometheus_service.dart';
 import 'package:quantus_miner/src/shared/extensions/log_string_extension.dart';
 
@@ -56,7 +58,6 @@ class MinerProcess {
   // Track metrics state to prevent premature hashrate reset
   double _lastValidHashrate = 0.0;
   int _consecutiveMetricsFailures = 0;
-  static const int _maxConsecutiveFailures = 5;
 
   // Public getters for process PIDs (for cleanup tracking)
   int? get nodeProcessPid {
@@ -100,7 +101,9 @@ class MinerProcess {
 
     // Initialize external miner API client with metrics endpoint
     _externalMinerApiClient = ExternalMinerApiClient(
-      metricsUrl: 'http://127.0.0.1:9900/metrics', // Standard metrics port
+      metricsUrl: MinerConfig.minerMetricsUrl(
+        MinerConfig.defaultMinerMetricsPort,
+      ),
     );
 
     // Set up external miner API callbacks
@@ -108,7 +111,9 @@ class MinerProcess {
     _externalMinerApiClient.onError = _handleExternalMinerError;
 
     // Initialize chain RPC client
-    _chainRpcClient = PollingChainRpcClient(rpcUrl: 'http://127.0.0.1:9933');
+    _chainRpcClient = PollingChainRpcClient(
+      rpcUrl: MinerConfig.nodeRpcUrl(MinerConfig.defaultNodeRpcPort),
+    );
     _chainRpcClient.onChainInfoUpdate = _handleChainInfoUpdate;
     _chainRpcClient.onError = _handleChainRpcError;
 
@@ -127,15 +132,8 @@ class MinerProcess {
     await BinaryManager.ensureNodeBinary();
     await BinaryManager.ensureExternalMinerBinary();
 
-    // Cleanup any existing processes first
-    await _cleanupExistingNodeProcesses();
-    await _cleanupExistingMinerProcesses();
-
-    // Cleanup database lock files if needed
-    await _cleanupDatabaseLocks();
-
-    // Ensure database directory has proper access
-    await _ensureDatabaseDirectoryAccess();
+    // Perform pre-start cleanup using the cleanup service
+    await ProcessCleanupService.performPreStartCleanup(chainId);
 
     // Check if ports are available and cleanup if needed
     await _ensurePortsAvailable();
@@ -303,7 +301,7 @@ class MinerProcess {
       '--gpu-devices',
       gpuDevices.toString(),
       '--metrics-port',
-      await _getMetricsPort().then((port) => port.toString()),
+      _getMetricsPort().toString(),
     ];
 
     try {
@@ -497,100 +495,16 @@ class MinerProcess {
     }
   }
 
-  /// Check if a process with the given PID is running
+  /// Check if a process with the given PID is running.
+  /// Delegates to ProcessCleanupService.
   Future<bool> _isProcessRunning(int pid) async {
-    try {
-      if (Platform.isWindows) {
-        final result = await Process.run('tasklist', ['/FI', 'PID eq $pid']);
-        return result.stdout.toString().contains(' $pid ');
-      } else {
-        final result = await Process.run('kill', ['-0', pid.toString()]);
-        return result.exitCode == 0;
-      }
-    } catch (e) {
-      return false;
-    }
+    return ProcessCleanupService.isProcessRunning(pid);
   }
 
-  /// Helper method to force kill a process by PID with verification
+  /// Helper method to force kill a process by PID with verification.
+  /// Delegates to ProcessCleanupService.
   Future<void> _forceKillProcess(int pid, String processName) async {
-    try {
-      print('MinerProcess: Force killing $processName process (PID: $pid)');
-
-      if (Platform.isWindows) {
-        final killResult = await Process.run('taskkill', [
-          '/F',
-          '/PID',
-          pid.toString(),
-        ]);
-        if (killResult.exitCode == 0) {
-          print(
-            'MinerProcess: Successfully force killed $processName (PID: $pid)',
-          );
-        } else {
-          print(
-            'MinerProcess: taskkill failed for $processName (PID: $pid), exit code: ${killResult.exitCode}',
-          );
-        }
-
-        await Future.delayed(const Duration(milliseconds: 500));
-
-        // Verify
-        final checkResult = await Process.run('tasklist', [
-          '/FI',
-          'PID eq $pid',
-        ]);
-        if (checkResult.stdout.toString().contains(' $pid ')) {
-          print(
-            'MinerProcess: WARNING - $processName (PID: $pid) may still be running',
-          );
-          // Try by name as last resort
-          final binaryName = processName.contains('miner')
-              ? 'quantus-miner.exe'
-              : 'quantus-node.exe';
-          await Process.run('taskkill', ['/F', '/IM', binaryName]);
-        } else {
-          print(
-            'MinerProcess: Verified $processName (PID: $pid) is terminated',
-          );
-        }
-      } else {
-        // First try SIGKILL via kill command for better reliability
-        final killResult = await Process.run('kill', ['-9', pid.toString()]);
-
-        if (killResult.exitCode == 0) {
-          print(
-            'MinerProcess: Successfully force killed $processName (PID: $pid)',
-          );
-        } else {
-          print(
-            'MinerProcess: kill command failed for $processName (PID: $pid), exit code: ${killResult.exitCode}',
-          );
-        }
-
-        // Wait a moment then verify the process is dead
-        await Future.delayed(const Duration(milliseconds: 500));
-
-        final checkResult = await Process.run('kill', ['-0', pid.toString()]);
-        if (checkResult.exitCode != 0) {
-          print(
-            'MinerProcess: Verified $processName (PID: $pid) is terminated',
-          );
-        } else {
-          print(
-            'MinerProcess: WARNING - $processName (PID: $pid) may still be running',
-          );
-          // Try pkill as last resort
-          await Process.run('pkill', [
-            '-9',
-            '-f',
-            processName.contains('miner') ? 'quantus-miner' : 'quantus-node',
-          ]);
-        }
-      }
-    } catch (e) {
-      print('MinerProcess: Error in _forceKillProcess for $processName: $e');
-    }
+    await ProcessCleanupService.forceKillProcess(pid, processName);
   }
 
   /// Handle external miner metrics updates
@@ -627,7 +541,8 @@ class MinerProcess {
       _consecutiveMetricsFailures++;
 
       // Only reset to zero after multiple consecutive failures
-      if (_consecutiveMetricsFailures >= _maxConsecutiveFailures) {
+      if (_consecutiveMetricsFailures >=
+          MinerConfig.maxConsecutiveMetricsFailures) {
         _statsService.updateHashrate(0.0);
         _lastValidHashrate = 0.0;
         onStatsUpdate?.call(_statsService.currentStats);
@@ -646,7 +561,8 @@ class MinerProcess {
     _consecutiveMetricsFailures++;
 
     // Only reset hashrate after multiple consecutive errors
-    if (_consecutiveMetricsFailures >= _maxConsecutiveFailures) {
+    if (_consecutiveMetricsFailures >=
+        MinerConfig.maxConsecutiveMetricsFailures) {
       if (_statsService.currentStats.hashrate != 0.0) {
         _statsService.updateHashrate(0.0);
         _lastValidHashrate = 0.0;
@@ -657,266 +573,31 @@ class MinerProcess {
 
   /// Check if required ports are available and cleanup if needed
   Future<void> _ensurePortsAvailable() async {
-    // Check if node QUIC port (9833) is in use
-    if (await _isPortInUse(minerListenPort)) {
-      await _killProcessOnPort(minerListenPort);
-      await Future.delayed(const Duration(seconds: 1));
+    final ports = await ProcessCleanupService.ensurePortsAvailable(
+      quicPort: minerListenPort,
+      metricsPort: MinerConfig.defaultMinerMetricsPort,
+    );
 
-      if (await _isPortInUse(minerListenPort)) {
-        throw Exception(
-          'Port $minerListenPort is still in use after cleanup attempt',
-        );
-      }
+    // If metrics port changed, update the API client
+    final actualMetricsPort = ports['metrics']!;
+    if (actualMetricsPort != MinerConfig.defaultMinerMetricsPort) {
+      _externalMinerApiClient = ExternalMinerApiClient(
+        metricsUrl: MinerConfig.minerMetricsUrl(actualMetricsPort),
+      );
+      _externalMinerApiClient.onMetricsUpdate = _handleExternalMinerMetrics;
+      _externalMinerApiClient.onError = _handleExternalMinerError;
     }
 
-    // Check if metrics port (9900) is in use
-    if (await _isPortInUse(9900)) {
-      await _killProcessOnPort(9900);
-      await Future.delayed(const Duration(seconds: 1));
-
-      if (await _isPortInUse(9900)) {
-        final altMetricsPort = await _findAvailablePort(9900);
-        if (altMetricsPort != 9900) {
-          // Update the metrics URL for the API client
-          _externalMinerApiClient = ExternalMinerApiClient(
-            metricsUrl: 'http://127.0.0.1:$altMetricsPort/metrics',
-          );
-          _externalMinerApiClient.onMetricsUpdate = _handleExternalMinerMetrics;
-          _externalMinerApiClient.onError = _handleExternalMinerError;
-        }
-      }
-    }
+    // Store the metrics port for later use
+    _actualMetricsPort = actualMetricsPort;
   }
 
-  /// Find an available port starting from the given port
-  Future<int> _findAvailablePort(int startPort) async {
-    for (int port = startPort; port <= startPort + 10; port++) {
-      if (!(await _isPortInUse(port))) {
-        return port;
-      }
-    }
-    return startPort; // Return original if no alternative found
-  }
+  // Track the actual metrics port being used (may differ from default)
+  int _actualMetricsPort = MinerConfig.defaultMinerMetricsPort;
 
-  /// Check if a port is currently in use
-  Future<bool> _isPortInUse(int port) async {
-    try {
-      if (Platform.isWindows) {
-        final result = await Process.run('netstat', ['-ano']);
-        return result.exitCode == 0 &&
-            result.stdout.toString().contains(':$port');
-      } else {
-        final result = await Process.run('lsof', ['-i', ':$port']);
-        return result.exitCode == 0 && result.stdout.toString().isNotEmpty;
-      }
-    } catch (e) {
-      // lsof might not be available, try netstat as fallback
-      try {
-        final result = await Process.run('netstat', ['-an']);
-        return result.stdout.toString().contains(':$port');
-      } catch (e2) {
-        print('DEBUG: Could not check port $port availability: $e2');
-        return false;
-      }
-    }
-  }
-
-  /// Kill process using a specific port
-  Future<void> _killProcessOnPort(int port) async {
-    try {
-      if (Platform.isWindows) {
-        final result = await Process.run('netstat', ['-ano']);
-        if (result.exitCode == 0) {
-          final lines = result.stdout.toString().split('\n');
-          for (final line in lines) {
-            if (line.contains(':$port')) {
-              final parts = line.trim().split(RegExp(r'\s+'));
-              if (parts.isNotEmpty) {
-                final pid = parts.last;
-                // Verify it's a valid PID number
-                if (int.tryParse(pid) != null) {
-                  await Process.run('taskkill', ['/F', '/PID', pid]);
-                }
-              }
-            }
-          }
-        }
-      } else {
-        // Find process using the port
-        final result = await Process.run('lsof', ['-ti', ':$port']);
-        if (result.exitCode == 0) {
-          final pids = result.stdout.toString().trim().split('\n');
-          for (final pid in pids) {
-            if (pid.isNotEmpty) {
-              await Process.run('kill', ['-9', pid.trim()]);
-            }
-          }
-        }
-      }
-    } catch (e) {
-      // Ignore cleanup errors
-    }
-  }
-
-  /// Get the metrics port to use (either 9900 or alternative)
-  Future<int> _getMetricsPort() async {
-    if (await _isPortInUse(9900)) {
-      return await _findAvailablePort(9901);
-    }
-    return 9900;
-  }
-
-  /// Cleanup any existing quantus-miner processes
-  Future<void> _cleanupExistingMinerProcesses() async {
-    try {
-      if (Platform.isWindows) {
-        try {
-          await Process.run('taskkill', ['/F', '/IM', 'quantus-miner.exe']);
-          await Future.delayed(const Duration(seconds: 2));
-        } catch (_) {
-          // Process might not exist
-        }
-      } else {
-        // Find all quantus-miner processes
-        final result = await Process.run('pgrep', ['-f', 'quantus-miner']);
-        if (result.exitCode == 0) {
-          final pids = result.stdout.toString().trim().split('\n');
-          for (final pid in pids) {
-            if (pid.isNotEmpty) {
-              try {
-                // Try graceful termination first
-                await Process.run('kill', ['-15', pid.trim()]);
-                await Future.delayed(const Duration(seconds: 1));
-
-                // Check if still running, force kill if needed
-                final checkResult = await Process.run('kill', [
-                  '-0',
-                  pid.trim(),
-                ]);
-                if (checkResult.exitCode == 0) {
-                  await Process.run('kill', ['-9', pid.trim()]);
-                }
-              } catch (e) {
-                // Ignore cleanup errors
-              }
-            }
-          }
-
-          // Wait a moment for processes to fully terminate
-          await Future.delayed(const Duration(seconds: 2));
-        }
-      }
-    } catch (e) {
-      // Ignore cleanup errors
-    }
-  }
-
-  /// Cleanup any existing quantus-node processes
-  Future<void> _cleanupExistingNodeProcesses() async {
-    try {
-      if (Platform.isWindows) {
-        try {
-          await Process.run('taskkill', ['/F', '/IM', 'quantus-node.exe']);
-          await Future.delayed(const Duration(seconds: 2));
-        } catch (_) {
-          // Process might not exist
-        }
-      } else {
-        // Find all quantus-node processes
-        final result = await Process.run('pgrep', ['-f', 'quantus-node']);
-        if (result.exitCode == 0) {
-          final pids = result.stdout.toString().trim().split('\n');
-          for (final pid in pids) {
-            if (pid.isNotEmpty) {
-              try {
-                // Try graceful termination first
-                await Process.run('kill', ['-15', pid.trim()]);
-                await Future.delayed(const Duration(seconds: 2));
-
-                // Check if still running, force kill if needed
-                final checkResult = await Process.run('kill', [
-                  '-0',
-                  pid.trim(),
-                ]);
-                if (checkResult.exitCode == 0) {
-                  await Process.run('kill', ['-9', pid.trim()]);
-                }
-              } catch (e) {
-                // Ignore cleanup errors
-              }
-            }
-          }
-
-          // Wait a moment for processes to fully terminate
-          await Future.delayed(const Duration(seconds: 3));
-        }
-      }
-    } catch (e) {
-      // Ignore cleanup errors
-    }
-  }
-
-  /// Cleanup database lock files that may prevent node startup
-  Future<void> _cleanupDatabaseLocks() async {
-    try {
-      // Get the quantus home directory path
-      final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
-      final lockFilePath =
-          '$quantusHome/node_data/chains/$chainId/db/full/LOCK';
-      final lockFile = File(lockFilePath);
-
-      if (await lockFile.exists()) {
-        // At this point node processes should already be cleaned up
-        // Safe to remove the stale lock file
-        await lockFile.delete();
-      }
-
-      // Also check for other potential lock files
-      final dbDir = Directory('$quantusHome/node_data/chains/$chainId/db/full');
-      if (await dbDir.exists()) {
-        await for (final entity in dbDir.list()) {
-          if (entity is File && entity.path.contains('LOCK')) {
-            try {
-              await entity.delete();
-            } catch (e) {
-              // Ignore cleanup errors
-            }
-          }
-        }
-      }
-    } catch (e) {
-      // Ignore cleanup errors
-    }
-  }
-
-  /// Check and fix database directory permissions
-  Future<void> _ensureDatabaseDirectoryAccess() async {
-    try {
-      final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
-      final dbPath = '$quantusHome/node_data/chains/$chainId/db';
-      final dbDir = Directory(dbPath);
-
-      // Create the directory if it doesn't exist
-      if (!await dbDir.exists()) {
-        await dbDir.create(recursive: true);
-      }
-
-      // Check if directory is writable
-      final testFile = File('$dbPath/test_write_access');
-      try {
-        await testFile.writeAsString('test');
-        await testFile.delete();
-      } catch (e) {
-        // Try to fix permissions
-        try {
-          await Process.run('chmod', ['-R', '755', dbPath]);
-        } catch (permError) {
-          // Ignore permission fix errors
-        }
-      }
-    } catch (e) {
-      // Ignore directory access errors
-    }
+  /// Get the metrics port to use (determined during _ensurePortsAvailable)
+  int _getMetricsPort() {
+    return _actualMetricsPort;
   }
 
   /// Wait for the node RPC to be ready (blocking)
