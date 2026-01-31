@@ -16,7 +16,10 @@ class MinerStatus extends StatelessWidget {
       case MiningStatus.idle:
         return _StatusConfig(
           icon: Icons.pause_circle_outline,
-          colors: [const Color(0xFF64748B), const Color(0xFF475569)], // Slate gray
+          colors: [
+            const Color(0xFF64748B),
+            const Color(0xFF475569),
+          ], // Slate gray
           glowColor: const Color(0xFF64748B),
           label: 'IDLE',
         );
@@ -80,7 +83,8 @@ class _StatusBadge extends StatefulWidget {
   State<_StatusBadge> createState() => _StatusBadgeState();
 }
 
-class _StatusBadgeState extends State<_StatusBadge> with TickerProviderStateMixin {
+class _StatusBadgeState extends State<_StatusBadge>
+    with TickerProviderStateMixin {
   late AnimationController _rotationController;
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
@@ -90,16 +94,21 @@ class _StatusBadgeState extends State<_StatusBadge> with TickerProviderStateMixi
     super.initState();
 
     // Rotation animation for syncing
-    _rotationController = AnimationController(duration: const Duration(seconds: 2), vsync: this);
+    _rotationController = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    );
 
     // Pickaxe animation for mining (arcing back and forth)
-    _pulseController = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
 
     // Arc rotation: -30 degrees to +30 degrees (in radians)
-    _pulseAnimation = Tween<double>(
-      begin: -0.5,
-      end: 0.5,
-    ).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut));
+    _pulseAnimation = Tween<double>(begin: -0.5, end: 0.5).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
 
     _updateAnimations();
   }
@@ -152,7 +161,13 @@ class _StatusBadgeState extends State<_StatusBadge> with TickerProviderStateMixi
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(24),
-            boxShadow: [BoxShadow(color: widget.config.glowColor.useOpacity(0.4), blurRadius: 12, spreadRadius: 2)],
+            boxShadow: [
+              BoxShadow(
+                color: widget.config.glowColor.useOpacity(0.4),
+                blurRadius: 12,
+                spreadRadius: 2,
+              ),
+            ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -164,8 +179,14 @@ class _StatusBadgeState extends State<_StatusBadge> with TickerProviderStateMixi
                     ? (Matrix4.identity()..rotateZ(_pulseAnimation.value))
                     : Matrix4.identity(),
                 child: RotationTransition(
-                  turns: widget.config.isAnimated ? _rotationController : AlwaysStoppedAnimation(0),
-                  child: Icon(widget.config.icon, color: Colors.white, size: 18),
+                  turns: widget.config.isAnimated
+                      ? _rotationController
+                      : AlwaysStoppedAnimation(0),
+                  child: Icon(
+                    widget.config.icon,
+                    color: Colors.white,
+                    size: 18,
+                  ),
                 ),
               ),
               const SizedBox(width: 10),

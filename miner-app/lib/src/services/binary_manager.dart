@@ -18,10 +18,15 @@ class BinaryVersion {
 
   BinaryVersion(this.version, this.checkedAt);
 
-  Map<String, dynamic> toJson() => {'version': version, 'checkedAt': checkedAt.toIso8601String()};
+  Map<String, dynamic> toJson() => {
+    'version': version,
+    'checkedAt': checkedAt.toIso8601String(),
+  };
 
-  factory BinaryVersion.fromJson(Map<String, dynamic> json) =>
-      BinaryVersion(json['version'] as String, DateTime.parse(json['checkedAt'] as String));
+  factory BinaryVersion.fromJson(Map<String, dynamic> json) => BinaryVersion(
+    json['version'] as String,
+    DateTime.parse(json['checkedAt'] as String),
+  );
 }
 
 class BinaryUpdateInfo {
@@ -30,7 +35,12 @@ class BinaryUpdateInfo {
   final String? latestVersion;
   final String? downloadUrl;
 
-  BinaryUpdateInfo({required this.updateAvailable, this.currentVersion, this.latestVersion, this.downloadUrl});
+  BinaryUpdateInfo({
+    required this.updateAvailable,
+    this.currentVersion,
+    this.latestVersion,
+    this.downloadUrl,
+  });
 }
 
 class BinaryManager {
@@ -127,7 +137,11 @@ class BinaryManager {
   }
 
   static Future<String> getLatestNodeVersion() async {
-    final rel = await http.get(Uri.parse('https://api.github.com/repos/$_repoOwner/$_repoName/releases/latest'));
+    final rel = await http.get(
+      Uri.parse(
+        'https://api.github.com/repos/$_repoOwner/$_repoName/releases/latest',
+      ),
+    );
 
     if (rel.statusCode != 200) {
       throw Exception('Failed to fetch latest node version: ${rel.statusCode}');
@@ -137,10 +151,16 @@ class BinaryManager {
   }
 
   static Future<String> getLatestMinerVersion() async {
-    final rel = await http.get(Uri.parse('https://api.github.com/repos/$_repoOwner/$_minerRepoName/releases/latest'));
+    final rel = await http.get(
+      Uri.parse(
+        'https://api.github.com/repos/$_repoOwner/$_minerRepoName/releases/latest',
+      ),
+    );
 
     if (rel.statusCode != 200) {
-      throw Exception('Failed to fetch latest miner version: ${rel.statusCode}');
+      throw Exception(
+        'Failed to fetch latest miner version: ${rel.statusCode}',
+      );
     }
 
     return jsonDecode(rel.body)['tag_name'] as String;
@@ -159,13 +179,18 @@ class BinaryManager {
         );
       }
 
-      final updateAvailable = _isNewerVersion(currentVersion.version, latestVersion);
+      final updateAvailable = _isNewerVersion(
+        currentVersion.version,
+        latestVersion,
+      );
 
       return BinaryUpdateInfo(
         updateAvailable: updateAvailable,
         currentVersion: currentVersion.version,
         latestVersion: latestVersion,
-        downloadUrl: updateAvailable ? _buildNodeDownloadUrl(latestVersion) : null,
+        downloadUrl: updateAvailable
+            ? _buildNodeDownloadUrl(latestVersion)
+            : null,
       );
     } catch (e) {
       print('Error checking node update: $e');
@@ -186,13 +211,18 @@ class BinaryManager {
         );
       }
 
-      final updateAvailable = _isNewerVersion(currentVersion.version, latestVersion);
+      final updateAvailable = _isNewerVersion(
+        currentVersion.version,
+        latestVersion,
+      );
 
       return BinaryUpdateInfo(
         updateAvailable: updateAvailable,
         currentVersion: currentVersion.version,
         latestVersion: latestVersion,
-        downloadUrl: updateAvailable ? _buildMinerDownloadUrl(latestVersion) : null,
+        downloadUrl: updateAvailable
+            ? _buildMinerDownloadUrl(latestVersion)
+            : null,
       );
     } catch (e) {
       print('Error checking miner update: $e');
@@ -225,7 +255,8 @@ class BinaryManager {
       // Force x86_64 on Windows to support x64 emulation on ARM devices
       // unless we specifically start releasing native ARM64 Windows binaries
       arch = 'x86_64';
-    } else if (Platform.version.contains('arm64') || Platform.version.contains('aarch64')) {
+    } else if (Platform.version.contains('arm64') ||
+        Platform.version.contains('aarch64')) {
       arch = 'aarch64';
     } else {
       arch = 'x86_64';
@@ -240,7 +271,9 @@ class BinaryManager {
 
   static bool _isNewerVersion(String current, String latest) {
     // Remove 'v' prefix if present
-    final currentClean = current.startsWith('v') ? current.substring(1) : current;
+    final currentClean = current.startsWith('v')
+        ? current.substring(1)
+        : current;
     final latestClean = latest.startsWith('v') ? latest.substring(1) : latest;
 
     final currentParts = currentClean.split('.').map(int.tryParse).toList();
@@ -274,7 +307,9 @@ class BinaryManager {
     return await _downloadNodeBinary(onProgress: onProgress);
   }
 
-  static Future<File> updateNodeBinary({void Function(DownloadProgress progress)? onProgress}) async {
+  static Future<File> updateNodeBinary({
+    void Function(DownloadProgress progress)? onProgress,
+  }) async {
     print('Updating node binary to latest version...');
 
     final binPath = await getNodeBinaryFilePath();
@@ -291,7 +326,10 @@ class BinaryManager {
 
     try {
       // Download to temporary location first
-      final newBinary = await _downloadNodeBinary(onProgress: onProgress, isUpdate: true);
+      final newBinary = await _downloadNodeBinary(
+        onProgress: onProgress,
+        isUpdate: true,
+      );
 
       // If download successful, replace the old binary
       if (await backupFile.exists()) {
@@ -319,7 +357,11 @@ class BinaryManager {
     bool isUpdate = false,
   }) async {
     // Find latest tag on GitHub
-    final rel = await http.get(Uri.parse('https://api.github.com/repos/$_repoOwner/$_repoName/releases/latest'));
+    final rel = await http.get(
+      Uri.parse(
+        'https://api.github.com/repos/$_repoOwner/$_repoName/releases/latest',
+      ),
+    );
     final tag = jsonDecode(rel.body)['tag_name'] as String;
 
     print('found latest tag: $tag');
@@ -328,14 +370,17 @@ class BinaryManager {
     final target = _targetTriple();
     final extension = Platform.isWindows ? "zip" : "tar.gz";
     final asset = '$_binary-$tag-$target.$extension';
-    final url = 'https://github.com/$_repoOwner/$_repoName/releases/download/$tag/$asset';
+    final url =
+        'https://github.com/$_repoOwner/$_repoName/releases/download/$tag/$asset';
 
     // Download
     final cacheDir = await _getCacheDir();
     final tgz = File(p.join(cacheDir.path, asset));
 
     // Use temporary path for extraction during updates
-    final tempExtractDir = isUpdate ? Directory(p.join(cacheDir.path, 'temp_update')) : cacheDir;
+    final tempExtractDir = isUpdate
+        ? Directory(p.join(cacheDir.path, 'temp_update'))
+        : cacheDir;
 
     if (isUpdate && await tempExtractDir.exists()) {
       await tempExtractDir.delete(recursive: true);
@@ -350,7 +395,9 @@ class BinaryManager {
       final response = await client.send(request);
 
       if (response.statusCode != 200) {
-        throw Exception('Failed to download binary: ${response.statusCode} ${response.reasonPhrase}');
+        throw Exception(
+          'Failed to download binary: ${response.statusCode} ${response.reasonPhrase}',
+        );
       }
 
       final totalBytes = response.contentLength ?? -1;
@@ -380,7 +427,10 @@ class BinaryManager {
     // Extract to temporary directory if updating
     await Process.run('tar', ['-xzf', tgz.path, '-C', tempExtractDir.path]);
 
-    final tempBinPath = p.join(tempExtractDir.path, _normalizeFilename(_binary));
+    final tempBinPath = p.join(
+      tempExtractDir.path,
+      _normalizeFilename(_binary),
+    );
     final finalBinPath = await getNodeBinaryFilePath();
 
     if (!Platform.isWindows) await Process.run('chmod', ['+x', tempBinPath]);
@@ -420,7 +470,9 @@ class BinaryManager {
     return await _downloadMinerBinary(onProgress: onProgress);
   }
 
-  static Future<File> updateMinerBinary({void Function(DownloadProgress progress)? onProgress}) async {
+  static Future<File> updateMinerBinary({
+    void Function(DownloadProgress progress)? onProgress,
+  }) async {
     print('Updating miner binary to latest version...');
 
     final binPath = await getExternalMinerBinaryFilePath();
@@ -437,7 +489,10 @@ class BinaryManager {
 
     try {
       // Download to temporary location first
-      final newBinary = await _downloadMinerBinary(onProgress: onProgress, isUpdate: true);
+      final newBinary = await _downloadMinerBinary(
+        onProgress: onProgress,
+        isUpdate: true,
+      );
 
       // If download successful, replace the old binary
       if (await backupFile.exists()) {
@@ -467,7 +522,8 @@ class BinaryManager {
     print('DEBUG: External miner binary download process starting...');
 
     // Find latest tag on GitHub
-    final releaseUrl = 'https://api.github.com/repos/$_repoOwner/$_minerRepoName/releases/latest';
+    final releaseUrl =
+        'https://api.github.com/repos/$_repoOwner/$_minerRepoName/releases/latest';
     print('DEBUG: Fetching latest release from: $releaseUrl');
 
     final rel = await http.get(Uri.parse(releaseUrl));
@@ -495,7 +551,8 @@ class BinaryManager {
       // Force x86_64 on Windows to support x64 emulation on ARM devices
       // unless we specifically start releasing native ARM64 Windows binaries
       arch = 'x86_64';
-    } else if (Platform.version.contains('arm64') || Platform.version.contains('aarch64')) {
+    } else if (Platform.version.contains('arm64') ||
+        Platform.version.contains('aarch64')) {
       arch = 'aarch64';
     } else {
       arch = 'x86_64';
@@ -507,7 +564,8 @@ class BinaryManager {
 
     print('DEBUG: Looking for asset: $asset');
 
-    final url = 'https://github.com/$_repoOwner/$_minerRepoName/releases/download/$tag/$asset';
+    final url =
+        'https://github.com/$_repoOwner/$_minerRepoName/releases/download/$tag/$asset';
 
     // Check if the asset exists in the release
     final assets = releaseData['assets'] as List;
@@ -539,7 +597,9 @@ class BinaryManager {
 
       print('DEBUG: Download response status: ${response.statusCode}');
       if (response.statusCode != 200) {
-        throw Exception('Failed to download external miner binary: ${response.statusCode} ${response.reasonPhrase}');
+        throw Exception(
+          'Failed to download external miner binary: ${response.statusCode} ${response.reasonPhrase}',
+        );
       }
 
       final totalBytes = response.contentLength ?? -1;
@@ -557,7 +617,9 @@ class BinaryManager {
         }
       }
       await tempBinaryFile.writeAsBytes(allBytes);
-      print('DEBUG: Downloaded ${allBytes.length} bytes to ${tempBinaryFile.path}');
+      print(
+        'DEBUG: Downloaded ${allBytes.length} bytes to ${tempBinaryFile.path}',
+      );
 
       if (totalBytes > 0 && downloadedBytes < totalBytes) {
         onProgress?.call(DownloadProgress(totalBytes, totalBytes));
@@ -571,7 +633,10 @@ class BinaryManager {
     // Set executable permissions on temp file
     if (!Platform.isWindows) {
       print('DEBUG: Setting executable permissions on ${tempBinaryFile.path}');
-      final chmodResult = await Process.run('chmod', ['+x', tempBinaryFile.path]);
+      final chmodResult = await Process.run('chmod', [
+        '+x',
+        tempBinaryFile.path,
+      ]);
       print('DEBUG: chmod exit code: ${chmodResult.exitCode}');
       if (chmodResult.exitCode != 0) {
         print('DEBUG: chmod stderr: ${chmodResult.stderr}');
@@ -600,8 +665,12 @@ class BinaryManager {
       // Save version info
       await _saveMinerVersion(tag);
     } else {
-      print('DEBUG: ERROR - External miner binary still not found at $binPath after download!');
-      throw Exception('External miner binary not found after download at $binPath');
+      print(
+        'DEBUG: ERROR - External miner binary still not found at $binPath after download!',
+      );
+      throw Exception(
+        'External miner binary not found after download at $binPath',
+      );
     }
 
     return binFile;
@@ -619,7 +688,9 @@ class BinaryManager {
     if (await nodeKeyFile.exists()) {
       final stat = await nodeKeyFile.stat();
       if (stat.size > 0) {
-        print('Node key file already exists and has content (size: ${stat.size} bytes)');
+        print(
+          'Node key file already exists and has content (size: ${stat.size} bytes)',
+        );
         return nodeKeyFile;
       }
     }
@@ -633,13 +704,20 @@ class BinaryManager {
     }
 
     try {
-      final processResult = await Process.run(nodeBinaryPath, ['key', 'generate-node-key', '--file', nodeKeyFile.path]);
+      final processResult = await Process.run(nodeBinaryPath, [
+        'key',
+        'generate-node-key',
+        '--file',
+        nodeKeyFile.path,
+      ]);
 
       if (processResult.exitCode == 0) {
         if (await nodeKeyFile.exists()) {
           final stat = await nodeKeyFile.stat();
           if (stat.size > 0) {
-            print('Successfully generated node key file: ${nodeKeyFile.path} (size: ${stat.size} bytes)');
+            print(
+              'Successfully generated node key file: ${nodeKeyFile.path} (size: ${stat.size} bytes)',
+            );
             return nodeKeyFile;
           } else {
             throw Exception('Node key file was created but is empty');
@@ -658,15 +736,20 @@ class BinaryManager {
     }
   }
 
-  static String _normalizeFilename(String file) => Platform.isWindows ? "$file.exe" : file;
+  static String _normalizeFilename(String file) =>
+      Platform.isWindows ? "$file.exe" : file;
 
-  static Future<Directory> _getCacheDir() async =>
-      Directory(p.join(await getQuantusHomeDirectoryPath(), 'bin')).create(recursive: true);
+  static Future<Directory> _getCacheDir() async => Directory(
+    p.join(await getQuantusHomeDirectoryPath(), 'bin'),
+  ).create(recursive: true);
 
-  static String _home() => Platform.environment['HOME'] ?? Platform.environment['USERPROFILE']!;
+  static String _home() =>
+      Platform.environment['HOME'] ?? Platform.environment['USERPROFILE']!;
 
   static String _targetTriple() {
-    final os = Platform.isMacOS ? 'apple-darwin' : (Platform.isWindows ? 'pc-windows-msvc' : 'unknown-linux-gnu');
+    final os = Platform.isMacOS
+        ? 'apple-darwin'
+        : (Platform.isWindows ? 'pc-windows-msvc' : 'unknown-linux-gnu');
 
     // Force x86_64 on Windows to ensure we download the x64 binary even on ARM devices
     // (since they can emulate x64, and we don't likely have a native ARM build for Windows yet)
@@ -674,7 +757,11 @@ class BinaryManager {
       return 'x86_64-$os';
     }
 
-    final arch = Platform.version.contains('arm64') || Platform.version.contains('aarch64') ? 'aarch64' : 'x86_64';
+    final arch =
+        Platform.version.contains('arm64') ||
+            Platform.version.contains('aarch64')
+        ? 'aarch64'
+        : 'x86_64';
     return '$arch-$os';
   }
 }

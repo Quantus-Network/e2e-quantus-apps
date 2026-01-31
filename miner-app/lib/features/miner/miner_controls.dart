@@ -49,7 +49,9 @@ class _MinerControlsState extends State<MinerControls> {
 
     if (mounted) {
       setState(() {
-        _cpuWorkers = savedCpuWorkers ?? (Platform.numberOfProcessors > 0 ? Platform.numberOfProcessors : 8);
+        _cpuWorkers =
+            savedCpuWorkers ??
+            (Platform.numberOfProcessors > 0 ? Platform.numberOfProcessors : 8);
         _gpuDevices = savedGpuDevices ?? 0;
       });
     }
@@ -72,8 +74,12 @@ class _MinerControlsState extends State<MinerControls> {
       print('Starting mining');
 
       // Check for all required files and binaries
-      final id = File('${await BinaryManager.getQuantusHomeDirectoryPath()}/node_key.p2p');
-      final rew = File('${await BinaryManager.getQuantusHomeDirectoryPath()}/rewards-address.txt');
+      final id = File(
+        '${await BinaryManager.getQuantusHomeDirectoryPath()}/node_key.p2p',
+      );
+      final rew = File(
+        '${await BinaryManager.getQuantusHomeDirectoryPath()}/rewards-address.txt',
+      );
       final binPath = await BinaryManager.getNodeBinaryFilePath();
       final bin = File(binPath);
       final minerBinPath = await BinaryManager.getExternalMinerBinaryFilePath();
@@ -83,7 +89,10 @@ class _MinerControlsState extends State<MinerControls> {
       if (!await bin.exists()) {
         print('Node binary not found. Cannot start mining.');
         if (mounted) {
-          context.showWarningSnackbar(title: 'Node binary not found!', message: 'Please run setup.');
+          context.showWarningSnackbar(
+            title: 'Node binary not found!',
+            message: 'Please run setup.',
+          );
         }
         setState(() => _isAttemptingToggle = false);
         return;
@@ -93,7 +102,10 @@ class _MinerControlsState extends State<MinerControls> {
       if (!await minerBin.exists()) {
         print('External miner binary not found. Cannot start mining.');
         if (mounted) {
-          context.showWarningSnackbar(title: 'External miner binary not found!', message: 'Please run setup.');
+          context.showWarningSnackbar(
+            title: 'External miner binary not found!',
+            message: 'Please run setup.',
+          );
         }
         setState(() => _isAttemptingToggle = false);
         return;
@@ -112,13 +124,19 @@ class _MinerControlsState extends State<MinerControls> {
       widget.onMinerProcessChanged.call(newProc);
 
       try {
-        final newMiningStats = widget.miningStats.copyWith(isSyncing: true, status: MiningStatus.syncing);
+        final newMiningStats = widget.miningStats.copyWith(
+          isSyncing: true,
+          status: MiningStatus.syncing,
+        );
         widget.onMetricsUpdate(newMiningStats);
         await newProc.start();
       } catch (e) {
         print('Error starting miner process: $e');
         if (mounted) {
-          context.showErrorSnackbar(title: 'Error starting miner!', message: e.toString());
+          context.showErrorSnackbar(
+            title: 'Error starting miner!',
+            message: e.toString(),
+          );
         }
 
         // Notify parent that miner process is null
@@ -158,7 +176,9 @@ class _MinerControlsState extends State<MinerControls> {
       try {
         widget.minerProcess!.forceStop();
       } catch (e) {
-        print('MinerControls: Error force stopping miner process in dispose: $e');
+        print(
+          'MinerControls: Error force stopping miner process in dispose: $e',
+        );
       }
 
       // Use GlobalMinerManager for comprehensive cleanup
@@ -183,15 +203,24 @@ class _MinerControlsState extends State<MinerControls> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('CPU Workers', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text(
+                    'CPU Workers',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   Text('$_cpuWorkers'),
                 ],
               ),
               Slider(
                 value: _cpuWorkers.toDouble(),
                 min: 0,
-                max: (Platform.numberOfProcessors > 0 ? Platform.numberOfProcessors : 16).toDouble(),
-                divisions: (Platform.numberOfProcessors > 0 ? Platform.numberOfProcessors : 16),
+                max:
+                    (Platform.numberOfProcessors > 0
+                            ? Platform.numberOfProcessors
+                            : 16)
+                        .toDouble(),
+                divisions: (Platform.numberOfProcessors > 0
+                    ? Platform.numberOfProcessors
+                    : 16),
                 label: _cpuWorkers.toString(),
                 onChanged: widget.minerProcess == null
                     ? (value) {
@@ -214,7 +243,10 @@ class _MinerControlsState extends State<MinerControls> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('GPU Devices', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text(
+                    'GPU Devices',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   Text('$_gpuDevices / $_detectedGpuCount'),
                 ],
               ),
@@ -238,13 +270,20 @@ class _MinerControlsState extends State<MinerControls> {
         const SizedBox(height: 24),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: widget.minerProcess == null ? Colors.green : Colors.blue,
+            backgroundColor: widget.minerProcess == null
+                ? Colors.green
+                : Colors.blue,
             padding: const EdgeInsets.symmetric(vertical: 15),
-            textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            textStyle: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
             minimumSize: const Size(200, 50),
           ),
           onPressed: _isAttemptingToggle ? null : _toggle,
-          child: Text(widget.minerProcess == null ? 'Start Mining' : 'Stop Mining'),
+          child: Text(
+            widget.minerProcess == null ? 'Start Mining' : 'Stop Mining',
+          ),
         ),
       ],
     );

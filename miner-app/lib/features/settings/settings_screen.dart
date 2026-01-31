@@ -70,7 +70,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20.0,
+                      vertical: 16.0,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -135,14 +138,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
         color: const Color(0xFF1C1C1C), // Slightly lighter than background
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.useOpacity(0.05), width: 1),
-        boxShadow: [BoxShadow(color: Colors.black.useOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.useOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
           // Icon Container
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: accentColor.useOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+              color: accentColor.useOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Icon(icon, color: accentColor, size: 20),
           ),
           const SizedBox(width: 16),
@@ -151,7 +163,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
 
@@ -160,7 +176,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SizedBox(
               width: 16,
               height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white.useOpacity(0.3)),
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white.useOpacity(0.3),
+              ),
             )
           else
             Container(

@@ -41,11 +41,19 @@ Future<void> showTopSnackBar(
   );
 }
 
-Future<void> showCopySnackbar(BuildContext context, {required String title, required String message}) async {
+Future<void> showCopySnackbar(
+  BuildContext context, {
+  required String title,
+  required String message,
+}) async {
   await showTopSnackBar(context, title: title, message: message);
 }
 
-Future<void> showWarningSnackbar(BuildContext context, {required String title, required String message}) async {
+Future<void> showWarningSnackbar(
+  BuildContext context, {
+  required String title,
+  required String message,
+}) async {
   await showTopSnackBar(
     context,
     title: title,
@@ -54,7 +62,11 @@ Future<void> showWarningSnackbar(BuildContext context, {required String title, r
   );
 }
 
-Future<void> showErrorSnackbar(BuildContext context, {required String title, required String message}) async {
+Future<void> showErrorSnackbar(
+  BuildContext context, {
+  required String title,
+  required String message,
+}) async {
   await showTopSnackBar(
     context,
     title: title,

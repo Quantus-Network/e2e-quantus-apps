@@ -56,7 +56,10 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
 
           setState(() {
             // Assuming NumberFormattingService and AppConstants are available via quantus_sdk export
-            _walletBalance = NumberFormattingService().formatBalance(balance, addSymbol: true);
+            _walletBalance = NumberFormattingService().formatBalance(
+              balance,
+              addSymbol: true,
+            );
             _walletAddress = address;
           });
         } else {
@@ -99,7 +102,12 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.white.useOpacity(0.1), width: 1),
         boxShadow: [
-          BoxShadow(color: Colors.black.useOpacity(0.2), blurRadius: 20, spreadRadius: 1, offset: const Offset(0, 8)),
+          BoxShadow(
+            color: Colors.black.useOpacity(0.2),
+            blurRadius: 20,
+            spreadRadius: 1,
+            offset: const Offset(0, 8),
+          ),
         ],
       ),
       child: Padding(
@@ -120,12 +128,20 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.account_balance_wallet, color: Colors.white, size: 20),
+                  child: const Icon(
+                    Icons.account_balance_wallet,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Text(
                   'Wallet Balance',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white.useOpacity(0.9)),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.useOpacity(0.9),
+                  ),
                 ),
               ],
             ),
@@ -146,11 +162,18 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
                 decoration: BoxDecoration(
                   color: Colors.white.useOpacity(0.05),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.useOpacity(0.1), width: 1),
+                  border: Border.all(
+                    color: Colors.white.useOpacity(0.1),
+                    width: 1,
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.link, color: Colors.white.useOpacity(0.5), size: 16),
+                    Icon(
+                      Icons.link,
+                      color: Colors.white.useOpacity(0.5),
+                      size: 16,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -164,7 +187,11 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.copy, color: Colors.white.useOpacity(0.5), size: 16),
+                      icon: Icon(
+                        Icons.copy,
+                        color: Colors.white.useOpacity(0.5),
+                        size: 16,
+                      ),
                       onPressed: () {
                         if (_walletAddress != null) {
                           context.copyTextWithSnackbar(_walletAddress!);

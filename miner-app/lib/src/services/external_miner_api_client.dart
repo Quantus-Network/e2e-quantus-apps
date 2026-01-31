@@ -49,7 +49,10 @@ class ExternalMinerApiClient {
   /// Start polling for metrics every second
   void startPolling() {
     _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(const Duration(seconds: 1), (_) => _pollMetrics());
+    _pollTimer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => _pollMetrics(),
+    );
   }
 
   /// Stop polling for metrics
@@ -64,7 +67,9 @@ class ExternalMinerApiClient {
   /// Get metrics from external miner Prometheus endpoint
   Future<ExternalMinerMetrics?> getMetrics() async {
     try {
-      final response = await _httpClient.get(Uri.parse(metricsUrl)).timeout(timeout);
+      final response = await _httpClient
+          .get(Uri.parse(metricsUrl))
+          .timeout(timeout);
 
       if (response.statusCode == 200) {
         return _parsePrometheusMetrics(response.body);
@@ -170,7 +175,9 @@ class ExternalMinerApiClient {
   /// Test if the external miner is reachable
   Future<bool> isReachable() async {
     try {
-      final response = await _httpClient.get(Uri.parse(baseUrl)).timeout(const Duration(seconds: 3));
+      final response = await _httpClient
+          .get(Uri.parse(baseUrl))
+          .timeout(const Duration(seconds: 3));
 
       // Any response (even 404) means the server is running
       return response.statusCode >= 200 && response.statusCode < 500;
@@ -182,7 +189,9 @@ class ExternalMinerApiClient {
   /// Test if the metrics endpoint is available
   Future<bool> isMetricsAvailable() async {
     try {
-      final response = await _httpClient.get(Uri.parse(metricsUrl)).timeout(const Duration(seconds: 3));
+      final response = await _httpClient
+          .get(Uri.parse(metricsUrl))
+          .timeout(const Duration(seconds: 3));
 
       return response.statusCode == 200;
     } catch (e) {

@@ -126,7 +126,8 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
       onProgress: (progress) {
         setState(() {
           if (progress.totalBytes > 0) {
-            _minerUpdateProgress = progress.downloadedBytes / progress.totalBytes;
+            _minerUpdateProgress =
+                progress.downloadedBytes / progress.totalBytes;
           } else {
             _minerUpdateProgress = progress.downloadedBytes > 0 ? 1.0 : 0.0;
           }
@@ -188,7 +189,8 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
       onProgress: (progress) {
         setState(() {
           if (progress.totalBytes > 0) {
-            _nodeUpdateProgress = progress.downloadedBytes / progress.totalBytes;
+            _nodeUpdateProgress =
+                progress.downloadedBytes / progress.totalBytes;
           } else {
             _nodeUpdateProgress = progress.downloadedBytes > 0 ? 1.0 : 0.0;
           }
@@ -280,13 +282,20 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                 // Logs section
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
+                    padding: const EdgeInsets.only(
+                      left: 20,
+                      right: 20,
+                      bottom: 20,
+                    ),
                     child: Container(
                       height: 430,
                       decoration: BoxDecoration(
                         color: Colors.white.useOpacity(0.05),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white.useOpacity(0.1), width: 1),
+                        border: Border.all(
+                          color: Colors.white.useOpacity(0.1),
+                          width: 1,
+                        ),
                       ),
                       child: Column(
                         children: [
@@ -294,11 +303,20 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              border: Border(bottom: BorderSide(color: Colors.white.useOpacity(0.1), width: 1)),
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: Colors.white.useOpacity(0.1),
+                                  width: 1,
+                                ),
+                              ),
                             ),
                             child: Row(
                               children: [
-                                Icon(Icons.terminal, color: Colors.white.useOpacity(0.7), size: 20),
+                                Icon(
+                                  Icons.terminal,
+                                  color: Colors.white.useOpacity(0.7),
+                                  size: 20,
+                                ),
                                 const SizedBox(width: 12),
                                 Text(
                                   'Live Logs',
@@ -312,7 +330,12 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                             ),
                           ),
                           // Logs content
-                          Expanded(child: LogsWidget(minerProcess: _currentMinerProcess, maxLines: 200)),
+                          Expanded(
+                            child: LogsWidget(
+                              minerProcess: _currentMinerProcess,
+                              maxLines: 200,
+                            ),
+                          ),
                         ],
                       ),
                     ),
