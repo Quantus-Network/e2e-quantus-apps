@@ -5,6 +5,9 @@ import 'package:resonance_network_wallet/features/components/copy_icon.dart';
 import 'package:resonance_network_wallet/features/components/inner_shadow_container.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
+import 'package:resonance_network_wallet/features/main/screens/quests/quest_constants.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_associations_providers.dart';
 import 'package:resonance_network_wallet/providers/account_stats_providers.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
@@ -62,7 +65,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                 width: 280,
                 padding: const EdgeInsets.all(24),
                 decoration: ShapeDecoration(
-                  color: const Color(0xFF0C1014),
+                  color: context.themeColors.background2,
                   shape: RoundedRectangleBorder(
                     side: const BorderSide(width: 1, color: Color(0x66F4F6F9)),
                     borderRadius: BorderRadius.circular(20),
@@ -75,15 +78,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'HOW IT WORKS',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                        Text('HOW IT WORKS', style: context.themeText.paragraph),
                         GestureDetector(
                           onTap: () => Navigator.of(context).pop(),
                           child: const Icon(Icons.close, color: Colors.white, size: 24),
@@ -171,7 +166,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                 width: double.infinity,
                 clipBehavior: Clip.antiAlias,
                 decoration: ShapeDecoration(
-                  color: const Color(0xFF0C1014),
+                  color: context.themeColors.background2,
                   shape: RoundedRectangleBorder(
                     side: const BorderSide(width: 1, color: Color(0x7F6734BA)),
                     borderRadius: BorderRadius.circular(4),
@@ -191,7 +186,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                             gradient: const RadialGradient(
                               center: Alignment(0.77, -0.77),
                               radius: 1.8,
-                              colors: [Color(0xFF0C1014), Color(0xFF0000FF), Color(0xFFED4CCE), Color(0xFFFFE91F)],
+                              colors: questReferFriendsGradient,
                               stops: [0.45, 0.53, 0.62, 0.65],
                             ),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
@@ -206,15 +201,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                             Center(
                               child: Column(
                                 children: [
-                                  const Text(
-                                    'REFER FRIENDS',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontFamily: 'Fira Code',
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
+                                  Text('REFER FRIENDS', style: context.themeText.paragraph),
                                   const SizedBox(height: 8),
                                   Text(
                                     'Invite friends. Earn rewards. \nClimb the leaderboard.',
@@ -233,14 +220,15 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                _buildAvatar(const [Color(0xFF0000FF), Color(0xFF0C1014)]),
+                                // these colors aren't really great anyway..should be spheres for accounts..
+                                _buildAvatar([const Color(0xFF0000FF), context.themeColors.background2]),
                                 Transform.translate(
                                   offset: const Offset(-16, 0),
-                                  child: _buildAvatar(const [Color(0xFF8B0000), Color(0xFFED4CCE)]),
+                                  child: _buildAvatar([const Color(0xFF8B0000), context.themeColors.pink]),
                                 ),
                                 Transform.translate(
                                   offset: const Offset(-32, 0),
-                                  child: _buildAvatar(const [Color(0xFFFFD700), Color(0xFFFFE91F)]),
+                                  child: _buildAvatar([const Color(0xFFFFD700), context.themeColors.yellow]),
                                 ),
                               ],
                             ),
@@ -249,7 +237,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                               width: double.infinity,
                               padding: const EdgeInsets.all(16),
                               decoration: ShapeDecoration(
-                                color: const Color(0xFF0C1014).useOpacity(0.4),
+                                color: context.themeColors.background2.useOpacity(0.4),
                                 shape: RoundedRectangleBorder(
                                   side: const BorderSide(width: 1, color: Color(0x33F4F6F9)),
                                   borderRadius: BorderRadius.circular(8),
@@ -262,7 +250,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                                 children: [
                                   _buildStatRow('Referrals', '$referralsCount', Colors.white),
                                   const SizedBox(height: 16),
-                                  _buildStatRow('Rank', '#-', const Color(0xFFED4CCE)),
+                                  _buildStatRow('Rank', '#-', context.themeColors.pink),
                                 ],
                               ),
                             ),
@@ -331,14 +319,9 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                     ),
                   ),
                   alignment: Alignment.center,
-                  child: const Text(
+                  child: Text(
                     'Share Link',
-                    style: TextStyle(
-                      color: Color(0xFFF4F6F9),
-                      fontSize: 18,
-                      fontFamily: 'Fira Code',
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: context.themeText.smallTitle?.copyWith(color: context.themeColors.textPrimary),
                   ),
                 ),
               ),
@@ -355,8 +338,12 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
       height: 64,
       decoration: ShapeDecoration(
         gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: colors),
-        shape: const OvalBorder(
-          side: BorderSide(width: 2.67, strokeAlign: BorderSide.strokeAlignOutside, color: Color(0xFF0C1014)),
+        shape: OvalBorder(
+          side: BorderSide(
+            width: 2.67,
+            strokeAlign: BorderSide.strokeAlignOutside,
+            color: context.themeColors.background2,
+          ),
         ),
       ),
     );

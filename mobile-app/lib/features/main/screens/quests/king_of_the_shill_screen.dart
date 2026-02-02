@@ -4,9 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/inner_shadow_container.dart';
-import 'package:resonance_network_wallet/features/components/raid_submission_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
+import 'package:resonance_network_wallet/features/main/screens/quests/quest_constants.dart';
+import 'package:resonance_network_wallet/features/main/screens/quests/raid_submission_action_sheet.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/raider_quest_providers.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -33,7 +36,7 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
                 width: 280,
                 padding: const EdgeInsets.all(24),
                 decoration: ShapeDecoration(
-                  color: const Color(0xFF0C1014),
+                  color: context.themeColors.background2,
                   shape: RoundedRectangleBorder(
                     side: const BorderSide(width: 1, color: Color(0x66F4F6F9)),
                     borderRadius: BorderRadius.circular(20),
@@ -46,15 +49,7 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'HOW IT WORKS',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                        Text('HOW IT WORKS', style: context.themeText.paragraph),
                         GestureDetector(
                           onTap: () => Navigator.of(context).pop(),
                           child: const Icon(Icons.close, color: Colors.white, size: 24),
@@ -108,10 +103,6 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
     ref.invalidate(raiderSubmissionsProvider);
   }
 
-  String _formatTimeAgo(String url) {
-    return '';
-  }
-
   Future<void> _openUrl(String url) async {
     final uri = Uri.tryParse(url);
     if (uri != null && await canLaunchUrl(uri)) {
@@ -142,7 +133,7 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
                 width: double.infinity,
                 clipBehavior: Clip.antiAlias,
                 decoration: ShapeDecoration(
-                  color: const Color(0xFF0C1014),
+                  color: context.themeColors.background2,
                   shape: RoundedRectangleBorder(
                     side: const BorderSide(width: 1, color: Color(0x7F6734BA)),
                     borderRadius: BorderRadius.circular(4),
@@ -159,7 +150,7 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
                               gradient: RadialGradient(
                                 center: Alignment(0.77, -0.56),
                                 radius: 2.8,
-                                colors: [Color(0xFF0C1014), Color(0xFFED4CCE), Color(0xFFFFE91F)],
+                                colors: questKingOfTheShillGradient,
                                 stops: [0.45, 0.54, 0.57],
                               ),
                             ),
@@ -174,15 +165,7 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
                             Center(
                               child: Column(
                                 children: [
-                                  const Text(
-                                    'KING OF THE SHILL',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontFamily: 'Fira Code',
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
+                                  Text('KING OF THE SHILL', style: context.themeText.paragraph),
                                   const SizedBox(height: 8),
                                   Text(
                                     'Join social raids. Get rewarded for\nverified posts.',
@@ -241,14 +224,9 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
                     ),
                   ),
                   alignment: Alignment.center,
-                  child: const Text(
+                  child: Text(
                     'Add Raid Submission',
-                    style: TextStyle(
-                      color: Color(0xFFF4F6F9),
-                      fontSize: 18,
-                      fontFamily: 'Fira Code',
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: context.themeText.smallTitle?.copyWith(color: context.themeColors.textPrimary),
                   ),
                 ),
               ),
@@ -264,7 +242,7 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: ShapeDecoration(
-        color: const Color(0xFF0C1014).useOpacity(0.4),
+        color: context.themeColors.background2.useOpacity(0.4),
         shape: RoundedRectangleBorder(
           side: const BorderSide(width: 1, color: Color(0x33F4F6F9)),
           borderRadius: BorderRadius.circular(8),
@@ -277,7 +255,7 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
           const SizedBox(height: 16),
           _buildStatRow('Verified posts', verifiedPosts.toString().padLeft(2, '0'), Colors.white),
           const SizedBox(height: 16),
-          _buildStatRow('Rank', '#-', const Color(0xFFED4CCE)),
+          _buildStatRow('Rank', '#-', context.themeColors.pink),
         ],
       ),
     );
@@ -372,10 +350,6 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-          ),
-          Text(
-            _formatTimeAgo(url),
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10, fontFamily: 'Fira Code'),
           ),
         ],
       ),
