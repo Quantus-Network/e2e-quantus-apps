@@ -19,6 +19,7 @@ class ScaffoldBase extends StatelessWidget {
   final double dim;
   final bool extendBodyBehindAppBar;
   final bool extendBodyBehindNavBar;
+  final Color? backgroundColor;
 
   // Default constructor - static content
   const ScaffoldBase({
@@ -30,6 +31,7 @@ class ScaffoldBase extends StatelessWidget {
     this.decorations,
     this.dim = 0.25,
     this.padding = const EdgeInsets.symmetric(horizontal: 24.0),
+    this.backgroundColor,
     required Widget this.child,
   }) : slivers = null,
        scrollController = null,
@@ -46,6 +48,7 @@ class ScaffoldBase extends StatelessWidget {
     this.decorations,
     this.dim = 0.25,
     this.padding = const EdgeInsets.symmetric(horizontal: 24.0),
+    this.backgroundColor,
     required ScrollController this.scrollController,
     this.scrollPhysics = const AlwaysScrollableScrollPhysics(),
     required Widget this.child,
@@ -62,6 +65,7 @@ class ScaffoldBase extends StatelessWidget {
     this.decorations,
     this.dim = 0.25,
     this.padding = const EdgeInsets.symmetric(horizontal: 24.0),
+    this.backgroundColor,
     required ScrollController this.scrollController,
     this.scrollPhysics = const AlwaysScrollableScrollPhysics(),
     required RefreshCallback this.onRefresh,
@@ -73,7 +77,7 @@ class ScaffoldBase extends StatelessWidget {
     return Scaffold(
       extendBodyBehindAppBar: extendBodyBehindAppBar,
       appBar: appBar,
-      backgroundColor: context.themeColors.background,
+      backgroundColor: backgroundColor ?? context.themeColors.background,
       body: Stack(
         children: [
           if (decorations != null) ...decorations!,

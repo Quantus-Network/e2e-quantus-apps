@@ -75,9 +75,14 @@ class _RaidSubmissionActionSheetState extends ConsumerState<RaidSubmissionAction
     } catch (e) {
       print('Failed adding raid submission: $e');
 
+      String errorMessage = e.toString();
+      if (errorMessage.contains('409') || errorMessage.contains('conflicting with existing record')) {
+        errorMessage = 'You already submitted this link';
+      }
+
       setState(() {
         _isSubmitting = false;
-        _errorMsg = e.toString();
+        _errorMsg = errorMessage;
       });
     }
   }

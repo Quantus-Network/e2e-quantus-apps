@@ -107,7 +107,7 @@ class _NavbarState extends ConsumerState<Navbar> {
     NavItem('assets/navbar/history_icon_off.svg', 'assets/navbar/history_icon_on.svg', 'History'),
     NavItem('assets/navbar/floating_button.svg', 'assets/navbar/floating_button.svg', 'Send'),
     NavItem('assets/navbar/settings_icon_off.svg', 'assets/navbar/settings_icon_on.svg', 'Settings'),
-    NavItem('assets/navbar/qcat_navbar_icon.png', 'assets/navbar/qcat_navbar_icon.png', 'Quests'),
+    NavItem('assets/navbar/lightning_icon_off.svg', 'assets/navbar/lightning_icon_on.svg', 'Quests'),
   ];
 
   @override
@@ -139,12 +139,8 @@ class _NavbarState extends ConsumerState<Navbar> {
 
     // Handle quest screen visibility
     if (newIndex == 3) {
-      // quests screen index - make video visible
+      // quests screen index
       (_questsScreenKey.currentState as dynamic)?.refreshStatsData();
-      (_questsScreenKey.currentState as dynamic)?.setVideoVisibility(true);
-    } else if (_selectedIndex == 3) {
-      // leaving quests screen - hide video
-      (_questsScreenKey.currentState as dynamic)?.setVideoVisibility(false);
     }
 
     setState(() {
@@ -215,15 +211,13 @@ class _NavbarState extends ConsumerState<Navbar> {
   }
 
   Widget _buildBody() {
-    bool playPromoVideo = _selectedIndex == 3;
-
     return IndexedStack(
       index: _selectedIndex,
       children: [
         const WalletMain(),
         const TransactionsScreen(),
         const SettingsScreen(),
-        QuestsScreen(key: _questsScreenKey, playPromoVideo: playPromoVideo),
+        QuestsScreen(key: _questsScreenKey),
       ],
     );
   }
