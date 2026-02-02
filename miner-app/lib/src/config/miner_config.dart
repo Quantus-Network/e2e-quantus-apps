@@ -71,6 +71,16 @@ class MinerConfig {
   /// How often to poll chain RPC for peer count and block info
   static const Duration chainRpcPollingInterval = Duration(seconds: 1);
 
+  /// How often to poll wallet balance (backup timer)
+  static const Duration balancePollingInterval = Duration(seconds: 30);
+
+  // ============================================================
+  // Hardware Detection
+  // ============================================================
+
+  /// Maximum number of GPU devices to probe for during detection
+  static const int maxGpuProbeCount = 8;
+
   // ============================================================
   // URLs & Endpoints
   // ============================================================

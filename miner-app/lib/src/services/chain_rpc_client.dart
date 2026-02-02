@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:quantus_miner/src/config/miner_config.dart';
+import 'package:quantus_miner/src/utils/app_logger.dart';
+
+final _log = log.withTag('ChainRpc');
 
 class ChainInfo {
   final int peerCount;
@@ -121,15 +124,14 @@ class ChainRpcClient {
         nodeVersion: nodeVersion,
       );
 
-      // Only log successful chain info
-      print('DEBUG: Chain connected - Peers: $peerCount, Block: $currentBlock');
+      _log.d('Chain connected - Peers: $peerCount, Block: $currentBlock');
       return info;
     } catch (e) {
       // Only log unexpected errors, not connection issues during startup
       if (!e.toString().contains('Connection refused') &&
           !e.toString().contains('Connection reset') &&
           !e.toString().contains('timeout')) {
-        print('DEBUG: getChainInfo error: $e');
+        _log.w('getChainInfo error', error: e);
       }
       return null;
     }
@@ -230,8 +232,8 @@ class ChainRpcClient {
     } else {
       // Don't log connection errors during startup - they're expected
       if (response.statusCode != 0) {
-        print(
-          'DEBUG: RPC HTTP error for $method: ${response.statusCode} ${response.reasonPhrase}',
+        _log.w(
+          'RPC HTTP error for $method: ${response.statusCode} ${response.reasonPhrase}',
         );
       }
       throw Exception('HTTP ${response.statusCode}: ${response.reasonPhrase}');
@@ -262,11 +264,8 @@ class PollingChainRpcClient extends ChainRpcClient {
   void Function(ChainInfo info)? onChainInfoUpdate;
   void Function(String error)? onError;
 
-  PollingChainRpcClient({
-    super.rpcUrl,
-    super.timeout,
-    this.pollInterval = const Duration(seconds: 3),
-  });
+  PollingChainRpcClient({super.rpcUrl, super.timeout, Duration? pollInterval})
+    : pollInterval = pollInterval ?? MinerConfig.prometheusPollingInterval;
 
   /// Start polling for chain information
   void startPolling() {

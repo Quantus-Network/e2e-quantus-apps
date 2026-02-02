@@ -154,7 +154,7 @@ class _LogsWidgetState extends State<LogsWidget> {
               child: _logs.isEmpty
                   ? const Center(
                       child: Text(
-                        'No logs available\nStart mining to see live logs',
+                        'No logs available\nStart the node to see live logs',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.grey,

@@ -2,7 +2,10 @@ import 'dart:io';
 
 import 'package:quantus_miner/src/config/miner_config.dart';
 import 'package:quantus_miner/src/services/binary_manager.dart';
+import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+final _log = log.withTag('Settings');
 
 class MinerSettingsService {
   static const String _keyCpuWorkers = 'cpu_workers';
@@ -57,7 +60,7 @@ class MinerSettingsService {
   }
 
   Future<void> logout() async {
-    print('Starting app logout/reset...');
+    _log.i('Starting app logout/reset...');
 
     // 1. Delete node identity file (node_key.p2p)
     try {
@@ -65,12 +68,12 @@ class MinerSettingsService {
       final identityFile = File('$quantusHome/node_key.p2p');
       if (await identityFile.exists()) {
         await identityFile.delete();
-        print('✅ Node identity file deleted: ${identityFile.path}');
+        _log.i('✅ Node identity file deleted: ${identityFile.path}');
       } else {
-        print('ℹ️ Node identity file not found, skipping deletion.');
+        _log.d('ℹ️ Node identity file not found, skipping deletion.');
       }
     } catch (e) {
-      print('❌ Error deleting node identity file: $e');
+      _log.e('❌ Error deleting node identity file', error: e);
     }
 
     // 2. Delete rewards address file
@@ -79,12 +82,12 @@ class MinerSettingsService {
       final rewardsFile = File('$quantusHome/rewards-address.txt');
       if (await rewardsFile.exists()) {
         await rewardsFile.delete();
-        print('✅ Rewards address file deleted: ${rewardsFile.path}');
+        _log.i('✅ Rewards address file deleted: ${rewardsFile.path}');
       } else {
-        print('ℹ️ Rewards address file not found, skipping deletion.');
+        _log.d('ℹ️ Rewards address file not found, skipping deletion.');
       }
     } catch (e) {
-      print('❌ Error deleting rewards address file: $e');
+      _log.e('❌ Error deleting rewards address file', error: e);
     }
 
     // 3. Delete node binary
@@ -93,12 +96,12 @@ class MinerSettingsService {
       final binaryFile = File(nodeBinaryPath);
       if (await binaryFile.exists()) {
         await binaryFile.delete();
-        print('✅ Node binary file deleted: ${binaryFile.path}');
+        _log.i('✅ Node binary file deleted: ${binaryFile.path}');
       } else {
-        print('ℹ️ Node binary file not found, skipping deletion.');
+        _log.d('ℹ️ Node binary file not found, skipping deletion.');
       }
     } catch (e) {
-      print('❌ Error deleting node binary file: $e');
+      _log.e('❌ Error deleting node binary file', error: e);
     }
 
     // 4. Delete external miner binary
@@ -108,12 +111,12 @@ class MinerSettingsService {
       final minerFile = File(minerBinaryPath);
       if (await minerFile.exists()) {
         await minerFile.delete();
-        print('✅ External miner binary deleted: ${minerFile.path}');
+        _log.i('✅ External miner binary deleted: ${minerFile.path}');
       } else {
-        print('ℹ️ External miner binary not found, skipping deletion.');
+        _log.d('ℹ️ External miner binary not found, skipping deletion.');
       }
     } catch (e) {
-      print('❌ Error deleting external miner binary: $e');
+      _log.e('❌ Error deleting external miner binary', error: e);
     }
 
     // 5. Delete node data directory (blockchain data)
@@ -122,12 +125,12 @@ class MinerSettingsService {
       final nodeDataDir = Directory('$quantusHome/node_data');
       if (await nodeDataDir.exists()) {
         await nodeDataDir.delete(recursive: true);
-        print('✅ Node data directory deleted: ${nodeDataDir.path}');
+        _log.i('✅ Node data directory deleted: ${nodeDataDir.path}');
       } else {
-        print('ℹ️ Node data directory not found, skipping deletion.');
+        _log.d('ℹ️ Node data directory not found, skipping deletion.');
       }
     } catch (e) {
-      print('❌ Error deleting node data directory: $e');
+      _log.e('❌ Error deleting node data directory', error: e);
     }
 
     // 6. Clean up bin directory and leftover files
@@ -141,22 +144,22 @@ class MinerSettingsService {
         );
         for (var file in tarFiles) {
           await file.delete();
-          print('✅ Cleaned up archive: ${file.path}');
+          _log.i('✅ Cleaned up archive: ${file.path}');
         }
 
         // Try to remove bin directory if it's empty
         try {
           await binDir.delete();
-          print('✅ Empty bin directory removed: ${binDir.path}');
+          _log.i('✅ Empty bin directory removed: ${binDir.path}');
         } catch (e) {
           // Directory not empty, that's fine
-          print('ℹ️ Bin directory not empty, keeping it.');
+          _log.d('ℹ️ Bin directory not empty, keeping it.');
         }
       } else {
-        print('ℹ️ Bin directory not found, skipping cleanup.');
+        _log.d('ℹ️ Bin directory not found, skipping cleanup.');
       }
     } catch (e) {
-      print('❌ Error cleaning up bin directory: $e');
+      _log.e('❌ Error cleaning up bin directory', error: e);
     }
 
     // 7. Try to remove the entire .quantus directory if it's empty
@@ -166,25 +169,25 @@ class MinerSettingsService {
       if (await quantusDir.exists()) {
         try {
           await quantusDir.delete();
-          print('✅ Removed empty .quantus directory: $quantusHome');
+          _log.i('✅ Removed empty .quantus directory: $quantusHome');
         } catch (e) {
           // Directory not empty, that's fine
-          print('ℹ️ .quantus directory not empty, keeping it.');
+          _log.d('ℹ️ .quantus directory not empty, keeping it.');
         }
       }
     } catch (e) {
-      print('❌ Error removing .quantus directory: $e');
+      _log.e('❌ Error removing .quantus directory', error: e);
     }
 
     // 8. Clear SharedPreferences
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
-      print('✅ SharedPreferences cleared');
+      _log.i('✅ SharedPreferences cleared');
     } catch (e) {
-      print('❌ Error clearing SharedPreferences: $e');
+      _log.e('❌ Error clearing SharedPreferences', error: e);
     }
 
-    print('🎉 App logout/reset complete! You can now go through setup again.');
+    _log.i('🎉 App logout/reset complete!');
   }
 }

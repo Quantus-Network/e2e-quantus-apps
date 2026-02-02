@@ -47,11 +47,11 @@ class ExternalMinerApiClient {
            MinerConfig.minerMetricsUrl(MinerConfig.defaultMinerMetricsPort),
        _httpClient = http.Client();
 
-  /// Start polling for metrics every second
+  /// Start polling for metrics
   void startPolling() {
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(
-      const Duration(seconds: 1),
+      MinerConfig.metricsPollingInterval,
       (_) => _pollMetrics(),
     );
   }

@@ -33,9 +33,28 @@ class GlobalMinerManager {
     return _orchestrator;
   }
 
+  /// Synchronous force stop for app detach scenarios.
+  ///
+  /// This is called from _onAppDetach which cannot be async.
+  /// It fires off process kills without waiting for completion.
+  static void forceStopAll() {
+    _log.i('Force stopping all processes (sync)...');
+    if (_orchestrator != null) {
+      try {
+        _orchestrator!.forceStop();
+        _orchestrator = null;
+      } catch (e) {
+        _log.e('Error force stopping orchestrator', error: e);
+      }
+    }
+
+    // Fire and forget - kill any remaining quantus processes
+    ProcessCleanupService.killAllQuantusProcesses();
+  }
+
   /// Cleanup all mining processes.
   ///
-  /// Called during app exit or detach.
+  /// Called during app exit (async context).
   static Future<void> cleanup() async {
     _log.i('Starting global cleanup...');
     if (_orchestrator != null) {
@@ -184,7 +203,8 @@ class _MinerAppState extends State<MinerApp> {
 
   void _onAppDetach() {
     _log.i('App detached, cleaning up...');
-    GlobalMinerManager.cleanup();
+    // Use synchronous force stop since _onAppDetach cannot be async
+    GlobalMinerManager.forceStopAll();
   }
 
   Future<AppExitResponse> _onExitRequested() async {

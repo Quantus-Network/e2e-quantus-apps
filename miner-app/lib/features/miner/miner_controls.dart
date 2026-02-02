@@ -2,14 +2,18 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:quantus_miner/src/config/miner_config.dart';
 import 'package:quantus_miner/src/services/mining_orchestrator.dart';
 import 'package:quantus_miner/src/services/mining_stats_service.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
+import 'package:quantus_miner/src/utils/app_logger.dart';
 
 import '../../main.dart';
 import '../../src/services/binary_manager.dart';
 import '../../src/services/gpu_detection_service.dart';
 import '../../src/services/miner_settings_service.dart';
+
+final _log = log.withTag('MinerControls');
 
 class MinerControls extends StatefulWidget {
   final MiningOrchestrator? orchestrator;
@@ -33,7 +37,7 @@ class _MinerControlsState extends State<MinerControls> {
   int _cpuWorkers = 8;
   int _gpuDevices = 0;
   int _detectedGpuCount = 0;
-  String _chainId = 'dev';
+  String _chainId = MinerConfig.defaultChainId;
   final _settingsService = MinerSettingsService();
 
   @override
@@ -88,7 +92,7 @@ class _MinerControlsState extends State<MinerControls> {
   }
 
   Future<void> _startNode() async {
-    print('Starting node');
+    _log.i('Starting node');
 
     // Reload chain ID in case it was changed in settings
     final chainId = await _settingsService.getChainId();
@@ -106,7 +110,7 @@ class _MinerControlsState extends State<MinerControls> {
     final minerBin = File(minerBinPath);
 
     if (!await nodeBin.exists()) {
-      print('Node binary not found.');
+      _log.w('Node binary not found');
       if (mounted) {
         context.showWarningSnackbar(
           title: 'Node binary not found!',
@@ -134,7 +138,7 @@ class _MinerControlsState extends State<MinerControls> {
         ),
       );
     } catch (e) {
-      print('Error starting node: $e');
+      _log.e('Error starting node', error: e);
       if (mounted) {
         context.showErrorSnackbar(
           title: 'Error starting node!',
@@ -147,13 +151,13 @@ class _MinerControlsState extends State<MinerControls> {
   }
 
   Future<void> _stopNode() async {
-    print('Stopping node');
+    _log.i('Stopping node');
 
     if (widget.orchestrator != null) {
       try {
         await widget.orchestrator!.stopNode();
       } catch (e) {
-        print('Error stopping node: $e');
+        _log.e('Error stopping node', error: e);
       }
       widget.orchestrator!.dispose();
     }
@@ -182,7 +186,7 @@ class _MinerControlsState extends State<MinerControls> {
   }
 
   Future<void> _startMiner() async {
-    print('Starting miner');
+    _log.i('Starting miner');
 
     if (widget.orchestrator == null) {
       if (mounted) {
@@ -199,7 +203,7 @@ class _MinerControlsState extends State<MinerControls> {
     final minerBin = File(minerBinPath);
 
     if (!await minerBin.exists()) {
-      print('Miner binary not found.');
+      _log.w('Miner binary not found');
       if (mounted) {
         context.showWarningSnackbar(
           title: 'Miner binary not found!',
@@ -218,7 +222,7 @@ class _MinerControlsState extends State<MinerControls> {
 
       await widget.orchestrator!.startMiner();
     } catch (e) {
-      print('Error starting miner: $e');
+      _log.e('Error starting miner', error: e);
       if (mounted) {
         context.showErrorSnackbar(
           title: 'Error starting miner!',
@@ -229,13 +233,13 @@ class _MinerControlsState extends State<MinerControls> {
   }
 
   Future<void> _stopMiner() async {
-    print('Stopping miner');
+    _log.i('Stopping miner');
 
     if (widget.orchestrator != null) {
       try {
         await widget.orchestrator!.stopMiner();
       } catch (e) {
-        print('Error stopping miner: $e');
+        _log.e('Error stopping miner', error: e);
       }
     }
   }

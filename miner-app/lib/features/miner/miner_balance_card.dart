@@ -8,8 +8,11 @@ import 'package:quantus_miner/src/services/binary_manager.dart';
 import 'package:quantus_miner/src/services/miner_settings_service.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
 import 'package:quantus_miner/src/shared/miner_app_constants.dart';
+import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/generated/schrodinger/schrodinger.dart';
+
+final _log = log.withTag('BalanceCard');
 
 class MinerBalanceCard extends StatefulWidget {
   /// Current block number - when this changes, balance is refreshed
@@ -34,8 +37,8 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
     super.initState();
 
     _loadChainAndFetchBalance();
-    // Start automatic polling every 30 seconds as backup
-    _balanceTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+    // Start automatic polling as backup
+    _balanceTimer = Timer.periodic(MinerConfig.balancePollingInterval, (_) {
       _loadChainAndFetchBalance();
     });
   }
@@ -65,7 +68,7 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
   }
 
   Future<void> _fetchWalletBalance() async {
-    print('fetching wallet balance for chain: $_chainId');
+    _log.d('Fetching wallet balance for chain: $_chainId');
     try {
       final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
       final rewardsFile = File('$quantusHome/rewards-address.txt');
@@ -74,28 +77,26 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
         final address = (await rewardsFile.readAsString()).trim();
 
         if (address.isNotEmpty) {
-          print('address: $address');
-
           final chainConfig = MinerConfig.getChainById(_chainId);
-          print(
-            'Chain config: id=${chainConfig.id}, rpcUrl=${chainConfig.rpcUrl}, isLocalNode=${chainConfig.isLocalNode}',
+          _log.d(
+            'Chain: ${chainConfig.id}, rpcUrl: ${chainConfig.rpcUrl}, isLocal: ${chainConfig.isLocalNode}',
           );
           BigInt balance;
 
           if (chainConfig.isLocalNode) {
             // Use local node RPC for dev chain
-            print('Querying balance from LOCAL node: ${chainConfig.rpcUrl}');
+            _log.d('Querying balance from local node: ${chainConfig.rpcUrl}');
             balance = await _queryBalanceFromLocalNode(
               address,
               chainConfig.rpcUrl,
             );
           } else {
             // Use SDK's SubstrateService for remote chains (dirac)
-            print('Querying balance from REMOTE (SDK SubstrateService)');
+            _log.d('Querying balance from remote (SDK SubstrateService)');
             balance = await SubstrateService().queryBalance(address);
           }
 
-          print('balance: $balance');
+          _log.d('Balance: $balance');
 
           if (mounted) {
             setState(() {
@@ -123,7 +124,7 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
           }
         });
       }
-      print('Error fetching wallet balance: $e');
+      _log.w('Error fetching wallet balance', error: e);
     }
   }
 
@@ -142,7 +143,7 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
       final accountInfo = await quantusApi.query.system.account(accountId);
       return accountInfo.data.free;
     } catch (e) {
-      print('Error querying local node balance: $e');
+      _log.d('Error querying local node balance: $e');
       // Return zero if node is not running or address has no balance
       return BigInt.zero;
     }
@@ -155,7 +156,7 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
         _walletAddress = null;
       });
     }
-    print('Rewards address file not found or empty.');
+    _log.w('Rewards address file not found or empty');
   }
 
   @override
