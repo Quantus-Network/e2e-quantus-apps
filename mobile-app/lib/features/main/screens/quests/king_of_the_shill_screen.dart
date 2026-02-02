@@ -103,10 +103,6 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
     ref.invalidate(raiderSubmissionsProvider);
   }
 
-  String _formatTimeAgo(String url) {
-    return '';
-  }
-
   Future<void> _openUrl(String url) async {
     final uri = Uri.tryParse(url);
     if (uri != null && await canLaunchUrl(uri)) {
@@ -354,10 +350,6 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-          ),
-          Text(
-            _formatTimeAgo(url),
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10, fontFamily: 'Fira Code'),
           ),
         ],
       ),

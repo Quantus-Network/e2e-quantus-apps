@@ -441,9 +441,7 @@ class _UnlinkConfirmationSheetState extends State<_UnlinkConfirmationSheet> {
     } catch (e) {
       if (mounted) {
         setState(() => _isUnlinking = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: widget.dangerColor));
+        context.showErrorSnackbar(title: 'Error', message: 'Error: $e');
       }
     }
   }

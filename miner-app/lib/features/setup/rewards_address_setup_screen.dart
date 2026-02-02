@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flash/flash_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -82,9 +83,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
       print('Rewards address saved: $address');
 
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Rewards address saved successfully!')));
+        context.showSuccessBar(content: Text('Rewards address saved successfully!'));
         // Navigate to the main mining screen
         context.go('/miner_dashboard');
       }
