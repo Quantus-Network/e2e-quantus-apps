@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flash/flash_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -86,8 +87,8 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
       print('Rewards address saved: $address');
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Rewards address saved successfully!')),
+        context.showSuccessBar(
+          content: const Text('Rewards address saved successfully!'),
         );
         // Navigate to the main mining screen
         context.go('/miner_dashboard');
@@ -142,14 +143,6 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                           Container(
                             width: 40, // spacer for alignment
                           ),
-                          // const Text(
-                          //   'Scan QR Code',
-                          //   style: TextStyle(
-                          //     color: Colors.white,
-                          //     fontSize: 20,
-                          //     fontWeight: FontWeight.bold,
-                          //   ),
-                          // ),
                           Positioned(
                             right: 0,
                             top: 0,

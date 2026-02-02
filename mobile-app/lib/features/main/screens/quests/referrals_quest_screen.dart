@@ -1,24 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/basic_card.dart';
-import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/copy_icon.dart';
-import 'package:resonance_network_wallet/features/components/link_text.dart';
+import 'package:resonance_network_wallet/features/components/inner_shadow_container.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/features/components/skeleton.dart';
-import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
-import 'package:resonance_network_wallet/features/main/screens/quests/account_associations_status.dart';
-import 'package:resonance_network_wallet/features/main/screens/quests/optin_position_status.dart';
-import 'package:resonance_network_wallet/features/main/screens/quests/quest_title.dart';
+import 'package:resonance_network_wallet/features/main/screens/quests/quest_constants.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_associations_providers.dart';
 import 'package:resonance_network_wallet/providers/account_stats_providers.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
-import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:share_plus/share_plus.dart';
 
 class ReferralsQuestScreen extends ConsumerStatefulWidget {
@@ -28,10 +21,8 @@ class ReferralsQuestScreen extends ConsumerStatefulWidget {
   ConsumerState<ReferralsQuestScreen> createState() => _ReferralsQuestScreenState();
 }
 
-class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> with WidgetsBindingObserver {
+class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
   final ReferralService _referralService = ReferralService();
-  final ScrollController _scrollController = ScrollController();
-
   String? _referralCode;
 
   Future<void> _loadReferralCode() async {
@@ -59,187 +50,324 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> wit
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _loadReferralCode();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  void refreshStatsData() {
-    ref.invalidate(accountsStatsProvider);
-  }
-
-  void refreshAssociationsData() {
-    ref.invalidate(accountAssociationsProvider);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final statsAsync = ref.watch(accountsStatsProvider);
-
-    return ScaffoldBase.refreshable(
-      appBar: WalletAppBar(title: 'Referrals Quest'),
-      padding: const EdgeInsetsGeometry.all(0),
-      onRefresh: () async {
-        refreshStatsData();
-        refreshAssociationsData();
-      },
-      scrollController: _scrollController,
-      decorations: [
-        const Positioned(top: 180, right: -34, child: Sphere(variant: 2, size: 194)),
-        const Positioned(left: -60, bottom: 0, child: Sphere(variant: 7, size: 240.68)),
-      ],
-      slivers: [
-        SliverToBoxAdapter(
-          child: Stack(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 11),
+  void _showHowItWorksDialog() {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.7),
+      builder: (context) => GestureDetector(
+        onTap: () => Navigator.of(context).pop(),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Center(
+            child: GestureDetector(
+              onTap: () {},
+              child: Container(
+                width: 280,
+                padding: const EdgeInsets.all(24),
+                decoration: ShapeDecoration(
+                  color: context.themeColors.background2,
+                  shape: RoundedRectangleBorder(
+                    side: const BorderSide(width: 1, color: Color(0x66F4F6F9)),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.only(right: 44),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: 17,
-                        children: [
-                          _buildDecoration(),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 96),
-                                const Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [OptinPositionStatus(), SizedBox(width: 71)],
-                                ),
-                                SizedBox(height: context.isSmallHeight ? 18 : 37.0),
-                                const AccountAssociationsStatus(),
-                                SizedBox(height: context.isSmallHeight ? 18 : 37.0),
-                                ..._buildAccountStats(context, statsAsync),
-                                const SizedBox(height: 16),
-                                LinkText(
-                                  label: 'Learn more',
-                                  url: AppConstants.shillQuestsPageUrl,
-                                  textStyle: context.themeText.smallParagraph,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: context.isSmallHeight ? 18 : 40),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: InkWell(
-                        onTap: _copyReferralCode,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-                          decoration: ShapeDecoration(
-                            color: context.themeColors.background,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                          ),
-                          child: Row(
-                            spacing: 12.0,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                _referralCode ?? 'Loading...',
-                                style: context.themeText.smallParagraph,
-                                textAlign: TextAlign.center,
-                              ),
-                              const CopyIcon(),
-                            ],
-                          ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('HOW IT WORKS', style: context.themeText.paragraph),
+                        GestureDetector(
+                          onTap: () => Navigator.of(context).pop(),
+                          child: const Icon(Icons.close, color: Colors.white, size: 24),
                         ),
-                      ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+                    _buildStep('Step 1', 'Invite users using your unique code'),
+                    const SizedBox(height: 16),
+                    _buildStep(
+                      'Step 2',
+                      'They must create a Quantus Wallet. Referrals without wallet creation won\'t count',
                     ),
                     const SizedBox(height: 16),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Button(
-                        variant: ButtonVariant.glassOutline,
-                        label: 'Share Referral Link',
-                        onPressed: _shareReferralLink,
-                      ),
-                    ),
+                    _buildStep('Step 3', 'Climb the leaderboard. Rank updates automatically'),
                   ],
                 ),
               ),
-              const QuestTitle(),
-            ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStep(String title, String description) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontFamily: 'Fira Code',
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          description,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.50),
+            fontSize: 14,
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.w400,
           ),
         ),
       ],
     );
   }
 
-  List<Widget> _buildAccountStats(BuildContext context, AsyncValue<AccountStats> statsAsync) {
-    return statsAsync.when(
-      data: (stats) => [
-        _buildStatCard(context, 'Referrals:', stats.referralCount),
-        const SizedBox(height: 9),
-        _buildStatCard(context, 'Sends:', stats.sendCount),
-        const SizedBox(height: 9),
-        _buildStatCard(context, 'Reversals:', stats.reversalCount),
-        const SizedBox(height: 9),
-        _buildStatCard(context, 'Mining:', stats.miningCount),
-      ],
-      loading: () => [
-        _buildStatCard(context, 'Referrals:', null),
-        const SizedBox(height: 9),
-        _buildStatCard(context, 'Sends:', null),
-        const SizedBox(height: 9),
-        _buildStatCard(context, 'Reversals:', null),
-        const SizedBox(height: 9),
-        _buildStatCard(context, 'Mining:', null),
-      ],
-      error: (error, stack) => [
-        Text(
-          'Error fetching account stats.',
-          style: context.themeText.detail?.copyWith(color: context.themeColors.textError),
-        ),
-        const SizedBox(height: 12),
-        Button(variant: ButtonVariant.neutral, label: 'Try again', onPressed: refreshStatsData),
-      ],
-    );
+  @override
+  void initState() {
+    super.initState();
+    _loadReferralCode();
   }
 
-  Widget _buildStatCard(BuildContext context, String title, int? stat) {
-    final isLoading = stat == null;
+  void refreshStatsData() {
+    ref.invalidate(accountsStatsProvider);
+    ref.invalidate(accountAssociationsProvider);
+  }
 
-    return BasicCard(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title, style: context.themeText.smallTitle),
-          isLoading ? const Skeleton(width: 40, height: 16) : Text('$stat', style: context.themeText.smallTitle),
+  @override
+  Widget build(BuildContext context) {
+    final statsAsync = ref.watch(accountsStatsProvider);
+    final referralsCount = statsAsync.value?.referralCount ?? 0;
+
+    return ScaffoldBase(
+      appBar: WalletAppBar(
+        title: 'Referrals',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline, color: Colors.white),
+            onPressed: _showHowItWorksDialog,
+          ),
         ],
       ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                clipBehavior: Clip.antiAlias,
+                decoration: ShapeDecoration(
+                  color: context.themeColors.background2,
+                  shape: RoundedRectangleBorder(
+                    side: const BorderSide(width: 1, color: Color(0x7F6734BA)),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                child: InnerShadowContainer.standard(
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        left: -156,
+                        top: 72,
+                        child: Container(
+                          width: 531,
+                          height: 531,
+                          clipBehavior: Clip.antiAlias,
+                          decoration: ShapeDecoration(
+                            gradient: const RadialGradient(
+                              center: Alignment(0.77, -0.77),
+                              radius: 1.8,
+                              colors: questReferFriendsGradient,
+                              stops: [0.45, 0.53, 0.62, 0.65],
+                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Center(
+                              child: Column(
+                                children: [
+                                  Text('REFER FRIENDS', style: context.themeText.paragraph),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Invite friends. Earn rewards. \nClimb the leaderboard.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.50),
+                                      fontSize: 14,
+                                      fontFamily: 'Inter',
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 40),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // these colors aren't really great anyway..should be spheres for accounts..
+                                _buildAvatar([const Color(0xFF0000FF), context.themeColors.background2]),
+                                Transform.translate(
+                                  offset: const Offset(-16, 0),
+                                  child: _buildAvatar([const Color(0xFF8B0000), context.themeColors.pink]),
+                                ),
+                                Transform.translate(
+                                  offset: const Offset(-32, 0),
+                                  child: _buildAvatar([const Color(0xFFFFD700), context.themeColors.yellow]),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 40),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: ShapeDecoration(
+                                color: context.themeColors.background2.useOpacity(0.4),
+                                shape: RoundedRectangleBorder(
+                                  side: const BorderSide(width: 1, color: Color(0x33F4F6F9)),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                shadows: const [
+                                  BoxShadow(color: Color(0x3F000000), blurRadius: 4, offset: Offset(4, 4)),
+                                ],
+                              ),
+                              child: Column(
+                                children: [
+                                  _buildStatRow('Referrals', '$referralsCount', Colors.white),
+                                  const SizedBox(height: 16),
+                                  _buildStatRow('Rank', '#-', context.themeColors.pink),
+                                ],
+                              ),
+                            ),
+                            const Spacer(),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  'Your invite code',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontFamily: 'Fira Code',
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                GestureDetector(
+                                  onTap: _copyReferralCode,
+                                  child: Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(14),
+                                    decoration: ShapeDecoration(
+                                      color: Colors.white.useOpacity(0.3),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          _referralCode ?? 'Loading...',
+                                          style: const TextStyle(
+                                            color: Color(0xFFF4F6F9),
+                                            fontSize: 12,
+                                            fontFamily: 'Fira Code',
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                        ),
+                                        const CopyIcon(width: 16, color: Color(0xFFF4F6F9)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+            GestureDetector(
+              onTap: _shareReferralLink,
+              child: InnerShadowContainer.standard(
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: ShapeDecoration(
+                    color: const Color(0x33F4F6F9),
+                    shape: RoundedRectangleBorder(
+                      side: const BorderSide(width: 1, color: Color(0x33F4F6F9)),
+                      borderRadius: BorderRadius.circular(42),
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    'Share Link',
+                    style: context.themeText.smallTitle?.copyWith(color: context.themeColors.textPrimary),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildDecoration() {
+  Widget _buildAvatar(List<Color> colors) {
     return Container(
-      width: 85,
-      height: context.isSmallHeight ? 415 : 480,
-      decoration: const ShapeDecoration(
-        gradient: LinearGradient(
-          begin: Alignment(0.03, -1.00),
-          end: Alignment(-0.03, 1),
-          colors: [Color(0xFF0000FF), Color(0xFFED4CCE), Color(0xFFFFE91F)],
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(topRight: Radius.circular(10), bottomRight: Radius.circular(10)),
+      width: 64,
+      height: 64,
+      decoration: ShapeDecoration(
+        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: colors),
+        shape: OvalBorder(
+          side: BorderSide(
+            width: 2.67,
+            strokeAlign: BorderSide.strokeAlignOutside,
+            color: context.themeColors.background2,
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildStatRow(String label, String value, Color valueColor) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFFF4F6F9),
+            fontSize: 14,
+            fontFamily: 'Fira Code',
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+        Text(
+          value,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: valueColor, fontSize: 14, fontFamily: 'Fira Code', fontWeight: FontWeight.w400),
+        ),
+      ],
     );
   }
 }

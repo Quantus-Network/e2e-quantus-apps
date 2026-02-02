@@ -13,6 +13,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
   final Color pink;
   final Color yellow;
   final Color background;
+  final Color background2;
   final Color surface;
   final Color surfaceActive;
   final Color error;
@@ -52,6 +53,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     required this.pink,
     required this.yellow,
     required this.background,
+    required this.background2,
     required this.surface,
     required this.surfaceActive,
     required this.error,
@@ -93,6 +95,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
         pink: const Color(0xFFED4CCE),
         yellow: const Color(0xFFFFE91F),
         background: const Color(0xFF0B0F14),
+        background2: const Color(0xFF0C1014),
         surface: const Color(0xFF000000),
         surfaceActive: const Color(0xFFF4F6F9),
         error: const Color(0xFFFF2D54),
@@ -134,6 +137,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
         pink: const Color(0xFFED4CCE),
         yellow: const Color(0xFFFFE91F),
         background: const Color(0xFF0B0F14),
+        background2: const Color(0xFF0C1014),
         surface: const Color(0xFF000000),
         surfaceActive: const Color(0xFFF4F6F9),
         error: const Color(0xFFFF2D54),
@@ -174,6 +178,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     Color? pink,
     Color? yellow,
     Color? background,
+    Color? background2,
     Color? surface,
     Color? surfaceActive,
     Color? error,
@@ -213,6 +218,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
       pink: pink ?? this.pink,
       yellow: yellow ?? this.yellow,
       background: background ?? this.background,
+      background2: background2 ?? this.background2,
       surface: surface ?? this.surface,
       surfaceActive: surfaceActive ?? this.surfaceActive,
       error: error ?? this.error,
@@ -256,6 +262,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
       pink: Color.lerp(pink, other.pink, t) ?? pink,
       yellow: Color.lerp(yellow, other.yellow, t) ?? yellow,
       background: Color.lerp(background, other.background, t) ?? background,
+      background2: Color.lerp(background2, other.background2, t) ?? background2,
       surface: Color.lerp(surface, other.surface, t) ?? surface,
       surfaceActive: Color.lerp(surfaceActive, other.surfaceActive, t) ?? surfaceActive,
       error: Color.lerp(error, other.error, t) ?? error,

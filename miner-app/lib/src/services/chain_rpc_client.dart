@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
 import 'package:quantus_miner/src/config/miner_config.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
