@@ -12,7 +12,10 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/generated/schrodinger/schrodinger.dart';
 
 class MinerBalanceCard extends StatefulWidget {
-  const MinerBalanceCard({super.key});
+  /// Current block number - when this changes, balance is refreshed
+  final int currentBlock;
+
+  const MinerBalanceCard({super.key, this.currentBlock = 0});
 
   @override
   State<MinerBalanceCard> createState() => _MinerBalanceCardState();
@@ -24,16 +27,27 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
   String _chainId = MinerConfig.defaultChainId;
   Timer? _balanceTimer;
   final _settingsService = MinerSettingsService();
+  int _lastRefreshedBlock = 0;
 
   @override
   void initState() {
     super.initState();
 
     _loadChainAndFetchBalance();
-    // Start automatic polling every 30 seconds
+    // Start automatic polling every 30 seconds as backup
     _balanceTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       _loadChainAndFetchBalance();
     });
+  }
+
+  @override
+  void didUpdateWidget(MinerBalanceCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Refresh balance when block number increases (new block found)
+    if (widget.currentBlock > _lastRefreshedBlock && widget.currentBlock > 0) {
+      _lastRefreshedBlock = widget.currentBlock;
+      _loadChainAndFetchBalance();
+    }
   }
 
   @override

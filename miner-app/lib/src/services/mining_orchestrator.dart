@@ -585,15 +585,15 @@ class MiningOrchestrator {
       _consecutiveMetricsFailures = 0;
 
       _statsService.updateHashrate(metrics.hashRate);
-      if (metrics.workers > 0) {
-        _statsService.updateWorkers(metrics.workers);
-      }
+      // NOTE: Don't update workers from metrics - miner_workers includes GPU workers
+      // which would incorrectly inflate the CPU count. We use the configured cpuWorkers instead.
       if (metrics.cpuCapacity > 0) {
         _statsService.updateCpuCapacity(metrics.cpuCapacity);
       }
-      if (metrics.gpuDevices > 0) {
-        _statsService.updateGpuDevices(metrics.gpuDevices);
-      }
+      // NOTE: Don't update gpuDevices from metrics - use the configured value instead
+      // if (metrics.gpuDevices > 0) {
+      //   _statsService.updateGpuDevices(metrics.gpuDevices);
+      // }
       _emitStats();
     } else if (metrics.hashRate == 0.0 && _lastValidHashrate > 0) {
       // Keep last valid hashrate during temporary zeroes
