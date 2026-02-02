@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart
 import 'package:resonance_network_wallet/features/main/screens/quests/quest_constants.dart';
 import 'package:resonance_network_wallet/features/main/screens/quests/raid_submission_action_sheet.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/raider_quest_providers.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -48,15 +49,7 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'HOW IT WORKS',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                        Text('HOW IT WORKS', style: context.themeText.paragraph),
                         GestureDetector(
                           onTap: () => Navigator.of(context).pop(),
                           child: const Icon(Icons.close, color: Colors.white, size: 24),
@@ -176,15 +169,7 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
                             Center(
                               child: Column(
                                 children: [
-                                  const Text(
-                                    'KING OF THE SHILL',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontFamily: 'Fira Code',
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
+                                  Text('KING OF THE SHILL', style: context.themeText.paragraph),
                                   const SizedBox(height: 8),
                                   Text(
                                     'Join social raids. Get rewarded for\nverified posts.',

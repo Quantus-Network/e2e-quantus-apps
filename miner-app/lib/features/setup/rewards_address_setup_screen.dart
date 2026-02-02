@@ -131,14 +131,6 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                           Container(
                             width: 40, // spacer for alignment
                           ),
-                          // const Text(
-                          //   'Scan QR Code',
-                          //   style: TextStyle(
-                          //     color: Colors.white,
-                          //     fontSize: 20,
-                          //     fontWeight: FontWeight.bold,
-                          //   ),
-                          // ),
                           Positioned(
                             right: 0,
                             top: 0,

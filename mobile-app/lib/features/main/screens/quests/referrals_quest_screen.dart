@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/features/components/scaffold_base.dart'
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/quests/quest_constants.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_associations_providers.dart';
 import 'package:resonance_network_wallet/providers/account_stats_providers.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
@@ -77,15 +78,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'HOW IT WORKS',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                        Text('HOW IT WORKS', style: context.themeText.paragraph),
                         GestureDetector(
                           onTap: () => Navigator.of(context).pop(),
                           child: const Icon(Icons.close, color: Colors.white, size: 24),
@@ -208,15 +201,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                             Center(
                               child: Column(
                                 children: [
-                                  const Text(
-                                    'REFER FRIENDS',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontFamily: 'Fira Code',
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
+                                  Text('REFER FRIENDS', style: context.themeText.paragraph),
                                   const SizedBox(height: 8),
                                   Text(
                                     'Invite friends. Earn rewards. \nClimb the leaderboard.',

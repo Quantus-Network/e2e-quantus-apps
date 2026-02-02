@@ -132,15 +132,7 @@ class QuestCard extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                        Text(title, style: context.themeText.paragraph),
                         const SizedBox(height: 8),
                         Text(
                           description,

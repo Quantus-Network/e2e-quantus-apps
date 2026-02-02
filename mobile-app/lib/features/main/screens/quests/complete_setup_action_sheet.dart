@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_associations_providers.dart';
 import 'package:resonance_network_wallet/providers/opt_in_position_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
@@ -149,15 +150,7 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'ACCOUNT SETUP',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                Text('ACCOUNT SETUP', style: context.themeText.paragraph),
                 const SizedBox(height: 6),
                 SizedBox(
                   width: 264,
