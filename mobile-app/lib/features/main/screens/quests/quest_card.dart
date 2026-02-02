@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:resonance_network_wallet/features/main/screens/quests/quest_constants.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
@@ -48,7 +49,7 @@ class QuestCard extends StatelessWidget {
       actionLabel: 'View Referrals',
       onTap: onTap,
       onDisabledTap: onDisabledTap,
-      gradientColors: const [Color(0xFF0C1014), Color(0xFF0000FF), Color(0xFFED4CCE), Color(0xFFFFE91F)],
+      gradientColors: questReferFriendsGradient,
       gradientStops: const [0.55, 0.62, 0.68, 0.72],
       gradientCenter: const Alignment(0.6, -0.7),
       gradientRadius: 1.29,
@@ -72,7 +73,7 @@ class QuestCard extends StatelessWidget {
       actionLabel: 'View Raids',
       onTap: onTap,
       onDisabledTap: onDisabledTap,
-      gradientColors: const [Color(0xFF0C1014), Color(0xFFED4CCE), Color(0xFFFFE91F)],
+      gradientColors: questKingOfTheShillGradient,
       gradientStops: const [0.55, 0.64, 0.68],
       gradientCenter: const Alignment(0.7, -0.7),
       gradientRadius: 1.3,
@@ -94,7 +95,7 @@ class QuestCard extends StatelessWidget {
           height: 246,
           clipBehavior: Clip.antiAlias,
           decoration: ShapeDecoration(
-            color: const Color(0xFF0C1014),
+            color: context.themeColors.background2,
             shape: RoundedRectangleBorder(
               side: BorderSide(width: 1, color: borderColor),
               borderRadius: BorderRadius.circular(4),

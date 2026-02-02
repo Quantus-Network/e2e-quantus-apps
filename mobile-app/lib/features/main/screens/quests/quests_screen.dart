@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:resonance_network_wallet/features/components/complete_setup_action_sheet.dart';
-import 'package:resonance_network_wallet/features/components/quest_card.dart';
+import 'package:resonance_network_wallet/features/main/screens/quests/complete_setup_action_sheet.dart';
+import 'package:resonance_network_wallet/features/main/screens/quests/quest_card.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/main/screens/quests/king_of_the_shill_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/quests/referrals_quest_screen.dart';
@@ -52,7 +52,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
     final showTooltip = !hasEthAddress && _showSetupTooltip;
 
     return ScaffoldBase.refreshable(
-      backgroundColor: const Color(0xFF0C1014),
+      backgroundColor: context.themeColors.background2,
       onRefresh: () async {
         refreshStatsData();
         refreshAssociationsData();
@@ -104,7 +104,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: ShapeDecoration(
-        color: const Color(0xFF0C1014),
+        color: context.themeColors.background2,
         shape: RoundedRectangleBorder(
           side: const BorderSide(width: 1, color: Color(0x66F4F6F9)),
           borderRadius: BorderRadius.circular(4),

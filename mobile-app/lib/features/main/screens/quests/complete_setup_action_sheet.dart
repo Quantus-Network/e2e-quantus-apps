@@ -111,9 +111,9 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
     return Container(
       constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
       padding: EdgeInsets.only(left: 26, right: 26, top: 40, bottom: 40 + MediaQuery.of(context).viewInsets.bottom),
-      decoration: const ShapeDecoration(
-        color: Color(0xFF0C1014),
-        shape: RoundedRectangleBorder(
+      decoration: ShapeDecoration(
+        color: context.themeColors.background2,
+        shape: const RoundedRectangleBorder(
           side: BorderSide(width: 1, strokeAlign: BorderSide.strokeAlignOutside, color: Color(0x66F4F6F9)),
           borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
         ),
@@ -189,7 +189,7 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
     showModalBottomSheet(
       context: context,
       isDismissible: true,
-      backgroundColor: const Color(0xFF0C1014),
+      backgroundColor: context.themeColors.background2,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (sheetContext) =>
           _UnlinkConfirmationSheet(title: title, onConfirm: onConfirm, dangerColor: context.themeColors.buttonDanger),
