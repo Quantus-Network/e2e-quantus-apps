@@ -230,7 +230,7 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
                   alignment: Alignment.center,
                   child: Text(
                     'Add Raid Submission',
-                    style: context.themeText.smallTitle?.copyWith(color: const Color(0xFFF4F6F9)),
+                    style: context.themeText.smallTitle?.copyWith(color: context.themeColors.textPrimary),
                   ),
                 ),
               ),

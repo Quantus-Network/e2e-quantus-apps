@@ -254,7 +254,7 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
         children: [
           SizedBox(
             width: 323,
-            child: Text(title, style: context.themeText.smallTitle?.copyWith(color: const Color(0xFFF4F6F9))),
+            child: Text(title, style: context.themeText.smallTitle?.copyWith(color: context.themeColors.textPrimary)),
           ),
           const SizedBox(height: 15),
           Container(
@@ -323,7 +323,7 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
                   width: 323,
                   child: Text(
                     'Verify your X account',
-                    style: context.themeText.smallTitle?.copyWith(color: const Color(0xFFF4F6F9)),
+                    style: context.themeText.smallTitle?.copyWith(color: context.themeColors.textPrimary),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -408,7 +408,10 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
                     height: 20,
                     child: CircularProgressIndicator(color: context.themeColors.textPrimary, strokeWidth: 2),
                   )
-                : Text('Link Accounts', style: context.themeText.smallTitle?.copyWith(color: const Color(0xFFF4F6F9))),
+                : Text(
+                    'Link Accounts',
+                    style: context.themeText.smallTitle?.copyWith(color: context.themeColors.textPrimary),
+                  ),
           ),
         ),
       ),

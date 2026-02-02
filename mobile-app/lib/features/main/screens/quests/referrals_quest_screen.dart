@@ -321,7 +321,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                   alignment: Alignment.center,
                   child: Text(
                     'Share Link',
-                    style: context.themeText.smallTitle?.copyWith(color: const Color(0xFFF4F6F9)),
+                    style: context.themeText.smallTitle?.copyWith(color: context.themeColors.textPrimary),
                   ),
                 ),
               ),
