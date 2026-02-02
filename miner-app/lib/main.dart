@@ -8,7 +8,7 @@ import 'features/setup/node_identity_setup_screen.dart';
 import 'features/setup/rewards_address_setup_screen.dart';
 import 'features/miner/miner_dashboard_screen.dart';
 import 'src/services/binary_manager.dart';
-import 'src/services/miner_process.dart';
+import 'src/services/mining_orchestrator.dart';
 import 'src/services/process_cleanup_service.dart';
 import 'src/utils/app_logger.dart';
 
@@ -16,27 +16,34 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 final _log = log.withTag('App');
 
-/// Global class to manage miner process lifecycle
+/// Global class to manage mining orchestrator lifecycle.
+///
+/// This is used for cleanup during app exit/detach events.
 class GlobalMinerManager {
-  static MinerProcess? _globalMinerProcess;
+  static MiningOrchestrator? _orchestrator;
 
-  static void setMinerProcess(MinerProcess? process) {
-    _globalMinerProcess = process;
-    _log.d('Miner process registered: ${process != null}');
+  /// Register the active orchestrator for lifecycle management.
+  static void setOrchestrator(MiningOrchestrator? orchestrator) {
+    _orchestrator = orchestrator;
+    _log.d('Orchestrator registered: ${orchestrator != null}');
   }
 
-  static MinerProcess? getMinerProcess() {
-    return _globalMinerProcess;
+  /// Get the current orchestrator, if any.
+  static MiningOrchestrator? getOrchestrator() {
+    return _orchestrator;
   }
 
+  /// Cleanup all mining processes.
+  ///
+  /// Called during app exit or detach.
   static Future<void> cleanup() async {
     _log.i('Starting global cleanup...');
-    if (_globalMinerProcess != null) {
+    if (_orchestrator != null) {
       try {
-        _globalMinerProcess!.forceStop();
-        _globalMinerProcess = null;
+        _orchestrator!.forceStop();
+        _orchestrator = null;
       } catch (e) {
-        _log.e('Error stopping miner process', error: e);
+        _log.e('Error stopping orchestrator', error: e);
       }
     }
 

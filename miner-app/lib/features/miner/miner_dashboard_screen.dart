@@ -5,8 +5,9 @@ import 'package:quantus_miner/features/miner/miner_balance_card.dart';
 import 'package:quantus_miner/features/miner/miner_app_bar.dart';
 import 'package:quantus_miner/features/miner/miner_stats_card.dart';
 import 'package:quantus_miner/features/miner/miner_status.dart';
+import 'package:quantus_miner/src/models/miner_error.dart';
 import 'package:quantus_miner/src/services/binary_manager.dart';
-import 'package:quantus_miner/src/services/miner_process.dart';
+import 'package:quantus_miner/src/services/mining_orchestrator.dart';
 import 'package:quantus_miner/src/services/mining_stats_service.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
 import 'package:quantus_miner/src/ui/logs_widget.dart';
@@ -34,25 +35,30 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
   Timer? _nodePollingTimer;
 
   MiningStats _miningStats = MiningStats.empty();
-  MinerProcess? _currentMinerProcess;
+
+  // The orchestrator manages all mining operations
+  MiningOrchestrator? _orchestrator;
+
+  // Subscriptions
+  StreamSubscription<MiningStats>? _statsSubscription;
+  StreamSubscription<MinerError>? _errorSubscription;
 
   @override
   void initState() {
     super.initState();
-
     _initializeNodeUpdatePolling();
     _initializeMinerUpdatePolling();
   }
 
   @override
   void dispose() {
-    // Clean up global miner process
-    if (_currentMinerProcess != null) {
-      try {
-        _currentMinerProcess!.forceStop();
-      } catch (e) {
-        print('MinerDashboard: Error stopping miner process on dispose: $e');
-      }
+    // Clean up subscriptions
+    _statsSubscription?.cancel();
+    _errorSubscription?.cancel();
+
+    // Clean up orchestrator
+    if (_orchestrator != null) {
+      _orchestrator!.forceStop();
     }
     GlobalMinerManager.cleanup();
 
@@ -62,21 +68,62 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
     super.dispose();
   }
 
-  void _onMetricsUpdate(MiningStats miningStats) {
-    setState(() {
-      _miningStats = miningStats;
-    });
-  }
-
-  void _onMinerProcessChanged(MinerProcess? minerProcess) {
+  void _onStatsUpdate(MiningStats stats) {
     if (mounted) {
       setState(() {
-        _currentMinerProcess = minerProcess;
+        _miningStats = stats;
+      });
+    }
+  }
+
+  void _onOrchestratorChanged(MiningOrchestrator? orchestrator) {
+    // Cancel old subscriptions
+    _statsSubscription?.cancel();
+    _errorSubscription?.cancel();
+
+    if (mounted) {
+      setState(() {
+        _orchestrator = orchestrator;
       });
     }
 
-    // Register with global app lifecycle for cleanup
-    GlobalMinerManager.setMinerProcess(minerProcess);
+    // Set up new subscriptions
+    if (orchestrator != null) {
+      _statsSubscription = orchestrator.statsStream.listen(_onStatsUpdate);
+      _errorSubscription = orchestrator.errorStream.listen(_onError);
+    }
+
+    // Register with global manager for cleanup
+    GlobalMinerManager.setOrchestrator(orchestrator);
+  }
+
+  void _onError(MinerError error) {
+    if (!mounted) return;
+
+    // Show error to user
+    context.showErrorSnackbar(
+      title: _getErrorTitle(error),
+      message: error.message,
+    );
+  }
+
+  String _getErrorTitle(MinerError error) {
+    switch (error.type) {
+      case MinerErrorType.minerCrashed:
+        return 'Miner Crashed';
+      case MinerErrorType.nodeCrashed:
+        return 'Node Crashed';
+      case MinerErrorType.minerStartupFailed:
+        return 'Miner Startup Failed';
+      case MinerErrorType.nodeStartupFailed:
+        return 'Node Startup Failed';
+      case MinerErrorType.metricsConnectionLost:
+        return 'Metrics Connection Lost';
+      case MinerErrorType.rpcConnectionLost:
+        return 'RPC Connection Lost';
+      case MinerErrorType.unknown:
+        return 'Error';
+    }
   }
 
   void _initializeMinerUpdatePolling() {
@@ -114,7 +161,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
   }
 
   void _handleUpdateMiner() async {
-    if (_currentMinerProcess != null) {
+    if (_orchestrator?.isMining == true) {
       context.showErrorSnackbar(
         title: 'Miner is running!',
         message: 'To update the binary please stop the miner first.',
@@ -177,7 +224,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
   }
 
   void _handleUpdateNode() async {
-    if (_currentMinerProcess != null) {
+    if (_orchestrator?.isMining == true) {
       context.showErrorSnackbar(
         title: 'Miner is running!',
         message: 'To update the binary please stop the miner first.',
@@ -263,10 +310,9 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                           child: SizedBox(
                             width: double.infinity,
                             child: MinerControls(
-                              minerProcess: _currentMinerProcess,
+                              orchestrator: _orchestrator,
                               miningStats: _miningStats,
-                              onMetricsUpdate: _onMetricsUpdate,
-                              onMinerProcessChanged: _onMinerProcessChanged,
+                              onOrchestratorChanged: _onOrchestratorChanged,
                             ),
                           ),
                         ),
@@ -332,7 +378,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                           // Logs content
                           Expanded(
                             child: LogsWidget(
-                              minerProcess: _currentMinerProcess,
+                              orchestrator: _orchestrator,
                               maxLines: 200,
                             ),
                           ),
