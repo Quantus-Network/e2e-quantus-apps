@@ -26,13 +26,19 @@ enum MiningState {
   /// Node is running, waiting for RPC to be ready.
   waitingForRpc,
 
+  /// Node is running (RPC ready), miner not started.
+  nodeRunning,
+
   /// Miner is starting up.
   startingMiner,
 
   /// Both node and miner are running, mining is active.
   mining,
 
-  /// Currently stopping.
+  /// Stopping miner only.
+  stoppingMiner,
+
+  /// Currently stopping everything.
   stopping,
 
   /// An error occurred.
@@ -150,6 +156,13 @@ class MiningOrchestrator {
   /// Whether mining is currently active.
   bool get isMining => _state == MiningState.mining;
 
+  /// Whether the node is running (with or without miner).
+  bool get isNodeRunning =>
+      _state == MiningState.nodeRunning ||
+      _state == MiningState.startingMiner ||
+      _state == MiningState.mining ||
+      _state == MiningState.stoppingMiner;
+
   /// Whether the orchestrator is in any running state.
   bool get isRunning =>
       _state != MiningState.idle && _state != MiningState.error;
@@ -160,13 +173,16 @@ class MiningOrchestrator {
   /// Miner process PID, if running.
   int? get minerProcessPid => _minerManager.pid;
 
+  // Store config for later use when starting miner separately
+  MiningSessionConfig? _currentConfig;
+
   MiningOrchestrator() {
     _initializeApiClients();
     _setupNodeSyncCallback();
     _subscribeToProcessEvents();
   }
 
-  /// Start mining with the given configuration.
+  /// Start mining with the given configuration (starts both node and miner).
   ///
   /// This will:
   /// 1. Cleanup any existing processes
@@ -175,10 +191,22 @@ class MiningOrchestrator {
   /// 4. Start the miner
   /// 5. Begin polling for stats
   Future<void> start(MiningSessionConfig config) async {
+    await startNode(config);
+    if (_state == MiningState.nodeRunning) {
+      await startMiner();
+    }
+  }
+
+  /// Start only the node (without the miner).
+  ///
+  /// Use this to enable balance queries and chain sync without mining.
+  Future<void> startNode(MiningSessionConfig config) async {
     if (_state != MiningState.idle && _state != MiningState.error) {
-      _log.w('Cannot start: already in state $_state');
+      _log.w('Cannot start node: already in state $_state');
       return;
     }
+
+    _currentConfig = config;
 
     try {
       // Initialize stats with worker counts
@@ -218,8 +246,43 @@ class MiningOrchestrator {
       _setState(MiningState.waitingForRpc);
       await _waitForNodeRpc();
 
-      // Start miner
+      // Start chain RPC polling (for balance, sync status, etc.)
+      _chainRpcClient.startPolling();
+
+      // Start Prometheus polling for target block
+      _prometheusTimer?.cancel();
+      _prometheusTimer = Timer.periodic(
+        MinerConfig.prometheusPollingInterval,
+        (_) => _fetchPrometheusMetrics(),
+      );
+
+      _setState(MiningState.nodeRunning);
+      _log.i('Node started successfully');
+    } catch (e, st) {
+      _log.e('Failed to start node', error: e, stackTrace: st);
+      _setState(MiningState.error);
+      await _stopInternal();
+      rethrow;
+    }
+  }
+
+  /// Start the miner (node must already be running).
+  Future<void> startMiner() async {
+    if (_state != MiningState.nodeRunning) {
+      _log.w('Cannot start miner: node not running (state: $_state)');
+      return;
+    }
+
+    if (_currentConfig == null) {
+      _log.e('Cannot start miner: no config available');
+      return;
+    }
+
+    final config = _currentConfig!;
+
+    try {
       _setState(MiningState.startingMiner);
+
       await _minerManager.start(
         ExternalMinerConfig(
           binary: config.minerBinary,
@@ -230,36 +293,72 @@ class MiningOrchestrator {
         ),
       );
 
-      // Start polling
-      _startPolling();
+      // Start miner metrics polling
+      _minerApiClient.startPolling();
 
       _setState(MiningState.mining);
-      _log.i('Mining started successfully');
+      _log.i('Miner started successfully');
     } catch (e, st) {
-      _log.e('Failed to start mining', error: e, stackTrace: st);
-      _setState(MiningState.error);
-      await _stopInternal();
+      _log.e('Failed to start miner', error: e, stackTrace: st);
+      _setState(MiningState.nodeRunning); // Revert to node-only state
       rethrow;
     }
   }
 
-  /// Stop mining gracefully.
+  /// Stop only the miner (keep node running).
+  Future<void> stopMiner() async {
+    if (_state != MiningState.mining) {
+      _log.w('Cannot stop miner: not mining (state: $_state)');
+      return;
+    }
+
+    _log.i('Stopping miner...');
+    _setState(MiningState.stoppingMiner);
+
+    _minerApiClient.stopPolling();
+    await _minerManager.stop();
+
+    _resetStats();
+    _setState(MiningState.nodeRunning);
+    _log.i('Miner stopped, node still running');
+  }
+
+  /// Stop everything (node and miner) gracefully.
   Future<void> stop() async {
     if (_state == MiningState.idle) {
       return;
     }
 
-    _log.i('Stopping mining...');
+    _log.i('Stopping everything...');
     _setState(MiningState.stopping);
     await _stopInternal();
     _setState(MiningState.idle);
     _resetStats();
-    _log.i('Mining stopped');
+    _currentConfig = null;
+    _log.i('All processes stopped');
   }
 
-  /// Force stop mining immediately.
+  /// Stop only the node (and miner if running).
+  Future<void> stopNode() async {
+    if (!isNodeRunning &&
+        _state != MiningState.startingNode &&
+        _state != MiningState.waitingForRpc) {
+      _log.w('Cannot stop node: not running (state: $_state)');
+      return;
+    }
+
+    _log.i('Stopping node...');
+    _setState(MiningState.stopping);
+    await _stopInternal();
+    _setState(MiningState.idle);
+    _resetStats();
+    _currentConfig = null;
+    _log.i('Node stopped');
+  }
+
+  /// Force stop everything immediately.
   void forceStop() {
-    _log.i('Force stopping mining...');
+    _log.i('Force stopping everything...');
     _setState(MiningState.stopping);
 
     _stopPolling();
@@ -268,7 +367,8 @@ class MiningOrchestrator {
 
     _setState(MiningState.idle);
     _resetStats();
-    _log.i('Mining force stopped');
+    _currentConfig = null;
+    _log.i('Force stopped');
   }
 
   /// Dispose of all resources.
@@ -394,18 +494,6 @@ class MiningOrchestrator {
     }
 
     _log.w('Node RPC not ready after max attempts, proceeding anyway');
-  }
-
-  void _startPolling() {
-    _minerApiClient.startPolling();
-    _chainRpcClient.startPolling();
-
-    // Prometheus polling for target block
-    _prometheusTimer?.cancel();
-    _prometheusTimer = Timer.periodic(
-      MinerConfig.prometheusPollingInterval,
-      (_) => _fetchPrometheusMetrics(),
-    );
   }
 
   void _stopPolling() {

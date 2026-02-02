@@ -97,12 +97,14 @@ class MinerConfig {
       id: 'dev',
       displayName: 'Development',
       description: 'Local development chain',
+      rpcUrl: 'http://127.0.0.1:9933',
       isDefault: true,
     ),
     ChainConfig(
       id: 'dirac',
       displayName: 'Dirac',
       description: 'Dirac testnet',
+      rpcUrl: 'https://a1-dirac.quantus.cat',
       isDefault: false,
     ),
   ];
@@ -160,15 +162,22 @@ class ChainConfig {
   final String id;
   final String displayName;
   final String description;
+  final String rpcUrl;
   final bool isDefault;
 
   const ChainConfig({
     required this.id,
     required this.displayName,
     required this.description,
+    required this.rpcUrl,
     required this.isDefault,
   });
 
+  /// Whether this chain uses the local node RPC
+  bool get isLocalNode =>
+      rpcUrl.contains('127.0.0.1') || rpcUrl.contains('localhost');
+
   @override
-  String toString() => 'ChainConfig(id: $id, displayName: $displayName)';
+  String toString() =>
+      'ChainConfig(id: $id, displayName: $displayName, rpcUrl: $rpcUrl)';
 }

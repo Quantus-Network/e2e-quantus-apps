@@ -18,6 +18,7 @@ dependencies:
   # Networking and storage
   http: # Version managed by melos.yaml
   shared_preferences: # Version managed by melos.yaml
+  polkadart: # For local node RPC queries
   
   # Routing
   go_router: # Version managed by melos.yaml

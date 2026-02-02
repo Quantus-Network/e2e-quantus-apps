@@ -28,7 +28,8 @@ class MinerControls extends StatefulWidget {
 }
 
 class _MinerControlsState extends State<MinerControls> {
-  bool _isAttemptingToggle = false;
+  bool _isNodeToggling = false;
+  bool _isMinerToggling = false;
   int _cpuWorkers = 8;
   int _gpuDevices = 0;
   int _detectedGpuCount = 0;
@@ -67,27 +68,35 @@ class _MinerControlsState extends State<MinerControls> {
     }
   }
 
-  Future<void> _toggle() async {
-    if (_isAttemptingToggle) return;
-    setState(() => _isAttemptingToggle = true);
+  // ============================================================
+  // Node Control
+  // ============================================================
 
-    if (widget.orchestrator == null || !widget.orchestrator!.isMining) {
-      // Start mining
-      await _startMining();
+  Future<void> _toggleNode() async {
+    if (_isNodeToggling) return;
+    setState(() => _isNodeToggling = true);
+
+    if (!_isNodeRunning) {
+      await _startNode();
     } else {
-      // Stop mining
-      await _stopMining();
+      await _stopNode();
     }
 
     if (mounted) {
-      setState(() => _isAttemptingToggle = false);
+      setState(() => _isNodeToggling = false);
     }
   }
 
-  Future<void> _startMining() async {
-    print('Starting mining');
+  Future<void> _startNode() async {
+    print('Starting node');
 
-    // Check for all required files and binaries
+    // Reload chain ID in case it was changed in settings
+    final chainId = await _settingsService.getChainId();
+    if (mounted) {
+      setState(() => _chainId = chainId);
+    }
+
+    // Check for required files
     final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
     final identityFile = File('$quantusHome/node_key.p2p');
     final rewardsFile = File('$quantusHome/rewards-address.txt');
@@ -96,24 +105,11 @@ class _MinerControlsState extends State<MinerControls> {
     final minerBinPath = await BinaryManager.getExternalMinerBinaryFilePath();
     final minerBin = File(minerBinPath);
 
-    // Check node binary
     if (!await nodeBin.exists()) {
-      print('Node binary not found. Cannot start mining.');
+      print('Node binary not found.');
       if (mounted) {
         context.showWarningSnackbar(
           title: 'Node binary not found!',
-          message: 'Please run setup.',
-        );
-      }
-      return;
-    }
-
-    // Check external miner binary
-    if (!await minerBin.exists()) {
-      print('External miner binary not found. Cannot start mining.');
-      if (mounted) {
-        context.showWarningSnackbar(
-          title: 'External miner binary not found!',
           message: 'Please run setup.',
         );
       }
@@ -125,7 +121,7 @@ class _MinerControlsState extends State<MinerControls> {
     widget.onOrchestratorChanged(orchestrator);
 
     try {
-      await orchestrator.start(
+      await orchestrator.startNode(
         MiningSessionConfig(
           nodeBinary: nodeBin,
           minerBinary: minerBin,
@@ -138,30 +134,27 @@ class _MinerControlsState extends State<MinerControls> {
         ),
       );
     } catch (e) {
-      print('Error starting miner: $e');
+      print('Error starting node: $e');
       if (mounted) {
         context.showErrorSnackbar(
-          title: 'Error starting miner!',
+          title: 'Error starting node!',
           message: e.toString(),
         );
       }
-
-      // Clean up on failure
       orchestrator.dispose();
       widget.onOrchestratorChanged(null);
     }
   }
 
-  Future<void> _stopMining() async {
-    print('Stopping mining');
+  Future<void> _stopNode() async {
+    print('Stopping node');
 
     if (widget.orchestrator != null) {
       try {
-        await widget.orchestrator!.stop();
+        await widget.orchestrator!.stopNode();
       } catch (e) {
-        print('Error during stop: $e');
+        print('Error stopping node: $e');
       }
-
       widget.orchestrator!.dispose();
     }
 
@@ -169,15 +162,115 @@ class _MinerControlsState extends State<MinerControls> {
     widget.onOrchestratorChanged(null);
   }
 
-  @override
-  void dispose() {
-    super.dispose();
+  // ============================================================
+  // Miner Control
+  // ============================================================
+
+  Future<void> _toggleMiner() async {
+    if (_isMinerToggling) return;
+    setState(() => _isMinerToggling = true);
+
+    if (!_isMining) {
+      await _startMiner();
+    } else {
+      await _stopMiner();
+    }
+
+    if (mounted) {
+      setState(() => _isMinerToggling = false);
+    }
   }
 
+  Future<void> _startMiner() async {
+    print('Starting miner');
+
+    if (widget.orchestrator == null) {
+      if (mounted) {
+        context.showWarningSnackbar(
+          title: 'Node not running!',
+          message: 'Start the node first.',
+        );
+      }
+      return;
+    }
+
+    // Check miner binary exists
+    final minerBinPath = await BinaryManager.getExternalMinerBinaryFilePath();
+    final minerBin = File(minerBinPath);
+
+    if (!await minerBin.exists()) {
+      print('Miner binary not found.');
+      if (mounted) {
+        context.showWarningSnackbar(
+          title: 'Miner binary not found!',
+          message: 'Please run setup.',
+        );
+      }
+      return;
+    }
+
+    try {
+      await widget.orchestrator!.startMiner();
+    } catch (e) {
+      print('Error starting miner: $e');
+      if (mounted) {
+        context.showErrorSnackbar(
+          title: 'Error starting miner!',
+          message: e.toString(),
+        );
+      }
+    }
+  }
+
+  Future<void> _stopMiner() async {
+    print('Stopping miner');
+
+    if (widget.orchestrator != null) {
+      try {
+        await widget.orchestrator!.stopMiner();
+      } catch (e) {
+        print('Error stopping miner: $e');
+      }
+    }
+  }
+
+  // ============================================================
+  // State Helpers
+  // ============================================================
+
+  bool get _isNodeRunning => widget.orchestrator?.isNodeRunning ?? false;
   bool get _isMining => widget.orchestrator?.isMining ?? false;
+
+  String get _nodeButtonText {
+    final state = widget.orchestrator?.state;
+    if (state == MiningState.startingNode) return 'Starting...';
+    if (state == MiningState.waitingForRpc) return 'Connecting...';
+    if (_isNodeRunning) return 'Stop Node';
+    return 'Start Node';
+  }
+
+  String get _minerButtonText {
+    final state = widget.orchestrator?.state;
+    if (state == MiningState.startingMiner) return 'Starting...';
+    if (state == MiningState.stoppingMiner) return 'Stopping...';
+    if (_isMining) return 'Stop Mining';
+    return 'Start Mining';
+  }
+
+  Color get _nodeButtonColor {
+    if (_isNodeRunning) return Colors.orange;
+    return Colors.blue;
+  }
+
+  Color get _minerButtonColor {
+    if (_isMining) return Colors.red;
+    return Colors.green;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final canEditSettings = !_isNodeRunning;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -209,7 +302,7 @@ class _MinerControlsState extends State<MinerControls> {
                     ? Platform.numberOfProcessors
                     : 16),
                 label: _cpuWorkers.toString(),
-                onChanged: !_isMining
+                onChanged: canEditSettings
                     ? (value) {
                         final rounded = value.round();
                         setState(() => _cpuWorkers = rounded);
@@ -221,6 +314,7 @@ class _MinerControlsState extends State<MinerControls> {
           ),
         ),
         const SizedBox(height: 16),
+
         // GPU Devices Control
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -243,7 +337,7 @@ class _MinerControlsState extends State<MinerControls> {
                 max: _detectedGpuCount > 0 ? _detectedGpuCount.toDouble() : 1,
                 divisions: _detectedGpuCount > 0 ? _detectedGpuCount : 1,
                 label: _gpuDevices.toString(),
-                onChanged: !_isMining
+                onChanged: canEditSettings
                     ? (value) {
                         final rounded = value.round();
                         setState(() => _gpuDevices = rounded);
@@ -255,19 +349,60 @@ class _MinerControlsState extends State<MinerControls> {
           ),
         ),
         const SizedBox(height: 24),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: !_isMining ? Colors.green : Colors.blue,
-            padding: const EdgeInsets.symmetric(vertical: 15),
-            textStyle: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+
+        // Control Buttons
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Node Button
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _nodeButtonColor,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 15,
+                  horizontal: 20,
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+                minimumSize: const Size(140, 50),
+              ),
+              onPressed: _isNodeToggling ? null : _toggleNode,
+              child: Text(_nodeButtonText),
             ),
-            minimumSize: const Size(200, 50),
-          ),
-          onPressed: _isAttemptingToggle ? null : _toggle,
-          child: Text(!_isMining ? 'Start Mining' : 'Stop Mining'),
+            const SizedBox(width: 16),
+
+            // Miner Button
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _minerButtonColor,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 15,
+                  horizontal: 20,
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+                minimumSize: const Size(140, 50),
+              ),
+              onPressed: (_isMinerToggling || !_isNodeRunning)
+                  ? null
+                  : _toggleMiner,
+              child: Text(_minerButtonText),
+            ),
+          ],
         ),
+
+        // Status indicator
+        if (_isNodeRunning && !_isMining) ...[
+          const SizedBox(height: 12),
+          Text(
+            'Node running - ready to mine',
+            style: TextStyle(color: Colors.green.shade300, fontSize: 12),
+          ),
+        ],
       ],
     );
   }

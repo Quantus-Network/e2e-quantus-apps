@@ -188,6 +188,7 @@ class MinerProcessManager {
 
   List<String> _buildArgs(ExternalMinerConfig config) {
     return [
+      'serve', // Subcommand required by new miner CLI
       '--node-addr',
       config.nodeAddress,
       '--cpu-workers',
