@@ -202,7 +202,8 @@ class NodeProcessManager {
 
   List<String> _buildArgs(NodeConfig config, String basePath) {
     return [
-      '--base-path', basePath,
+      // Only use --base-path for non-dev chains (dev uses temp storage for fresh state)
+      if (config.chainId != 'dev') ...['--base-path', basePath],
       '--node-key-file', config.identityFile.path,
       '--rewards-address', config.rewardsAddress,
       '--validator',

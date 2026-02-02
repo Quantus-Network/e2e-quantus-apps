@@ -42,6 +42,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
   // Subscriptions
   StreamSubscription<MiningStats>? _statsSubscription;
   StreamSubscription<MinerError>? _errorSubscription;
+  StreamSubscription<MiningState>? _stateSubscription;
 
   @override
   void initState() {
@@ -55,6 +56,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
     // Clean up subscriptions
     _statsSubscription?.cancel();
     _errorSubscription?.cancel();
+    _stateSubscription?.cancel();
 
     // Clean up orchestrator
     if (_orchestrator != null) {
@@ -80,6 +82,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
     // Cancel old subscriptions
     _statsSubscription?.cancel();
     _errorSubscription?.cancel();
+    _stateSubscription?.cancel();
 
     if (mounted) {
       setState(() {
@@ -91,10 +94,19 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
     if (orchestrator != null) {
       _statsSubscription = orchestrator.statsStream.listen(_onStatsUpdate);
       _errorSubscription = orchestrator.errorStream.listen(_onError);
+      _stateSubscription = orchestrator.stateStream.listen(_onStateChange);
     }
 
     // Register with global manager for cleanup
     GlobalMinerManager.setOrchestrator(orchestrator);
+  }
+
+  void _onStateChange(MiningState state) {
+    // Trigger rebuild when orchestrator state changes
+    // This ensures button labels and UI state update properly
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _onError(MinerError error) {

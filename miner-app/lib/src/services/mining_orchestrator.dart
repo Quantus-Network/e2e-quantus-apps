@@ -266,6 +266,36 @@ class MiningOrchestrator {
     }
   }
 
+  /// Update miner settings (CPU workers, GPU devices).
+  /// Call this before startMiner() if settings have changed.
+  void updateMinerSettings({int? cpuWorkers, int? gpuDevices}) {
+    if (_currentConfig == null) {
+      _log.w('Cannot update settings: no config available');
+      return;
+    }
+
+    _currentConfig = MiningSessionConfig(
+      nodeBinary: _currentConfig!.nodeBinary,
+      minerBinary: _currentConfig!.minerBinary,
+      identityFile: _currentConfig!.identityFile,
+      rewardsFile: _currentConfig!.rewardsFile,
+      chainId: _currentConfig!.chainId,
+      cpuWorkers: cpuWorkers ?? _currentConfig!.cpuWorkers,
+      gpuDevices: gpuDevices ?? _currentConfig!.gpuDevices,
+      detectedGpuCount: _currentConfig!.detectedGpuCount,
+      minerListenPort: _currentConfig!.minerListenPort,
+    );
+
+    // Update stats to reflect new settings
+    _statsService.updateWorkers(_currentConfig!.cpuWorkers);
+    _statsService.updateGpuDevices(_currentConfig!.gpuDevices);
+    _emitStats();
+
+    _log.i(
+      'Miner settings updated: cpuWorkers=${_currentConfig!.cpuWorkers}, gpuDevices=${_currentConfig!.gpuDevices}',
+    );
+  }
+
   /// Start the miner (node must already be running).
   Future<void> startMiner() async {
     if (_state != MiningState.nodeRunning) {
@@ -296,10 +326,15 @@ class MiningOrchestrator {
       // Start miner metrics polling
       _minerApiClient.startPolling();
 
+      // Update stats to reflect miner is running
+      _statsService.setMinerRunning(true);
+      _emitStats();
+
       _setState(MiningState.mining);
       _log.i('Miner started successfully');
     } catch (e, st) {
       _log.e('Failed to start miner', error: e, stackTrace: st);
+      _statsService.setMinerRunning(false);
       _setState(MiningState.nodeRunning); // Revert to node-only state
       rethrow;
     }
@@ -318,6 +353,8 @@ class MiningOrchestrator {
     _minerApiClient.stopPolling();
     await _minerManager.stop();
 
+    // Update stats to reflect miner is stopped
+    _statsService.setMinerRunning(false);
     _resetStats();
     _setState(MiningState.nodeRunning);
     _log.i('Miner stopped, node still running');
@@ -532,6 +569,7 @@ class MiningOrchestrator {
 
   void _resetStats() {
     _statsService.updateHashrate(0);
+    _statsService.setMinerRunning(false);
     _lastValidHashrate = 0;
     _consecutiveMetricsFailures = 0;
     _emitStats();

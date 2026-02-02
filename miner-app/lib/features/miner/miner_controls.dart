@@ -210,6 +210,12 @@ class _MinerControlsState extends State<MinerControls> {
     }
 
     try {
+      // Update settings in case they changed while miner was stopped
+      widget.orchestrator!.updateMinerSettings(
+        cpuWorkers: _cpuWorkers,
+        gpuDevices: _gpuDevices,
+      );
+
       await widget.orchestrator!.startMiner();
     } catch (e) {
       print('Error starting miner: $e');
@@ -241,6 +247,14 @@ class _MinerControlsState extends State<MinerControls> {
   bool get _isNodeRunning => widget.orchestrator?.isNodeRunning ?? false;
   bool get _isMining => widget.orchestrator?.isMining ?? false;
 
+  /// Whether miner is starting or running (for disabling settings)
+  bool get _isMinerActive {
+    final state = widget.orchestrator?.state;
+    return state == MiningState.startingMiner ||
+        state == MiningState.mining ||
+        state == MiningState.stoppingMiner;
+  }
+
   String get _nodeButtonText {
     final state = widget.orchestrator?.state;
     if (state == MiningState.startingNode) return 'Starting...';
@@ -269,7 +283,9 @@ class _MinerControlsState extends State<MinerControls> {
 
   @override
   Widget build(BuildContext context) {
-    final canEditSettings = !_isNodeRunning;
+    // Allow editing settings when miner is stopped (even if node is running)
+    // Disable during startingMiner, mining, and stoppingMiner states
+    final canEditSettings = !_isMinerActive;
 
     return Column(
       mainAxisSize: MainAxisSize.min,

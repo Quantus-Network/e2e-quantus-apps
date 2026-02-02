@@ -63,16 +63,21 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
           print('address: $address');
 
           final chainConfig = MinerConfig.getChainById(_chainId);
+          print(
+            'Chain config: id=${chainConfig.id}, rpcUrl=${chainConfig.rpcUrl}, isLocalNode=${chainConfig.isLocalNode}',
+          );
           BigInt balance;
 
           if (chainConfig.isLocalNode) {
             // Use local node RPC for dev chain
+            print('Querying balance from LOCAL node: ${chainConfig.rpcUrl}');
             balance = await _queryBalanceFromLocalNode(
               address,
               chainConfig.rpcUrl,
             );
           } else {
             // Use SDK's SubstrateService for remote chains (dirac)
+            print('Querying balance from REMOTE (SDK SubstrateService)');
             balance = await SubstrateService().queryBalance(address);
           }
 
