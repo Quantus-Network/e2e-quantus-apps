@@ -254,15 +254,7 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
         children: [
           SizedBox(
             width: 323,
-            child: Text(
-              title,
-              style: const TextStyle(
-                color: Color(0xFFF4F6F9),
-                fontSize: 18,
-                fontFamily: 'Fira Code',
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            child: Text(title, style: context.themeText.smallTitle?.copyWith(color: const Color(0xFFF4F6F9))),
           ),
           const SizedBox(height: 15),
           Container(
@@ -320,7 +312,7 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(
+          SizedBox(
             width: double.infinity,
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -331,16 +323,11 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
                   width: 323,
                   child: Text(
                     'Verify your X account',
-                    style: TextStyle(
-                      color: Color(0xFFF4F6F9),
-                      fontSize: 18,
-                      fontFamily: 'Fira Code',
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: context.themeText.smallTitle?.copyWith(color: const Color(0xFFF4F6F9)),
                   ),
                 ),
-                SizedBox(height: 4),
-                SizedBox(
+                const SizedBox(height: 4),
+                const SizedBox(
                   width: 323,
                   child: Text(
                     'To confirm this account belongs to you, please update your X bio to include @QuantusNetwork',
@@ -421,15 +408,7 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
                     height: 20,
                     child: CircularProgressIndicator(color: context.themeColors.textPrimary, strokeWidth: 2),
                   )
-                : const Text(
-                    'Link Accounts',
-                    style: TextStyle(
-                      color: Color(0xFFF4F6F9),
-                      fontSize: 18,
-                      fontFamily: 'Fira Code',
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                : Text('Link Accounts', style: context.themeText.smallTitle?.copyWith(color: const Color(0xFFF4F6F9))),
           ),
         ),
       ),
@@ -474,15 +453,7 @@ class _UnlinkConfirmationSheetState extends State<_UnlinkConfirmationSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'Unlink ${widget.title}?',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontFamily: 'Fira Code',
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            Text('Unlink ${widget.title}?', style: context.themeText.smallTitle?.copyWith(color: Colors.white)),
             const SizedBox(height: 8),
             Text(
               'Are you sure you want to unlink your ${widget.title}?',
