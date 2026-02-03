@@ -21,6 +21,33 @@ class KingOfTheShillScreen extends ConsumerStatefulWidget {
 }
 
 class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
+  final TaskmasterService _taskmasterService = TaskmasterService();
+  int? _rank;
+  int? _totalImpressions;
+
+  @override
+  void initState() {
+    super.initState();
+    final asyncValue = ref.read(raiderSubmissionsProvider);
+    if (asyncValue.value is RaiderSubmissionsOk) {
+      _loadRaidStats((asyncValue.value as RaiderSubmissionsOk).activeRaid.id);
+    }
+  }
+
+  Future<void> _loadRaidStats(int raidId) async {
+    try {
+      final stats = await _taskmasterService.getRaidStats(raidId);
+      if (mounted) {
+        setState(() {
+          _rank = stats.rank;
+          _totalImpressions = stats.totalImpressions;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading raid stats: $e');
+    }
+  }
+
   void _showHowItWorksDialog() {
     showDialog(
       context: context,
@@ -114,6 +141,13 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
   Widget build(BuildContext context) {
     final raiderSubmissionsAsync = ref.watch(raiderSubmissionsProvider);
 
+    ref.listen(raiderSubmissionsProvider, (prev, next) {
+      final state = next.value;
+      if (state is RaiderSubmissionsOk && _rank == null) {
+        _loadRaidStats(state.activeRaid.id);
+      }
+    });
+
     return ScaffoldBase(
       appBar: WalletAppBar(
         title: 'King of The Shill',
@@ -189,12 +223,12 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
                                   child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                                 ),
                               ),
-                              error: (_, _) => _buildStatsBox(0, 0),
+                              error: (_, _) => _buildStatsBox(0, _totalImpressions, _rank),
                               data: (state) {
                                 if (state is RaiderSubmissionsOk) {
-                                  return _buildStatsBox(state.submissions.length, 0);
+                                  return _buildStatsBox(state.submissions.length, _totalImpressions, _rank);
                                 }
-                                return _buildStatsBox(0, 0);
+                                return _buildStatsBox(0, _totalImpressions, _rank);
                               },
                             ),
                             const SizedBox(height: 24),
@@ -237,7 +271,7 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
     );
   }
 
-  Widget _buildStatsBox(int submissions, int verifiedPosts) {
+  Widget _buildStatsBox(int submissions, int? totalImpressions, int? rank) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -251,17 +285,39 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
       ),
       child: Column(
         children: [
-          _buildStatRow('Submissions', '$submissions', Colors.white),
+          _buildStatRow(
+            'Submissions',
+            Text(
+              '$submissions',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontFamily: 'Fira Code',
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
           const SizedBox(height: 16),
-          _buildStatRow('Verified posts', verifiedPosts.toString().padLeft(2, '0'), Colors.white),
+          _buildStatRow('Total impressions', _buildLoadingOrValue(totalImpressions, Colors.white)),
           const SizedBox(height: 16),
-          _buildStatRow('Rank', '#-', context.themeColors.pink),
+          _buildStatRow('Rank', _buildLoadingOrValue(rank, context.themeColors.pink, isRank: true)),
         ],
       ),
     );
   }
 
-  Widget _buildStatRow(String label, String value, Color valueColor) {
+  Widget _buildLoadingOrValue(int? value, Color color, {bool isRank = false}) {
+    if (value == null) {
+      return SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: color));
+    }
+    final text = isRank ? (value > 0 ? '#$value' : '#-') : '$value';
+    return Text(
+      text,
+      style: TextStyle(color: color, fontSize: 14, fontFamily: 'Fira Code', fontWeight: FontWeight.w400),
+    );
+  }
+
+  Widget _buildStatRow(String label, Widget valueWidget) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -274,10 +330,7 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
             fontWeight: FontWeight.w400,
           ),
         ),
-        Text(
-          value,
-          style: TextStyle(color: valueColor, fontSize: 14, fontFamily: 'Fira Code', fontWeight: FontWeight.w400),
-        ),
+        valueWidget,
       ],
     );
   }
