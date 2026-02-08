@@ -3,13 +3,13 @@ import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
 import 'package:polkadart/polkadart.dart';
-import 'package:quantus_sdk/generated/schrodinger/schrodinger.dart';
-import 'package:quantus_sdk/generated/schrodinger/types/pallet_reversible_transfers/high_security_account_data.dart';
-import 'package:quantus_sdk/generated/schrodinger/types/pallet_reversible_transfers/pending_transfer.dart';
-import 'package:quantus_sdk/generated/schrodinger/types/primitive_types/h256.dart';
-import 'package:quantus_sdk/generated/schrodinger/types/qp_scheduler/block_number_or_timestamp.dart' as qp;
-import 'package:quantus_sdk/generated/schrodinger/types/quantus_runtime/runtime_call.dart';
-import 'package:quantus_sdk/generated/schrodinger/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
+import 'package:quantus_sdk/generated/dirac/dirac.dart';
+import 'package:quantus_sdk/generated/dirac/types/pallet_reversible_transfers/high_security_account_data.dart';
+import 'package:quantus_sdk/generated/dirac/types/pallet_reversible_transfers/pending_transfer.dart';
+import 'package:quantus_sdk/generated/dirac/types/primitive_types/h256.dart';
+import 'package:quantus_sdk/generated/dirac/types/qp_scheduler/block_number_or_timestamp.dart' as qp;
+import 'package:quantus_sdk/generated/dirac/types/quantus_runtime/runtime_call.dart';
+import 'package:quantus_sdk/generated/dirac/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/src/extensions/address_extension.dart';
 import 'package:quantus_sdk/src/extensions/duration_extension.dart';
 import 'package:quantus_sdk/src/models/account.dart';
@@ -33,7 +33,7 @@ class ReversibleTransfersService {
     required BigInt amount,
   }) async {
     try {
-      final quantusApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Dirac(_substrateService.provider!);
       final multiDest = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: recipientAddress));
 
       // Create the call
@@ -79,7 +79,7 @@ class ReversibleTransfersService {
     BigInt amount,
     qp.BlockNumberOrTimestamp delay,
   ) {
-    final quantusApi = Schrodinger(_substrateService.provider!);
+    final quantusApi = Dirac(_substrateService.provider!);
     final multiDest = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: recipientAddress));
 
     final call = quantusApi.tx.reversibleTransfers.scheduleTransferWithDelay(
@@ -111,7 +111,7 @@ class ReversibleTransfersService {
   /// Cancel a pending reversible transaction (theft deterrence - reverse a transaction)
   Future<Uint8List> cancelReversibleTransfer({required Account account, required H256 transactionId}) async {
     try {
-      final quantusApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Dirac(_substrateService.provider!);
 
       // Create the call
       final call = quantusApi.tx.reversibleTransfers.cancel(txId: transactionId);
@@ -127,7 +127,7 @@ class ReversibleTransfersService {
   Future<HighSecurityAccountData?> getHighSecurityConfig(String address) async {
     print('getHighSecurityConfig: $address');
     try {
-      final quantusApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Dirac(_substrateService.provider!);
       final accountId = crypto.ss58ToAccountId(s: address);
 
       return await quantusApi.query.reversibleTransfers.highSecurityAccounts(accountId);
@@ -139,7 +139,7 @@ class ReversibleTransfersService {
   /// Query pending transfer details
   Future<PendingTransfer?> getPendingTransfer(H256 transactionId) async {
     try {
-      final quantusApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Dirac(_substrateService.provider!);
 
       return await quantusApi.query.reversibleTransfers.pendingTransfers(transactionId);
     } catch (e) {
@@ -150,7 +150,7 @@ class ReversibleTransfersService {
   /// Get account's pending transaction index
   Future<int> getAccountPendingIndex(String address) async {
     try {
-      final quantusApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Dirac(_substrateService.provider!);
       final accountId = crypto.ss58ToAccountId(s: address);
 
       return await quantusApi.query.reversibleTransfers.accountPendingIndex(accountId);
@@ -194,7 +194,7 @@ class ReversibleTransfersService {
   /// Get constants related to reversible transfers
   Future<Map<String, dynamic>> getConstants() async {
     try {
-      final quantusApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Dirac(_substrateService.provider!);
       final constants = quantusApi.constant.reversibleTransfers;
 
       return {
@@ -225,7 +225,7 @@ class ReversibleTransfersService {
         : delay.toJson().toString();
     print('setHighSecurity: ${account.accountId}, $guardianAccountId, $delayValue');
     try {
-      final quantusApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Dirac(_substrateService.provider!);
       final guardianAccountId32 = crypto.ss58ToAccountId(s: guardianAccountId);
 
       // Create the call
@@ -272,7 +272,7 @@ class ReversibleTransfersService {
     print('getInterceptedAccounts: $guardianAddress');
 
     try {
-      final quantusApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Dirac(_substrateService.provider!);
       final accountId = crypto.ss58ToAccountId(s: guardianAddress);
       final interceptedAccounts = await quantusApi.query.reversibleTransfers.interceptorIndex(accountId);
 
@@ -298,7 +298,7 @@ class ReversibleTransfersService {
     Duration safeguardDuration,
   ) async {
     final delay = safeguardDuration.qpTimestamp;
-    final quantusApi = Schrodinger(_substrateService.provider!);
+    final quantusApi = Dirac(_substrateService.provider!);
     final call = quantusApi.tx.reversibleTransfers.setHighSecurity(
       delay: delay,
       interceptor: crypto.ss58ToAccountId(s: guardianAccountId),
