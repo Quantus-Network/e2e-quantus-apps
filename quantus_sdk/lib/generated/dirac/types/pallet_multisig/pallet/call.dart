@@ -39,53 +39,23 @@ class $Call {
     required int threshold,
     required BigInt nonce,
   }) {
-    return CreateMultisig(
-      signers: signers,
-      threshold: threshold,
-      nonce: nonce,
-    );
+    return CreateMultisig(signers: signers, threshold: threshold, nonce: nonce);
   }
 
-  Propose propose({
-    required _i3.AccountId32 multisigAddress,
-    required List<int> call,
-    required int expiry,
-  }) {
-    return Propose(
-      multisigAddress: multisigAddress,
-      call: call,
-      expiry: expiry,
-    );
+  Propose propose({required _i3.AccountId32 multisigAddress, required List<int> call, required int expiry}) {
+    return Propose(multisigAddress: multisigAddress, call: call, expiry: expiry);
   }
 
-  Approve approve({
-    required _i3.AccountId32 multisigAddress,
-    required int proposalId,
-  }) {
-    return Approve(
-      multisigAddress: multisigAddress,
-      proposalId: proposalId,
-    );
+  Approve approve({required _i3.AccountId32 multisigAddress, required int proposalId}) {
+    return Approve(multisigAddress: multisigAddress, proposalId: proposalId);
   }
 
-  Cancel cancel({
-    required _i3.AccountId32 multisigAddress,
-    required int proposalId,
-  }) {
-    return Cancel(
-      multisigAddress: multisigAddress,
-      proposalId: proposalId,
-    );
+  Cancel cancel({required _i3.AccountId32 multisigAddress, required int proposalId}) {
+    return Cancel(multisigAddress: multisigAddress, proposalId: proposalId);
   }
 
-  RemoveExpired removeExpired({
-    required _i3.AccountId32 multisigAddress,
-    required int proposalId,
-  }) {
-    return RemoveExpired(
-      multisigAddress: multisigAddress,
-      proposalId: proposalId,
-    );
+  RemoveExpired removeExpired({required _i3.AccountId32 multisigAddress, required int proposalId}) {
+    return RemoveExpired(multisigAddress: multisigAddress, proposalId: proposalId);
   }
 
   ClaimDeposits claimDeposits({required _i3.AccountId32 multisigAddress}) {
@@ -124,10 +94,7 @@ class $CallCodec with _i1.Codec<Call> {
   }
 
   @override
-  void encodeTo(
-    Call value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Call value, _i1.Output output) {
     switch (value.runtimeType) {
       case CreateMultisig:
         (value as CreateMultisig).encodeTo(output);
@@ -151,8 +118,7 @@ class $CallCodec with _i1.Codec<Call> {
         (value as ApproveDissolve).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -174,8 +140,7 @@ class $CallCodec with _i1.Codec<Call> {
       case ApproveDissolve:
         return (value as ApproveDissolve)._sizeHint();
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -196,16 +161,11 @@ class $CallCodec with _i1.Codec<Call> {
 /// - MultisigFee: burned immediately (spam prevention)
 /// - MultisigDeposit: reserved until dissolution, then returned to creator (storage bond)
 class CreateMultisig extends Call {
-  const CreateMultisig({
-    required this.signers,
-    required this.threshold,
-    required this.nonce,
-  });
+  const CreateMultisig({required this.signers, required this.threshold, required this.nonce});
 
   factory CreateMultisig._decode(_i1.Input input) {
     return CreateMultisig(
-      signers: const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec())
-          .decode(input),
+      signers: const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec()).decode(input),
       threshold: _i1.U32Codec.codec.decode(input),
       nonce: _i1.U64Codec.codec.decode(input),
     );
@@ -222,62 +182,38 @@ class CreateMultisig extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'create_multisig': {
-          'signers': signers.map((value) => value.toList()).toList(),
-          'threshold': threshold,
-          'nonce': nonce,
-        }
-      };
+    'create_multisig': {
+      'signers': signers.map((value) => value.toList()).toList(),
+      'threshold': threshold,
+      'nonce': nonce,
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
-        const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec())
-            .sizeHint(signers);
+    size = size + const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec()).sizeHint(signers);
     size = size + _i1.U32Codec.codec.sizeHint(threshold);
     size = size + _i1.U64Codec.codec.sizeHint(nonce);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec()).encodeTo(
-      signers,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      threshold,
-      output,
-    );
-    _i1.U64Codec.codec.encodeTo(
-      nonce,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec()).encodeTo(signers, output);
+    _i1.U32Codec.codec.encodeTo(threshold, output);
+    _i1.U64Codec.codec.encodeTo(nonce, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is CreateMultisig &&
-          _i4.listsEqual(
-            other.signers,
-            signers,
-          ) &&
+          _i4.listsEqual(other.signers, signers) &&
           other.threshold == threshold &&
           other.nonce == nonce;
 
   @override
-  int get hashCode => Object.hash(
-        signers,
-        threshold,
-        nonce,
-      );
+  int get hashCode => Object.hash(signers, threshold, nonce);
 }
 
 /// Propose a transaction to be executed by the multisig
@@ -299,11 +235,7 @@ class CreateMultisig extends Call {
 /// **Weight:** Charged based on whether multisig is high-security or not.
 /// High-security multisigs incur additional cost for decode + whitelist check.
 class Propose extends Call {
-  const Propose({
-    required this.multisigAddress,
-    required this.call,
-    required this.expiry,
-  });
+  const Propose({required this.multisigAddress, required this.call, required this.expiry});
 
   factory Propose._decode(_i1.Input input) {
     return Propose(
@@ -324,12 +256,8 @@ class Propose extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'propose': {
-          'multisigAddress': multisigAddress.toList(),
-          'call': call,
-          'expiry': expiry,
-        }
-      };
+    'propose': {'multisigAddress': multisigAddress.toList(), 'call': call, 'expiry': expiry},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -340,47 +268,22 @@ class Propose extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      multisigAddress,
-      output,
-    );
-    _i1.U8SequenceCodec.codec.encodeTo(
-      call,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      expiry,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    const _i1.U8ArrayCodec(32).encodeTo(multisigAddress, output);
+    _i1.U8SequenceCodec.codec.encodeTo(call, output);
+    _i1.U32Codec.codec.encodeTo(expiry, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is Propose &&
-          _i4.listsEqual(
-            other.multisigAddress,
-            multisigAddress,
-          ) &&
-          _i4.listsEqual(
-            other.call,
-            call,
-          ) &&
+          _i4.listsEqual(other.multisigAddress, multisigAddress) &&
+          _i4.listsEqual(other.call, call) &&
           other.expiry == expiry;
 
   @override
-  int get hashCode => Object.hash(
-        multisigAddress,
-        call,
-        expiry,
-      );
+  int get hashCode => Object.hash(multisigAddress, call, expiry);
 }
 
 /// Approve a proposed transaction
@@ -395,10 +298,7 @@ class Propose extends Call {
 /// Weight: Charges for MAX call size, refunds based on actual
 /// NOTE: approve() does NOT do auto-cleanup (removed for predictable gas costs)
 class Approve extends Call {
-  const Approve({
-    required this.multisigAddress,
-    required this.proposalId,
-  });
+  const Approve({required this.multisigAddress, required this.proposalId});
 
   factory Approve._decode(_i1.Input input) {
     return Approve(
@@ -415,11 +315,8 @@ class Approve extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'approve': {
-          'multisigAddress': multisigAddress.toList(),
-          'proposalId': proposalId,
-        }
-      };
+    'approve': {'multisigAddress': multisigAddress.toList(), 'proposalId': proposalId},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -429,38 +326,18 @@ class Approve extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      multisigAddress,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      proposalId,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    const _i1.U8ArrayCodec(32).encodeTo(multisigAddress, output);
+    _i1.U32Codec.codec.encodeTo(proposalId, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Approve &&
-          _i4.listsEqual(
-            other.multisigAddress,
-            multisigAddress,
-          ) &&
-          other.proposalId == proposalId;
+      identical(this, other) ||
+      other is Approve && _i4.listsEqual(other.multisigAddress, multisigAddress) && other.proposalId == proposalId;
 
   @override
-  int get hashCode => Object.hash(
-        multisigAddress,
-        proposalId,
-      );
+  int get hashCode => Object.hash(multisigAddress, proposalId);
 }
 
 /// Cancel a proposed transaction (only by proposer)
@@ -469,10 +346,7 @@ class Approve extends Call {
 /// - `multisig_address`: The multisig account
 /// - `proposal_id`: ID (nonce) of the proposal to cancel
 class Cancel extends Call {
-  const Cancel({
-    required this.multisigAddress,
-    required this.proposalId,
-  });
+  const Cancel({required this.multisigAddress, required this.proposalId});
 
   factory Cancel._decode(_i1.Input input) {
     return Cancel(
@@ -489,11 +363,8 @@ class Cancel extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'cancel': {
-          'multisigAddress': multisigAddress.toList(),
-          'proposalId': proposalId,
-        }
-      };
+    'cancel': {'multisigAddress': multisigAddress.toList(), 'proposalId': proposalId},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -503,38 +374,18 @@ class Cancel extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      multisigAddress,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      proposalId,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
+    const _i1.U8ArrayCodec(32).encodeTo(multisigAddress, output);
+    _i1.U32Codec.codec.encodeTo(proposalId, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Cancel &&
-          _i4.listsEqual(
-            other.multisigAddress,
-            multisigAddress,
-          ) &&
-          other.proposalId == proposalId;
+      identical(this, other) ||
+      other is Cancel && _i4.listsEqual(other.multisigAddress, multisigAddress) && other.proposalId == proposalId;
 
   @override
-  int get hashCode => Object.hash(
-        multisigAddress,
-        proposalId,
-      );
+  int get hashCode => Object.hash(multisigAddress, proposalId);
 }
 
 /// Remove expired proposals and return deposits to proposers
@@ -546,10 +397,7 @@ class Cancel extends Call {
 /// The deposit is always returned to the original proposer, not the caller.
 /// This allows any signer to help clean up storage even if proposer is inactive.
 class RemoveExpired extends Call {
-  const RemoveExpired({
-    required this.multisigAddress,
-    required this.proposalId,
-  });
+  const RemoveExpired({required this.multisigAddress, required this.proposalId});
 
   factory RemoveExpired._decode(_i1.Input input) {
     return RemoveExpired(
@@ -566,11 +414,8 @@ class RemoveExpired extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'remove_expired': {
-          'multisigAddress': multisigAddress.toList(),
-          'proposalId': proposalId,
-        }
-      };
+    'remove_expired': {'multisigAddress': multisigAddress.toList(), 'proposalId': proposalId},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -580,38 +425,20 @@ class RemoveExpired extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      multisigAddress,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      proposalId,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
+    const _i1.U8ArrayCodec(32).encodeTo(multisigAddress, output);
+    _i1.U32Codec.codec.encodeTo(proposalId, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is RemoveExpired &&
-          _i4.listsEqual(
-            other.multisigAddress,
-            multisigAddress,
-          ) &&
+          _i4.listsEqual(other.multisigAddress, multisigAddress) &&
           other.proposalId == proposalId;
 
   @override
-  int get hashCode => Object.hash(
-        multisigAddress,
-        proposalId,
-      );
+  int get hashCode => Object.hash(multisigAddress, proposalId);
 }
 
 /// Claim all deposits from expired proposals
@@ -628,8 +455,7 @@ class ClaimDeposits extends Call {
   const ClaimDeposits({required this.multisigAddress});
 
   factory ClaimDeposits._decode(_i1.Input input) {
-    return ClaimDeposits(
-        multisigAddress: const _i1.U8ArrayCodec(32).decode(input));
+    return ClaimDeposits(multisigAddress: const _i1.U8ArrayCodec(32).decode(input));
   }
 
   /// T::AccountId
@@ -637,8 +463,8 @@ class ClaimDeposits extends Call {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'claim_deposits': {'multisigAddress': multisigAddress.toList()}
-      };
+    'claim_deposits': {'multisigAddress': multisigAddress.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -647,27 +473,13 @@ class ClaimDeposits extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      multisigAddress,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(5, output);
+    const _i1.U8ArrayCodec(32).encodeTo(multisigAddress, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ClaimDeposits &&
-          _i4.listsEqual(
-            other.multisigAddress,
-            multisigAddress,
-          );
+      identical(this, other) || other is ClaimDeposits && _i4.listsEqual(other.multisigAddress, multisigAddress);
 
   @override
   int get hashCode => multisigAddress.hashCode;
@@ -690,8 +502,7 @@ class ApproveDissolve extends Call {
   const ApproveDissolve({required this.multisigAddress});
 
   factory ApproveDissolve._decode(_i1.Input input) {
-    return ApproveDissolve(
-        multisigAddress: const _i1.U8ArrayCodec(32).decode(input));
+    return ApproveDissolve(multisigAddress: const _i1.U8ArrayCodec(32).decode(input));
   }
 
   /// T::AccountId
@@ -699,8 +510,8 @@ class ApproveDissolve extends Call {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'approve_dissolve': {'multisigAddress': multisigAddress.toList()}
-      };
+    'approve_dissolve': {'multisigAddress': multisigAddress.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -709,27 +520,13 @@ class ApproveDissolve extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      6,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      multisigAddress,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(6, output);
+    const _i1.U8ArrayCodec(32).encodeTo(multisigAddress, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ApproveDissolve &&
-          _i4.listsEqual(
-            other.multisigAddress,
-            multisigAddress,
-          );
+      identical(this, other) || other is ApproveDissolve && _i4.listsEqual(other.multisigAddress, multisigAddress);
 
   @override
   int get hashCode => multisigAddress.hashCode;

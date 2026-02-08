@@ -9,8 +9,7 @@ import 'dart:typed_data' as _i6;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i5;
 import 'package:polkadart/polkadart.dart' as _i8;
-import 'package:quantus_sdk/generated/dirac/types/pallet_reversible_transfers/high_security_account_data.dart'
-    as _i9;
+import 'package:quantus_sdk/generated/dirac/types/pallet_reversible_transfers/high_security_account_data.dart' as _i9;
 import 'package:quantus_sdk/generated/dirac/types/pallet_reversible_transfers/pending_transfer.dart' as _i10;
 import 'package:quantus_sdk/generated/dirac/types/qp_scheduler/block_number_or_timestamp.dart' as _i7;
 import 'package:quantus_sdk/quantus_sdk.dart' as _i2;

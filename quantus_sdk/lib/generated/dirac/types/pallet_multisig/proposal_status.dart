@@ -8,10 +8,7 @@ enum ProposalStatus {
   executed('Executed', 1),
   cancelled('Cancelled', 2);
 
-  const ProposalStatus(
-    this.variantName,
-    this.codecIndex,
-  );
+  const ProposalStatus(this.variantName, this.codecIndex);
 
   factory ProposalStatus.decode(_i1.Input input) {
     return codec.decode(input);
@@ -48,13 +45,7 @@ class $ProposalStatusCodec with _i1.Codec<ProposalStatus> {
   }
 
   @override
-  void encodeTo(
-    ProposalStatus value,
-    _i1.Output output,
-  ) {
-    _i1.U8Codec.codec.encodeTo(
-      value.codecIndex,
-      output,
-    );
+  void encodeTo(ProposalStatus value, _i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
   }
 }
