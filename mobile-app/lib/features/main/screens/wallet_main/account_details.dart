@@ -11,8 +11,14 @@ import 'package:resonance_network_wallet/shared/extensions/media_query_data_exte
 class AccountDetails extends ConsumerWidget {
   final BaseAccount activeAccount;
   final bool isEntrustedAccount;
+  final bool isMultisigAccount;
 
-  const AccountDetails({super.key, required this.activeAccount, this.isEntrustedAccount = false});
+  const AccountDetails({
+    super.key,
+    required this.activeAccount,
+    this.isEntrustedAccount = false,
+    this.isMultisigAccount = false,
+  });
 
   void _showActionSheet(BuildContext context, BaseAccount account) {
     showAccountCopyActionSheet(context, account);
@@ -39,7 +45,9 @@ class AccountDetails extends ConsumerWidget {
           children: [
             if (isEntrustedAccount)
               AccountTag(text: 'Entrusted Account', color: context.themeColors.accountTagEntrusted),
-            if (isHighSecurity && !isEntrustedAccount)
+            if (isMultisigAccount)
+              AccountTag(text: 'Multisig', color: context.themeColors.accountTagMultisig),
+            if (isHighSecurity && !isEntrustedAccount && !isMultisigAccount)
               AccountTag(text: 'High Security', color: context.themeColors.accountTagEntrusted),
             Container(
               width: double.infinity,

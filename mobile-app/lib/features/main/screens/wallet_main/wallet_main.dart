@@ -10,6 +10,8 @@ import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/notifications_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/multisig/multisig_proposals_section.dart';
+import 'package:resonance_network_wallet/features/main/screens/multisig/propose_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/send_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/account_details.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/action_button.dart';
@@ -153,6 +155,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                       AccountDetails(
                         activeAccount: activeDisplayAccount.account,
                         isEntrustedAccount: activeDisplayAccount is EntrustedDisplayAccount,
+                        isMultisigAccount: activeDisplayAccount is MultisigDisplayAccount,
                       ),
                       const SizedBox(height: 20),
                       balanceAsync.when(
@@ -213,12 +216,37 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                         ),
                       ],
                     )
+                  else if (activeDisplayAccount is MultisigDisplayAccount)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ActionButton(
+                          type: ActionType.propose,
+                          onPressed: () {
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => const ProposeScreen()));
+                          },
+                        ),
+                        const SizedBox(width: 33),
+                        ActionButton(
+                          type: ActionType.receive,
+                          onPressed: () {
+                            showReceiveSheet(context);
+                          },
+                        ),
+                      ],
+                    )
                   else if (activeDisplayAccount is EntrustedDisplayAccount)
                     const EmergencyButton(),
                   const SizedBox(height: 30),
                 ],
               ),
             ),
+            if (activeDisplayAccount is MultisigDisplayAccount)
+              SliverToBoxAdapter(
+                child: MultisigProposalsSection(
+                  multisigAddress: activeDisplayAccount.account.accountId,
+                ),
+              ),
             SliverToBoxAdapter(
               child: HistorySection(
                 allTransactionsAsync: activeAccountTransactionsAsync,

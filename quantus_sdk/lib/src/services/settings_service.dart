@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:quantus_sdk/src/models/account.dart';
 import 'package:quantus_sdk/src/models/display_account.dart';
+import 'package:quantus_sdk/src/models/multisig_account.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsService {
@@ -17,6 +18,7 @@ class SettingsService {
   static const String _accountsKey = 'accounts_v4';
   static const String _accountsToMigrateKey = 'accounts_to_migrate';
   static const String _addressBookKey = 'address_book';
+  static const String _multisigAccountsKey = 'multisig_accounts';
 
   static const String _oldAccountsKeyV3 = 'accounts_v3';
   static const String _oldAccountsKeyV2 = 'accounts_v2';
@@ -239,6 +241,23 @@ class SettingsService {
     final addressBook = await getAddressBook();
     addressBook.remove(address);
     await saveAddressBook(addressBook);
+  }
+
+  // --- Multisig Account Methods ---
+
+  Future<List<MultisigAccount>> getMultisigAccounts() async {
+    final jsonStr = _prefs.getString(_multisigAccountsKey);
+    if (jsonStr == null) return [];
+    try {
+      final decoded = jsonDecode(jsonStr) as List<dynamic>;
+      return decoded.map((e) => MultisigAccount.fromJson(e as Map<String, dynamic>)).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> saveMultisigAccounts(List<MultisigAccount> accounts) async {
+    await _prefs.setString(_multisigAccountsKey, jsonEncode(accounts.map((a) => a.toJson()).toList()));
   }
 
   // --- End Multi-Account Methods ---

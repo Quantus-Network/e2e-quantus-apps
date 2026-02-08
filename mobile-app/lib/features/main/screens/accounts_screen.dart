@@ -17,16 +17,18 @@ import 'package:resonance_network_wallet/features/main/screens/add_hardware_acco
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_wallet_and_backup_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/import_wallet_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/multisig/add_multisig_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/entrusted_account_provider.dart';
+import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/utils/feature_flags.dart';
 
-enum _WalletMoreAction { createWallet, importWallet, addHardwareWallet }
+enum _WalletMoreAction { createWallet, importWallet, addHardwareWallet, addMultisig }
 
 class AccountsScreen extends ConsumerStatefulWidget {
   const AccountsScreen({super.key});
@@ -116,6 +118,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     if (FeatureFlags.enableKeystoneHardwareWallet) {
       items.add(Item(value: _WalletMoreAction.addHardwareWallet, label: 'Add hardware wallet'));
     }
+    items.add(Item(value: _WalletMoreAction.addMultisig, label: 'Add multisig wallet'));
 
     showSelectActionSheet<_WalletMoreAction>(context, items, (item) async {
       final result = await (switch (item.value) {
@@ -136,6 +139,10 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
           MaterialPageRoute(
             builder: (context) => AddHardwareAccountScreen(walletIndex: nextWalletIndex, isNewWallet: true),
           ),
+        ),
+        _WalletMoreAction.addMultisig => Navigator.push<bool?>(
+          context,
+          MaterialPageRoute(builder: (context) => const AddMultisigScreen()),
         ),
       });
       if (result == true && mounted) {
@@ -246,18 +253,23 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
             }
 
             final grouped = _groupByWallet(accounts);
+            final multisigSection = _buildMultisigSection(activeDisplayAccount?.account.accountId);
+
             if (grouped.length <= 1) {
               final walletAccounts = grouped.values.first;
               return RefreshIndicator(
                 onRefresh: _refreshAccounts,
-                child: ListView.separated(
+                child: ListView(
                   padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  itemCount: walletAccounts.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 25),
-                  itemBuilder: (context, index) {
-                    final account = walletAccounts[index];
-                    return _buildAccountListItem(account, activeDisplayAccount?.account.accountId, index);
-                  },
+                  children: [
+                    ...walletAccounts.asMap().entries.map((entry) {
+                      return Padding(
+                        padding: EdgeInsets.only(top: entry.key > 0 ? 25 : 0),
+                        child: _buildAccountListItem(entry.value, activeDisplayAccount?.account.accountId, entry.key),
+                      );
+                    }),
+                    multisigSection,
+                  ],
                 ),
               );
             }
@@ -291,6 +303,8 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
               }
               sectionIndex++;
             }
+
+            children.add(multisigSection);
 
             return RefreshIndicator(
               onRefresh: _refreshAccounts,
@@ -593,6 +607,131 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
             left: (context.themeSize.accountListItemLogoWidth / 2) * -1,
             child: AccountGradientImage(
               accountId: account.accountId,
+              width: context.themeSize.accountListItemLogoWidth,
+              height: context.themeSize.accountListItemLogoWidth,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMultisigSection(String? activeAccountId) {
+    final multisigAccountsAsync = ref.watch(multisigAccountsProvider);
+
+    return multisigAccountsAsync.when(
+      data: (multisigAccounts) {
+        if (multisigAccounts.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 18),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Text(
+                'Multisig Wallets',
+                style: context.themeText.detail?.copyWith(color: context.themeColors.textPrimary),
+              ),
+            ),
+            ...multisigAccounts.asMap().entries.map((entry) {
+              final msig = entry.value;
+              return Padding(
+                padding: EdgeInsets.only(top: entry.key > 0 ? 25 : 0),
+                child: _buildMultisigListItem(msig, activeAccountId),
+              );
+            }),
+          ],
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildMultisigListItem(MultisigAccount msig, String? activeAccountId) {
+    final isActive = msig.accountId == activeAccountId;
+
+    return InkWell(
+      onTap: () async {
+        await ref.read(activeAccountProvider.notifier).setActiveAccount(MultisigDisplayAccount(msig));
+        if (mounted) Navigator.pop(context);
+      },
+      child: Stack(
+        clipBehavior: Clip.hardEdge,
+        children: [
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: context.isTablet ? 20 : 8, vertical: 8),
+            height: context.themeSize.accountListItemHeight,
+            decoration: ShapeDecoration(
+              color: isActive ? context.themeColors.surfaceActive : context.themeColors.surface,
+              shape: RoundedRectangleBorder(
+                side: BorderSide(width: 1, color: context.themeColors.borderLight),
+                borderRadius: BorderRadius.circular(5),
+              ),
+            ),
+            child: Row(
+              children: [
+                const SizedBox(width: 24),
+                Expanded(
+                  child: Consumer(
+                    builder: (context, ref, child) {
+                      return FutureBuilder<String>(
+                        future: _checksumService.getHumanReadableName(msig.accountId),
+                        builder: (context, checksumSnapshot) {
+                          final humanChecksum = checksumSnapshot.data ?? '';
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    msig.name,
+                                    style: context.themeText.smallParagraph?.copyWith(
+                                      color: isActive ? Colors.black : Colors.white,
+                                    ),
+                                  ),
+                                  AccountTag(text: 'Multisig', color: context.themeColors.accountTagMultisig),
+                                ],
+                              ),
+                              Text(
+                                humanChecksum,
+                                style: context.themeText.detail?.copyWith(
+                                  color: isActive ? context.themeColors.checksumDarker : context.themeColors.checksum,
+                                ),
+                              ),
+                              Text(
+                                context.isTablet
+                                    ? msig.accountId
+                                    : AddressFormattingService.formatAddress(msig.accountId),
+                                style: context.themeText.tiny?.copyWith(
+                                  color: isActive ? context.themeColors.darkGray : context.themeColors.textMuted,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${msig.threshold} of ${msig.signers.length} signers',
+                                style: context.themeText.tiny?.copyWith(
+                                  color: isActive ? context.themeColors.darkGray : context.themeColors.accountTagMultisig,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            top: (context.themeSize.accountListItemHeight / 2) - (context.themeSize.accountListItemLogoWidth / 2),
+            left: (context.themeSize.accountListItemLogoWidth / 2) * -1,
+            child: AccountGradientImage(
+              accountId: msig.accountId,
               width: context.themeSize.accountListItemLogoWidth,
               height: context.themeSize.accountListItemLogoWidth,
             ),

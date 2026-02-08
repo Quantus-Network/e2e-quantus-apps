@@ -43,6 +43,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
   final Color accountTagGuardian;
   final Color accountTagEntrusted;
   final Color accountTagHighSecurity;
+  final Color accountTagMultisig;
 
   const AppColorsTheme({
     required this.primary,
@@ -83,6 +84,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     required this.accountTagGuardian,
     required this.accountTagEntrusted,
     required this.accountTagHighSecurity,
+    required this.accountTagMultisig,
   });
 
   const AppColorsTheme.light()
@@ -125,6 +127,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
         accountTagGuardian: const Color(0xFF9747FF),
         accountTagEntrusted: const Color(0xFFFFD541),
         accountTagHighSecurity: const Color(0xFF4CEDE7),
+        accountTagMultisig: const Color(0xFF2ECC71),
       );
 
   const AppColorsTheme.dark()
@@ -167,6 +170,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
         accountTagGuardian: const Color(0xFF9747FF),
         accountTagEntrusted: const Color(0xFFFFD541),
         accountTagHighSecurity: const Color(0xFF4CEDE7),
+        accountTagMultisig: const Color(0xFF2ECC71),
       );
 
   @override
@@ -209,6 +213,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     Color? accountTagGuardian,
     Color? accountTagEntrusted,
     Color? accountTagHighSecurity,
+    Color? accountTagMultisig,
   }) {
     return AppColorsTheme(
       primary: primary ?? this.primary,
@@ -248,6 +253,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
       accountTagGuardian: accountTagGuardian ?? this.accountTagGuardian,
       accountTagEntrusted: accountTagEntrusted ?? this.accountTagEntrusted,
       accountTagHighSecurity: accountTagHighSecurity ?? this.accountTagHighSecurity,
+      accountTagMultisig: accountTagMultisig ?? this.accountTagMultisig,
     );
   }
 
@@ -293,6 +299,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
       accountTagEntrusted: Color.lerp(accountTagEntrusted, other.accountTagEntrusted, t) ?? accountTagEntrusted,
       accountTagHighSecurity:
           Color.lerp(accountTagHighSecurity, other.accountTagHighSecurity, t) ?? accountTagHighSecurity,
+      accountTagMultisig: Color.lerp(accountTagMultisig, other.accountTagMultisig, t) ?? accountTagMultisig,
     );
   }
 }

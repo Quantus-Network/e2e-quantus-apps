@@ -63,6 +63,11 @@ export 'src/quantus_signing_payload.dart';
 export 'src/quantus_payload_parser.dart';
 export 'src/models/entrusted_account.dart';
 export 'src/models/display_account.dart';
+export 'src/models/multisig_account.dart';
+export 'src/services/multisig_service.dart';
+export 'generated/dirac/types/pallet_multisig/multisig_data.dart';
+export 'generated/dirac/types/pallet_multisig/proposal_data.dart';
+export 'generated/dirac/types/pallet_multisig/proposal_status.dart';
 
 class QuantusSdk {
   /// Initialise the SDK (loads Rust FFI, etc).

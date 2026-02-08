@@ -4,7 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
-enum ActionType { send, receive, bridge, swap }
+enum ActionType { send, receive, bridge, swap, propose }
 
 class ActionButton extends StatelessWidget {
   final ActionType type;
@@ -23,12 +23,15 @@ class ActionButton extends StatelessWidget {
         return 'BRIDGE';
       case ActionType.swap:
         return 'SWAP';
+      case ActionType.propose:
+        return 'PROPOSE';
     }
   }
 
   Widget get iconWidget {
     switch (type) {
       case ActionType.send:
+      case ActionType.propose:
         return Image.asset('assets/transaction/send_icon.png');
       case ActionType.receive:
         return SvgPicture.asset('assets/transaction/receive_icon.svg', width: 19);
@@ -42,6 +45,7 @@ class ActionButton extends StatelessWidget {
   String get frameImagePath {
     switch (type) {
       case ActionType.send:
+      case ActionType.propose:
         return 'assets/send_btn_decoration.png';
       case ActionType.receive:
         return 'assets/receive_btn_decoration.png';
