@@ -180,16 +180,12 @@ class _ProposeScreenState extends ConsumerState<ProposeScreen> {
       ref.invalidate(multisigProposalsProvider(activeAccount.account.accountId));
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Proposal submitted')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Proposal submitted')));
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Propose failed: $e')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Propose failed: $e')));
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -299,9 +295,7 @@ class _ProposeScreenState extends ConsumerState<ProposeScreen> {
           decoration: BoxDecoration(
             color: isSelected ? context.themeColors.buttonNeutral : context.themeColors.surface,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isSelected ? context.themeColors.buttonNeutral : context.themeColors.borderLight,
-            ),
+            border: Border.all(color: isSelected ? context.themeColors.buttonNeutral : context.themeColors.borderLight),
           ),
           child: Center(
             child: Text(
@@ -322,7 +316,11 @@ class _ProposeScreenState extends ConsumerState<ProposeScreen> {
       children: [
         Text('Network Fee', style: context.themeText.detail?.copyWith(color: context.themeColors.textMuted)),
         _isFetchingFee
-            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white54))
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white54),
+              )
             : Text(
                 _networkFee > BigInt.zero
                     ? '${_numberFormatting.formatBalance(_networkFee)} ${AppConstants.tokenSymbol}'

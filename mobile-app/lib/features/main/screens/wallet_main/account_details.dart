@@ -45,8 +45,7 @@ class AccountDetails extends ConsumerWidget {
           children: [
             if (isEntrustedAccount)
               AccountTag(text: 'Entrusted Account', color: context.themeColors.accountTagEntrusted),
-            if (isMultisigAccount)
-              AccountTag(text: 'Multisig', color: context.themeColors.accountTagMultisig),
+            if (isMultisigAccount) AccountTag(text: 'Multisig', color: context.themeColors.accountTagMultisig),
             if (isHighSecurity && !isEntrustedAccount && !isMultisigAccount)
               AccountTag(text: 'High Security', color: context.themeColors.accountTagEntrusted),
             Container(

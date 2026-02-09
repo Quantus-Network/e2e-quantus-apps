@@ -37,10 +37,7 @@ BigInt? _decodeCompactBigInt(List<int> bytes, int offset) {
       return BigInt.from(((bytes[offset + 1] << 8) | first) >> 2);
     } else if (mode == 2) {
       if (offset + 3 >= bytes.length) return null;
-      final value = (bytes[offset + 3] << 24) |
-          (bytes[offset + 2] << 16) |
-          (bytes[offset + 1] << 8) |
-          first;
+      final value = (bytes[offset + 3] << 24) | (bytes[offset + 2] << 16) | (bytes[offset + 1] << 8) | first;
       return BigInt.from(value >> 2);
     } else {
       final len = (first >> 2) + 4;

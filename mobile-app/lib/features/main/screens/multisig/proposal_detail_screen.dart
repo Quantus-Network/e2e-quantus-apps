@@ -15,11 +15,7 @@ class ProposalDetailScreen extends ConsumerStatefulWidget {
   final String multisigAddress;
   final int proposalId;
 
-  const ProposalDetailScreen({
-    super.key,
-    required this.multisigAddress,
-    required this.proposalId,
-  });
+  const ProposalDetailScreen({super.key, required this.multisigAddress, required this.proposalId});
 
   @override
   ConsumerState<ProposalDetailScreen> createState() => _ProposalDetailScreenState();
@@ -51,9 +47,7 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Approve failed: $e')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Approve failed: $e')));
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -79,9 +73,7 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Cancel failed: $e')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Cancel failed: $e')));
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -111,9 +103,7 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
         data: (proposals) {
           final match = proposals.where((p) => p.$1 == widget.proposalId);
           if (match.isEmpty) {
-            return Center(
-              child: Text('Proposal not found', style: context.themeText.smallParagraph),
-            );
+            return Center(child: Text('Proposal not found', style: context.themeText.smallParagraph));
           }
 
           final proposal = match.first.$2;
@@ -126,9 +116,9 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
           final proposerAddress = _multisigService.signerToAddress(proposal.proposer);
           final userSignerAccount = activeAccount != null ? _findSignerAccount(accounts, activeAccount) : null;
           final isProposer = userSignerAccount != null && userSignerAccount.accountId == proposerAddress;
-          final hasApproved = userSignerAccount != null &&
-              proposal.approvals.any((a) =>
-                _multisigService.signerToAddress(a) == userSignerAccount.accountId);
+          final hasApproved =
+              userSignerAccount != null &&
+              proposal.approvals.any((a) => _multisigService.signerToAddress(a) == userSignerAccount.accountId);
 
           return SingleChildScrollView(
             child: Column(
@@ -158,8 +148,7 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                   title: 'Signers',
                   children: signers.map((signer) {
                     final signerAddr = _multisigService.signerToAddress(signer);
-                    final approved = proposal.approvals.any((a) =>
-                      _multisigService.signerToAddress(a) == signerAddr);
+                    final approved = proposal.approvals.any((a) => _multisigService.signerToAddress(a) == signerAddr);
 
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -168,9 +157,7 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                           Icon(
                             approved ? Icons.check_circle : Icons.radio_button_unchecked,
                             size: 18,
-                            color: approved
-                                ? context.themeColors.buttonSuccess
-                                : context.themeColors.textMuted,
+                            color: approved ? context.themeColors.buttonSuccess : context.themeColors.textMuted,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -183,23 +170,18 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                                     if (snap.data != null)
                                       Text(
                                         snap.data!,
-                                        style: context.themeText.detail?.copyWith(
-                                          color: context.themeColors.checksum,
-                                        ),
+                                        style: context.themeText.detail?.copyWith(color: context.themeColors.checksum),
                                       ),
                                     Text(
                                       AddressFormattingService.formatAddress(signerAddr),
-                                      style: context.themeText.tiny?.copyWith(
-                                        color: context.themeColors.textMuted,
-                                      ),
+                                      style: context.themeText.tiny?.copyWith(color: context.themeColors.textMuted),
                                     ),
                                   ],
                                 );
                               },
                             ),
                           ),
-                          if (approved)
-                            AccountTag(text: 'Approved', color: context.themeColors.buttonSuccess),
+                          if (approved) AccountTag(text: 'Approved', color: context.themeColors.buttonSuccess),
                         ],
                       ),
                     );
@@ -309,4 +291,3 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
     );
   }
 }
-

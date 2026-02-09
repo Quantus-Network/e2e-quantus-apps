@@ -10,12 +10,7 @@ class MultisigAccount implements BaseAccount {
   final List<String> signers;
   final int threshold;
 
-  const MultisigAccount({
-    required this.name,
-    required this.accountId,
-    required this.signers,
-    required this.threshold,
-  });
+  const MultisigAccount({required this.name, required this.accountId, required this.signers, required this.threshold});
 
   factory MultisigAccount.fromJson(Map<String, dynamic> json) {
     return MultisigAccount(
@@ -27,20 +22,10 @@ class MultisigAccount implements BaseAccount {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'accountId': accountId,
-      'signers': signers,
-      'threshold': threshold,
-    };
+    return {'name': name, 'accountId': accountId, 'signers': signers, 'threshold': threshold};
   }
 
   MultisigAccount copyWith({String? name}) {
-    return MultisigAccount(
-      name: name ?? this.name,
-      accountId: accountId,
-      signers: signers,
-      threshold: threshold,
-    );
+    return MultisigAccount(name: name ?? this.name, accountId: accountId, signers: signers, threshold: threshold);
   }
 }

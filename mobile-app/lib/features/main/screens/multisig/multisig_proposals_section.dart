@@ -36,10 +36,7 @@ class MultisigProposalsSection extends ConsumerWidget {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
-              decoration: BoxDecoration(
-                color: Colors.black.withAlpha(128),
-                borderRadius: BorderRadius.circular(5),
-              ),
+              decoration: BoxDecoration(color: Colors.black.withAlpha(128), borderRadius: BorderRadius.circular(5)),
               child: Column(
                 children: proposals.asMap().entries.map((entry) {
                   final index = entry.key;
@@ -48,8 +45,7 @@ class MultisigProposalsSection extends ConsumerWidget {
 
                   return Column(
                     children: [
-                      if (index > 0)
-                        Divider(color: context.themeColors.darkGray, thickness: 0.5, height: 24),
+                      if (index > 0) Divider(color: context.themeColors.darkGray, thickness: 0.5, height: 24),
                       _ProposalListItem(
                         proposalId: proposalId,
                         proposal: proposal,
@@ -97,10 +93,7 @@ class _ProposalListItem extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => ProposalDetailScreen(
-              multisigAddress: multisigAddress,
-              proposalId: proposalId,
-            ),
+            builder: (_) => ProposalDetailScreen(multisigAddress: multisigAddress, proposalId: proposalId),
           ),
         );
       },
@@ -121,16 +114,15 @@ class _ProposalListItem extends StatelessWidget {
                     ),
                     if (decoded != null)
                       Text.rich(
-                        TextSpan(children: [
-                          TextSpan(
-                            text: numberFormatting.formatBalance(decoded.amount),
-                            style: context.themeText.smallParagraph,
-                          ),
-                          TextSpan(
-                            text: ' ${AppConstants.tokenSymbol}',
-                            style: context.themeText.tiny,
-                          ),
-                        ]),
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: numberFormatting.formatBalance(decoded.amount),
+                              style: context.themeText.smallParagraph,
+                            ),
+                            TextSpan(text: ' ${AppConstants.tokenSymbol}', style: context.themeText.tiny),
+                          ],
+                        ),
                       ),
                   ],
                 ),
@@ -164,4 +156,3 @@ class _ProposalListItem extends StatelessWidget {
     );
   }
 }
-

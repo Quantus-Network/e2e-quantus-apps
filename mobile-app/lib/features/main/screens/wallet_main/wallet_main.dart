@@ -243,9 +243,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
             ),
             if (activeDisplayAccount is MultisigDisplayAccount)
               SliverToBoxAdapter(
-                child: MultisigProposalsSection(
-                  multisigAddress: activeDisplayAccount.account.accountId,
-                ),
+                child: MultisigProposalsSection(multisigAddress: activeDisplayAccount.account.accountId),
               ),
             SliverToBoxAdapter(
               child: HistorySection(

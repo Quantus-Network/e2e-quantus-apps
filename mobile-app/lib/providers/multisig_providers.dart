@@ -15,8 +15,10 @@ final activeMultisigDataProvider = FutureProvider.family<MultisigData?, String>(
   return await service.getMultisigData(address);
 });
 
-final multisigProposalsProvider =
-    FutureProvider.family<List<(int, ProposalData)>, String>((ref, multisigAddress) async {
+final multisigProposalsProvider = FutureProvider.family<List<(int, ProposalData)>, String>((
+  ref,
+  multisigAddress,
+) async {
   final service = ref.watch(multisigServiceProvider);
   return await service.getActiveProposals(multisigAddress);
 });

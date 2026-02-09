@@ -71,9 +71,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
     final address = _addressController.text.trim();
     final service = ref.read(multisigServiceProvider);
 
-    final signerAddresses = _multisigData!.signers
-        .map((s) => service.signerToAddress(s))
-        .toList();
+    final signerAddresses = _multisigData!.signers.map((s) => service.signerToAddress(s)).toList();
 
     final account = MultisigAccount(
       name: 'Multisig',
@@ -136,9 +134,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
             onSelectionChanged: (value) => setState(() => _mode = value),
           ),
           const SizedBox(height: 24),
-          Expanded(
-            child: _mode == _AddMode.manual ? _buildManualTab() : _buildDiscoverTab(),
-          ),
+          Expanded(child: _mode == _AddMode.manual ? _buildManualTab() : _buildDiscoverTab()),
           Button(
             label: 'Create New Multisig',
             variant: ButtonVariant.glassOutline,
@@ -171,16 +167,11 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        if (_isLoading)
-          const Center(child: CircularProgressIndicator(color: Colors.white)),
+        if (_isLoading) const Center(child: CircularProgressIndicator(color: Colors.white)),
         if (_multisigData != null) ...[
           _buildMultisigInfo(_multisigData!),
           const Spacer(),
-          Button(
-            label: 'Add Multisig Wallet',
-            variant: ButtonVariant.primary,
-            onPressed: _addManual,
-          ),
+          Button(label: 'Add Multisig Wallet', variant: ButtonVariant.primary, onPressed: _addManual),
           const SizedBox(height: 32),
         ],
       ],
@@ -196,11 +187,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
             style: context.themeText.detail?.copyWith(color: context.themeColors.textMuted),
           ),
           const SizedBox(height: 24),
-          Button(
-            label: 'Discover Multisigs',
-            variant: ButtonVariant.glassOutline,
-            onPressed: _discover,
-          ),
+          Button(label: 'Discover Multisigs', variant: ButtonVariant.glassOutline, onPressed: _discover),
         ],
         if (_isLoading)
           const Padding(
@@ -241,10 +228,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              AddressFormattingService.formatAddress(msig.accountId),
-              style: context.themeText.smallParagraph,
-            ),
+            Text(AddressFormattingService.formatAddress(msig.accountId), style: context.themeText.smallParagraph),
             const SizedBox(height: 4),
             Text(
               '${msig.threshold} of ${msig.signers.length} signers',
@@ -275,13 +259,15 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
           const SizedBox(height: 8),
           Text('Signers', style: context.themeText.detail?.copyWith(color: context.themeColors.textMuted)),
           const SizedBox(height: 4),
-          ...data.signers.map((s) => Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Text(
-              AddressFormattingService.formatAddress(service.signerToAddress(s)),
-              style: context.themeText.tiny,
+          ...data.signers.map(
+            (s) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                AddressFormattingService.formatAddress(service.signerToAddress(s)),
+                style: context.themeText.tiny,
+              ),
             ),
-          )),
+          ),
         ],
       ),
     );

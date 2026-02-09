@@ -71,10 +71,7 @@ class _CreateMultisigScreenState extends ConsumerState<CreateMultisigScreen> {
     }
 
     final accounts = ref.read(accountsProvider).value ?? [];
-    final signerAccount = accounts.firstWhere(
-      (a) => _signers.contains(a.accountId),
-      orElse: () => accounts.first,
-    );
+    final signerAccount = accounts.firstWhere((a) => _signers.contains(a.accountId), orElse: () => accounts.first);
 
     setState(() {
       _isLoading = true;
@@ -146,36 +143,33 @@ class _CreateMultisigScreenState extends ConsumerState<CreateMultisigScreen> {
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
-                    children: List.generate(
-                      _signers.length,
-                      (i) {
-                        final val = i + 1;
-                        final isSelected = _threshold == val;
-                        return InkWell(
-                          onTap: () => setState(() => _threshold = val),
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: isSelected ? context.themeColors.buttonNeutral : context.themeColors.surface,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: isSelected ? context.themeColors.buttonNeutral : context.themeColors.borderLight,
-                              ),
+                    children: List.generate(_signers.length, (i) {
+                      final val = i + 1;
+                      final isSelected = _threshold == val;
+                      return InkWell(
+                        onTap: () => setState(() => _threshold = val),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: isSelected ? context.themeColors.buttonNeutral : context.themeColors.surface,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isSelected ? context.themeColors.buttonNeutral : context.themeColors.borderLight,
                             ),
-                            child: Center(
-                              child: Text(
-                                '$val',
-                                style: context.themeText.smallParagraph?.copyWith(
-                                  color: isSelected ? context.themeColors.textSecondary : context.themeColors.textPrimary,
-                                ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '$val',
+                              style: context.themeText.smallParagraph?.copyWith(
+                                color: isSelected ? context.themeColors.textSecondary : context.themeColors.textPrimary,
                               ),
                             ),
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    }),
                   ),
                   Padding(
                     padding: const EdgeInsets.only(top: 6),
@@ -228,10 +222,7 @@ class _CreateMultisigScreenState extends ConsumerState<CreateMultisigScreen> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        AddressFormattingService.formatAddress(address),
-                        style: context.themeText.detail,
-                      ),
+                      Text(AddressFormattingService.formatAddress(address), style: context.themeText.detail),
                       if (snap.data != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 2),

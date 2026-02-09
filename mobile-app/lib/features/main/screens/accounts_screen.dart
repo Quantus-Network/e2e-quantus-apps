@@ -714,7 +714,9 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                               Text(
                                 '${msig.threshold} of ${msig.signers.length} signers',
                                 style: context.themeText.tiny?.copyWith(
-                                  color: isActive ? context.themeColors.darkGray : context.themeColors.accountTagMultisig,
+                                  color: isActive
+                                      ? context.themeColors.darkGray
+                                      : context.themeColors.accountTagMultisig,
                                 ),
                               ),
                             ],

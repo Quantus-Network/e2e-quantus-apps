@@ -25,7 +25,6 @@ class MultisigService {
   final RpcEndpointService _rpcEndpointService = RpcEndpointService();
   final SettingsService _settingsService = SettingsService();
 
-
   Dirac get _api => Dirac(_substrateService.provider!);
 
   Uint8List _accountId(String address) => crypto.ss58ToAccountId(s: address);
@@ -59,11 +58,7 @@ class MultisigService {
     required BigInt nonce,
   }) async {
     final signerIds = signerAddresses.map((a) => _accountId(a).toList()).toList();
-    final call = _api.tx.multisig.createMultisig(
-      signers: signerIds,
-      threshold: threshold,
-      nonce: nonce,
-    );
+    final call = _api.tx.multisig.createMultisig(signers: signerIds, threshold: threshold, nonce: nonce);
     return await _substrateService.submitExtrinsic(signer, call);
   }
 
@@ -74,19 +69,11 @@ class MultisigService {
     required BigInt nonce,
   }) async {
     final signerIds = signerAddresses.map((a) => _accountId(a).toList()).toList();
-    final call = _api.tx.multisig.createMultisig(
-      signers: signerIds,
-      threshold: threshold,
-      nonce: nonce,
-    );
+    final call = _api.tx.multisig.createMultisig(signers: signerIds, threshold: threshold, nonce: nonce);
     return await _substrateService.getFeeForCall(signer, call);
   }
 
-  String deriveMultisigAddress({
-    required List<String> signerAddresses,
-    required int threshold,
-    required BigInt nonce,
-  }) {
+  String deriveMultisigAddress({required List<String> signerAddresses, required int threshold, required BigInt nonce}) {
     final signerIds = signerAddresses.map((a) => _accountId(a).toList()).toList()
       ..sort((a, b) {
         for (int i = 0; i < a.length; i++) {
@@ -127,27 +114,13 @@ class MultisigService {
     return await _substrateService.submitExtrinsic(signer, call);
   }
 
-  Future<Uint8List> approve({
-    required Account signer,
-    required String multisigAddress,
-    required int proposalId,
-  }) async {
-    final call = _api.tx.multisig.approve(
-      multisigAddress: _accountId(multisigAddress),
-      proposalId: proposalId,
-    );
+  Future<Uint8List> approve({required Account signer, required String multisigAddress, required int proposalId}) async {
+    final call = _api.tx.multisig.approve(multisigAddress: _accountId(multisigAddress), proposalId: proposalId);
     return await _substrateService.submitExtrinsic(signer, call);
   }
 
-  Future<Uint8List> cancel({
-    required Account signer,
-    required String multisigAddress,
-    required int proposalId,
-  }) async {
-    final call = _api.tx.multisig.cancel(
-      multisigAddress: _accountId(multisigAddress),
-      proposalId: proposalId,
-    );
+  Future<Uint8List> cancel({required Account signer, required String multisigAddress, required int proposalId}) async {
+    final call = _api.tx.multisig.cancel(multisigAddress: _accountId(multisigAddress), proposalId: proposalId);
     return await _substrateService.submitExtrinsic(signer, call);
   }
 
@@ -156,10 +129,7 @@ class MultisigService {
     required String multisigAddress,
     required int proposalId,
   }) async {
-    final call = _api.tx.multisig.removeExpired(
-      multisigAddress: _accountId(multisigAddress),
-      proposalId: proposalId,
-    );
+    final call = _api.tx.multisig.removeExpired(multisigAddress: _accountId(multisigAddress), proposalId: proposalId);
     return await _substrateService.submitExtrinsic(signer, call);
   }
 
@@ -182,10 +152,7 @@ class MultisigService {
     required String multisigAddress,
     required int proposalId,
   }) async {
-    final call = _api.tx.multisig.approve(
-      multisigAddress: _accountId(multisigAddress),
-      proposalId: proposalId,
-    );
+    final call = _api.tx.multisig.approve(multisigAddress: _accountId(multisigAddress), proposalId: proposalId);
     return await _substrateService.getFeeForCall(signer, call);
   }
 
@@ -194,10 +161,7 @@ class MultisigService {
     required String multisigAddress,
     required int proposalId,
   }) async {
-    final call = _api.tx.multisig.cancel(
-      multisigAddress: _accountId(multisigAddress),
-      proposalId: proposalId,
-    );
+    final call = _api.tx.multisig.cancel(multisigAddress: _accountId(multisigAddress), proposalId: proposalId);
     return await _substrateService.getFeeForCall(signer, call);
   }
 
@@ -234,8 +198,9 @@ class MultisigService {
       final valueBytes = Uint8List.fromList(hex.decode(valueHex));
       final multisigData = MultisigData.decode(ByteInput(valueBytes));
 
-      final isUserSigner = multisigData.signers.any((signer) =>
-        userAccountIdBytes.any((userId) => _bytesEqual(signer, userId)));
+      final isUserSigner = multisigData.signers.any(
+        (signer) => userAccountIdBytes.any((userId) => _bytesEqual(signer, userId)),
+      );
 
       if (!isUserSigner) continue;
 
@@ -248,12 +213,14 @@ class MultisigService {
           .map((s) => AddressExtension.ss58AddressFromBytes(Uint8List.fromList(s)))
           .toList();
 
-      discovered.add(MultisigAccount(
-        name: 'Multisig ${discovered.length + 1}',
-        accountId: address,
-        signers: signerAddresses,
-        threshold: multisigData.threshold,
-      ));
+      discovered.add(
+        MultisigAccount(
+          name: 'Multisig ${discovered.length + 1}',
+          accountId: address,
+          signers: signerAddresses,
+          threshold: multisigData.threshold,
+        ),
+      );
     }
 
     return discovered;
