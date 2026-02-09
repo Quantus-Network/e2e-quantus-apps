@@ -106,7 +106,7 @@ class _CreateMultisigScreenState extends ConsumerState<CreateMultisigScreen> {
       await ref.read(activeAccountProvider.notifier).setActiveAccount(MultisigDisplayAccount(account));
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
-      setState(() => _error = 'Creation failed: $e');
+      setState(() => _error = 'Error, please try again');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
