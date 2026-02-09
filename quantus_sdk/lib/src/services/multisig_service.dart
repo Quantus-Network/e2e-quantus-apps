@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
 import 'package:polkadart/polkadart.dart';
-import 'package:polkadart/scale_codec.dart' show ByteInput;
+import 'package:polkadart/scale_codec.dart' show ByteInput, ByteOutput, U32Codec, U64Codec;
 import 'package:quantus_sdk/generated/dirac/dirac.dart';
 import 'package:quantus_sdk/generated/dirac/types/pallet_multisig/multisig_data.dart';
 import 'package:quantus_sdk/generated/dirac/types/pallet_multisig/proposal_data.dart';
@@ -50,6 +50,67 @@ class MultisigService {
       }
     }
     return results;
+  }
+
+  Future<Uint8List> createMultisig({
+    required Account signer,
+    required List<String> signerAddresses,
+    required int threshold,
+    required BigInt nonce,
+  }) async {
+    final signerIds = signerAddresses.map((a) => _accountId(a).toList()).toList();
+    final call = _api.tx.multisig.createMultisig(
+      signers: signerIds,
+      threshold: threshold,
+      nonce: nonce,
+    );
+    return await _substrateService.submitExtrinsic(signer, call);
+  }
+
+  Future<ExtrinsicFeeData> getCreateMultisigFee({
+    required Account signer,
+    required List<String> signerAddresses,
+    required int threshold,
+    required BigInt nonce,
+  }) async {
+    final signerIds = signerAddresses.map((a) => _accountId(a).toList()).toList();
+    final call = _api.tx.multisig.createMultisig(
+      signers: signerIds,
+      threshold: threshold,
+      nonce: nonce,
+    );
+    return await _substrateService.getFeeForCall(signer, call);
+  }
+
+  String deriveMultisigAddress({
+    required List<String> signerAddresses,
+    required int threshold,
+    required BigInt nonce,
+  }) {
+    final signerIds = signerAddresses.map((a) => _accountId(a).toList()).toList()
+      ..sort((a, b) {
+        for (int i = 0; i < a.length; i++) {
+          if (a[i] != b[i]) return a[i].compareTo(b[i]);
+        }
+        return 0;
+      });
+
+    final palletId = const <int>[112, 121, 47, 109, 108, 116, 115, 103];
+
+    final output = ByteOutput(256);
+    for (final b in palletId) {
+      output.pushByte(b);
+    }
+    for (final signer in signerIds) {
+      for (final b in signer) {
+        output.pushByte(b);
+      }
+    }
+    U32Codec.codec.encodeTo(threshold, output);
+    U64Codec.codec.encodeTo(nonce, output);
+
+    final hash = Hasher.blake2b256.hash(output.toBytes());
+    return AddressExtension.ss58AddressFromBytes(Uint8List.fromList(hash));
   }
 
   Future<Uint8List> propose({

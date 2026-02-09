@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/features/components/custom_text_field.d
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/segmented_control.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
+import 'package:resonance_network_wallet/features/main/screens/multisig/create_multisig_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
@@ -138,6 +139,18 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
           Expanded(
             child: _mode == _AddMode.manual ? _buildManualTab() : _buildDiscoverTab(),
           ),
+          Button(
+            label: 'Create New Multisig',
+            variant: ButtonVariant.glassOutline,
+            onPressed: () async {
+              final result = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(builder: (_) => const CreateMultisigScreen()),
+              );
+              if (result == true && mounted) Navigator.pop(context, true);
+            },
+          ),
+          const SizedBox(height: 32),
         ],
       ),
     );
