@@ -14,6 +14,7 @@ import 'package:resonance_network_wallet/providers/notification_config_provider.
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
+import 'package:resonance_network_wallet/v2/components/back_button.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/change_pin_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -161,10 +162,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Icon(Icons.chevron_left, color: colors.textPrimary, size: 24),
-                    ),
+                    const AppBackButton(),
                     Text('Settings', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
                     const SizedBox(width: 24),
                   ],

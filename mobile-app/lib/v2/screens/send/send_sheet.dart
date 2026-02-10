@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/features/main/screens/send/send_screen_
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
+import 'package:resonance_network_wallet/v2/components/back_button.dart';
 import 'package:resonance_network_wallet/v2/components/success_check.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -184,7 +185,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         if (onBack != null)
-          GestureDetector(onTap: onBack, child: Icon(Icons.chevron_left, color: colors.textPrimary, size: 24))
+          AppBackButton(onTap: onBack)
         else
           Text('Send', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
         GestureDetector(

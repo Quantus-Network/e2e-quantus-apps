@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/v2/components/back_button.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
 import 'package:resonance_network_wallet/v2/components/success_check.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -148,10 +149,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Icon(Icons.chevron_left, color: colors.textPrimary, size: 24),
-          ),
+          const AppBackButton(),
           Text('Change PIN', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
           const SizedBox(width: 24),
         ],
