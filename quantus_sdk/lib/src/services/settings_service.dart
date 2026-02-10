@@ -264,7 +264,34 @@ class SettingsService {
     return await _secureStorage.read(key: getMnemonicKey(walletIndex));
   }
 
-  // Reversible Time Settings
+  // PIN Code Settings
+  Future<void> setPin(String pin) async {
+    await _secureStorage.write(key: 'wallet_pin', value: pin);
+  }
+
+  Future<String?> getPin() async {
+    return await _secureStorage.read(key: 'wallet_pin');
+  }
+
+  Future<bool> hasPin() async {
+    final pin = await _secureStorage.read(key: 'wallet_pin');
+    return pin != null && pin.isNotEmpty;
+  }
+
+  Future<bool> verifyPin(String pin) async {
+    final stored = await _secureStorage.read(key: 'wallet_pin');
+    return stored == pin;
+  }
+
+  // Reversible Transaction Settings
+  Future<void> setReversibleEnabled(bool enabled) async {
+    await _prefs.setBool('reversible_enabled', enabled);
+  }
+
+  bool isReversibleEnabled() {
+    return _prefs.getBool('reversible_enabled') ?? false;
+  }
+
   Future<void> setReversibleTimeSeconds(int seconds) async {
     await _prefs.setInt('reversible_time_seconds', seconds);
   }

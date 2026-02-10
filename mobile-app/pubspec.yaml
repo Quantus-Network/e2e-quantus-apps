@@ -101,6 +101,8 @@ flutter:
     - assets/high_security/big_red_button_icon.png
     - assets/high_security/intercept_icon.svg
     - assets/quests/quests_top_logo.png
+    - assets/v2/green_checkmark.png
+    - assets/v2/pin_number_background.png
 
   fonts:
     - family: Fira Code

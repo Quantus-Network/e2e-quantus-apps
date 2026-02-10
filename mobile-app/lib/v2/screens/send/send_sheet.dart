@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/features/main/screens/send/send_screen_
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
+import 'package:resonance_network_wallet/v2/components/success_check.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/v2/screens/send/address_picker_sheet.dart';
@@ -409,7 +410,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       children: [
         _header(colors, text),
         const SizedBox(height: 80),
-        Icon(Icons.check_circle_outline, color: colors.accentGreen, size: 64),
+        const SuccessCheck(size: 64),
         const SizedBox(height: 24),
         Text('Sent!', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
         const SizedBox(height: 8),
