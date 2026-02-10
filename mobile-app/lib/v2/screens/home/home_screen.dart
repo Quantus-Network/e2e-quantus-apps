@@ -6,8 +6,8 @@ import 'package:resonance_network_wallet/features/components/account_gradient_im
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/send/send_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/receive/receive_sheet.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_sheet.dart';
 import 'package:resonance_network_wallet/features/main/screens/settings_screen.dart';
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
@@ -225,7 +225,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           label: 'Receive',
           colors: colors,
           text: text,
-          onTap: () => showReceiveSheet(context),
+          onTap: () => showReceiveSheetV2(context),
         ),
         const SizedBox(width: 15),
         _actionCard(
@@ -233,7 +233,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           label: 'Send',
           colors: colors,
           text: text,
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SendScreen())),
+          onTap: () => showSendSheetV2(context),
         ),
         const SizedBox(width: 15),
         _actionCard(
