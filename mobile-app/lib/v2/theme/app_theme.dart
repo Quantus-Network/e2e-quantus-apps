@@ -12,25 +12,21 @@ import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 class AppTheme {
   static ThemeData darkTheme(BuildContext context) {
     final isTablet = context.isTablet;
-    final appColors = const AppColorsTheme.dark();
+    final colors = const AppColorsV2.dark();
 
     return ThemeData(
-      primaryColor: appColors.primary,
-      scaffoldBackgroundColor: appColors.background,
-      cardColor: appColors.surface,
+      scaffoldBackgroundColor: colors.background,
+      cardColor: colors.surface,
       colorScheme: ColorScheme.dark(
-        primary: appColors.primary,
-        secondary: appColors.secondary,
-        surface: appColors.surface,
-        error: appColors.error,
+        surface: colors.surface,
+        error: colors.error,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: appColors.surface,
+        backgroundColor: colors.surface,
         elevation: 0,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: appColors.primary,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
@@ -39,8 +35,6 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: appColors.secondary,
-          side: BorderSide(color: appColors.secondary),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
@@ -48,7 +42,7 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: appColors.textPrimary,
+          foregroundColor: colors.textPrimary,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -56,15 +50,16 @@ class AppTheme {
         enabledBorder: InputBorder.none,
         focusedBorder: InputBorder.none,
         filled: true,
-        fillColor: appColors.surface,
+        fillColor: colors.surface,
       ),
       extensions: [
+        colors,
         isTablet ? const AppTextTheme.iPad() : const AppTextTheme.defaultTheme(),
         isTablet ? const AppSizeTheme.iPad() : const AppSizeTheme.defaultTheme(),
-        appColors,
+        // v1 compat: keeps existing screens working until migrated
+        const v1_colors.AppColorsTheme.dark(),
         isTablet ? const v1_text.AppTextTheme.iPad() : const v1_text.AppTextTheme.defaultTheme(),
         isTablet ? const v1_size.AppSizeTheme.iPad() : const v1_size.AppSizeTheme.defaultTheme(),
-        const v1_colors.AppColorsTheme.dark(),
       ],
     );
   }
