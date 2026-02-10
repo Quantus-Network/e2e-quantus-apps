@@ -103,6 +103,7 @@ flutter:
     - assets/quests/quests_top_logo.png
     - assets/v2/green_checkmark.png
     - assets/v2/pin_number_background.png
+    - assets/v2/caret_left.svg
 
   fonts:
     - family: Fira Code

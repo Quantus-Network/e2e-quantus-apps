@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
 import 'package:resonance_network_wallet/v2/components/success_check.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -102,39 +103,40 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
     return Scaffold(
       backgroundColor: colors.background,
       resizeToAvoidBottomInset: false,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // Hidden text field to trigger native keyboard
-            Opacity(
-              opacity: 0,
-              child: SizedBox(
-                height: 0,
-                child: TextField(
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  keyboardType: TextInputType.number,
-                  keyboardAppearance: Brightness.dark,
-                  maxLength: 6,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
-                  decoration: const InputDecoration(counterText: ''),
+      body: GradientBackground(
+        child: SafeArea(
+          child: Stack(
+            children: [
+              Opacity(
+                opacity: 0,
+                child: SizedBox(
+                  height: 0,
+                  child: TextField(
+                    controller: _controller,
+                    focusNode: _focusNode,
+                    keyboardType: TextInputType.number,
+                    keyboardAppearance: Brightness.dark,
+                    maxLength: 6,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
+                    decoration: const InputDecoration(counterText: ''),
+                  ),
                 ),
               ),
-            ),
-            Column(
-              children: [
-                const SizedBox(height: 16),
-                _header(colors, text),
-                Expanded(
-                  child: _step == _Step.success ? _successBody(colors, text) : _pinBody(colors, text),
-                ),
-                if (_step == _Step.success) ...[
-                  _doneButton(colors, text),
-                  const SizedBox(height: 24),
+              Column(
+                children: [
+                  const SizedBox(height: 16),
+                  _header(colors, text),
+                  Expanded(
+                    child: _step == _Step.success ? _successBody(colors, text) : _pinBody(colors, text),
+                  ),
+                  if (_step == _Step.success) ...[
+                    _doneButton(colors, text),
+                    const SizedBox(height: 24),
+                  ],
                 ],
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );

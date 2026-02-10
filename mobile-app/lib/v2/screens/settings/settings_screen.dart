@@ -14,6 +14,7 @@ import 'package:resonance_network_wallet/providers/notification_config_provider.
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
+import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/change_pin_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -150,84 +151,86 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
 
     return Scaffold(
       backgroundColor: colors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Icon(Icons.chevron_left, color: colors.textPrimary, size: 24),
-                  ),
-                  Text('Settings', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
-                  const SizedBox(width: 24),
-                ],
-              ),
-            ),
-            const SizedBox(height: 48),
-            Expanded(
-              child: ListView(
+      body: GradientBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              const SizedBox(height: 16),
+              Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
-                children: [
-                  _section('Security', colors, text, [
-                    _toggleItem('Biometric Lock', _biometricDesc, _biometricEnabled, _toggleBiometric, colors, text),
-                    _divider(colors),
-                    _chevronItem('PIN Code', _hasPinSet ? '6-digit code' : 'Not set', colors, text,
-                        onTap: () async {
-                      await Navigator.push(context, MaterialPageRoute(builder: (_) => const ChangePinScreen()));
-                      _loadPinState();
-                    }),
-                    _divider(colors),
-                    _chevronItem('Auto-Lock', _autoLockLabel(), colors, text,
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthenticationSettingsScreen()))),
-                  ]),
-                  const SizedBox(height: 40),
-                  _section('Wallet', colors, text, [
-                    _chevronItem('Recovery Phase', 'View Backup', colors, text, onTap: _navigateToRecoveryPhrase),
-                  ]),
-                  const SizedBox(height: 40),
-                  _section('Reversible Transactions', colors, text, [
-                    _toggleItem('Reversible Transactions', _reversibleEnabled ? 'Enabled' : 'Disabled', _reversibleEnabled, _toggleReversible, colors, text),
-                    _divider(colors),
-                    _chevronItem('Time Limit', _timeLimitLabel(), colors, text, onTap: () {}),
-                    _divider(colors),
-                    _chevronItem('Amount Limit', 'No Limit', colors, text, onTap: () {}),
-                  ]),
-                  const SizedBox(height: 40),
-                  _section('Account Type', colors, text, [
-                    _comingSoonItem('High Security Account', 'Guardian Approval', colors, text),
-                    _divider(colors),
-                    _comingSoonItem('Multi-Signature', 'Multiple Accounts', colors, text),
-                    _divider(colors),
-                    _comingSoonItem('Hardware Wallet', 'Pair Device', colors, text),
-                  ]),
-                  const SizedBox(height: 40),
-                  _section('Preferences', colors, text, [
-                    _chevronItem('Currency', 'USD (\$)', colors, text, onTap: () {}),
-                    _divider(colors),
-                    _toggleItem('Notifications', notifConfig.enabled ? 'Transaction Alerts Enabled' : 'Alerts Disabled', notifConfig.enabled, _toggleNotifications, colors, text),
-                  ]),
-                  const SizedBox(height: 40),
-                  _section('About & Support', colors, text, [
-                    _externalItem('Help & Support', null, colors, text, onTap: () => launchUrl(Uri.parse(AppConstants.helpAndSupportUrl))),
-                    _divider(colors),
-                    _chevronItem('About Quantus', 'Version 1.0.1', colors, text, onTap: () {}),
-                    _divider(colors),
-                    _externalItem('Terms of Service', null, colors, text, onTap: () => launchUrl(Uri.parse(AppConstants.termsOfServiceUrl))),
-                    _divider(colors),
-                    _externalItem('Privacy Policy', null, colors, text, onTap: () => launchUrl(Uri.parse(AppConstants.termsOfServiceUrl))),
-                  ]),
-                  const SizedBox(height: 40),
-                  _resetButton(colors, text),
-                  const SizedBox(height: 48),
-                ],
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Icon(Icons.chevron_left, color: colors.textPrimary, size: 24),
+                    ),
+                    Text('Settings', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
+                    const SizedBox(width: 24),
+                  ],
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 48),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  children: [
+                    _section('Security', colors, text, [
+                      _toggleItem('Biometric Lock', _biometricDesc, _biometricEnabled, _toggleBiometric, colors, text),
+                      _divider(colors),
+                      _chevronItem('PIN Code', _hasPinSet ? '6-digit code' : 'Not set', colors, text,
+                          onTap: () async {
+                        await Navigator.push(context, MaterialPageRoute(builder: (_) => const ChangePinScreen()));
+                        _loadPinState();
+                      }),
+                      _divider(colors),
+                      _chevronItem('Auto-Lock', _autoLockLabel(), colors, text,
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthenticationSettingsScreen()))),
+                    ]),
+                    const SizedBox(height: 40),
+                    _section('Wallet', colors, text, [
+                      _chevronItem('Recovery Phase', 'View Backup', colors, text, onTap: _navigateToRecoveryPhrase),
+                    ]),
+                    const SizedBox(height: 40),
+                    _section('Reversible Transactions', colors, text, [
+                      _toggleItem('Reversible Transactions', _reversibleEnabled ? 'Enabled' : 'Disabled', _reversibleEnabled, _toggleReversible, colors, text),
+                      _divider(colors),
+                      _chevronItem('Time Limit', _timeLimitLabel(), colors, text, onTap: () {}),
+                      _divider(colors),
+                      _chevronItem('Amount Limit', 'No Limit', colors, text, onTap: () {}),
+                    ]),
+                    const SizedBox(height: 40),
+                    _section('Account Type', colors, text, [
+                      _comingSoonItem('High Security Account', 'Guardian Approval', colors, text),
+                      _divider(colors),
+                      _comingSoonItem('Multi-Signature', 'Multiple Accounts', colors, text),
+                      _divider(colors),
+                      _comingSoonItem('Hardware Wallet', 'Pair Device', colors, text),
+                    ]),
+                    const SizedBox(height: 40),
+                    _section('Preferences', colors, text, [
+                      _chevronItem('Currency', 'USD (\$)', colors, text, onTap: () {}),
+                      _divider(colors),
+                      _toggleItem('Notifications', notifConfig.enabled ? 'Transaction Alerts Enabled' : 'Alerts Disabled', notifConfig.enabled, _toggleNotifications, colors, text),
+                    ]),
+                    const SizedBox(height: 40),
+                    _section('About & Support', colors, text, [
+                      _externalItem('Help & Support', null, colors, text, onTap: () => launchUrl(Uri.parse(AppConstants.helpAndSupportUrl))),
+                      _divider(colors),
+                      _chevronItem('About Quantus', 'Version 1.0.1', colors, text, onTap: () {}),
+                      _divider(colors),
+                      _externalItem('Terms of Service', null, colors, text, onTap: () => launchUrl(Uri.parse(AppConstants.termsOfServiceUrl))),
+                      _divider(colors),
+                      _externalItem('Privacy Policy', null, colors, text, onTap: () => launchUrl(Uri.parse(AppConstants.termsOfServiceUrl))),
+                    ]),
+                    const SizedBox(height: 40),
+                    _resetButton(colors, text),
+                    const SizedBox(height: 48),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

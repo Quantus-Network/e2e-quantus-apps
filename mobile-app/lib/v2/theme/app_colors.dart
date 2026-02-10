@@ -27,11 +27,14 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
   final Color danger;
   final Color success;
 
+  // Glow & Gradients
+  final Color backgroundGlow;
+  final List<Color> buttonPrimaryGradient;
+
   // UI elements
   final Color separator;
   final Color border;
   final Color buttonDisabled;
-  final List<Color> buttonPrimaryGradient;
   final Color skeletonBase;
   final Color skeletonHighlight;
 
@@ -56,10 +59,11 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     required this.error,
     required this.danger,
     required this.success,
+    required this.backgroundGlow,
+    required this.buttonPrimaryGradient,
     required this.separator,
     required this.border,
     required this.buttonDisabled,
-    required this.buttonPrimaryGradient,
     required this.skeletonBase,
     required this.skeletonHighlight,
     required this.tagGuardian,
@@ -84,10 +88,11 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
           error: const Color(0xFFFF2D54),
           danger: const Color(0xFFFF1F45),
           success: const Color(0xFF1FFFA7),
+          backgroundGlow: const Color(0xFFFFFFFF),
+          buttonPrimaryGradient: const [Color(0xFF0000FF), Color(0xFFED4CCE)],
           separator: const Color(0x1AFFFFFF),
           border: const Color(0x33FFFFFF),
           buttonDisabled: const Color(0xFF3D3C44),
-          buttonPrimaryGradient: const [Color(0xFF0000FF), Color(0xFFED4CCE)],
           skeletonBase: const Color(0xFF3D3C44),
           skeletonHighlight: const Color(0xFF5A5A5A),
           tagGuardian: const Color(0xFF9747FF),
@@ -112,10 +117,11 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     Color? error,
     Color? danger,
     Color? success,
+    Color? backgroundGlow,
+    List<Color>? buttonPrimaryGradient,
     Color? separator,
     Color? border,
     Color? buttonDisabled,
-    List<Color>? buttonPrimaryGradient,
     Color? skeletonBase,
     Color? skeletonHighlight,
     Color? tagGuardian,
@@ -138,10 +144,11 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       error: error ?? this.error,
       danger: danger ?? this.danger,
       success: success ?? this.success,
+      backgroundGlow: backgroundGlow ?? this.backgroundGlow,
+      buttonPrimaryGradient: buttonPrimaryGradient ?? this.buttonPrimaryGradient,
       separator: separator ?? this.separator,
       border: border ?? this.border,
       buttonDisabled: buttonDisabled ?? this.buttonDisabled,
-      buttonPrimaryGradient: buttonPrimaryGradient ?? this.buttonPrimaryGradient,
       skeletonBase: skeletonBase ?? this.skeletonBase,
       skeletonHighlight: skeletonHighlight ?? this.skeletonHighlight,
       tagGuardian: tagGuardian ?? this.tagGuardian,
@@ -169,10 +176,11 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       error: Color.lerp(error, other.error, t) ?? error,
       danger: Color.lerp(danger, other.danger, t) ?? danger,
       success: Color.lerp(success, other.success, t) ?? success,
+      backgroundGlow: Color.lerp(backgroundGlow, other.backgroundGlow, t) ?? backgroundGlow,
+      buttonPrimaryGradient: other.buttonPrimaryGradient,
       separator: Color.lerp(separator, other.separator, t) ?? separator,
       border: Color.lerp(border, other.border, t) ?? border,
       buttonDisabled: Color.lerp(buttonDisabled, other.buttonDisabled, t) ?? buttonDisabled,
-      buttonPrimaryGradient: other.buttonPrimaryGradient,
       skeletonBase: Color.lerp(skeletonBase, other.skeletonBase, t) ?? skeletonBase,
       skeletonHighlight: Color.lerp(skeletonHighlight, other.skeletonHighlight, t) ?? skeletonHighlight,
       tagGuardian: Color.lerp(tagGuardian, other.tagGuardian, t) ?? tagGuardian,

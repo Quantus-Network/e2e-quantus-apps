@@ -15,6 +15,7 @@ import 'package:resonance_network_wallet/providers/active_account_transactions_p
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/v2/screens/home/activity_section.dart';
@@ -108,14 +109,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildContent(DisplayAccount active, AsyncValue<BigInt> balanceAsync, AppColorsV2 colors, AppTextTheme text) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: RadialGradient(
-          center: Alignment.topCenter,
-          radius: 1.2,
-          colors: [colors.backgroundAlt, colors.background],
-        ),
-      ),
+    return GradientBackground(
       child: SafeArea(
         bottom: false,
         child: Padding(
