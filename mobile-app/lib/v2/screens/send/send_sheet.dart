@@ -311,8 +311,11 @@ class _SendSheetState extends ConsumerState<SendSheet> {
               style: text.mediumTitle?.copyWith(color: colors.textPrimary, fontSize: 32),
               decoration: InputDecoration(
                 isDense: true,
+                filled: false,
                 contentPadding: EdgeInsets.zero,
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
                 hintText: '0 ${AppConstants.tokenSymbol}',
                 hintStyle: text.mediumTitle?.copyWith(color: colors.textTertiary, fontSize: 32),
               ),

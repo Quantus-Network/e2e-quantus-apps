@@ -33,7 +33,10 @@ class _AddressPickerSheetState extends State<AddressPickerSheet> {
   }
 
   Future<void> _loadAddresses() async {
-    final addresses = await RecentAddressesService().getAddresses();
+    final allAddresses = await RecentAddressesService().getAddresses();
+    final active = await SettingsService().getActiveAccount();
+    final currentId = active?.account.accountId;
+    final addresses = allAddresses.where((a) => a != currentId).toList();
     if (!mounted) return;
     setState(() {
       _addresses = addresses;
