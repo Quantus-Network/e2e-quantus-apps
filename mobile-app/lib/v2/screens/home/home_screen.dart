@@ -1,0 +1,278 @@
+import 'dart:ui';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
+import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
+import 'package:resonance_network_wallet/features/components/skeleton.dart';
+import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/send/send_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/settings_screen.dart';
+import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
+import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
+import 'package:resonance_network_wallet/v2/screens/home/activity_section.dart';
+
+class HomeScreen extends ConsumerStatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  final NumberFormattingService _fmt = NumberFormattingService();
+  bool _balanceHidden = false;
+
+  Future<void> _refresh() async {
+    final active = ref.read(activeAccountProvider).value;
+    if (active != null) {
+      ref.invalidate(balanceProviderFamily);
+      await ref
+          .read(
+            filteredPaginationControllerProviderFamily(
+              AccountIdListCache.get([active.account.accountId]),
+            ).notifier,
+          )
+          .loadingRefresh();
+    }
+    ref.invalidate(balanceProviderRaw);
+    ref.invalidate(activeAccountTransactionsProvider);
+  }
+
+  void _processIntentIfAvailable() {
+    final shared = ref.read(sharedAccountIntentProvider);
+    if (shared != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(sharedAccountIntentProvider.notifier).state = null;
+        showSharedAddressActionSheet(context, shared);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _processIntentIfAvailable();
+
+    final accountAsync = ref.watch(activeAccountProvider);
+    final balanceAsync = ref.watch(balanceProvider);
+    final txAsync = ref.watch(activeAccountTransactionsProvider);
+    final colors = context.colors;
+    final text = context.themeText;
+
+    return accountAsync.when(
+      loading: () => Scaffold(
+        backgroundColor: colors.background,
+        body: Center(child: CircularProgressIndicator(color: colors.textPrimary)),
+      ),
+      error: (e, _) => Scaffold(
+        backgroundColor: colors.background,
+        body: Center(child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError))),
+      ),
+      data: (active) {
+        if (active == null) {
+          return Scaffold(
+            backgroundColor: colors.background,
+            body: const Center(child: Text('No active account')),
+          );
+        }
+        return Scaffold(
+          backgroundColor: colors.background,
+          body: RefreshIndicator(
+            color: colors.textPrimary,
+            backgroundColor: colors.surface,
+            onRefresh: _refresh,
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(child: _buildContent(active, balanceAsync, colors, text)),
+                SliverToBoxAdapter(
+                  child: ActivitySection(
+                    txAsync: txAsync,
+                    activeAccount: active.account,
+                    onRetry: _refresh,
+                  ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 120)),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildContent(DisplayAccount active, AsyncValue<BigInt> balanceAsync, AppColorsV2 colors, AppTextTheme text) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: RadialGradient(
+          center: Alignment.topCenter,
+          radius: 1.2,
+          colors: [colors.backgroundAlt, colors.background],
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            children: [
+              const SizedBox(height: 16),
+              _buildTopBar(active, colors),
+              const SizedBox(height: 64),
+              _buildBalance(balanceAsync, colors, text),
+              const SizedBox(height: 64),
+              if (active is RegularAccount) _buildActionButtons(colors, text),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopBar(DisplayAccount active, AppColorsV2 colors) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        GestureDetector(
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountsScreen())),
+          child: AccountGradientImage(accountId: active.account.accountId, width: 40.0, height: 40.0),
+        ),
+        Row(
+          children: [
+            _glassCircleButton(
+              icon: _balanceHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+              colors: colors,
+              onTap: () => setState(() => _balanceHidden = !_balanceHidden),
+            ),
+            const SizedBox(width: 12),
+            _glassCircleButton(
+              icon: Icons.settings_outlined,
+              colors: colors,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _glassCircleButton({required IconData icon, required AppColorsV2 colors, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(shape: BoxShape.circle, color: colors.surfaceGlass),
+        child: Icon(icon, color: colors.textPrimary, size: 20),
+      ),
+    );
+  }
+
+  Widget _buildBalance(AsyncValue<BigInt> balanceAsync, AppColorsV2 colors, AppTextTheme text) {
+    return Column(
+      children: [
+        balanceAsync.when(
+          data: (balance) {
+            final formatted = _balanceHidden ? '-----' : _fmt.formatBalance(balance);
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                ImageFiltered(
+                  imageFilter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                  child: Text(
+                    '$formatted ${AppConstants.tokenSymbol}',
+                    style: text.extraLargeTitle?.copyWith(color: colors.textSecondary),
+                  ),
+                ),
+                Text(
+                  '$formatted ${AppConstants.tokenSymbol}',
+                  style: text.extraLargeTitle?.copyWith(color: colors.textPrimary),
+                ),
+              ],
+            );
+          },
+          loading: () => Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Skeleton(width: 200, height: 36),
+              Text(' ${AppConstants.tokenSymbol}', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+            ],
+          ),
+          error: (_, _) => Text(
+            'Error loading balance',
+            style: text.detail?.copyWith(color: colors.textError),
+          ),
+        ),
+        if (!_balanceHidden) ...[
+          const SizedBox(height: 6),
+          Text('≈ \$0.00', style: text.paragraph?.copyWith(color: colors.textSecondary)),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildActionButtons(AppColorsV2 colors, AppTextTheme text) {
+    return Row(
+      children: [
+        _actionCard(
+          icon: Icons.arrow_downward_rounded,
+          label: 'Receive',
+          colors: colors,
+          text: text,
+          onTap: () => showReceiveSheet(context),
+        ),
+        const SizedBox(width: 15),
+        _actionCard(
+          icon: Icons.arrow_upward_rounded,
+          label: 'Send',
+          colors: colors,
+          text: text,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SendScreen())),
+        ),
+        const SizedBox(width: 15),
+        _actionCard(
+          icon: Icons.swap_horiz_rounded,
+          label: 'Swap',
+          colors: colors,
+          text: text,
+          onTap: () {},
+        ),
+      ],
+    );
+  }
+
+  Widget _actionCard({
+    required IconData icon,
+    required String label,
+    required AppColorsV2 colors,
+    required AppTextTheme text,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 80,
+          decoration: BoxDecoration(
+            color: colors.surfaceGlass,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: colors.textPrimary, size: 24),
+              const SizedBox(height: 8),
+              Text(label, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
