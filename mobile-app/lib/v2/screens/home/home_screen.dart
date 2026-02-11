@@ -214,58 +214,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildActionButtons(AppColorsV2 colors, AppTextTheme text) {
     return Row(
       children: [
-        _actionCard(
-          icon: Icons.arrow_downward_rounded,
-          label: 'Receive',
-          colors: colors,
-          text: text,
-          onTap: () => showReceiveSheetV2(context),
-        ),
+        _actionCard('assets/v2/receive_button.png', () => showReceiveSheetV2(context)),
         const SizedBox(width: 15),
-        _actionCard(
-          icon: Icons.arrow_upward_rounded,
-          label: 'Send',
-          colors: colors,
-          text: text,
-          onTap: () => showSendSheetV2(context),
-        ),
+        _actionCard('assets/v2/send_button.png', () => showSendSheetV2(context)),
         const SizedBox(width: 15),
-        _actionCard(
-          icon: Icons.swap_horiz_rounded,
-          label: 'Swap',
-          colors: colors,
-          text: text,
-          onTap: () {},
-        ),
+        _actionCard('assets/v2/swap_button.png', () {}),
       ],
     );
   }
 
-  Widget _actionCard({
-    required IconData icon,
-    required String label,
-    required AppColorsV2 colors,
-    required AppTextTheme text,
-    required VoidCallback onTap,
-  }) {
+  Widget _actionCard(String asset, VoidCallback onTap) {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
-        child: Container(
-          height: 80,
-          decoration: BoxDecoration(
-            color: colors.surfaceGlass,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: colors.textPrimary, size: 24),
-              const SizedBox(height: 8),
-              Text(label, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
-            ],
-          ),
-        ),
+        child: Image.asset(asset),
       ),
     );
   }

@@ -104,6 +104,9 @@ flutter:
     - assets/v2/green_checkmark.png
     - assets/v2/pin_number_background.png
     - assets/v2/caret_left.svg
+    - assets/v2/send_button.png
+    - assets/v2/receive_button.png
+    - assets/v2/swap_button.png
 
   fonts:
     - family: Fira Code
