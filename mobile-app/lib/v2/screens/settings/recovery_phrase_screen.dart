@@ -79,11 +79,7 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
                 const SizedBox(height: 40),
                 _warning(colors, text),
                 const SizedBox(height: 40),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: _wordGrid(colors, text),
-                  ),
-                ),
+                Expanded(child: SingleChildScrollView(child: _wordGrid(colors, text))),
                 if (_revealed) ...[const SizedBox(height: 16), _copyRow(colors, text)],
                 const SizedBox(height: 16),
                 _revealButton(colors, text),
