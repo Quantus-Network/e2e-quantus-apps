@@ -6,7 +6,7 @@ import 'package:resonance_network_wallet/features/components/reset_confirmation_
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/select_wallet_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart';
 import 'package:resonance_network_wallet/providers/account_associations_providers.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_config_provider.dart';
@@ -120,7 +120,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
     ref.read(activeAccountProvider.notifier).reset();
     ref.read(accountAssociationsProvider.notifier).reset();
     if (mounted) {
-      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const WelcomeScreen()), (r) => false);
+      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const WelcomeScreenV2()), (r) => false);
     }
   }
 
