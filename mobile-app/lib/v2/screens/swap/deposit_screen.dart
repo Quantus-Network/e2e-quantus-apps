@@ -253,6 +253,14 @@ class _DepositScreenState extends State<DepositScreen> {
           style: text.paragraph?.copyWith(color: colors.textSecondary),
           textAlign: TextAlign.center,
         ),
+        const SizedBox(height: 40),
+        if (AppConstants.stillOnTestnet)
+        Text(
+          'DEMO ONLY - WE ARE STILL ON TESTNET',
+          style: text.paragraph?.copyWith(color: Colors.yellow),
+          textAlign: TextAlign.center,
+        ),
+
       ],
     );
   }
