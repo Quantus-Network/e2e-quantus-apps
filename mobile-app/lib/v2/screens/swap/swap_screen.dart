@@ -28,7 +28,7 @@ class _SwapScreenState extends State<SwapScreen> {
   bool _loading = false;
 
   double get _rate => _swapService.getRate(_fromToken);
-  String get _rateLabel => '1 QU = ${(1 / _rate).toStringAsFixed(4)} ${_fromToken.symbol}';
+  String get _rateLabel => '1 QUAN = ${(1 / _rate).toStringAsFixed(4)} ${_fromToken.symbol}';
 
   @override
   void initState() {
@@ -339,7 +339,7 @@ class _SwapScreenState extends State<SwapScreen> {
                       decoration: BoxDecoration(color: colors.accentGreen.withValues(alpha: 0.3), shape: BoxShape.circle),
                     ),
                     const SizedBox(width: 8),
-                    Text('QU', style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600)),
+                    Text('QUAN', style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),

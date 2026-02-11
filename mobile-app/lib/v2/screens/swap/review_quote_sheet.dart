@@ -83,7 +83,7 @@ class _ReviewQuoteContent extends StatelessWidget {
   }
 
   Widget _tokenCard(SwapToken token, double amount, double usd, double width, AppColorsV2 colors, AppTextTheme text) {
-    final isQu = token.symbol == 'QU';
+    final isQu = token.symbol == 'QUAN';
     return Container(
       width: width, height: 111,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),

@@ -223,7 +223,7 @@ class _DepositScreenState extends State<DepositScreen> {
         Text('Swap Complete', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
         const SizedBox(height: 12),
         Text(
-          '${_order.quote.toAmount.toStringAsFixed(2)} QU has been added to your wallet',
+          '${_order.quote.toAmount.toStringAsFixed(2)} QUAN has been added to your wallet',
           style: text.paragraph?.copyWith(color: colors.textSecondary),
           textAlign: TextAlign.center,
         ),

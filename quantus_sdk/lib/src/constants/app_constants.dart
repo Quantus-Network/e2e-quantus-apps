@@ -2,7 +2,7 @@ class AppConstants {
   static const globalDebug = false;
 
   static const String appName = 'Quantus Wallet';
-  static const String tokenSymbol = 'QU'; // fetch this from chain eventually
+  static const String tokenSymbol = 'QUAN'; // fetch this from chain eventually
   static const String shareUrl = 'https://linktr.ee/quantusnetwork';
   static const String websiteBaseUrl = 'https://www.quantus.com';
 

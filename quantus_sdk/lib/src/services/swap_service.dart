@@ -75,12 +75,12 @@ class SwapService {
     SwapToken(symbol: 'ETH', name: 'Ethereum', network: 'Ethereum'),
     SwapToken(symbol: 'BTC', name: 'Bitcoin', network: 'Bitcoin', decimals: 8),
     SwapToken(symbol: 'SOL', name: 'Solana', network: 'Solana', decimals: 9),
-    SwapToken(symbol: 'QU', name: 'Quantus', network: 'Quantus'),
+    SwapToken(symbol: 'QUAN', name: 'Quantus', network: 'Quantus'),
   ];
 
-  static const _quToken = SwapToken(symbol: 'QU', name: 'Quantus', network: 'Quantus');
+  static const _quToken = SwapToken(symbol: 'QUAN', name: 'Quantus', network: 'Quantus');
 
-  List<SwapToken> getFromTokens() => availableTokens.where((t) => t.symbol != 'QU').toList();
+  List<SwapToken> getFromTokens() => availableTokens.where((t) => t.symbol != 'QUAN').toList();
 
   SwapToken getQuToken() => _quToken;
 
@@ -111,7 +111,7 @@ class SwapService {
         return 60000.0;
       case 'SOL':
         return 150.0;
-      case 'QU':
+      case 'QUAN':
         return 0.10;
       default:
         return 0.0;
