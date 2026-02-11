@@ -44,10 +44,7 @@ class ActivitySection extends ConsumerWidget {
                 const SizedBox(height: 16),
                 Text('No transactions yet', style: text.paragraph?.copyWith(color: colors.textSecondary)),
                 const SizedBox(height: 8),
-                Text(
-                  'Your activity will appear here',
-                  style: text.detail?.copyWith(color: colors.textTertiary),
-                ),
+                Text('Your activity will appear here', style: text.detail?.copyWith(color: colors.textTertiary)),
               ],
             );
           }

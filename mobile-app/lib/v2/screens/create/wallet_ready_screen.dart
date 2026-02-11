@@ -59,10 +59,11 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
 
       if (mounted) setState(() => _isLoading = false);
     } catch (e) {
-      if (mounted) setState(() {
-        _isLoading = false;
-        _error = 'Failed to generate: $e';
-      });
+      if (mounted)
+        setState(() {
+          _isLoading = false;
+          _error = 'Failed to generate: $e';
+        });
     }
   }
 
@@ -87,11 +88,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
       ref.invalidate(activeAccountProvider);
 
       if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-        (route) => false,
-      );
+      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HomeScreen()), (route) => false);
     } catch (e) {
       if (mounted) showCopySnackbar(context, title: 'Error', message: 'Error saving wallet: $e');
     } finally {
@@ -118,7 +115,10 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const AppBackButton(),
-                    Text('Your Wallet Is Ready', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
+                    Text(
+                      'Your Wallet Is Ready',
+                      style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20),
+                    ),
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
                       child: Icon(Icons.close, color: colors.textPrimary, size: 24),
@@ -141,7 +141,14 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
                         const SizedBox(height: 24),
                         _Field(
                           label: 'Wallet Address',
-                          value: _isLoading ? '...' : AddressFormattingService.formatAddress(_address, prefix: 15, ellipses: '.......', postFix: 14),
+                          value: _isLoading
+                              ? '...'
+                              : AddressFormattingService.formatAddress(
+                                  _address,
+                                  prefix: 15,
+                                  ellipses: '.......',
+                                  postFix: 14,
+                                ),
                           isLoading: _isLoading,
                           actionIcon: Icons.copy,
                           onAction: () => ClipboardExtensions.copyTextWithSnackbar(context, _address),
@@ -153,7 +160,11 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
                           isLoading: _isLoading,
                           valueColor: colors.accentPink,
                           actionIcon: Icons.copy,
-                          onAction: () => ClipboardExtensions.copyTextWithSnackbar(context, _checksum, message: 'Checkphrase copied'),
+                          onAction: () => ClipboardExtensions.copyTextWithSnackbar(
+                            context,
+                            _checksum,
+                            message: 'Checkphrase copied',
+                          ),
                         ),
                         const SizedBox(height: 16),
                         GestureDetector(
@@ -184,8 +195,19 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
                   onTap: canContinue ? _continue : null,
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   child: _isSubmitting
-                      ? Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: colors.textPrimary)))
-                      : Center(child: Text('Continue', style: text.paragraph?.copyWith(fontWeight: FontWeight.w500, color: colors.textPrimary))),
+                      ? Center(
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: colors.textPrimary),
+                          ),
+                        )
+                      : Center(
+                          child: Text(
+                            'Continue',
+                            style: text.paragraph?.copyWith(fontWeight: FontWeight.w500, color: colors.textPrimary),
+                          ),
+                        ),
                 ),
                 const SizedBox(height: 24),
               ],
@@ -231,7 +253,12 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
                 });
                 Navigator.pop(ctx);
               },
-              child: Center(child: Text('Save', style: text.paragraph?.copyWith(fontWeight: FontWeight.w500, color: colors.textPrimary))),
+              child: Center(
+                child: Text(
+                  'Save',
+                  style: text.paragraph?.copyWith(fontWeight: FontWeight.w500, color: colors.textPrimary),
+                ),
+              ),
             ),
           ],
         ),
@@ -269,10 +296,7 @@ class _Field extends StatelessWidget {
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.only(left: 12, right: 8, top: 8, bottom: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
+          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
           child: Row(
             children: [
               Expanded(
