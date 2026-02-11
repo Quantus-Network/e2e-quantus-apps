@@ -25,7 +25,7 @@ class GradientBackground extends StatelessWidget {
           ),
         ),
         Positioned.fill(
-          child: CustomPaint(painter: _EllipseGlowPainter(glowColor: colors.backgroundGlow.useOpacity(0.2))),
+          child: CustomPaint(painter: _EllipseGlowPainter(glowColor: colors.backgroundGlow.useOpacity(0.3))),
         ),
         child,
       ],
@@ -34,9 +34,6 @@ class GradientBackground extends StatelessWidget {
 }
 
 class _EllipseGlowPainter extends CustomPainter {
-  static const xOffset = -110.0;
-  static const yOffset = -60.0;
-
   final Color glowColor;
 
   _EllipseGlowPainter({required this.glowColor});
@@ -44,24 +41,39 @@ class _EllipseGlowPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final sx = size.width / 390.0;
-    final sy = size.height / 844.0;
-    final ox = xOffset * sx;
-    final oy = yOffset * sy;
+    // final sy = size.height / 844.0; // we don't want to be relative on the y axis
     final paint = Paint()
       ..color = glowColor
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 85);
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 100);
+
+    const e1x = 95.0;
+    const e1y = 3.0;
+    const e1width = 86.0;
+    const e1height = 528.0;
+    const e2x = 330.0;
+    const e2y = -48.0;
+    const e2width = 44.0;
+    const e2height = 580.0;
 
     canvas.save();
-    canvas.translate(176.56 * sx + ox, 77.88 * sy + oy);
+    canvas.translate(e1x * sx, e1y);
     canvas.rotate(30 * pi / 180);
-    canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: 66.46 * sx, height: 406.13 * sy), paint);
+    canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: e1width * sx, height: e1height), paint);
     canvas.restore();
 
     canvas.save();
-    canvas.translate(367.38 * sx + ox, 41.54 * sy + oy);
+    canvas.translate(e2x * sx, e2y);
     canvas.rotate(30 * pi / 180);
-    canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: 33.41 * sx, height: 446.53 * sy), paint);
+    canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: e2width * sx, height: e2height), paint);
     canvas.restore();
+
+    // DEBUG: vertical center lines
+    // final debugPaint = Paint()
+    //   ..color = const Color(0xFFFF0000)
+    //   ..strokeWidth = 1;
+    // canvas.drawLine(Offset(e1x * sx, 0), Offset(e1x * sx, size.height), debugPaint);
+    // debugPaint.color = const Color(0xFF00FF00);
+    // canvas.drawLine(Offset(e2x * sx, 0), Offset(e2x * sx, size.height), debugPaint);
   }
 
   @override

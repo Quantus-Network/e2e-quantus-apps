@@ -23,15 +23,16 @@ class WelcomeScreenV2 extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 24),
-                Image.asset('assets/v2/quantus_white_logo.png', height: 32),
+                const SizedBox(height:40),
+                Row(children: [
+                  // const SizedBox(width: 6), 
+                  Image.asset('assets/v2/quantus_white_logo.png', height: 32)],
+                ),
                 const Spacer(),
-                Center(
-                  child: Text(
-                    'Quantum Secure\nCrypto',
-                    textAlign: TextAlign.center,
-                    style: text.largeTitle?.copyWith(fontSize: 32, height: 1.35, color: colors.textPrimary),
-                  ),
+                Text(
+                  'Quantum Secure\nCrypto',
+                  textAlign: TextAlign.left,
+                  style: text.largeTitle?.copyWith(fontSize: 32, height: 1.35, color: Colors.white),
                 ),
                 const SizedBox(height: 64),
                 GlassButton(
