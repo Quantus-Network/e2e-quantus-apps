@@ -23,10 +23,12 @@ class WelcomeScreenV2 extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height:40),
-                Row(children: [
-                  // const SizedBox(width: 6), 
-                  Image.asset('assets/v2/quantus_white_logo.png', height: 32)],
+                const SizedBox(height: 40),
+                Row(
+                  children: [
+                    // const SizedBox(width: 6),
+                    Image.asset('assets/v2/quantus_white_logo.png', height: 32),
+                  ],
                 ),
                 const Spacer(),
                 Text(
@@ -44,7 +46,12 @@ class WelcomeScreenV2 extends StatelessWidget {
                       builder: (_) => const CreateWalletAndBackupScreen(),
                     ),
                   ),
-                  child: Center(child: Text('Create New Wallet', style: text.paragraph?.copyWith(fontWeight: FontWeight.w500, color: colors.textPrimary))),
+                  child: Center(
+                    child: Text(
+                      'Create New Wallet',
+                      style: text.paragraph?.copyWith(fontWeight: FontWeight.w500, color: colors.textPrimary),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 32),
                 GlassButton(
@@ -55,7 +62,12 @@ class WelcomeScreenV2 extends StatelessWidget {
                       builder: (_) => const ImportWalletScreen(),
                     ),
                   ),
-                  child: Center(child: Text('Import Existing Wallet', style: text.paragraph?.copyWith(fontWeight: FontWeight.w500, color: colors.textPrimary))),
+                  child: Center(
+                    child: Text(
+                      'Import Existing Wallet',
+                      style: text.paragraph?.copyWith(fontWeight: FontWeight.w500, color: colors.textPrimary),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 60),
               ],
