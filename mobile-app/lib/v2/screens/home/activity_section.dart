@@ -34,7 +34,23 @@ class ActivitySection extends ConsumerWidget {
             otherTransfers: data.otherTransfers,
           );
 
-          if (all.isEmpty) return const SizedBox.shrink();
+          if (all.isEmpty) {
+            return Column(
+              children: [
+                const SizedBox(height: 40),
+                _header(colors, text, context),
+                const SizedBox(height: 48),
+                Icon(Icons.receipt_long_outlined, size: 48, color: colors.textTertiary),
+                const SizedBox(height: 16),
+                Text('No transactions yet', style: text.paragraph?.copyWith(color: colors.textSecondary)),
+                const SizedBox(height: 8),
+                Text(
+                  'Your activity will appear here',
+                  style: text.detail?.copyWith(color: colors.textTertiary),
+                ),
+              ],
+            );
+          }
 
           return Column(
             children: [

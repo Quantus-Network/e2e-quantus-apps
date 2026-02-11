@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:resonance_network_wallet/features/main/screens/create_wallet_and_backup_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/create/wallet_ready_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/import_wallet_screen.dart';
 import 'package:resonance_network_wallet/v2/components/glass_button.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
@@ -43,7 +43,7 @@ class WelcomeScreenV2 extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       settings: const RouteSettings(name: 'create_wallet'),
-                      builder: (_) => const CreateWalletAndBackupScreen(),
+                      builder: (_) => const WalletReadyScreenV2(),
                     ),
                   ),
                   child: Center(
