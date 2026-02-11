@@ -107,6 +107,10 @@ flutter:
     - assets/v2/send_button.png
     - assets/v2/receive_button.png
     - assets/v2/swap_button.png
+    - assets/v2/glass_border_bg.png
+    - assets/v2/glass_medium_button_bg.png
+    - assets/v2/glass_button_40_bg.png
+    - assets/v2/glass_button_40_bg.png
 
   fonts:
     - family: Fira Code

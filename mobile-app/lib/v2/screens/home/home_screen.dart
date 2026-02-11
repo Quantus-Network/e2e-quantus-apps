@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/features/main/screens/accounts_screen.d
 import 'package:resonance_network_wallet/v2/screens/receive/receive_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
@@ -218,7 +219,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(width: 15),
         _actionCard('assets/v2/send_button.png', () => showSendSheetV2(context)),
         const SizedBox(width: 15),
-        _actionCard('assets/v2/swap_button.png', () {}),
+        _actionCard('assets/v2/swap_button.png', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SwapScreen()))),
       ],
     );
   }

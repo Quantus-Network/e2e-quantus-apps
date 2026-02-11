@@ -1,0 +1,146 @@
+import 'dart:ui';
+import 'package:flutter/material.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/deposit_screen.dart';
+import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
+import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
+
+void showReviewQuoteSheet(BuildContext context, SwapQuote quote, String refundAddress) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    builder: (_) => _ReviewQuoteContent(quote: quote, refundAddress: refundAddress),
+  );
+}
+
+class _ReviewQuoteContent extends StatelessWidget {
+  final SwapQuote quote;
+  final String refundAddress;
+  const _ReviewQuoteContent({required this.quote, required this.refundAddress});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final text = context.themeText;
+    final swapService = SwapService();
+    final fromUsd = quote.fromAmount * swapService.getUsdPrice(quote.fromToken);
+    final toUsd = quote.toAmount * swapService.getUsdPrice(quote.toToken);
+
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Review Quote', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 18)),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Icon(Icons.close, color: colors.textPrimary, size: 20),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _swapVisual(colors, text, fromUsd, toUsd),
+            const SizedBox(height: 32),
+            _feeRow('Total fees', '${quote.networkFee.toStringAsFixed(3)} ${quote.fromToken.symbol}', colors, text),
+            Divider(color: colors.separator, height: 32),
+            _feeRow('Total Amount', '${quote.totalAmount.toStringAsFixed(2)} ${quote.fromToken.symbol}', colors, text),
+            const SizedBox(height: 24),
+            Text(
+              'You could receive up to \$${(quote.fromAmount * quote.slippageTolerance).toStringAsFixed(2)} less based on the ${(quote.slippageTolerance * 100).toStringAsFixed(0)}% slippage you set',
+              style: text.detail?.copyWith(color: colors.textTertiary),
+            ),
+            const SizedBox(height: 24),
+            _confirmButton(context, colors, text),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _swapVisual(AppColorsV2 colors, AppTextTheme text, double fromUsd, double toUsd) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(14)),
+      child: Row(
+        children: [
+          Expanded(child: _tokenCard(quote.fromToken, quote.fromAmount, fromUsd, colors, text)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Icon(Icons.arrow_forward, color: colors.textSecondary, size: 20),
+          ),
+          Expanded(child: _tokenCard(quote.toToken, quote.toAmount, toUsd, colors, text)),
+        ],
+      ),
+    );
+  }
+
+  Widget _tokenCard(SwapToken token, double amount, double usd, AppColorsV2 colors, AppTextTheme text) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 20, height: 20,
+              decoration: BoxDecoration(
+                color: token.symbol == 'QU' ? colors.accentGreen.withValues(alpha: 0.3) : colors.accentPink.withValues(alpha: 0.3),
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Flexible(child: Text(token.symbol, style: text.detail?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500))),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(amount.toStringAsFixed(2), style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600)),
+        Text('\$${usd.toStringAsFixed(2)}', style: text.detail?.copyWith(color: colors.textTertiary)),
+      ],
+    );
+  }
+
+  Widget _feeRow(String label, String value, AppColorsV2 colors, AppTextTheme text) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: text.detail?.copyWith(color: colors.textTertiary)),
+        Text(value, style: text.detail?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+      ],
+    );
+  }
+
+  Widget _confirmButton(BuildContext context, AppColorsV2 colors, AppTextTheme text) {
+    return GestureDetector(
+      onTap: () async {
+        final swapService = SwapService();
+        final order = await swapService.createSwap(quote);
+        if (!context.mounted) return;
+        Navigator.pop(context);
+        Navigator.push(context, MaterialPageRoute(builder: (_) => DepositScreen(order: order)));
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.44)),
+        ),
+        child: Center(
+          child: Text('Confirm', style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+        ),
+      ),
+    );
+  }
+}
