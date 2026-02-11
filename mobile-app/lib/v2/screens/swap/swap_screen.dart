@@ -152,22 +152,28 @@ class _SwapScreenState extends State<SwapScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('From', style: text.detail?.copyWith(color: colors.textSecondary)),
+        Text('From', style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
         const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
-              child: SizedBox(
+              child: Container(
                 height: 56,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(8)),
+                alignment: Alignment.centerLeft,
                 child: TextField(
                   controller: _fromController,
-                  style: text.smallTitle?.copyWith(color: colors.textPrimary),
+                  style: text.mediumTitle?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.bold),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
                     hintText: '0.00',
-                    hintStyle: text.smallTitle?.copyWith(color: colors.textTertiary),
+                    hintStyle: text.mediumTitle?.copyWith(color: colors.textTertiary, fontWeight: FontWeight.bold),
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 16),
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                    filled: true,
+                    fillColor: Colors.transparent,
                   ),
                 ),
               ),
@@ -190,8 +196,8 @@ class _SwapScreenState extends State<SwapScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(_fromToken.symbol, style: text.detail?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis),
-                            Text(_fromToken.network, style: text.detail?.copyWith(color: colors.textTertiary, fontSize: 10), overflow: TextOverflow.ellipsis),
+                            Text(_fromToken.symbol, style: text.detail?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
+                            Text(_fromToken.network, style: text.tiny?.copyWith(color: colors.textSecondary), overflow: TextOverflow.ellipsis),
                           ],
                         ),
                       ),
@@ -205,7 +211,13 @@ class _SwapScreenState extends State<SwapScreen> {
           ],
         ),
         const SizedBox(height: 4),
-        Text('\$${_fromUsd.toStringAsFixed(2)}', style: text.detail?.copyWith(color: colors.textTertiary)),
+        Row(
+          children: [
+            Text('\$${_fromUsd.toStringAsFixed(2)}', style: text.detail?.copyWith(color: colors.textSecondary)),
+            const SizedBox(width: 4),
+            Icon(Icons.swap_vert, color: colors.textSecondary, size: 12),
+          ],
+        ),
       ],
     );
   }
@@ -216,31 +228,34 @@ class _SwapScreenState extends State<SwapScreen> {
       children: [
         Row(
           children: [
-            Text('Refund Address', style: text.detail?.copyWith(color: colors.textSecondary)),
+            Text('Refund Address', style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
             const SizedBox(width: 4),
-            Icon(Icons.info_outline, color: colors.textTertiary, size: 14),
+            Icon(Icons.info_outline, color: colors.textSecondary, size: 14),
           ],
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(8)),
+        Container(
+          decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(8)),
+          padding: const EdgeInsets.only(left: 12, right: 8, top: 8, bottom: 8),
+          child: Row(
+            children: [
+              Expanded(
                 child: TextField(
                   controller: _addressController,
                   style: text.smallParagraph?.copyWith(color: colors.textPrimary),
                   decoration: InputDecoration(
-                    fillColor: Colors.transparent,
                     hintText: '${_fromToken.network} Address',
                     hintStyle: text.smallParagraph?.copyWith(color: colors.textTertiary),
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                    filled: true,
+                    fillColor: Colors.transparent,
                   ),
                   onChanged: (_) => setState(() {}),
                 ),
               ),
-            ),
+              const SizedBox(width: 8),
               GestureDetector(
                 onTap: _scanQr,
                 child: SizedBox(
@@ -268,9 +283,9 @@ class _SwapScreenState extends State<SwapScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
             ],
           ),
+        ),
       ],
     );
   }
@@ -295,7 +310,7 @@ class _SwapScreenState extends State<SwapScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('To', style: text.detail?.copyWith(color: colors.textSecondary)),
+        Text('To', style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
         const SizedBox(height: 12),
         Row(
           children: [
@@ -307,7 +322,7 @@ class _SwapScreenState extends State<SwapScreen> {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   _toAmount > 0 ? _toAmount.toStringAsFixed(2) : '0.00',
-                  style: text.smallTitle?.copyWith(color: _toAmount > 0 ? colors.textPrimary : colors.textTertiary),
+                  style: text.mediumTitle?.copyWith(fontWeight: FontWeight.bold, color: _toAmount > 0 ? colors.textPrimary : colors.textTertiary),
                 ),
               ),
             ),
@@ -324,7 +339,7 @@ class _SwapScreenState extends State<SwapScreen> {
                       decoration: BoxDecoration(color: colors.accentGreen.withValues(alpha: 0.3), shape: BoxShape.circle),
                     ),
                     const SizedBox(width: 8),
-                    Text('QU', style: text.detail?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+                    Text('QU', style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
@@ -332,7 +347,7 @@ class _SwapScreenState extends State<SwapScreen> {
           ],
         ),
         const SizedBox(height: 4),
-        Text('\$${_toUsd.toStringAsFixed(2)}', style: text.detail?.copyWith(color: colors.textTertiary)),
+        Text('\$${_toUsd.toStringAsFixed(2)}', style: text.detail?.copyWith(color: colors.textSecondary)),
       ],
     );
   }
@@ -343,12 +358,12 @@ class _SwapScreenState extends State<SwapScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Slippage Tolerance', style: text.detail?.copyWith(color: colors.textTertiary)),
+            Text('Slippage Tolerance', style: text.detail?.copyWith(color: colors.textSecondary)),
             Row(
               children: [
-                Text('1%', style: text.detail?.copyWith(color: colors.textTertiary)),
+                Text('1%', style: text.detail?.copyWith(color: colors.textSecondary)),
                 const SizedBox(width: 4),
-                Icon(Icons.settings, color: colors.textTertiary, size: 12),
+                Icon(Icons.settings, color: colors.textSecondary, size: 12),
               ],
             ),
           ],
@@ -357,8 +372,8 @@ class _SwapScreenState extends State<SwapScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Rate', style: text.detail?.copyWith(color: colors.textTertiary)),
-            Text(_rateLabel, style: text.detail?.copyWith(color: colors.textTertiary)),
+            Text('Rate', style: text.detail?.copyWith(color: colors.textSecondary)),
+            Text(_rateLabel, style: text.detail?.copyWith(color: colors.textSecondary, fontWeight: FontWeight.w500)),
           ],
         ),
       ],
@@ -369,17 +384,16 @@ class _SwapScreenState extends State<SwapScreen> {
     final enabled = _canGetQuote && !_loading;
     return GestureDetector(
       onTap: enabled ? _getQuote : null,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: enabled ? 0.44 : 0.1)),
-        ),
-        child: Center(
-          child: _loading
-              ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: colors.textPrimary, strokeWidth: 2))
-              : Text('Get a Quote', style: text.paragraph?.copyWith(color: colors.textPrimary.withValues(alpha: enabled ? 1.0 : 0.2), fontWeight: FontWeight.w500)),
+      child: Opacity(
+        opacity: enabled ? 1.0 : 0.4,
+        child: GlassContainer(
+          asset: GlassContainer.wideAsset,
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Center(
+            child: _loading
+                ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: colors.textPrimary, strokeWidth: 2))
+                : Text('Get a Quote', style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+          ),
         ),
       ),
     );

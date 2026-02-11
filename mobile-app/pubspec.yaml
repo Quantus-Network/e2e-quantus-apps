@@ -110,7 +110,7 @@ flutter:
     - assets/v2/glass_border_bg.png
     - assets/v2/glass_medium_button_bg.png
     - assets/v2/glass_button_40_bg.png
-    - assets/v2/glass_button_40_bg.png
+    - assets/v2/glass_button_wide_340_bg.png
 
   fonts:
     - family: Fira Code

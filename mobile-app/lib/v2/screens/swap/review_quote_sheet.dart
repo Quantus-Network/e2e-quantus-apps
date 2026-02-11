@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/deposit_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -30,9 +31,10 @@ class _ReviewQuoteContent extends StatelessWidget {
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
       child: Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
         decoration: BoxDecoration(
-          color: colors.surface,
+          color: const Color(0xFF1A1A1A),
+          border: Border.all(color: const Color(0xFF3D3D3D)),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
@@ -42,81 +44,91 @@ class _ReviewQuoteContent extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Review Quote', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 18)),
+                Text('Review Quote', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: Icon(Icons.close, color: colors.textPrimary, size: 20),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            _swapVisual(colors, text, fromUsd, toUsd),
             const SizedBox(height: 32),
+            _swapVisual(context, colors, text, fromUsd, toUsd),
+            const SizedBox(height: 48),
             _feeRow('Total fees', '${quote.networkFee.toStringAsFixed(3)} ${quote.fromToken.symbol}', colors, text),
             Divider(color: colors.separator, height: 32),
-            _feeRow('Total Amount', '${quote.totalAmount.toStringAsFixed(2)} ${quote.fromToken.symbol}', colors, text),
+            _feeRow('Total Amount', '${quote.totalAmount.toStringAsFixed(2)} ${quote.fromToken.symbol}', colors, text, highlight: true),
             const SizedBox(height: 24),
             Text(
               'You could receive up to \$${(quote.fromAmount * quote.slippageTolerance).toStringAsFixed(2)} less based on the ${(quote.slippageTolerance * 100).toStringAsFixed(0)}% slippage you set',
-              style: text.detail?.copyWith(color: colors.textTertiary),
+              style: text.tiny?.copyWith(color: colors.textSecondary, height: 1.35),
             ),
             const SizedBox(height: 24),
             _confirmButton(context, colors, text),
-            const SizedBox(height: 16),
           ],
         ),
       ),
     );
   }
 
-  Widget _swapVisual(AppColorsV2 colors, AppTextTheme text, double fromUsd, double toUsd) {
+  Widget _swapVisual(BuildContext context, AppColorsV2 colors, AppTextTheme text, double fromUsd, double toUsd) {
+    final cardWidth = MediaQuery.of(context).size.width / 3;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _tokenCard(quote.fromToken, quote.fromAmount, fromUsd, cardWidth, colors, text),
+        Icon(Icons.arrow_forward, color: colors.textSecondary, size: 20),
+        _tokenCard(quote.toToken, quote.toAmount, toUsd, cardWidth, colors, text),
+      ],
+    );
+  }
+
+  Widget _tokenCard(SwapToken token, double amount, double usd, double width, AppColorsV2 colors, AppTextTheme text) {
+    final isQu = token.symbol == 'QU';
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: width, height: 111,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(14)),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(child: _tokenCard(quote.fromToken, quote.fromAmount, fromUsd, colors, text)),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Icon(Icons.arrow_forward, color: colors.textSecondary, size: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 22, height: 22,
+                decoration: BoxDecoration(
+                  color: isQu ? colors.accentGreen.withValues(alpha: 0.3) : colors.accentPink.withValues(alpha: 0.3),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(token.symbol, style: text.detail?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600)),
+                    Text(token.network, style: text.tiny?.copyWith(color: colors.textSecondary)),
+                  ],
+                ),
+            ],
           ),
-          Expanded(child: _tokenCard(quote.toToken, quote.toAmount, toUsd, colors, text)),
+          const SizedBox(height: 6),
+          Text(amount.toStringAsFixed(2), style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 0),
+          Text('\$${usd.toStringAsFixed(2)}', style: text.detail?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
         ],
       ),
     );
   }
 
-  Widget _tokenCard(SwapToken token, double amount, double usd, AppColorsV2 colors, AppTextTheme text) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 20, height: 20,
-              decoration: BoxDecoration(
-                color: token.symbol == 'QU' ? colors.accentGreen.withValues(alpha: 0.3) : colors.accentPink.withValues(alpha: 0.3),
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Flexible(child: Text(token.symbol, style: text.detail?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500))),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(amount.toStringAsFixed(2), style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600)),
-        Text('\$${usd.toStringAsFixed(2)}', style: text.detail?.copyWith(color: colors.textTertiary)),
-      ],
-    );
-  }
-
-  Widget _feeRow(String label, String value, AppColorsV2 colors, AppTextTheme text) {
+  Widget _feeRow(String label, String value, AppColorsV2 colors, AppTextTheme text, {bool highlight = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: text.detail?.copyWith(color: colors.textTertiary)),
-        Text(value, style: text.detail?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+        Text(label, style: text.detail?.copyWith(color: colors.textSecondary)),
+        Text(value, style: text.detail?.copyWith(
+          color: highlight ? colors.textPrimary : colors.textSecondary,
+          fontWeight: highlight ? FontWeight.w500 : null,
+        )),
       ],
     );
   }
@@ -130,13 +142,9 @@ class _ReviewQuoteContent extends StatelessWidget {
         Navigator.pop(context);
         Navigator.push(context, MaterialPageRoute(builder: (_) => DepositScreen(order: order)));
       },
-      child: Container(
-        width: double.infinity,
+      child: GlassContainer(
+        asset: GlassContainer.wideAsset,
         padding: const EdgeInsets.symmetric(vertical: 20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.44)),
-        ),
         child: Center(
           child: Text('Confirm', style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
         ),
