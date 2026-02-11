@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
 import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/refund_address_picker_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/review_quote_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/token_picker_sheet.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -66,6 +66,7 @@ class _SwapScreenState extends State<SwapScreen> {
       final quote = await _swapService.getQuote(fromToken: _fromToken, fromAmount: amount);
       if (!mounted) return;
       setState(() => _loading = false);
+      _swapService.addRefundAddress(_fromToken.network, _addressController.text.trim());
       showReviewQuoteSheet(context, quote, _addressController.text);
     } catch (e) {
       setState(() => _loading = false);
@@ -269,9 +270,9 @@ class _SwapScreenState extends State<SwapScreen> {
               const SizedBox(width: 8),
               GestureDetector(
                 onTap: () async {
-                  final data = await Clipboard.getData('text/plain');
-                  if (data?.text != null) {
-                    _addressController.text = data!.text!;
+                  final address = await showRefundAddressPickerSheet(context, _fromToken.network);
+                  if (address != null) {
+                    _addressController.text = address;
                     setState(() {});
                   }
                 },

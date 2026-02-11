@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
+import 'package:resonance_network_wallet/v2/components/glass_button.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
 import 'package:resonance_network_wallet/v2/components/success_check.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -114,17 +115,19 @@ class _DepositScreenState extends State<DepositScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Deposit Amount', style: text.detail?.copyWith(color: colors.textSecondary)),
-            const SizedBox(width: 8),
+            Text('Deposit Amount', style: text.smallParagraph?.copyWith(color: colors.textPrimary, height: 1.35)),
+            const SizedBox(width: 6),
             GestureDetector(
-              onTap: () {
-                Clipboard.setData(ClipboardData(text: quote.totalAmount.toStringAsFixed(2)));
-              },
-              child: Icon(Icons.copy, color: colors.textTertiary, size: 14),
+              onTap: () => Clipboard.setData(ClipboardData(text: quote.totalAmount.toStringAsFixed(2))),
+              child: Container(
+                width: 20, height: 20,
+                decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(4)),
+                child: Center(child: Icon(Icons.copy, color: colors.textPrimary, size: 12)),
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -133,71 +136,94 @@ class _DepositScreenState extends State<DepositScreen> {
               decoration: BoxDecoration(color: colors.accentPink.withValues(alpha: 0.3), shape: BoxShape.circle),
             ),
             const SizedBox(width: 8),
-            Text(quote.totalAmount.toStringAsFixed(2), style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 24)),
+            Text(quote.totalAmount.toStringAsFixed(2), style: text.mediumTitle?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600)),
           ],
         ),
-        Text('\$${usd.toStringAsFixed(2)}', style: text.detail?.copyWith(color: colors.textTertiary)),
-        const SizedBox(height: 32),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-          child: QrImageView(data: _order.depositAddress, version: QrVersions.auto, size: 180),
+        const SizedBox(height: 8),
+        Text('\$${usd.toStringAsFixed(2)}', style: text.smallParagraph?.copyWith(color: colors.textSecondary, fontWeight: FontWeight.w500)),
+        const SizedBox(height: 40),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(9),
+          child: Container(
+            color: Colors.white,
+            padding: const EdgeInsets.all(8),
+            child: QrImageView(data: _order.depositAddress, version: QrVersions.auto, size: 184),
+          ),
         ),
         const SizedBox(height: 16),
-        GestureDetector(
-          onTap: _copyAddress,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+        SizedBox(
+          width: 264,
+          child: Stack(
             children: [
-              Flexible(
-                child: Text(
-                  _order.depositAddress,
-                  style: text.detail?.copyWith(color: colors.textSecondary, fontSize: 11),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
+              Text(
+                _order.depositAddress.toLowerCase(),
+                style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500, height: 1.35),
+                textAlign: TextAlign.center,
+              ),
+              Positioned(
+                right: 0,
+                top: 19,
+                child: GestureDetector(
+                  onTap: _copyAddress,
+                  child: Container(
+                    width: 20, height: 20,
+                    decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(4)),
+                    child: Center(child: Icon(Icons.copy, color: colors.textPrimary, size: 12)),
+                  ),
                 ),
               ),
-              const SizedBox(width: 4),
-              Icon(Icons.copy, color: colors.textTertiary, size: 12),
             ],
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 40),
         Row(
           children: [
-            Expanded(child: _actionBtn(Icons.copy, 'Copy', _copyAddress, colors, text)),
+            Expanded(
+              child: OutlinedGlassButton(
+                onTap: _copyAddress,
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.copy, color: colors.textPrimary, size: 20),
+                    const SizedBox(width: 8),
+                    Text('Copy', style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(width: 16),
-            Expanded(child: _actionBtn(Icons.qr_code, 'Share QR', () {}, colors, text)),
+            Expanded(
+              child: OutlinedGlassButton(
+                onTap: () {},
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.qr_code, color: colors.textPrimary, size: 20),
+                    const SizedBox(width: 8),
+                    Text('Share QR', style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
-        const SizedBox(height: 24),
-        Text(
-          'Use your ${quote.fromToken.symbol} or ${quote.fromToken.network} wallet to deposit funds. Depositing other assets may result in loss of funds.',
-          style: text.detail?.copyWith(color: colors.textTertiary),
+        const SizedBox(height: 40),
+        Text.rich(
+          TextSpan(
+            style: text.detail?.copyWith(color: colors.textSecondary, height: 1.35),
+            children: [
+              const TextSpan(text: 'Use your '),
+              TextSpan(text: quote.fromToken.symbol, style: const TextStyle(fontWeight: FontWeight.w600)),
+              const TextSpan(text: ' or '),
+              TextSpan(text: quote.fromToken.network, style: const TextStyle(fontWeight: FontWeight.w600)),
+              const TextSpan(text: ' wallet to deposit funds. Depositing other assets may result in loss of funds.'),
+            ],
+          ),
           textAlign: TextAlign.center,
         ),
       ],
-    );
-  }
-
-  Widget _actionBtn(IconData icon, String label, VoidCallback onTap, AppColorsV2 colors, AppTextTheme text) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: colors.textPrimary, size: 18),
-            const SizedBox(width: 8),
-            Text(label, style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
-          ],
-        ),
-      ),
     );
   }
 
@@ -232,37 +258,23 @@ class _DepositScreenState extends State<DepositScreen> {
   }
 
   Widget _sentButton(AppColorsV2 colors, AppTextTheme text) {
-    return GestureDetector(
+    return FilledGlassButton(
       onTap: _confirming ? null : _confirmSent,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.44)),
-        ),
-        child: Center(
-          child: _confirming
-              ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: colors.textPrimary, strokeWidth: 2))
-              : Text("I've sent the funds", style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
-        ),
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: Center(
+        child: _confirming
+            ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: colors.textPrimary, strokeWidth: 2))
+            : Text("I've sent the funds", style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
       ),
     );
   }
 
   Widget _doneButton(AppColorsV2 colors, AppTextTheme text) {
-    return GestureDetector(
+    return FilledGlassButton(
       onTap: () => Navigator.popUntil(context, (r) => r.isFirst),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.44)),
-        ),
-        child: Center(
-          child: Text('Done', style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
-        ),
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: Center(
+        child: Text('Done', style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum SwapStatus { pending, depositing, processing, complete, failed, expired }
 
@@ -67,6 +68,8 @@ class SwapService {
   factory SwapService() => _instance;
   SwapService._();
 
+  static const _refundAddressKey = 'recent_refund_addresses';
+  static const _maxRefundAddresses = 50;
   final _orders = <String, SwapOrder>{};
 
   static const availableTokens = [
@@ -175,5 +178,23 @@ class SwapService {
     });
 
     return updated;
+  }
+
+  Future<void> addRefundAddress(String network, String address) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = '${_refundAddressKey}_${network.toLowerCase()}';
+    var addresses = prefs.getStringList(key) ?? [];
+    addresses.remove(address);
+    addresses.insert(0, address);
+    if (addresses.length > _maxRefundAddresses) {
+      addresses = addresses.sublist(0, _maxRefundAddresses);
+    }
+    await prefs.setStringList(key, addresses);
+  }
+
+  Future<List<String>> getRefundAddresses(String network) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = '${_refundAddressKey}_${network.toLowerCase()}';
+    return prefs.getStringList(key) ?? [];
   }
 }
