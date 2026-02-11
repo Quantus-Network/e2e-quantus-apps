@@ -192,7 +192,7 @@ class _DepositScreenState extends State<DepositScreen> {
         Row(
           children: [
             Expanded(
-              child: OutlinedGlassButton(
+              child: GlassButton(
                 onTap: _copyAddress,
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Row(
@@ -210,7 +210,7 @@ class _DepositScreenState extends State<DepositScreen> {
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: OutlinedGlassButton(
+              child: GlassButton(
                 onTap: () {},
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Row(
@@ -290,7 +290,8 @@ class _DepositScreenState extends State<DepositScreen> {
   }
 
   Widget _sentButton(AppColorsV2 colors, AppTextTheme text) {
-    return FilledGlassButton(
+    return GlassButton(
+      filled: true,
       onTap: _confirming ? null : _confirmSent,
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: Center(
@@ -309,7 +310,8 @@ class _DepositScreenState extends State<DepositScreen> {
   }
 
   Widget _doneButton(AppColorsV2 colors, AppTextTheme text) {
-    return FilledGlassButton(
+    return GlassButton(
+      filled: true,
       onTap: () => Navigator.popUntil(context, (r) => r.isFirst),
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: Center(

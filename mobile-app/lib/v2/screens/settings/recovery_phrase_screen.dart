@@ -81,14 +81,10 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
                 const SizedBox(height: 40),
                 Expanded(
                   child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        _wordGrid(colors, text),
-                        if (_revealed) ...[const SizedBox(height: 24), _copyRow(colors, text)],
-                      ],
-                    ),
+                    child: _wordGrid(colors, text),
                   ),
                 ),
+                if (_revealed) ...[const SizedBox(height: 16), _copyRow(colors, text)],
                 const SizedBox(height: 16),
                 _revealButton(colors, text),
                 const SizedBox(height: 24),
@@ -144,13 +140,9 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
       overflow: TextOverflow.ellipsis,
     );
 
-    return Container(
-      height: 36,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: colors.border),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+    return GlassButton(
+      radius: 8,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       child: Row(
         children: [
           Text('$index', style: text.detail?.copyWith(color: colors.textSecondary)),
@@ -183,7 +175,7 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
   }
 
   Widget _revealButton(AppColorsV2 colors, AppTextTheme text) {
-    return OutlinedGlassButton(
+    return GlassButton(
       onTap: _toggleReveal,
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: Center(
