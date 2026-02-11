@@ -114,7 +114,10 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   }
 
   Future<void> _scanQr() async {
-    final address = await Navigator.push<String>(context, MaterialPageRoute(fullscreenDialog: true, builder: (_) => const _QrScanPage()));
+    final address = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(fullscreenDialog: true, builder: (_) => const _QrScanPage()),
+    );
     if (address != null && mounted) {
       _recipientController.text = address;
     }
@@ -139,7 +142,13 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       final settings = SettingsService();
       final account = (await settings.getActiveRegularAccount())!;
       final submissionService = ref.read(transactionSubmissionServiceProvider);
-      await submissionService.balanceTransfer(account, _recipientController.text.trim(), _amount, _networkFee, _blockHeight);
+      await submissionService.balanceTransfer(
+        account,
+        _recipientController.text.trim(),
+        _amount,
+        _networkFee,
+        _blockHeight,
+      );
       RecentAddressesService().addAddress(_recipientController.text.trim());
       if (mounted) setState(() => _step = _Step.complete);
     } catch (e) {
@@ -262,7 +271,12 @@ class _SendSheetState extends ConsumerState<SendSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                AddressFormattingService.formatAddress(_recipientController.text.trim(), prefix: 15, ellipses: '.......', postFix: 14),
+                AddressFormattingService.formatAddress(
+                  _recipientController.text.trim(),
+                  prefix: 15,
+                  ellipses: '.......',
+                  postFix: 14,
+                ),
                 style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -367,9 +381,15 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       children: [
         _header(colors, text, onBack: _backToForm),
         const SizedBox(height: 72),
-        Text('${_fmt.formatBalance(_amount)} ${AppConstants.tokenSymbol}', style: text.mediumTitle?.copyWith(color: colors.textPrimary, fontSize: 32)),
+        Text(
+          '${_fmt.formatBalance(_amount)} ${AppConstants.tokenSymbol}',
+          style: text.mediumTitle?.copyWith(color: colors.textPrimary, fontSize: 32),
+        ),
         const SizedBox(height: 64),
-        Text('To:', style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600)),
+        Text(
+          'To:',
+          style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
+        ),
         const SizedBox(height: 12),
         Text(
           AddressFormattingService.formatAddress(recipient, prefix: 15, ellipses: '.......', postFix: 14),
@@ -456,7 +476,11 @@ class _SendSheetState extends ConsumerState<SendSheet> {
             border: Border.all(color: Colors.white.withValues(alpha: 0.44), width: 0.889),
             borderRadius: BorderRadius.circular(14),
           ),
-          child: Text(label, textAlign: TextAlign.center, style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+          ),
         ),
       ),
     );
@@ -525,11 +549,11 @@ class _QrScanPageState extends State<_QrScanPage> {
                 onTap: () => Navigator.pop(context),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1A1A1A),
-                    borderRadius: BorderRadius.circular(14),
+                  decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(14)),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
                   ),
-                  child: const Text('Cancel', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
                 ),
               ),
             ),

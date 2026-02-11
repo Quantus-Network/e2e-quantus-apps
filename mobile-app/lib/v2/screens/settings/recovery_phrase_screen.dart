@@ -84,10 +84,7 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
                     child: Column(
                       children: [
                         _wordGrid(colors, text),
-                        if (_revealed) ...[
-                          const SizedBox(height: 24),
-                          _copyRow(colors, text),
-                        ],
+                        if (_revealed) ...[const SizedBox(height: 24), _copyRow(colors, text)],
                       ],
                     ),
                   ),

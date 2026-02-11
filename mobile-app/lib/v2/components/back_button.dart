@@ -11,7 +11,12 @@ class AppBackButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap ?? () => Navigator.pop(context),
-      child: SvgPicture.asset('assets/v2/caret_left.svg', width: 24, height: 24, colorFilter: ColorFilter.mode(context.colors.textPrimary, BlendMode.srcIn)),
+      child: SvgPicture.asset(
+        'assets/v2/caret_left.svg',
+        width: 24,
+        height: 24,
+        colorFilter: ColorFilter.mode(context.colors.textPrimary, BlendMode.srcIn),
+      ),
     );
   }
 }

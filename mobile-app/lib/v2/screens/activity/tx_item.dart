@@ -32,19 +32,19 @@ class TxItemData {
       label: isScheduled
           ? (isSend ? 'Pending' : 'Receiving')
           : isSend
-              ? 'Sent'
-              : 'Received',
+          ? 'Sent'
+          : 'Received',
       timeLabel: isScheduled ? _formatDuration(tx.timeRemaining) : _timeAgo(tx.timestamp),
       iconBg: isScheduled && !isSend
           ? const Color(0x2927F027)
           : isScheduled && isSend
-              ? const Color(0x29FFBC42)
-              : const Color(0xFF292929),
+          ? const Color(0x29FFBC42)
+          : const Color(0xFF292929),
       iconColor: isScheduled && !isSend
           ? const Color(0xFF27F027)
           : isScheduled && isSend
-              ? const Color(0xFFFFBC42)
-              : const Color(0x80FFFFFF),
+          ? const Color(0xFFFFBC42)
+          : const Color(0x80FFFFFF),
       isSend: isSend,
       amount: '${fmt.formatBalance(tx.amount)} ${AppConstants.tokenSymbol}',
       counterpartyAddr: _shortenAddress(isSend ? tx.to : tx.from),
@@ -87,7 +87,10 @@ Widget buildTxItem(TransactionEvent tx, TxItemData data, AppColorsV2 colors, App
                 children: [
                   Text(data.amount, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
                   const SizedBox(height: 2),
-                  Text('${data.isSend ? "To" : "From"}: ${data.counterpartyAddr}', style: text.detail?.copyWith(color: colors.textTertiary)),
+                  Text(
+                    '${data.isSend ? "To" : "From"}: ${data.counterpartyAddr}',
+                    style: text.detail?.copyWith(color: colors.textTertiary),
+                  ),
                 ],
               ),
             ],

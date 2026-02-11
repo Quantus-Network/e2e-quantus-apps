@@ -56,7 +56,13 @@ class _ReviewQuoteContent extends StatelessWidget {
             const SizedBox(height: 48),
             _feeRow('Total fees', '${quote.networkFee.toStringAsFixed(3)} ${quote.fromToken.symbol}', colors, text),
             Divider(color: colors.separator, height: 32),
-            _feeRow('Total Amount', '${quote.totalAmount.toStringAsFixed(2)} ${quote.fromToken.symbol}', colors, text, highlight: true),
+            _feeRow(
+              'Total Amount',
+              '${quote.totalAmount.toStringAsFixed(2)} ${quote.fromToken.symbol}',
+              colors,
+              text,
+              highlight: true,
+            ),
             const SizedBox(height: 24),
             Text(
               'You could receive up to \$${(quote.fromAmount * quote.slippageTolerance).toStringAsFixed(2)} less based on the ${(quote.slippageTolerance * 100).toStringAsFixed(0)}% slippage you set',
@@ -85,7 +91,8 @@ class _ReviewQuoteContent extends StatelessWidget {
   Widget _tokenCard(SwapToken token, double amount, double usd, double width, AppColorsV2 colors, AppTextTheme text) {
     final isQu = token.symbol == 'QUAN';
     return Container(
-      width: width, height: 111,
+      width: width,
+      height: 111,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(14)),
       child: Column(
@@ -95,26 +102,36 @@ class _ReviewQuoteContent extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 22, height: 22,
+                width: 22,
+                height: 22,
                 decoration: BoxDecoration(
                   color: isQu ? colors.accentGreen.withValues(alpha: 0.3) : colors.accentPink.withValues(alpha: 0.3),
                   shape: BoxShape.circle,
                 ),
               ),
               const SizedBox(width: 8),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(token.symbol, style: text.detail?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600)),
-                    Text(token.network, style: text.tiny?.copyWith(color: colors.textSecondary)),
-                  ],
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    token.symbol,
+                    style: text.detail?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
+                  ),
+                  Text(token.network, style: text.tiny?.copyWith(color: colors.textSecondary)),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 6),
-          Text(amount.toStringAsFixed(2), style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600)),
+          Text(
+            amount.toStringAsFixed(2),
+            style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 0),
-          Text('\$${usd.toStringAsFixed(2)}', style: text.detail?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+          Text(
+            '\$${usd.toStringAsFixed(2)}',
+            style: text.detail?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+          ),
         ],
       ),
     );
@@ -125,10 +142,13 @@ class _ReviewQuoteContent extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: text.detail?.copyWith(color: colors.textSecondary)),
-        Text(value, style: text.detail?.copyWith(
-          color: highlight ? colors.textPrimary : colors.textSecondary,
-          fontWeight: highlight ? FontWeight.w500 : null,
-        )),
+        Text(
+          value,
+          style: text.detail?.copyWith(
+            color: highlight ? colors.textPrimary : colors.textSecondary,
+            fontWeight: highlight ? FontWeight.w500 : null,
+          ),
+        ),
       ],
     );
   }
@@ -146,7 +166,10 @@ class _ReviewQuoteContent extends StatelessWidget {
         asset: GlassContainer.wideAsset,
         padding: const EdgeInsets.symmetric(vertical: 20),
         child: Center(
-          child: Text('Confirm', style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+          child: Text(
+            'Confirm',
+            style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+          ),
         ),
       ),
     );

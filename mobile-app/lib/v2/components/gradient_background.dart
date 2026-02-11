@@ -54,19 +54,13 @@ class _EllipseGlowPainter extends CustomPainter {
     canvas.save();
     canvas.translate(176.56 * sx + ox, 77.88 * sy + oy);
     canvas.rotate(30 * pi / 180);
-    canvas.drawOval(
-      Rect.fromCenter(center: Offset.zero, width: 66.46 * sx, height: 406.13 * sy),
-      paint,
-    );
+    canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: 66.46 * sx, height: 406.13 * sy), paint);
     canvas.restore();
 
     canvas.save();
     canvas.translate(367.38 * sx + ox, 41.54 * sy + oy);
     canvas.rotate(30 * pi / 180);
-    canvas.drawOval(
-      Rect.fromCenter(center: Offset.zero, width: 33.41 * sx, height: 446.53 * sy),
-      paint,
-    );
+    canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: 33.41 * sx, height: 446.53 * sy), paint);
     canvas.restore();
   }
 

@@ -59,7 +59,12 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
           '${_checksum != null ? '\n\nCheckphrase: $_checksum' : ''}'
           '\n\nTo open in the app or download:\n${AppConstants.websiteBaseUrl}/account?id=$_accountId';
       SharePlus.instance.share(
-        ShareParams(text: text, subject: 'Shared Address', title: 'Shared Address', sharePositionOrigin: context.sharePositionRect()),
+        ShareParams(
+          text: text,
+          subject: 'Shared Address',
+          title: 'Shared Address',
+          sharePositionOrigin: context.sharePositionRect(),
+        ),
       );
     }
   }
@@ -167,7 +172,11 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
       future: _checksumFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: colors.textSecondary));
+          return SizedBox(
+            height: 16,
+            width: 16,
+            child: CircularProgressIndicator(strokeWidth: 2, color: colors.textSecondary),
+          );
         }
         if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) return const SizedBox.shrink();
 
@@ -222,7 +231,10 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                 children: [
                   Icon(Icons.copy, size: 20, color: colors.textPrimary),
                   const SizedBox(width: 8),
-                  Text('Copy', style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+                  Text(
+                    'Copy',
+                    style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+                  ),
                 ],
               ),
             ),
@@ -234,16 +246,16 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
             onTap: _share,
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 20),
-              decoration: BoxDecoration(
-                color: colors.surfaceGlass,
-                borderRadius: BorderRadius.circular(14),
-              ),
+              decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(14)),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.share, size: 20, color: colors.textPrimary),
                   const SizedBox(width: 8),
-                  Text('Share', style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+                  Text(
+                    'Share',
+                    style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+                  ),
                 ],
               ),
             ),
@@ -260,9 +272,6 @@ void showReceiveSheetV2(BuildContext context) {
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
-    builder: (_) => BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-      child: const ReceiveSheet(),
-    ),
+    builder: (_) => BackdropFilter(filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2), child: const ReceiveSheet()),
   );
 }

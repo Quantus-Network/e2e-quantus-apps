@@ -24,12 +24,7 @@ class OutlinedGlassButton extends StatelessWidget {
         child: BackdropFilter(
           filter: ImageFilter.compose(
             outer: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            inner: const ColorFilter.matrix(<double>[
-              0.8, 0, 0, 0, 0,
-              0, 0.8, 0, 0, 0,
-              0, 0, 0.8, 0, 0,
-              0, 0, 0, 1, 0,
-            ]),
+            inner: const ColorFilter.matrix(<double>[0.8, 0, 0, 0, 0, 0, 0.8, 0, 0, 0, 0, 0, 0.8, 0, 0, 0, 0, 0, 1, 0]),
           ),
           child: CustomPaint(
             painter: _ShimmerBorderPainter(radius: radius),
@@ -112,10 +107,26 @@ class FilledGlassButton extends StatelessWidget {
           filter: ImageFilter.compose(
             outer: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             inner: const ColorFilter.matrix(<double>[
-              1.05, 0, 0, 0, 0,
-              0, 1.05, 0, 0, 0,
-              0, 0, 1.05, 0, 0,
-              0, 0, 0, 1, 0,
+              1.05,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1.05,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1.05,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
             ]),
           ),
           child: CustomPaint(

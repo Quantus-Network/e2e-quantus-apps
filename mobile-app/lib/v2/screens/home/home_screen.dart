@@ -37,11 +37,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (active != null) {
       ref.invalidate(balanceProviderFamily);
       await ref
-          .read(
-            filteredPaginationControllerProviderFamily(
-              AccountIdListCache.get([active.account.accountId]),
-            ).notifier,
-          )
+          .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get([active.account.accountId])).notifier)
           .loadingRefresh();
     }
     ref.invalidate(balanceProviderRaw);
@@ -75,7 +71,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       error: (e, _) => Scaffold(
         backgroundColor: colors.background,
-        body: Center(child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError))),
+        body: Center(
+          child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError)),
+        ),
       ),
       data: (active) {
         if (active == null) {
@@ -94,11 +92,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               slivers: [
                 SliverToBoxAdapter(child: _buildContent(active, balanceAsync, colors, text)),
                 SliverToBoxAdapter(
-                  child: ActivitySection(
-                    txAsync: txAsync,
-                    activeAccount: active.account,
-                    onRetry: _refresh,
-                  ),
+                  child: ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
                 ),
                 const SliverToBoxAdapter(child: SizedBox(height: 120)),
               ],
@@ -199,10 +193,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Text(' ${AppConstants.tokenSymbol}', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
             ],
           ),
-          error: (_, _) => Text(
-            'Error loading balance',
-            style: text.detail?.copyWith(color: colors.textError),
-          ),
+          error: (_, _) => Text('Error loading balance', style: text.detail?.copyWith(color: colors.textError)),
         ),
         if (!_balanceHidden) ...[
           const SizedBox(height: 6),
@@ -219,17 +210,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(width: 15),
         _actionCard('assets/v2/send_button.png', () => showSendSheetV2(context)),
         const SizedBox(width: 15),
-        _actionCard('assets/v2/swap_button.png', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SwapScreen()))),
+        _actionCard(
+          'assets/v2/swap_button.png',
+          () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SwapScreen())),
+        ),
       ],
     );
   }
 
   Widget _actionCard(String asset, VoidCallback onTap) {
     return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Image.asset(asset),
-      ),
+      child: GestureDetector(onTap: onTap, child: Image.asset(asset)),
     );
   }
 }

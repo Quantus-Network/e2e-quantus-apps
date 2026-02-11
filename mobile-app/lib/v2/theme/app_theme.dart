@@ -17,34 +17,18 @@ class AppTheme {
     return ThemeData(
       scaffoldBackgroundColor: colors.background,
       cardColor: colors.surface,
-      colorScheme: ColorScheme.dark(
-        surface: colors.surface,
-        error: colors.error,
-      ),
-      appBarTheme: AppBarTheme(
-        backgroundColor: colors.surface,
-        elevation: 0,
-      ),
+      colorScheme: ColorScheme.dark(surface: colors.surface, error: colors.error),
+      appBarTheme: AppBarTheme(backgroundColor: colors.surface, elevation: 0),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
+        style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
       ),
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: colors.textPrimary,
-        ),
-      ),
+      textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(foregroundColor: colors.textPrimary)),
       inputDecorationTheme: InputDecorationTheme(
         border: InputBorder.none,
         enabledBorder: InputBorder.none,

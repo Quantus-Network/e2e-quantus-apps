@@ -43,9 +43,15 @@ class ActivitySection extends ConsumerWidget {
               const SizedBox(height: 24),
               ...all.take(5).map((tx) {
                 final data = TxItemData.from(tx, activeAccount.accountId);
-                return buildTxItem(tx, data, colors, text, onTap: () {
-                  showTransactionDetailSheet(context, tx, activeAccount.accountId);
-                });
+                return buildTxItem(
+                  tx,
+                  data,
+                  colors,
+                  text,
+                  onTap: () {
+                    showTransactionDetailSheet(context, tx, activeAccount.accountId);
+                  },
+                );
               }),
             ],
           );
@@ -85,7 +91,10 @@ class ActivitySection extends ConsumerWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text('Activity', style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+        Text(
+          'Activity',
+          style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+        ),
         GestureDetector(
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivityScreen())),
           child: Text(

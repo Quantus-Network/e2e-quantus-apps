@@ -33,128 +33,36 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
   });
 
   const AppTextTheme.defaultTheme()
-      : this(
-          lockTitle: const TextStyle(fontSize: 24, fontFamily: _fontFamily),
-          extraLargeTitle: const TextStyle(
-            fontSize: 40,
-            fontFamily: _fontFamily,
-            fontWeight: FontWeight.w600,
-          ),
-          largeTitle: const TextStyle(
-            fontSize: 30,
-            fontFamily: _fontFamily,
-            fontWeight: FontWeight.w300,
-          ),
-          mediumTitle: const TextStyle(
-            fontSize: 24,
-            fontFamily: _fontFamily,
-            fontWeight: FontWeight.w500,
-          ),
-          smallTitle: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-            fontFamily: _fontFamily,
-          ),
-          paragraph: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w400,
-            fontFamily: _fontFamily,
-          ),
-          smallParagraph: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-            fontFamily: _fontFamily,
-          ),
-          largeTag: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w400,
-            fontFamily: _fontFamily,
-          ),
-          tag: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w300,
-            fontFamily: _fontFamily,
-          ),
-          timer: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w600,
-            fontFamily: _fontFamily,
-          ),
-          detail: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w400,
-            fontFamily: _fontFamily,
-          ),
-          tiny: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w400,
-            fontFamily: _fontFamily,
-          ),
-        );
+    : this(
+        lockTitle: const TextStyle(fontSize: 24, fontFamily: _fontFamily),
+        extraLargeTitle: const TextStyle(fontSize: 40, fontFamily: _fontFamily, fontWeight: FontWeight.w600),
+        largeTitle: const TextStyle(fontSize: 30, fontFamily: _fontFamily, fontWeight: FontWeight.w300),
+        mediumTitle: const TextStyle(fontSize: 24, fontFamily: _fontFamily, fontWeight: FontWeight.w500),
+        smallTitle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, fontFamily: _fontFamily),
+        paragraph: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400, fontFamily: _fontFamily),
+        smallParagraph: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400, fontFamily: _fontFamily),
+        largeTag: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400, fontFamily: _fontFamily),
+        tag: const TextStyle(fontSize: 12, fontWeight: FontWeight.w300, fontFamily: _fontFamily),
+        timer: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600, fontFamily: _fontFamily),
+        detail: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400, fontFamily: _fontFamily),
+        tiny: const TextStyle(fontSize: 11, fontWeight: FontWeight.w400, fontFamily: _fontFamily),
+      );
 
   const AppTextTheme.iPad()
-      : this(
-          lockTitle: const TextStyle(
-            color: Colors.white,
-            fontSize: 28,
-            fontFamily: _fontFamily,
-          ),
-          extraLargeTitle: const TextStyle(
-            fontSize: 52,
-            fontFamily: _fontFamily,
-            fontWeight: FontWeight.w600,
-          ),
-          largeTitle: const TextStyle(
-            fontSize: 36,
-            fontFamily: _fontFamily,
-            fontWeight: FontWeight.w300,
-          ),
-          mediumTitle: const TextStyle(
-            fontSize: 28,
-            fontFamily: _fontFamily,
-            fontWeight: FontWeight.w400,
-          ),
-          smallTitle: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w500,
-            fontFamily: _fontFamily,
-          ),
-          paragraph: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w400,
-            fontFamily: _fontFamily,
-          ),
-          smallParagraph: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w400,
-            fontFamily: _fontFamily,
-          ),
-          largeTag: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w400,
-            fontFamily: _fontFamily,
-          ),
-          tag: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w300,
-            fontFamily: _fontFamily,
-          ),
-          timer: const TextStyle(
-            fontSize: 36,
-            fontWeight: FontWeight.w600,
-            fontFamily: _fontFamily,
-          ),
-          detail: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w400,
-            fontFamily: _fontFamily,
-          ),
-          tiny: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w400,
-            fontFamily: _fontFamily,
-          ),
-        );
+    : this(
+        lockTitle: const TextStyle(color: Colors.white, fontSize: 28, fontFamily: _fontFamily),
+        extraLargeTitle: const TextStyle(fontSize: 52, fontFamily: _fontFamily, fontWeight: FontWeight.w600),
+        largeTitle: const TextStyle(fontSize: 36, fontFamily: _fontFamily, fontWeight: FontWeight.w300),
+        mediumTitle: const TextStyle(fontSize: 28, fontFamily: _fontFamily, fontWeight: FontWeight.w400),
+        smallTitle: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500, fontFamily: _fontFamily),
+        paragraph: const TextStyle(fontSize: 20, fontWeight: FontWeight.w400, fontFamily: _fontFamily),
+        smallParagraph: const TextStyle(fontSize: 18, fontWeight: FontWeight.w400, fontFamily: _fontFamily),
+        largeTag: const TextStyle(fontSize: 24, fontWeight: FontWeight.w400, fontFamily: _fontFamily),
+        tag: const TextStyle(fontSize: 16, fontWeight: FontWeight.w300, fontFamily: _fontFamily),
+        timer: const TextStyle(fontSize: 36, fontWeight: FontWeight.w600, fontFamily: _fontFamily),
+        detail: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400, fontFamily: _fontFamily),
+        tiny: const TextStyle(fontSize: 15, fontWeight: FontWeight.w400, fontFamily: _fontFamily),
+      );
 
   @override
   AppTextTheme copyWith({

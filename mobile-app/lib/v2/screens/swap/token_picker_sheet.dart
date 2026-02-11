@@ -63,16 +63,22 @@ class _TokenPickerContent extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 36, height: 36,
+              width: 36,
+              height: 36,
               decoration: BoxDecoration(color: colors.accentPink.withValues(alpha: 0.2), shape: BoxShape.circle),
-              child: Center(child: Text(token.symbol[0], style: text.smallParagraph?.copyWith(color: colors.textPrimary))),
+              child: Center(
+                child: Text(token.symbol[0], style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+              ),
             ),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(token.symbol, style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+                  Text(
+                    token.symbol,
+                    style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+                  ),
                   Text('${token.name} · ${token.network}', style: text.detail?.copyWith(color: colors.textTertiary)),
                 ],
               ),

@@ -119,12 +119,17 @@ class _AddressPickerSheetState extends State<AddressPickerSheet> {
               const SizedBox(height: 40),
               Align(
                 alignment: Alignment.centerLeft,
-                child: Text('Recents', style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+                child: Text(
+                  'Recents',
+                  style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+                ),
               ),
               const SizedBox(height: 24),
               Expanded(
                 child: _filtered.isEmpty
-                    ? Center(child: Text('No recent addresses', style: text.detail?.copyWith(color: colors.textTertiary)))
+                    ? Center(
+                        child: Text('No recent addresses', style: text.detail?.copyWith(color: colors.textTertiary)),
+                      )
                     : ListView.separated(
                         padding: EdgeInsets.zero,
                         itemCount: _filtered.length,
@@ -151,8 +156,7 @@ class _AddressPickerSheetState extends State<AddressPickerSheet> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (checksum != null)
-                  Text(checksum, style: text.smallParagraph?.copyWith(color: colors.accentPink)),
+                if (checksum != null) Text(checksum, style: text.smallParagraph?.copyWith(color: colors.accentPink)),
                 const SizedBox(height: 4),
                 Text(
                   AddressFormattingService.formatAddress(address),
@@ -174,9 +178,6 @@ Future<String?> showAddressPickerSheet(BuildContext context) {
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
-    builder: (_) => BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-      child: const AddressPickerSheet(),
-    ),
+    builder: (_) => BackdropFilter(filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), child: const AddressPickerSheet()),
   );
 }

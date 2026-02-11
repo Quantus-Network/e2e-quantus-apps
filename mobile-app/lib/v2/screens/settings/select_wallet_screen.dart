@@ -38,11 +38,18 @@ class SelectWalletScreen extends ConsumerWidget {
                 Expanded(
                   child: accountsAsync.when(
                     loading: () => const Center(child: CircularProgressIndicator(color: Colors.white24)),
-                    error: (e, _) => Center(child: Text('Failed to load wallets', style: text.paragraph?.copyWith(color: colors.textSecondary))),
+                    error: (e, _) => Center(
+                      child: Text(
+                        'Failed to load wallets',
+                        style: text.paragraph?.copyWith(color: colors.textSecondary),
+                      ),
+                    ),
                     data: (accounts) {
                       final indices = getNonHardwareWalletIndices(accounts);
                       if (indices.isEmpty) {
-                        return Center(child: Text('No wallets found', style: text.paragraph?.copyWith(color: colors.textSecondary)));
+                        return Center(
+                          child: Text('No wallets found', style: text.paragraph?.copyWith(color: colors.textSecondary)),
+                        );
                       }
                       return ListView.separated(
                         itemCount: indices.length,
@@ -62,13 +69,19 @@ class SelectWalletScreen extends ConsumerWidget {
 
   Widget _walletItem(BuildContext context, int walletIndex, AppColorsV2 colors, AppTextTheme text) {
     return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RecoveryPhraseScreen(walletIndex: walletIndex))),
+      onTap: () =>
+          Navigator.push(context, MaterialPageRoute(builder: (_) => RecoveryPhraseScreen(walletIndex: walletIndex))),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(color: colors.surfaceCard, borderRadius: BorderRadius.circular(14)),
         child: Row(
           children: [
-            Expanded(child: Text('Wallet ${walletIndex + 1}', style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500))),
+            Expanded(
+              child: Text(
+                'Wallet ${walletIndex + 1}',
+                style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+              ),
+            ),
             Icon(Icons.chevron_right, color: colors.textSecondary, size: 20),
           ],
         ),

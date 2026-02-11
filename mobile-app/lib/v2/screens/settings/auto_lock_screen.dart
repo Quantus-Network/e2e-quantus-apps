@@ -83,7 +83,10 @@ class _AutoLockScreenState extends State<AutoLockScreen> {
                   onTap: _confirm,
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   child: Center(
-                    child: Text('Confirm', style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+                    child: Text(
+                      'Confirm',
+                      style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),

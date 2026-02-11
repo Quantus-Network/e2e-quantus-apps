@@ -85,10 +85,12 @@ class _SwapScreenState extends State<SwapScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => _QrScanPage(onScanned: (v) {
-          _addressController.text = v;
-          Navigator.pop(context);
-        }),
+        builder: (_) => _QrScanPage(
+          onScanned: (v) {
+            _addressController.text = v;
+            Navigator.pop(context);
+          },
+        ),
       ),
     );
   }
@@ -189,16 +191,28 @@ class _SwapScreenState extends State<SwapScreen> {
                   child: Row(
                     children: [
                       Container(
-                        width: 25, height: 25,
-                        decoration: BoxDecoration(color: colors.accentPink.withValues(alpha: 0.3), shape: BoxShape.circle),
+                        width: 25,
+                        height: 25,
+                        decoration: BoxDecoration(
+                          color: colors.accentPink.withValues(alpha: 0.3),
+                          shape: BoxShape.circle,
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(_fromToken.symbol, style: text.detail?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
-                            Text(_fromToken.network, style: text.tiny?.copyWith(color: colors.textSecondary), overflow: TextOverflow.ellipsis),
+                            Text(
+                              _fromToken.symbol,
+                              style: text.detail?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              _fromToken.network,
+                              style: text.tiny?.copyWith(color: colors.textSecondary),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ],
                         ),
                       ),
@@ -260,7 +274,8 @@ class _SwapScreenState extends State<SwapScreen> {
               GestureDetector(
                 onTap: _scanQr,
                 child: SizedBox(
-                  width: 40, height: 40,
+                  width: 40,
+                  height: 40,
                   child: GlassContainer(
                     asset: GlassContainer.smallAsset,
                     child: Center(child: Icon(Icons.qr_code_scanner, color: colors.textPrimary, size: 20)),
@@ -277,7 +292,8 @@ class _SwapScreenState extends State<SwapScreen> {
                   }
                 },
                 child: SizedBox(
-                  width: 40, height: 40,
+                  width: 40,
+                  height: 40,
                   child: GlassContainer(
                     asset: GlassContainer.smallAsset,
                     child: Center(child: Icon(Icons.history, color: colors.textPrimary, size: 20)),
@@ -296,7 +312,8 @@ class _SwapScreenState extends State<SwapScreen> {
       children: [
         Expanded(child: Divider(color: colors.separator)),
         SizedBox(
-          width: 40, height: 40,
+          width: 40,
+          height: 40,
           child: GlassContainer(
             asset: GlassContainer.smallAsset,
             child: Center(child: Icon(Icons.swap_vert, color: colors.textPrimary, size: 20)),
@@ -323,7 +340,10 @@ class _SwapScreenState extends State<SwapScreen> {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   _toAmount > 0 ? _toAmount.toStringAsFixed(2) : '0.00',
-                  style: text.mediumTitle?.copyWith(fontWeight: FontWeight.bold, color: _toAmount > 0 ? colors.textPrimary : colors.textTertiary),
+                  style: text.mediumTitle?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: _toAmount > 0 ? colors.textPrimary : colors.textTertiary,
+                  ),
                 ),
               ),
             ),
@@ -336,11 +356,18 @@ class _SwapScreenState extends State<SwapScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      width: 25, height: 25,
-                      decoration: BoxDecoration(color: colors.accentGreen.withValues(alpha: 0.3), shape: BoxShape.circle),
+                      width: 25,
+                      height: 25,
+                      decoration: BoxDecoration(
+                        color: colors.accentGreen.withValues(alpha: 0.3),
+                        shape: BoxShape.circle,
+                      ),
                     ),
                     const SizedBox(width: 8),
-                    Text('QUAN', style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600)),
+                    Text(
+                      'QUAN',
+                      style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
+                    ),
                   ],
                 ),
               ),
@@ -374,7 +401,10 @@ class _SwapScreenState extends State<SwapScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text('Rate', style: text.detail?.copyWith(color: colors.textSecondary)),
-            Text(_rateLabel, style: text.detail?.copyWith(color: colors.textSecondary, fontWeight: FontWeight.w500)),
+            Text(
+              _rateLabel,
+              style: text.detail?.copyWith(color: colors.textSecondary, fontWeight: FontWeight.w500),
+            ),
           ],
         ),
       ],
@@ -392,8 +422,15 @@ class _SwapScreenState extends State<SwapScreen> {
           padding: const EdgeInsets.symmetric(vertical: 20),
           child: Center(
             child: _loading
-                ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: colors.textPrimary, strokeWidth: 2))
-                : Text('Get a Quote', style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+                ? SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(color: colors.textPrimary, strokeWidth: 2),
+                  )
+                : Text(
+                    'Get a Quote',
+                    style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+                  ),
           ),
         ),
       ),
@@ -419,13 +456,17 @@ class _QrScanPage extends StatelessWidget {
             },
           ),
           Positioned(
-            bottom: 60, left: 24, right: 24,
+            bottom: 60,
+            left: 24,
+            right: 24,
             child: GestureDetector(
               onTap: () => Navigator.pop(context),
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(14)),
-                child: Center(child: Text('Cancel', style: TextStyle(color: colors.textPrimary, fontSize: 16))),
+                child: Center(
+                  child: Text('Cancel', style: TextStyle(color: colors.textPrimary, fontSize: 16)),
+                ),
               ),
             ),
           ),

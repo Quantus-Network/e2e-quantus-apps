@@ -42,12 +42,16 @@ class ActivityScreen extends ConsumerWidget {
                 Expanded(
                   child: accountAsync.when(
                     loading: () => Center(child: CircularProgressIndicator(color: colors.textPrimary)),
-                    error: (e, _) => Center(child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError))),
+                    error: (e, _) => Center(
+                      child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError)),
+                    ),
                     data: (active) {
                       if (active == null) return const Center(child: Text('No account'));
                       return txAsync.when(
                         loading: () => Center(child: CircularProgressIndicator(color: colors.textPrimary)),
-                        error: (e, _) => Center(child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError))),
+                        error: (e, _) => Center(
+                          child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError)),
+                        ),
                         data: (data) {
                           final txService = ref.read(transactionServiceProvider);
                           final all = txService.combineAndDeduplicateTransactions(
@@ -57,7 +61,12 @@ class ActivityScreen extends ConsumerWidget {
                             otherTransfers: data.otherTransfers,
                           );
                           if (all.isEmpty) {
-                            return Center(child: Text('No transactions yet', style: text.paragraph?.copyWith(color: colors.textSecondary)));
+                            return Center(
+                              child: Text(
+                                'No transactions yet',
+                                style: text.paragraph?.copyWith(color: colors.textSecondary),
+                              ),
+                            );
                           }
                           final grouped = _groupByDate(all);
                           return ListView.builder(
@@ -69,13 +78,25 @@ class ActivityScreen extends ConsumerWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   if (i > 0) const SizedBox(height: 40),
-                                  Text(group.label, style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+                                  Text(
+                                    group.label,
+                                    style: text.paragraph?.copyWith(
+                                      color: colors.textPrimary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
                                   const SizedBox(height: 20),
                                   ...group.transactions.map((tx) {
                                     final itemData = TxItemData.from(tx, active.account.accountId);
-                                    return buildTxItem(tx, itemData, colors, text, onTap: () {
-                                      showTransactionDetailSheet(context, tx, active.account.accountId);
-                                    });
+                                    return buildTxItem(
+                                      tx,
+                                      itemData,
+                                      colors,
+                                      text,
+                                      onTap: () {
+                                        showTransactionDetailSheet(context, tx, active.account.accountId);
+                                      },
+                                    );
                                   }),
                                 ],
                               );

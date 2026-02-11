@@ -127,13 +127,8 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
                 children: [
                   const SizedBox(height: 16),
                   _header(colors, text),
-                  Expanded(
-                    child: _step == _Step.success ? _successBody(colors, text) : _pinBody(colors, text),
-                  ),
-                  if (_step == _Step.success) ...[
-                    _doneButton(colors, text),
-                    const SizedBox(height: 24),
-                  ],
+                  Expanded(child: _step == _Step.success ? _successBody(colors, text) : _pinBody(colors, text)),
+                  if (_step == _Step.success) ...[_doneButton(colors, text), const SizedBox(height: 24)],
                 ],
               ),
             ],
@@ -164,7 +159,10 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
       child: Column(
         children: [
           const SizedBox(height: 80),
-          Text(_stepTitle, style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 24, fontWeight: FontWeight.w400)),
+          Text(
+            _stepTitle,
+            style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 24, fontWeight: FontWeight.w400),
+          ),
           const SizedBox(height: 32),
           _pinDots(colors),
           if (_error != null) ...[
@@ -214,8 +212,11 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
         const SizedBox(height: 24),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Text('Your PIN has been updated successfully',
-              style: text.paragraph?.copyWith(color: colors.textSecondary), textAlign: TextAlign.center),
+          child: Text(
+            'Your PIN has been updated successfully',
+            style: text.paragraph?.copyWith(color: colors.textSecondary),
+            textAlign: TextAlign.center,
+          ),
         ),
         const Spacer(flex: 3),
       ],
@@ -235,7 +236,10 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
             border: Border.all(color: Colors.white.withValues(alpha: 0.44)),
           ),
           child: Center(
-            child: Text('Done', style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+            child: Text(
+              'Done',
+              style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+            ),
           ),
         ),
       ),

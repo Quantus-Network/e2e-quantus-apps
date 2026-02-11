@@ -102,7 +102,10 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
       final walletIndices = getNonHardwareWalletIndices(accounts);
       if (walletIndices.isEmpty) return;
       if (walletIndices.length == 1) {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => RecoveryPhraseScreen(walletIndex: walletIndices.first)));
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => RecoveryPhraseScreen(walletIndex: walletIndices.first)),
+        );
       } else {
         Navigator.push(context, MaterialPageRoute(builder: (_) => const SelectWalletScreen()));
       }
@@ -176,17 +179,27 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
                     _section('Security', colors, text, [
                       _toggleItem('Biometric Lock', _biometricDesc, _biometricEnabled, _toggleBiometric, colors, text),
                       _divider(colors),
-                      _chevronItem('PIN Code', _hasPinSet ? '6-digit code' : 'Not set', colors, text,
-                          onTap: () async {
-                        await Navigator.push(context, MaterialPageRoute(builder: (_) => const ChangePinScreen()));
-                        _loadPinState();
-                      }),
+                      _chevronItem(
+                        'PIN Code',
+                        _hasPinSet ? '6-digit code' : 'Not set',
+                        colors,
+                        text,
+                        onTap: () async {
+                          await Navigator.push(context, MaterialPageRoute(builder: (_) => const ChangePinScreen()));
+                          _loadPinState();
+                        },
+                      ),
                       _divider(colors),
-                      _chevronItem('Auto-Lock', _autoLockLabel(), colors, text,
-                          onTap: () async {
-                        await Navigator.push(context, MaterialPageRoute(builder: (_) => const AutoLockScreen()));
-                        _loadSettings();
-                      }),
+                      _chevronItem(
+                        'Auto-Lock',
+                        _autoLockLabel(),
+                        colors,
+                        text,
+                        onTap: () async {
+                          await Navigator.push(context, MaterialPageRoute(builder: (_) => const AutoLockScreen()));
+                          _loadSettings();
+                        },
+                      ),
                     ]),
                     const SizedBox(height: 40),
                     _section('Wallet', colors, text, [
@@ -194,7 +207,14 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
                     ]),
                     const SizedBox(height: 40),
                     _section('Reversible Transactions', colors, text, [
-                      _toggleItem('Reversible Transactions', _reversibleEnabled ? 'Enabled' : 'Disabled', _reversibleEnabled, _toggleReversible, colors, text),
+                      _toggleItem(
+                        'Reversible Transactions',
+                        _reversibleEnabled ? 'Enabled' : 'Disabled',
+                        _reversibleEnabled,
+                        _toggleReversible,
+                        colors,
+                        text,
+                      ),
                       _divider(colors),
                       _chevronItem('Time Limit', _timeLimitLabel(), colors, text, onTap: () {}),
                       _divider(colors),
@@ -212,17 +232,42 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
                     _section('Preferences', colors, text, [
                       _chevronItem('Currency', 'USD (\$)', colors, text, onTap: () {}),
                       _divider(colors),
-                      _toggleItem('Notifications', notifConfig.enabled ? 'Transaction Alerts Enabled' : 'Alerts Disabled', notifConfig.enabled, _toggleNotifications, colors, text),
+                      _toggleItem(
+                        'Notifications',
+                        notifConfig.enabled ? 'Transaction Alerts Enabled' : 'Alerts Disabled',
+                        notifConfig.enabled,
+                        _toggleNotifications,
+                        colors,
+                        text,
+                      ),
                     ]),
                     const SizedBox(height: 40),
                     _section('About & Support', colors, text, [
-                      _externalItem('Help & Support', null, colors, text, onTap: () => launchUrl(Uri.parse(AppConstants.helpAndSupportUrl))),
+                      _externalItem(
+                        'Help & Support',
+                        null,
+                        colors,
+                        text,
+                        onTap: () => launchUrl(Uri.parse(AppConstants.helpAndSupportUrl)),
+                      ),
                       _divider(colors),
                       _chevronItem('About Quantus', 'Version 1.0.1', colors, text, onTap: () {}),
                       _divider(colors),
-                      _externalItem('Terms of Service', null, colors, text, onTap: () => launchUrl(Uri.parse(AppConstants.termsOfServiceUrl))),
+                      _externalItem(
+                        'Terms of Service',
+                        null,
+                        colors,
+                        text,
+                        onTap: () => launchUrl(Uri.parse(AppConstants.termsOfServiceUrl)),
+                      ),
                       _divider(colors),
-                      _externalItem('Privacy Policy', null, colors, text, onTap: () => launchUrl(Uri.parse(AppConstants.termsOfServiceUrl))),
+                      _externalItem(
+                        'Privacy Policy',
+                        null,
+                        colors,
+                        text,
+                        onTap: () => launchUrl(Uri.parse(AppConstants.termsOfServiceUrl)),
+                      ),
                     ]),
                     const SizedBox(height: 40),
                     _resetButton(colors, text),
@@ -241,21 +286,28 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+        Text(
+          title,
+          style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+        ),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: colors.surfaceCard,
-            borderRadius: BorderRadius.circular(14),
-          ),
+          decoration: BoxDecoration(color: colors.surfaceCard, borderRadius: BorderRadius.circular(14)),
           child: Column(children: children),
         ),
       ],
     );
   }
 
-  Widget _toggleItem(String title, String subtitle, bool value, ValueChanged<bool> onChanged, AppColorsV2 colors, AppTextTheme text) {
+  Widget _toggleItem(
+    String title,
+    String subtitle,
+    bool value,
+    ValueChanged<bool> onChanged,
+    AppColorsV2 colors,
+    AppTextTheme text,
+  ) {
     return Row(
       children: [
         Expanded(
@@ -268,16 +320,18 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
             ],
           ),
         ),
-        CupertinoSwitch(
-          value: value,
-          onChanged: onChanged,
-          activeTrackColor: colors.accentGreen,
-        ),
+        CupertinoSwitch(value: value, onChanged: onChanged, activeTrackColor: colors.accentGreen),
       ],
     );
   }
 
-  Widget _chevronItem(String title, String subtitle, AppColorsV2 colors, AppTextTheme text, {required VoidCallback onTap}) {
+  Widget _chevronItem(
+    String title,
+    String subtitle,
+    AppColorsV2 colors,
+    AppTextTheme text, {
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -299,7 +353,13 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
     );
   }
 
-  Widget _externalItem(String title, String? subtitle, AppColorsV2 colors, AppTextTheme text, {required VoidCallback onTap}) {
+  Widget _externalItem(
+    String title,
+    String? subtitle,
+    AppColorsV2 colors,
+    AppTextTheme text, {
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -359,7 +419,10 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
           border: Border.all(color: colors.danger),
         ),
         child: Center(
-          child: Text('Reset Quantus', style: text.paragraph?.copyWith(color: colors.danger, fontWeight: FontWeight.w500)),
+          child: Text(
+            'Reset Quantus',
+            style: text.paragraph?.copyWith(color: colors.danger, fontWeight: FontWeight.w500),
+          ),
         ),
       ),
     );

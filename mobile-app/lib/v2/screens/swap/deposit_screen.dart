@@ -57,9 +57,9 @@ class _DepositScreenState extends State<DepositScreen> {
 
   void _copyAddress() {
     Clipboard.setData(ClipboardData(text: _order.depositAddress));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Address copied'), duration: Duration(seconds: 1)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Address copied'), duration: Duration(seconds: 1)));
   }
 
   @override
@@ -120,7 +120,8 @@ class _DepositScreenState extends State<DepositScreen> {
             GestureDetector(
               onTap: () => Clipboard.setData(ClipboardData(text: quote.totalAmount.toStringAsFixed(2))),
               child: Container(
-                width: 20, height: 20,
+                width: 20,
+                height: 20,
                 decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(4)),
                 child: Center(child: Icon(Icons.copy, color: colors.textPrimary, size: 12)),
               ),
@@ -132,15 +133,22 @@ class _DepositScreenState extends State<DepositScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 28, height: 28,
+              width: 28,
+              height: 28,
               decoration: BoxDecoration(color: colors.accentPink.withValues(alpha: 0.3), shape: BoxShape.circle),
             ),
             const SizedBox(width: 8),
-            Text(quote.totalAmount.toStringAsFixed(2), style: text.mediumTitle?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600)),
+            Text(
+              quote.totalAmount.toStringAsFixed(2),
+              style: text.mediumTitle?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
+            ),
           ],
         ),
         const SizedBox(height: 8),
-        Text('\$${usd.toStringAsFixed(2)}', style: text.smallParagraph?.copyWith(color: colors.textSecondary, fontWeight: FontWeight.w500)),
+        Text(
+          '\$${usd.toStringAsFixed(2)}',
+          style: text.smallParagraph?.copyWith(color: colors.textSecondary, fontWeight: FontWeight.w500),
+        ),
         const SizedBox(height: 40),
         ClipRRect(
           borderRadius: BorderRadius.circular(9),
@@ -157,7 +165,11 @@ class _DepositScreenState extends State<DepositScreen> {
             children: [
               Text(
                 _order.depositAddress.toLowerCase(),
-                style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500, height: 1.35),
+                style: text.smallParagraph?.copyWith(
+                  color: colors.textPrimary,
+                  fontWeight: FontWeight.w500,
+                  height: 1.35,
+                ),
                 textAlign: TextAlign.center,
               ),
               Positioned(
@@ -166,7 +178,8 @@ class _DepositScreenState extends State<DepositScreen> {
                 child: GestureDetector(
                   onTap: _copyAddress,
                   child: Container(
-                    width: 20, height: 20,
+                    width: 20,
+                    height: 20,
                     decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(4)),
                     child: Center(child: Icon(Icons.copy, color: colors.textPrimary, size: 12)),
                   ),
@@ -187,7 +200,10 @@ class _DepositScreenState extends State<DepositScreen> {
                   children: [
                     Icon(Icons.copy, color: colors.textPrimary, size: 20),
                     const SizedBox(width: 8),
-                    Text('Copy', style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+                    Text(
+                      'Copy',
+                      style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+                    ),
                   ],
                 ),
               ),
@@ -202,7 +218,10 @@ class _DepositScreenState extends State<DepositScreen> {
                   children: [
                     Icon(Icons.qr_code, color: colors.textPrimary, size: 20),
                     const SizedBox(width: 8),
-                    Text('Share QR', style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+                    Text(
+                      'Share QR',
+                      style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+                    ),
                   ],
                 ),
               ),
@@ -215,9 +234,15 @@ class _DepositScreenState extends State<DepositScreen> {
             style: text.detail?.copyWith(color: colors.textSecondary, height: 1.35),
             children: [
               const TextSpan(text: 'Use your '),
-              TextSpan(text: quote.fromToken.symbol, style: const TextStyle(fontWeight: FontWeight.w600)),
+              TextSpan(
+                text: quote.fromToken.symbol,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
               const TextSpan(text: ' or '),
-              TextSpan(text: quote.fromToken.network, style: const TextStyle(fontWeight: FontWeight.w600)),
+              TextSpan(
+                text: quote.fromToken.network,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
               const TextSpan(text: ' wallet to deposit funds. Depositing other assets may result in loss of funds.'),
             ],
           ),
@@ -255,12 +280,11 @@ class _DepositScreenState extends State<DepositScreen> {
         ),
         const SizedBox(height: 40),
         if (AppConstants.stillOnTestnet)
-        Text(
-          'DEMO ONLY - WE ARE STILL ON TESTNET',
-          style: text.paragraph?.copyWith(color: Colors.yellow),
-          textAlign: TextAlign.center,
-        ),
-
+          Text(
+            'DEMO ONLY - WE ARE STILL ON TESTNET',
+            style: text.paragraph?.copyWith(color: Colors.yellow),
+            textAlign: TextAlign.center,
+          ),
       ],
     );
   }
@@ -271,8 +295,15 @@ class _DepositScreenState extends State<DepositScreen> {
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: Center(
         child: _confirming
-            ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: colors.textPrimary, strokeWidth: 2))
-            : Text("I've sent the funds", style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+            ? SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(color: colors.textPrimary, strokeWidth: 2),
+              )
+            : Text(
+                "I've sent the funds",
+                style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+              ),
       ),
     );
   }
@@ -282,7 +313,10 @@ class _DepositScreenState extends State<DepositScreen> {
       onTap: () => Navigator.popUntil(context, (r) => r.isFirst),
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: Center(
-        child: Text('Done', style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+        child: Text(
+          'Done',
+          style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+        ),
       ),
     );
   }

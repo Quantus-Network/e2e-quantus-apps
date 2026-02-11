@@ -59,8 +59,13 @@ class SwapOrder {
     required this.createdAt,
   });
 
-  SwapOrder copyWith({SwapStatus? status}) =>
-      SwapOrder(orderId: orderId, quote: quote, depositAddress: depositAddress, status: status ?? this.status, createdAt: createdAt);
+  SwapOrder copyWith({SwapStatus? status}) => SwapOrder(
+    orderId: orderId,
+    quote: quote,
+    depositAddress: depositAddress,
+    status: status ?? this.status,
+    createdAt: createdAt,
+  );
 }
 
 class SwapService {

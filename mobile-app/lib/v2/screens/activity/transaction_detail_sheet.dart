@@ -84,8 +84,8 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     final label = widget.tx.isReversibleScheduled
         ? (_isSend ? 'Pending' : 'Receiving')
         : _isSend
-            ? 'Sent'
-            : 'Received';
+        ? 'Sent'
+        : 'Received';
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -107,24 +107,26 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(14),
-      ),
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('$amount ${AppConstants.tokenSymbol}',
-                  style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 32, fontWeight: FontWeight.w600)),
+              Text(
+                '$amount ${AppConstants.tokenSymbol}',
+                style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 32, fontWeight: FontWeight.w600),
+              ),
             ],
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(date, style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+              Text(
+                date,
+                style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+              ),
               const SizedBox(height: 8),
               Text('At $time', style: text.detail?.copyWith(color: Colors.white.withValues(alpha: 0.5))),
             ],
@@ -141,14 +143,19 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(direction, style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600)),
+        Text(
+          direction,
+          style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
+        ),
         const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
-              child: Text(address,
-                  style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-                  overflow: TextOverflow.ellipsis),
+              child: Text(
+                address,
+                style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             const SizedBox(width: 8),
             _copyButton(colors, _counterparty),
@@ -176,10 +183,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
       child: Container(
         width: 20,
         height: 20,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(4),
-        ),
+        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
         child: const Icon(Icons.copy, size: 12, color: Colors.white),
       ),
     );
@@ -219,7 +223,10 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('View in Explorer', style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+            Text(
+              'View in Explorer',
+              style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+            ),
             const SizedBox(width: 8),
             Icon(Icons.open_in_new, size: 16, color: colors.textPrimary),
           ],
@@ -234,8 +241,8 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     final transactionType = isMinerReward
         ? 'miner-rewards'
         : (tx.isReversibleScheduled || tx.isReversibleExecuted || tx.isReversibleCancelled)
-            ? 'reversible-transactions'
-            : 'immediate-transactions';
+        ? 'reversible-transactions'
+        : 'immediate-transactions';
 
     String? path;
     if (tx.extrinsicHash != null) {
