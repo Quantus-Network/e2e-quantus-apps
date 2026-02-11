@@ -80,7 +80,15 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
                 _warning(colors, text),
                 const SizedBox(height: 40),
                 Expanded(child: SingleChildScrollView(child: _wordGrid(colors, text))),
-                if (_revealed) ...[const SizedBox(height: 16), _copyRow(colors, text)],
+                const SizedBox(height: 16),
+                IgnorePointer(
+                  ignoring: !_revealed,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 200),
+                    opacity: _revealed ? 1.0 : 0.0,
+                    child: _copyRow(colors, text),
+                  ),
+                ),
                 const SizedBox(height: 16),
                 _revealButton(colors, text),
                 const SizedBox(height: 24),
@@ -136,22 +144,38 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
       overflow: TextOverflow.ellipsis,
     );
 
-    return GlassButton(
-      radius: 8,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      child: Row(
-        children: [
-          Text('$index', style: text.detail?.copyWith(color: colors.textSecondary)),
-          const SizedBox(width: 6),
-          Expanded(
-            child: _revealed
-                ? wordWidget
-                : Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: ImageFiltered(imageFilter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), child: wordWidget),
+    return SizedBox(
+      height: 36,
+      child: GlassButton(
+        radius: 14,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        filled: true,
+        child: Row(
+          children: [
+            Text('$index', style: text.detail?.copyWith(color: colors.textSecondary)),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Stack(
+                alignment: Alignment.centerLeft,
+                children: [
+                  AnimatedOpacity(
+                    duration: const Duration(milliseconds: 50),
+                    opacity: _revealed ? 1.0 : 0.0,
+                    child: wordWidget,
                   ),
-          ),
-        ],
+                  AnimatedOpacity(
+                    duration: const Duration(milliseconds: 50),
+                    opacity: _revealed ? 0.0 : 1.0,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: ImageFiltered(imageFilter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), child: wordWidget),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
