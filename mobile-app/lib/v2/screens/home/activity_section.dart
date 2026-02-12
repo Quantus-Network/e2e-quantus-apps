@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/models/combined_transactions_list.dart';
+import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/activity_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
@@ -90,8 +91,15 @@ class ActivitySection extends ConsumerWidget {
               Text('Error loading transactions', style: text.detail?.copyWith(color: colors.textError)),
               const SizedBox(height: 12),
               GestureDetector(
-                onTap: () => onRetry?.call(),
-                child: Text('Retry', style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  ref.invalidate(activeAccountTransactionsProvider);
+                  onRetry?.call();
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  child: Text('Retry', style: text.smallParagraph?.copyWith(color: colors.textPrimary, decoration: TextDecoration.underline)),
+                ),
               ),
             ],
           ),
