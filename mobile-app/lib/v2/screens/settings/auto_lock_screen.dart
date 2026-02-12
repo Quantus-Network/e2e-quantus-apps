@@ -80,6 +80,7 @@ class _AutoLockScreenState extends State<AutoLockScreen> {
                 ),
                 const Spacer(),
                 GlassButton(
+                  height: 56,
                   onTap: _confirm,
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   child: Center(

@@ -38,6 +38,7 @@ class WelcomeScreenV2 extends StatelessWidget {
                 ),
                 const SizedBox(height: 64),
                 GlassButton(
+                  height: 56,
                   filled: true,
                   onTap: () => Navigator.push(
                     context,
@@ -55,6 +56,7 @@ class WelcomeScreenV2 extends StatelessWidget {
                 ),
                 const SizedBox(height: 32),
                 GlassButton(
+                  height: 56,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(

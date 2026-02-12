@@ -1,8 +1,8 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
+import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:share_plus/share_plus.dart';
@@ -74,46 +74,25 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
     final colors = context.colors;
     final text = context.themeText;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 40, 24, 40),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        border: Border.all(color: const Color(0xFF3D3D3D)),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return BottomSheetContainer(
+      title: 'Receive',
+      child: _accountId == null
+          ? Padding(
+              padding: const EdgeInsets.symmetric(vertical: 80),
+              child: Center(child: CircularProgressIndicator(color: colors.textPrimary)),
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Receive', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Icon(Icons.close, color: colors.textPrimary, size: 20),
-                ),
+                _buildQrCode(colors),
+                const SizedBox(height: 20),
+                _buildAddress(colors, text),
+                const SizedBox(height: 9),
+                _buildChecksum(colors, text),
+                const SizedBox(height: 32),
+                _buildButtons(colors, text),
               ],
             ),
-            const SizedBox(height: 32),
-            if (_accountId == null)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 80),
-                child: CircularProgressIndicator(color: colors.textPrimary),
-              )
-            else ...[
-              _buildQrCode(colors),
-              const SizedBox(height: 20),
-              _buildAddress(colors, text),
-              const SizedBox(height: 9),
-              _buildChecksum(colors, text),
-              const SizedBox(height: 32),
-              _buildButtons(colors, text),
-            ],
-          ],
-        ),
-      ),
     );
   }
 
@@ -267,11 +246,5 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
 }
 
 void showReceiveSheetV2(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    backgroundColor: Colors.transparent,
-    isScrollControlled: true,
-    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
-    builder: (_) => BackdropFilter(filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2), child: const ReceiveSheet()),
-  );
+  BottomSheetContainer.show(context, builder: (_) => const ReceiveSheet());
 }

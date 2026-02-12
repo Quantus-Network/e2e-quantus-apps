@@ -146,6 +146,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
                 Opacity(
                   opacity: _hasInput ? 1.0 : 0.2,
                   child: GlassButton(
+                    height: 56,
                     onTap: _hasInput && !_isLoading ? _import : null,
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     child: _isLoading

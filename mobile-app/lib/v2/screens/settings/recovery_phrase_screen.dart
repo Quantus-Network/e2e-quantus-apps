@@ -147,6 +147,7 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
     return SizedBox(
       height: 36,
       child: GlassButton(
+        height: 36,
         radius: 14,
         padding: const EdgeInsets.symmetric(horizontal: 10),
         filled: true,
@@ -196,6 +197,7 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
 
   Widget _revealButton(AppColorsV2 colors, AppTextTheme text) {
     return GlassButton(
+      height: 56,
       onTap: _toggleReveal,
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: Center(

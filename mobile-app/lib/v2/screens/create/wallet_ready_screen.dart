@@ -193,6 +193,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
                 ),
                 const SizedBox(height: 24),
                 GlassButton(
+                  height: 56,
                   onTap: canContinue ? _continue : null,
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   child: _isSubmitting
@@ -244,6 +245,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
             ),
             const SizedBox(height: 24),
             GlassButton(
+              height: 56,
               filled: true,
               onTap: () {
                 final v = controller.text.trim();
@@ -311,6 +313,7 @@ class _Field extends StatelessWidget {
                 width: 40,
                 height: 40,
                 child: GlassButton(
+                  height: 40,
                   filled: true,
                   radius: 8,
                   padding: EdgeInsets.zero,

@@ -1,18 +1,16 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
+import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 void showTransactionDetailSheet(BuildContext context, TransactionEvent tx, String activeAccountId) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
+  BottomSheetContainer.show(
+    context,
     builder: (_) => _TransactionDetailSheet(tx: tx, activeAccountId: activeAccountId),
   );
 }
@@ -33,6 +31,11 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
   bool get _isSend => widget.tx.from == widget.activeAccountId;
   String get _counterparty => _isSend ? widget.tx.to : widget.tx.from;
 
+  String get _title {
+    if (widget.tx.isReversibleScheduled) return _isSend ? 'Pending' : 'Receiving';
+    return _isSend ? 'Sent' : 'Received';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -46,55 +49,21 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     final colors = context.colors;
     final text = context.themeText;
 
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-      child: Container(
-        color: Colors.black54,
-        child: Center(
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 14),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A1A1A),
-              border: Border.all(color: const Color(0xFF3D3D3D)),
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _headerRow(colors, text),
-                const SizedBox(height: 72),
-                _amountCard(colors, text),
-                const SizedBox(height: 56),
-                _addressSection(colors, text),
-                const SizedBox(height: 56),
-                _feeRow(colors, text),
-                const SizedBox(height: 32),
-                _explorerButton(colors, text),
-              ],
-            ),
-          ),
-        ),
+    return BottomSheetContainer(
+      title: _title,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 40),
+          _amountCard(colors, text),
+          const SizedBox(height: 40),
+          _addressSection(colors, text),
+          _feeRow(colors, text),
+          const SizedBox(height: 32),
+          _explorerButton(colors, text),
+        ],
       ),
-    );
-  }
-
-  Widget _headerRow(AppColorsV2 colors, AppTextTheme text) {
-    final label = widget.tx.isReversibleScheduled
-        ? (_isSend ? 'Pending' : 'Receiving')
-        : _isSend
-        ? 'Sent'
-        : 'Received';
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
-        GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Icon(Icons.close, color: colors.textPrimary, size: 20),
-        ),
-      ],
     );
   }
 
@@ -111,22 +80,14 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '$amount ${AppConstants.tokenSymbol}',
-                style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 32, fontWeight: FontWeight.w600),
-              ),
-            ],
+          Text(
+            '$amount ${AppConstants.tokenSymbol}',
+            style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 32, fontWeight: FontWeight.w600),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                date,
-                style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-              ),
+              Text(date, style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
               const SizedBox(height: 8),
               Text('At $time', style: text.detail?.copyWith(color: Colors.white.withValues(alpha: 0.5))),
             ],
@@ -143,19 +104,12 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          direction,
-          style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
-        ),
+        Text(direction, style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600)),
         const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
-              child: Text(
-                address,
-                style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: Text(address, style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis),
             ),
             const SizedBox(width: 8),
             _copyButton(colors, _counterparty),
@@ -165,14 +119,13 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
           const SizedBox(height: 4),
           Row(
             children: [
-              Expanded(
-                child: Text(_checkphrase!, style: text.smallParagraph?.copyWith(color: const Color(0xFFED4CCE))),
-              ),
+              Expanded(child: Text(_checkphrase!, style: text.smallParagraph?.copyWith(color: colors.accentPink))),
               const SizedBox(width: 8),
               _copyButton(colors, _checkphrase!),
             ],
           ),
         ],
+        const SizedBox(height: 24),
       ],
     );
   }
@@ -191,22 +144,19 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
 
   Widget _feeRow(AppColorsV2 colors, AppTextTheme text) {
     BigInt? fee;
-    if (widget.tx is TransferEvent) {
-      fee = (widget.tx as TransferEvent).fee;
-    } else if (widget.tx is PendingTransactionEvent) {
-      fee = (widget.tx as PendingTransactionEvent).fee;
-    }
+    if (widget.tx is TransferEvent) fee = (widget.tx as TransferEvent).fee;
+    if (widget.tx is PendingTransactionEvent) fee = (widget.tx as PendingTransactionEvent).fee;
     if (fee == null || fee == BigInt.zero) return const SizedBox.shrink();
     final fmt = NumberFormattingService();
     final feeStr = '${fmt.formatBalance(fee)} ${AppConstants.tokenSymbol}';
     final style = text.detail?.copyWith(color: Colors.white.withValues(alpha: 0.5));
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text('Network Fee:', style: style),
-        Text(feeStr, style: style),
-      ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [Text('Network Fee:', style: style), Text(feeStr, style: style)],
+      ),
     );
   }
 
@@ -223,10 +173,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              'View in Explorer',
-              style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-            ),
+            Text('View in Explorer', style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
             const SizedBox(width: 8),
             Icon(Icons.open_in_new, size: 16, color: colors.textPrimary),
           ],
@@ -241,8 +188,8 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     final transactionType = isMinerReward
         ? 'miner-rewards'
         : (tx.isReversibleScheduled || tx.isReversibleExecuted || tx.isReversibleCancelled)
-        ? 'reversible-transactions'
-        : 'immediate-transactions';
+            ? 'reversible-transactions'
+            : 'immediate-transactions';
 
     String? path;
     if (tx.extrinsicHash != null) {
@@ -250,8 +197,6 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     } else if (isMinerReward && tx.blockHash != null) {
       path = '$transactionType/${tx.blockHash}';
     }
-    if (path != null) {
-      launchUrl(Uri.parse('${AppConstants.explorerEndpoint}/$path'));
-    }
+    if (path != null) launchUrl(Uri.parse('${AppConstants.explorerEndpoint}/$path'));
   }
 }
