@@ -19,7 +19,7 @@ class BottomSheetContainer extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         border: Border.all(color: const Color(0xFF3D3D3D)),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.circular(24),
       ),
       child: SafeArea(
         top: false,
@@ -51,10 +51,7 @@ class BottomSheetContainer extends StatelessWidget {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
-      builder: (ctx) => BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-        child: builder(ctx),
-      ),
+      builder: (ctx) => BackdropFilter(filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2), child: builder(ctx)),
     );
   }
 }

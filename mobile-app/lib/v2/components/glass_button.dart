@@ -9,7 +9,7 @@ class GlassButton extends StatelessWidget {
   final bool filled;
   final double height;
 
-  GlassButton({
+  const GlassButton({
     super.key,
     this.onTap,
     required this.child,
@@ -19,9 +19,6 @@ class GlassButton extends StatelessWidget {
     this.filled = false,
   });
 
-  final filledGradient = LinearGradient(colors: [Colors.white.withValues(alpha: 0.08), Colors.white.withValues(alpha: 0.04)]);
-  final emptyGradient = const LinearGradient(colors: [Colors.transparent, Colors.transparent]);
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -29,16 +26,31 @@ class GlassButton extends StatelessWidget {
       child: GlassContainer.clearGlass(
         height: height,
         borderRadius: BorderRadius.circular(radius),
-        gradient: filled ? filledGradient : emptyGradient,
-        borderGradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0x70FFFFFF), Color(0x18FFFFFF)],
-        ),
+        color: filled ? const Color(0xFFFFFFFF).withValues(alpha: 0.1) : Colors.transparent,
+        borderColor: const Color(0xFFFFFFFF).withValues(alpha: 0.66),
         borderWidth: 0.889,
         blur: 20,
-        child: Center(
-          child: child,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.2),
+                      Colors.transparent,
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.15),
+                    ],
+                    stops: const [0.0, 0.25, 0.75, 1.0],
+                  ),
+                ),
+              ),
+            ),
+            Center(child: child),
+          ],
         ),
       ),
     );
