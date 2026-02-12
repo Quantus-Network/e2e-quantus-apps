@@ -59,11 +59,12 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
 
       if (mounted) setState(() => _isLoading = false);
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _isLoading = false;
           _error = 'Failed to generate: $e';
         });
+      }
     }
   }
 
