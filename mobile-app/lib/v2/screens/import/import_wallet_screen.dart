@@ -54,11 +54,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       _settingsService.setExistingUserSeenPromoVideo();
 
       if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-        (route) => false,
-      );
+      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HomeScreen()), (route) => false);
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
     } finally {
@@ -68,10 +64,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
 
   Future<void> _discoverAccounts(String mnemonic) async {
     try {
-      final discovered = await _discoveryService.discoverAccounts(
-        mnemonic: mnemonic,
-        walletIndex: widget.walletIndex,
-      );
+      final discovered = await _discoveryService.discoverAccounts(mnemonic: mnemonic, walletIndex: widget.walletIndex);
       final existing = (await _accountsService.getAccounts()).map((e) => e.accountId).toSet();
       for (final account in discovered) {
         if (!existing.contains(account.accountId)) {
@@ -88,7 +81,12 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
     final colors = context.colors;
     final text = context.themeText;
 
-    var textSTyleSmallTitle = text.smallTitle?.copyWith(fontSize: 20, color: colors.textPrimary, fontWeight: FontWeight.w400, height: 1.35);
+    var textSTyleSmallTitle = text.smallTitle?.copyWith(
+      fontSize: 20,
+      color: colors.textPrimary,
+      fontWeight: FontWeight.w400,
+      height: 1.35,
+    );
     return Scaffold(
       backgroundColor: colors.background,
       body: GradientBackground(
@@ -138,7 +136,11 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 16),
-                  Text(_error!, style: text.detail?.copyWith(color: colors.error), textAlign: TextAlign.center),
+                  Text(
+                    _error!,
+                    style: text.detail?.copyWith(color: colors.error),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
                 const Spacer(),
                 Opacity(
@@ -147,8 +149,23 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
                     onTap: _hasInput && !_isLoading ? _import : null,
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     child: _isLoading
-                        ? Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: colors.textPrimary)))
-                        : Center(child: Text('Import Wallet', style: text.paragraph?.copyWith(fontSize: 16, fontWeight: FontWeight.w500, color: colors.textPrimary))),
+                        ? Center(
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: colors.textPrimary),
+                            ),
+                          )
+                        : Center(
+                            child: Text(
+                              'Import Wallet',
+                              style: text.paragraph?.copyWith(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: colors.textPrimary,
+                              ),
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 24),

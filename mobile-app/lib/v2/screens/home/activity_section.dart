@@ -98,7 +98,13 @@ class ActivitySection extends ConsumerWidget {
                 },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  child: Text('Retry', style: text.smallParagraph?.copyWith(color: colors.textPrimary, decoration: TextDecoration.underline)),
+                  child: Text(
+                    'Retry',
+                    style: text.smallParagraph?.copyWith(
+                      color: colors.textPrimary,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
                 ),
               ),
             ],
