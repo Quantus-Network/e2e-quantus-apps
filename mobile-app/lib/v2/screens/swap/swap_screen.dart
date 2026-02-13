@@ -193,6 +193,8 @@ class _SwapScreenState extends State<SwapScreen> {
               child: SizedBox(
                 width: 119,
                 child: GlassContainer(
+                  asset: GlassContainer.mediumAsset,
+                  filled: true,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   child: Row(
                     children: [
@@ -359,6 +361,8 @@ class _SwapScreenState extends State<SwapScreen> {
               width: 119,
               height: 56,
               child: GlassContainer(
+                asset: GlassContainer.mediumAsset,
+                filled: true,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

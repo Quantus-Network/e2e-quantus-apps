@@ -110,6 +110,7 @@ flutter:
     - assets/v2/swap_button.png
     - assets/v2/glass_border_bg.png
     - assets/v2/glass_medium_button_bg.png
+    - assets/v2/glass_medium_clear.png
     - assets/v2/glass_button_40_bg.png
     - assets/v2/glass_button_wide_340_bg.png
     - assets/v2/glass_circle_icon_button_bg.png
@@ -122,6 +123,7 @@ flutter:
     - assets/v2/swap_clock_counter_clockwise.svg
     - assets/v2/swap_qr_code.svg
     - assets/v2/quantus_white_logo.png
+
     
 
   fonts:

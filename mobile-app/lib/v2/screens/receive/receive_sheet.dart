@@ -3,6 +3,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
+import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:share_plus/share_plus.dart';
@@ -199,12 +200,9 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
         Expanded(
           child: GestureDetector(
             onTap: _copyAddress,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.44)),
-              ),
+            child: GlassContainer(
+              filled: false,
+              asset: GlassContainer.mediumAsset,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -223,9 +221,9 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
         Expanded(
           child: GestureDetector(
             onTap: _share,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(14)),
+            child: GlassContainer(
+              filled: true,
+              asset: GlassContainer.mediumAsset,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
