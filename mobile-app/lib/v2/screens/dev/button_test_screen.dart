@@ -179,16 +179,13 @@ class ButtonTestScreen extends StatelessWidget {
               const SizedBox(height: 16),
 
               _label('TARGET: PNG wide', colors, text),
-              SizedBox(
-                height: 56,
-                child: GlassContainer(
-                  asset: GlassContainer.wideAsset,
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                  child: Center(
-                    child: Text(
-                      'Wide PNG',
-                      style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-                    ),
+              GlassContainer(
+                asset: GlassContainer.wideAsset,
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                child: Center(
+                  child: Text(
+                    'Wide PNG',
+                    style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
                   ),
                 ),
               ),
