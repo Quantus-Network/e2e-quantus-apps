@@ -264,9 +264,10 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     if (hasRecipient) {
       return GestureDetector(
         onTap: () => _recipientController.clear(),
-        child: GlassContainer(
-          asset: GlassContainer.wideAsset,
+        child: Container(
+          width: double.infinity,
           padding: const EdgeInsets.fromLTRB(12, 14, 8, 14),
+          decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(8)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -293,13 +294,18 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     return SizedBox(
       width: double.infinity,
       height: 56,
-      child: GlassContainer(
-        asset: GlassContainer.wideAsset,
-        padding: const EdgeInsets.fromLTRB(12, 14, 8, 14),
+      child: Container(
+        alignment: Alignment.center,
+        padding: const EdgeInsets.only(left: 12, right: 8),
+        decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(8)),
         child: TextField(
           controller: _recipientController,
+          textAlignVertical: TextAlignVertical.center,
           style: text.smallParagraph?.copyWith(color: colors.textPrimary),
           decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.transparent,
+            isDense: true,
             contentPadding: EdgeInsets.zero,
             border: InputBorder.none,
             enabledBorder: InputBorder.none,

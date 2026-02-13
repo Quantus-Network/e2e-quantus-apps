@@ -209,7 +209,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
                     _section('Reversible Transactions', colors, text, [
                       _toggleItem(
                         'Reversible Transactions',
-                        _reversibleEnabled ? 'Enabled' : 'Disabled',
+                        'Coming Soon', //_reversibleEnabled ? 'Enabled' : 'Disabled',
                         _reversibleEnabled,
                         _toggleReversible,
                         colors,
@@ -251,18 +251,8 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
                         onTap: () => launchUrl(Uri.parse(AppConstants.helpAndSupportUrl)),
                       ),
                       _divider(colors),
-                      _chevronItem('About Quantus', 'Version 1.0.1', colors, text, onTap: () {}),
-                      _divider(colors),
                       _externalItem(
-                        'Terms of Service',
-                        null,
-                        colors,
-                        text,
-                        onTap: () => launchUrl(Uri.parse(AppConstants.termsOfServiceUrl)),
-                      ),
-                      _divider(colors),
-                      _externalItem(
-                        'Privacy Policy',
+                        'Privacy & Terms of Service',
                         null,
                         colors,
                         text,
