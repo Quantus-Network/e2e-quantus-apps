@@ -427,7 +427,6 @@ class _SwapScreenState extends State<SwapScreen> {
         opacity: enabled ? 1.0 : 0.4,
         child: GlassContainer(
           asset: GlassContainer.wideAsset,
-          padding: const EdgeInsets.symmetric(vertical: 20),
           child: Center(
             child: _loading
                 ? SizedBox(
