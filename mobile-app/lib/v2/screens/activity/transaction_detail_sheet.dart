@@ -180,7 +180,6 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
       onTap: _openExplorer,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.white.withValues(alpha: 0.44)),
