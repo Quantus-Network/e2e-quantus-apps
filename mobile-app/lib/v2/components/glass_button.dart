@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:glass_kit/glass_kit.dart';
+import 'dart:ui';
 
 class GlassButton extends StatelessWidget {
   final VoidCallback? onTap;
@@ -21,35 +21,75 @@ class GlassButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final borderRadius = BorderRadius.circular(radius);
+    final outerBorderColor = filled
+        ? const Color(0xFFFFFFFF).withValues(alpha: 0.32)
+        : const Color(0xFFFFFFFF).withValues(alpha: 0.44);
+    final innerBorderColor = filled
+        ? const Color(0xFFFFFFFF).withValues(alpha: 0.18)
+        : const Color(0xFFFFFFFF).withValues(alpha: 0.12);
+
     return GestureDetector(
       onTap: onTap,
-      child: GlassContainer.clearGlass(
+      child: SizedBox(
         height: height,
-        borderRadius: BorderRadius.circular(radius),
-        color: filled ? const Color(0xFFFFFFFF).withValues(alpha: 0.1) : Colors.transparent,
-        borderColor: const Color(0xFFFFFFFF).withValues(alpha: 0.66),
-        borderWidth: 0.889,
-        blur: 20,
+        width: double.infinity,
         child: Stack(
+          fit: StackFit.expand,
           children: [
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.2),
-                      Colors.transparent,
-                      Colors.transparent,
-                      Colors.black.withValues(alpha: 0.15),
-                    ],
-                    stops: const [0.0, 0.25, 0.75, 1.0],
+            ClipRRect(
+              borderRadius: borderRadius,
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: borderRadius,
+                    color: filled ? const Color(0xFFFFFFFF).withValues(alpha: 0.1) : Colors.transparent,
                   ),
                 ),
               ),
             ),
-            Center(child: child),
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: borderRadius,
+                  border: Border.all(color: outerBorderColor, width: 0.889),
+                ),
+              ),
+            ),
+            Positioned.fill(
+              child: Padding(
+                padding: const EdgeInsets.all(1),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(radius - 1),
+                    border: Border.all(color: innerBorderColor, width: 0.6),
+                  ),
+                ),
+              ),
+            ),
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: borderRadius,
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.12),
+                      Colors.transparent,
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.16),
+                    ],
+                    stops: const [0.0, 0.22, 0.78, 1.0],
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: padding,
+              child: Center(child: child),
+            ),
           ],
         ),
       ),

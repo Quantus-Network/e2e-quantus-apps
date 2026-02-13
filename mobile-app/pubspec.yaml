@@ -112,6 +112,15 @@ flutter:
     - assets/v2/glass_medium_button_bg.png
     - assets/v2/glass_button_40_bg.png
     - assets/v2/glass_button_wide_340_bg.png
+    - assets/v2/glass_circle_icon_button_bg.png
+    - assets/v2/glass_104_x_80.png
+    - assets/v2/glass_40.png
+    - assets/v2/action_receive.svg
+    - assets/v2/action_send.svg
+    - assets/v2/action_swap.svg
+    - assets/v2/swap_arrows_down_up.svg
+    - assets/v2/swap_clock_counter_clockwise.svg
+    - assets/v2/swap_qr_code.svg
     
 
   fonts:
