@@ -140,7 +140,7 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
   Widget _wordChip(int index, String word, AppColorsV2 colors, AppTextTheme text) {
     final wordWidget = Text(
       word,
-       textHeightBehavior: TextHeightBehavior(applyHeightToFirstAscent: false),
+      textHeightBehavior: TextHeightBehavior(applyHeightToFirstAscent: false),
       style: text.detail?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
       overflow: TextOverflow.ellipsis,
     );

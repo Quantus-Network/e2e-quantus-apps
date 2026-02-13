@@ -13,10 +13,8 @@ class GlassContainer extends StatelessWidget {
 
   const GlassContainer({super.key, required this.child, this.padding, this.asset = mediumAsset});
 
-
   @override
   Widget build(BuildContext context) {
-    
     return SizedBox(
       width: double.infinity,
       height: height,
