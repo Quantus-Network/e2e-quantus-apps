@@ -140,6 +140,7 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
   Widget _wordChip(int index, String word, AppColorsV2 colors, AppTextTheme text) {
     final wordWidget = Text(
       word,
+       textHeightBehavior: TextHeightBehavior(applyHeightToFirstAscent: false),
       style: text.detail?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
       overflow: TextOverflow.ellipsis,
     );
@@ -152,7 +153,10 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 10),
         filled: true,
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            const SizedBox(width: 8),
             Text('$index', style: text.detail?.copyWith(color: colors.textSecondary)),
             const SizedBox(width: 6),
             Expanded(
