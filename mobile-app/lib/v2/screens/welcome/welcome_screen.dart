@@ -59,7 +59,7 @@ class WelcomeScreenV2 extends StatelessWidget {
                 ),
                 const SizedBox(height: 32),
                 GlassContainer(
-                  asset: GlassContainer.wideAsset,
+                  asset: GlassContainer.wideClearAsset,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
