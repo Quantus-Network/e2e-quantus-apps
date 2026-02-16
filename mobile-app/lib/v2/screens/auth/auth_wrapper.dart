@@ -41,7 +41,7 @@ class AuthWrapper extends ConsumerWidget {
             Padding(
               padding: EdgeInsets.symmetric(horizontal: context.themeSize.screenPadding),
               child: GlassContainer(
-                asset: GlassContainer.wideAsset,
+                asset: GlassContainer.wideClearAsset,
                 onTap: () {
                   ref.read(localAuthProvider.notifier).authenticate();
                 },
