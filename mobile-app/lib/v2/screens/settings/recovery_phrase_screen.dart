@@ -1,9 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
+import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
 import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
@@ -50,8 +49,7 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
   }
 
   void _copyToClipboard() {
-    Clipboard.setData(ClipboardData(text: _words.join(' ')));
-    showCopySnackbar(context, title: 'Copied!', message: 'Recovery phrase copied to clipboard');
+    context.copyTextWithToaster(_words.join(' '), message: 'Recovery phrase copied to clipboard');
   }
 
   @override
