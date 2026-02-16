@@ -31,10 +31,13 @@ class WelcomeScreenV2 extends StatelessWidget {
                   ],
                 ),
                 const Spacer(),
-                Text(
-                  'Quantum Secure\nCrypto',
-                  textAlign: TextAlign.left,
-                  style: text.largeTitle?.copyWith(fontSize: 32, height: 1.35, color: Colors.white),
+                SizedBox(
+                  width: double.infinity,
+                  child: Text(
+                    'Quantum Secure\nCrypto',
+                    textAlign: TextAlign.center,
+                    style: text.largeTitle?.copyWith(fontSize: 32, height: 1.35, color: Colors.white),
+                  ),
                 ),
                 const SizedBox(height: 64),
                 GlassContainer(
