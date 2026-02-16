@@ -39,12 +39,7 @@ Future<void> showCopyToaster(BuildContext context, {required String message}) as
 }
 
 Future<void> showWarningToaster(BuildContext context, {required String message}) async {
-  await showToaster(
-    context,
-    message: message,
-    iconData: Icons.warning,
-    iconColor: Colors.amber,
-  );
+  await showToaster(context, message: message, iconData: Icons.warning, iconColor: Colors.amber);
 }
 
 Future<void> showInfoToaster(BuildContext context, {required String message}) async {
@@ -62,10 +57,5 @@ Future<void> showErrorToaster(BuildContext context, {required String message}) a
 }
 
 Future<void> showSuccessToaster(BuildContext context, {required String message}) async {
-  await showToaster(
-    context,
-    message: message,
-    iconData: Icons.check_circle_rounded,
-    iconColor: context.colors.success,
-  );
+  await showToaster(context, message: message, iconData: Icons.check_circle_rounded, iconColor: context.colors.success);
 }

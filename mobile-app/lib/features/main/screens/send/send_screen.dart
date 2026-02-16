@@ -598,7 +598,10 @@ class SendScreenState extends ConsumerState<SendScreen> {
                             padding: const EdgeInsets.only(bottom: 10.0),
                             child: InkWell(
                               onTap: () async {
-                                context.copyTextWithToaster(_humanReadableCheckphrase, message: 'Check phrase copied to clipboard');
+                                context.copyTextWithToaster(
+                                  _humanReadableCheckphrase,
+                                  message: 'Check phrase copied to clipboard',
+                                );
                                 HapticFeedback.lightImpact();
                               },
                               borderRadius: BorderRadius.circular(4),

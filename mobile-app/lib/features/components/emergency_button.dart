@@ -33,9 +33,7 @@ class EmergencyButton extends ConsumerWidget {
                     await highSecurityService.pullAllFunds(activeDisplayAccount.account.accountId, guardianAccount);
 
                     if (context.mounted) {
-                      context.showSuccessToaster(
-                        message: 'Emergency funds pull initiated successfully',
-                      );
+                      context.showSuccessToaster(message: 'Emergency funds pull initiated successfully');
                     }
                   } catch (e) {
                     print('Error: Failed to pull funds: $e');

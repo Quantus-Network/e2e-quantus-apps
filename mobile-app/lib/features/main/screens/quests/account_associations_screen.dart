@@ -52,9 +52,7 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
       }
 
       if (mounted) {
-        context.showSuccessToaster(
-          message: 'Your ETH address is successfully associated',
-        );
+        context.showSuccessToaster(message: 'Your ETH address is successfully associated');
       }
 
       ref.invalidate(accountAssociationsProvider);

@@ -291,10 +291,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
                   style: context.themeText.smallParagraph,
                 ),
               ),
-              InkWell(
-                child: const CopyIcon(),
-                onTap: () => context.copyTextWithToaster(widget.account.accountId),
-              ),
+              InkWell(child: const CopyIcon(), onTap: () => context.copyTextWithToaster(widget.account.accountId)),
             ],
           ),
         ),
