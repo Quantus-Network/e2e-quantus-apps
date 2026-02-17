@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/migration_dialog.dart';
-import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
-import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
+// import 'package:resonance_network_wallet/v2/screens/dev/button_test_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/utils/env_utils.dart';
 
@@ -160,25 +160,21 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
 
   @override
   Widget build(BuildContext context) {
-    final hasTxIntent = ref.read(transactionIntentProvider) != null;
-    // If we have value of tx that means we got arguments from notification tap,
-    // so we wanted to display the transactions history screen instead which is index 1.
-    final initialIndex = hasTxIntent ? 1 : 0;
-
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // If migration is needed, render a neutral background (no spinner) while
-    // the bottom sheet is presented, to avoid a loading indicator behind it.
     if (_needsMigration) {
       return const Scaffold(body: SizedBox.shrink());
     }
 
+    // for testing buttons
+    // return const ButtonTestScreen();
+
     if (_walletExists) {
-      return Navbar(initialIndex: initialIndex);
+      return const HomeScreen();
     } else {
-      return const WelcomeScreen();
+      return const WelcomeScreenV2();
     }
   }
 }
