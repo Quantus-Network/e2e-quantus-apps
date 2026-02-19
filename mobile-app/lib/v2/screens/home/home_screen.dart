@@ -6,7 +6,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
-import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/home/accounts_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
@@ -144,7 +144,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         GestureDetector(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountsScreen())),
+          onTap: () => showAccountsSheet(context),
           child: AccountGradientImage(accountId: active.account.accountId, width: 40.0, height: 40.0),
         ),
         Row(
@@ -206,10 +206,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             error: (_, _) => Text('Error loading balance', style: text.detail?.copyWith(color: colors.textError)),
           ),
-          if (!isBalanceHidden) ...[
-            const SizedBox(height: 6),
-            Text('≈ \$0.00', style: text.paragraph?.copyWith(color: colors.textSecondary)),
-          ],
+          // if (!isBalanceHidden) ...[
+          //   const SizedBox(height: 6),
+          //   Text('≈ \$0.00', style: text.paragraph?.copyWith(color: colors.textSecondary)),
+          // ],
         ],
       ),
     );
