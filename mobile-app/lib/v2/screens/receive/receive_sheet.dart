@@ -175,11 +175,15 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
   }
 
   Widget _copyButton(AppColorsV2 colors) {
-    return Container(
+    return SizedBox(
       width: 20,
       height: 20,
-      decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(4)),
-      child: Icon(Icons.copy, size: 12, color: colors.textPrimary),
+      child: GlassContainer(
+        asset: GlassContainer.tinyAsset,
+        filled: false,
+        onTap: _copyAddress,
+        child: Icon(Icons.copy, size: 12, color: colors.textPrimary),
+      ),
     );
   }
 
