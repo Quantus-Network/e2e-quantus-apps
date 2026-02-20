@@ -69,6 +69,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
   }
 
   Future<void> _fetchPage(List<String> targetAccountIds) async {
+    final sw = Stopwatch()..start();
     try {
       print(
         'UnifiedPaginationController: Fetching page for accounts:'
@@ -79,12 +80,14 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
           .read(chainHistoryServiceProvider)
           .fetchAllTransactionTypes(accountIds: targetAccountIds, limit: _limit, offset: state.offset);
 
+      sw.stop();
       final newItems = newTransactions.otherTransfers;
       print(
         'UnifiedPaginationController: Fetched ${newItems.length} '
         'transactions, ${newTransactions.reversibleTransfers.length} '
         'reversible',
       );
+      print('[TIMING] _fetchPage TOTAL: ${sw.elapsedMilliseconds}ms');
       state = state.copyWith(
         items: [...state.items, ...newItems],
         reversibleTransfers: state.offset == 0 ? newTransactions.reversibleTransfers : state.reversibleTransfers,
@@ -95,7 +98,8 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
         stackTrace: null,
       );
     } catch (e, st) {
-      print('Fetch page failed: $e\n$st');
+      sw.stop();
+      print('Fetch page failed after ${sw.elapsedMilliseconds}ms: $e\n$st');
       state = state.copyWith(error: e, stackTrace: st, isFetching: false);
     }
   }

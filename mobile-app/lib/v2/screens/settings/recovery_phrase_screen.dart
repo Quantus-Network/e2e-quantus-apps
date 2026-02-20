@@ -32,9 +32,7 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
       });
       return;
     }
-    final ok = await _authService.authenticate(
-      localizedReason: 'Authenticate to reveal recovery phrase',
-    );
+    final ok = await _authService.authenticate(localizedReason: 'Authenticate to reveal recovery phrase');
     if (!ok || !mounted) return;
     final mnemonic = await _settingsService.getMnemonic(widget.walletIndex);
     if (mnemonic != null && mounted) {

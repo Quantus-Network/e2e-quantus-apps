@@ -38,20 +38,14 @@ class LocalAuthService {
     }
   }
 
-  Future<bool> authenticate({
-    String localizedReason = 'Please authenticate to access your wallet',
-  }) async {
+  Future<bool> authenticate({String localizedReason = 'Please authenticate to access your wallet'}) async {
     try {
       final isAvailable = await isBiometricAvailable();
       if (!isAvailable) return true;
 
       final didAuthenticate = await _localAuth.authenticate(
         localizedReason: localizedReason,
-        options: const AuthenticationOptions(
-          biometricOnly: false,
-          stickyAuth: true,
-          sensitiveTransaction: true,
-        ),
+        options: const AuthenticationOptions(biometricOnly: false, stickyAuth: true, sensitiveTransaction: true),
       );
 
       if (didAuthenticate) _cleanLastPausedTime();

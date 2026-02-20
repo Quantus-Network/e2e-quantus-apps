@@ -35,6 +35,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   static const _actionButtonBgAsset = 'assets/v2/glass_104_x_80.png';
 
   final NumberFormattingService _fmt = NumberFormattingService();
+  Stopwatch? _txLoadingStopwatch;
 
   Future<void> _refresh() async {
     final active = ref.read(activeAccountProvider).value;
@@ -71,6 +72,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final accountAsync = ref.watch(activeAccountProvider);
     final balanceAsync = ref.watch(balanceProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider);
+    if (txAsync.isLoading && _txLoadingStopwatch == null) {
+      _txLoadingStopwatch = Stopwatch()..start();
+      print('[UI-TIMING] Transaction loading spinner STARTED');
+    } else if (!txAsync.isLoading && _txLoadingStopwatch != null) {
+      _txLoadingStopwatch!.stop();
+      print('[UI-TIMING] Transaction loading spinner ENDED after ${_txLoadingStopwatch!.elapsedMilliseconds}ms');
+      _txLoadingStopwatch = null;
+    }
     final colors = context.colors;
     final text = context.themeText;
 
