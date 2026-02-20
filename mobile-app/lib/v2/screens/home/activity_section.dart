@@ -131,10 +131,7 @@ class ActivitySection extends ConsumerWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0x3F000000),
-        borderRadius: BorderRadius.circular(5),
-      ),
+      decoration: BoxDecoration(color: const Color(0x3F000000), borderRadius: BorderRadius.circular(5)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
