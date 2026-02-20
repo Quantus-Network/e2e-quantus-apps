@@ -244,7 +244,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
                         null,
                         colors,
                         text,
-                        onTap: () => launchUrl(Uri.parse(AppConstants.helpAndSupportUrl)),
+                        onTap: () => launchUrl(Uri.parse(AppConstants.techSupportUrl)),
                       ),
                       _divider(colors),
                       _externalItem(

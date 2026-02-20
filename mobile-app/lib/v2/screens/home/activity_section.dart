@@ -124,9 +124,8 @@ class ActivitySection extends ConsumerWidget {
     final linkStyle = text.smallParagraph?.copyWith(color: colors.textPrimary);
     final links = [
       ('Get Testnet Tokens →', AppConstants.faucetBotUrl),
-      ('Tutorials & Guides →', AppConstants.tutorialsAndGuidesUrl),
       ('Community →', AppConstants.communityUrl),
-      ('Tech Support →', AppConstants.helpAndSupportUrl),
+      ('Tech Support →', AppConstants.techSupportUrl),
     ];
 
     return Container(
