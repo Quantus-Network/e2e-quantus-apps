@@ -203,7 +203,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ListItem(
           title: 'Help & Support',
           onTap: () {
-            final Uri url = Uri.parse(AppConstants.helpAndSupportUrl);
+            final Uri url = Uri.parse(AppConstants.techSupportUrl);
             launchUrl(url);
           },
           trailing: const Icon(Icons.arrow_outward_sharp),
