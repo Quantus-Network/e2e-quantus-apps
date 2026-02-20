@@ -343,6 +343,12 @@ query SearchPendingTransaction(
 }
 ''';
 
+  void printTiming(String label, int milliseconds) {
+    if (AppConstants.debugQueryTiming) {
+      print('[TIMING] $label: $milliseconds ms');
+    }
+  }
+
   Future<SortedTransactionsList> fetchAllTransactionTypes({
     required List<String> accountIds,
     int limit = 20,
@@ -355,7 +361,7 @@ query SearchPendingTransaction(
       () async {
         final sw = Stopwatch()..start();
         final r = await fetchScheduledTransfers(accountIds: accountIds);
-        print('[TIMING] fetchScheduledTransfers: ${sw.elapsedMilliseconds}ms');
+        printTiming('fetchScheduledTransfers', sw.elapsedMilliseconds);
         return r;
       }(),
       () async {
@@ -366,13 +372,13 @@ query SearchPendingTransaction(
           offset: offset,
           printName: printName,
         );
-        print('[TIMING] _fetchOtherTransfers: ${sw.elapsedMilliseconds}ms');
+        printTiming('_fetchOtherTransfers', sw.elapsedMilliseconds);
         return r;
       }(),
     ]);
 
     totalSw.stop();
-    print('[TIMING] fetchAllTransactionTypes TOTAL: ${totalSw.elapsedMilliseconds}ms');
+    printTiming('fetchAllTransactionTypes', totalSw.elapsedMilliseconds);
 
     final scheduled = results[0] as List<ReversibleTransferEvent>;
     final other = results[1] as TransferList;
@@ -389,10 +395,6 @@ query SearchPendingTransaction(
     if (transactionHashes.isEmpty) {
       return [];
     }
-
-    // print(
-    //   'Fetching transactions by hash: $transactionHashes (limit: $limit, offset: $offset)',
-    // );
 
     final Map<String, dynamic> requestBody = {
       'query': _transactionsByHashQuery,
@@ -444,9 +446,6 @@ query SearchPendingTransaction(
         }
       }
 
-      // print(
-      //   'Found ${transactions.length} transactions for ${transactionHashes.length} hashes',
-      // );
       for (final t in transactions) {
         print('${t.id} ${t.extrinsicHash} ${(t as ReversibleTransferEvent).status}');
       }
@@ -474,7 +473,7 @@ query SearchPendingTransaction(
     try {
       final http.Response response = await _graphQlEndpointService.post(body: jsonBody);
       sw.stop();
-      print('[TIMING] fetchScheduledTransfers HTTP: ${sw.elapsedMilliseconds}ms (status: ${response.statusCode})');
+      printTiming('fetchScheduledTransfers HTTP', sw.elapsedMilliseconds);
 
       if (response.statusCode != 200) {
         throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
@@ -495,7 +494,7 @@ query SearchPendingTransaction(
       return result;
     } catch (e, stackTrace) {
       sw.stop();
-      print('[TIMING] fetchScheduledTransfers FAILED after ${sw.elapsedMilliseconds}ms');
+      printTiming('fetchScheduledTransfers FAILED', sw.elapsedMilliseconds);
       print('Error fetching scheduled transfers: $e');
       print(stackTrace);
       rethrow;
@@ -517,7 +516,7 @@ query SearchPendingTransaction(
 
     final sw = Stopwatch()..start();
     final http.Response response = await _graphQlEndpointService.post(body: body);
-    print('[TIMING] $label HTTP: ${sw.elapsedMilliseconds}ms');
+    printTiming('$label HTTP', sw.elapsedMilliseconds);
 
     if (response.statusCode != 200) {
       throw Exception('GraphQL $label failed: ${response.statusCode}. Body: ${response.body}');
@@ -592,15 +591,12 @@ query SearchPendingTransaction(
       final totalFetched = results[0].length + results[1].length + results[2].length;
 
       sw.stop();
-      print(
-        '[TIMING] _fetchOtherTransfers TOTAL: ${sw.elapsedMilliseconds}ms '
-        '(${results[0].length} transfers, ${results[1].length} reversible, ${results[2].length} rewards)',
-      );
+      printTiming('_fetchOtherTransfers TOTAL', sw.elapsedMilliseconds);
 
       return TransferList(transfers: trimmed, hasMore: totalFetched >= limit, nextOffset: offset + trimmed.length);
     } catch (e, stackTrace) {
       sw.stop();
-      print('[TIMING] _fetchOtherTransfers FAILED after ${sw.elapsedMilliseconds}ms');
+      printTiming('_fetchOtherTransfers FAILED', sw.elapsedMilliseconds);
       print('Error fetching transfers: $e');
       print(stackTrace);
       rethrow;
