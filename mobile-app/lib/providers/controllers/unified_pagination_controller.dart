@@ -69,37 +69,34 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
   }
 
   Future<void> _fetchPage(List<String> targetAccountIds) async {
-    final sw = Stopwatch()..start();
     try {
-      print(
-        'UnifiedPaginationController: Fetching page for accounts:'
-        ' $targetAccountIds, offset: ${state.offset}',
-      );
       state = state.copyWith(isFetching: true);
-      final newTransactions = await ref
-          .read(chainHistoryServiceProvider)
-          .fetchAllTransactionTypes(accountIds: targetAccountIds, limit: _limit, offset: state.offset);
-
-      sw.stop();
-      final newItems = newTransactions.otherTransfers;
-      print(
-        'UnifiedPaginationController: Fetched ${newItems.length} '
-        'transactions, ${newTransactions.reversibleTransfers.length} '
-        'reversible',
+      final newTransactions = await ref.read(chainHistoryServiceProvider).fetchAllTransactionTypes(
+        accountIds: targetAccountIds,
+        limit: _limit,
+        transfersOffset: state.transfersOffset,
+        reversibleOffset: state.reversibleOffset,
+        rewardsOffset: state.rewardsOffset,
       );
-      print('[TIMING] _fetchPage TOTAL: ${sw.elapsedMilliseconds}ms');
+
+      final newItems = newTransactions.otherTransfers;
+      final isFirstPage = state.transfersOffset == 0 &&
+          state.reversibleOffset == 0 &&
+          state.rewardsOffset == 0;
+
       state = state.copyWith(
         items: [...state.items, ...newItems],
-        reversibleTransfers: state.offset == 0 ? newTransactions.reversibleTransfers : state.reversibleTransfers,
-        offset: state.offset + newItems.length,
-        hasMore: newItems.length == _limit,
+        reversibleTransfers: isFirstPage ? newTransactions.reversibleTransfers : state.reversibleTransfers,
+        transfersOffset: newTransactions.nextTransfersOffset,
+        reversibleOffset: newTransactions.nextReversibleOffset,
+        rewardsOffset: newTransactions.nextRewardsOffset,
+        hasMore: newTransactions.hasMore,
         isFetching: false,
         error: null,
         stackTrace: null,
       );
     } catch (e, st) {
-      sw.stop();
-      print('Fetch page failed after ${sw.elapsedMilliseconds}ms: $e\n$st');
+      print('Fetch page failed: $e\n$st');
       state = state.copyWith(error: e, stackTrace: st, isFetching: false);
     }
   }
@@ -152,25 +149,23 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
 
   Future<void> _silentFetchFirstPage(List<String> targetAccountIds) async {
     try {
-      // Fetch without setting isFetching to avoid loading indicators
       final newTransactions = await ref
           .read(chainHistoryServiceProvider)
-          .fetchAllTransactionTypes(accountIds: targetAccountIds, limit: _limit, offset: 0);
+          .fetchAllTransactionTypes(accountIds: targetAccountIds, limit: _limit);
 
       final newItems = newTransactions.otherTransfers;
 
-      // Replace existing items with fresh data
       state = state.copyWith(
         items: newItems,
         reversibleTransfers: newTransactions.reversibleTransfers,
-        offset: newItems.length,
-        hasMore: newItems.length == _limit,
+        transfersOffset: newTransactions.nextTransfersOffset,
+        reversibleOffset: newTransactions.nextReversibleOffset,
+        rewardsOffset: newTransactions.nextRewardsOffset,
+        hasMore: newTransactions.hasMore,
         error: null,
         stackTrace: null,
       );
     } catch (e, st) {
-      // Silently handle errors - don't update UI state for automatic polling
-      // failures
       print('Silent refresh failed: $e, $st');
     }
   }

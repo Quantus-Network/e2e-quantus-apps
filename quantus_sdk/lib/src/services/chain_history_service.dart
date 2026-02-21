@@ -6,17 +6,17 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 class TransferList {
   final List<TransactionEvent> transfers;
   final bool hasMore;
-  final int nextOffset;
+  final int nextTransfersOffset;
+  final int nextReversibleOffset;
+  final int nextRewardsOffset;
 
-  TransferList({required this.transfers, required this.hasMore, required this.nextOffset});
-}
-
-class TransferResult {
-  final List<TransactionEvent> combinedTransfers;
-  final bool hasMore;
-  final int nextOffset;
-
-  TransferResult({required this.combinedTransfers, required this.hasMore, required this.nextOffset});
+  TransferList({
+    required this.transfers,
+    required this.hasMore,
+    required this.nextTransfersOffset,
+    required this.nextReversibleOffset,
+    required this.nextRewardsOffset,
+  });
 }
 
 class BlockQueryResponse {
@@ -274,37 +274,31 @@ query SearchPendingTransaction(
   Future<SortedTransactionsList> fetchAllTransactionTypes({
     required List<String> accountIds,
     int limit = 20,
-    int offset = 0,
-    String? printName,
+    int transfersOffset = 0,
+    int reversibleOffset = 0,
+    int rewardsOffset = 0,
   }) async {
-    final totalSw = Stopwatch()..start();
-
     final results = await Future.wait([
-      () async {
-        final sw = Stopwatch()..start();
-        final r = await fetchScheduledTransfers(accountIds: accountIds);
-        printTiming('fetchScheduledTransfers', sw.elapsedMilliseconds);
-        return r;
-      }(),
-      () async {
-        final sw = Stopwatch()..start();
-        final r = await _fetchOtherTransfers(
-          accountIds: accountIds,
-          limit: limit,
-          offset: offset,
-          printName: printName,
-        );
-        printTiming('_fetchOtherTransfers', sw.elapsedMilliseconds);
-        return r;
-      }(),
+      fetchScheduledTransfers(accountIds: accountIds),
+      _fetchOtherTransfers(
+        accountIds: accountIds,
+        limit: limit,
+        transfersOffset: transfersOffset,
+        reversibleOffset: reversibleOffset,
+        rewardsOffset: rewardsOffset,
+      ),
     ]);
-
-    totalSw.stop();
-    printTiming('fetchAllTransactionTypes', totalSw.elapsedMilliseconds);
 
     final scheduled = results[0] as List<ReversibleTransferEvent>;
     final other = results[1] as TransferList;
-    return SortedTransactionsList(reversibleTransfers: scheduled, otherTransfers: other.transfers);
+    return SortedTransactionsList(
+      reversibleTransfers: scheduled,
+      otherTransfers: other.transfers,
+      nextTransfersOffset: other.nextTransfersOffset,
+      nextReversibleOffset: other.nextReversibleOffset,
+      nextRewardsOffset: other.nextRewardsOffset,
+      hasMore: other.hasMore,
+    );
   }
 
   // Make a graphQL query for specific transaction hashes, get the results back
@@ -458,12 +452,10 @@ query SearchPendingTransaction(
   Future<TransferList> _fetchOtherTransfers({
     required List<String> accountIds,
     int limit = 10,
-    int offset = 0,
-    String? printName,
+    int transfersOffset = 0,
+    int reversibleOffset = 0,
+    int rewardsOffset = 0,
   }) async {
-    print('${printName ?? ''} fetchTransfers for account: $accountIds (limit: $limit, offset: $offset)');
-
-    final sw = Stopwatch()..start();
     try {
       final results = await Future.wait([
         _fetchSingleType(
@@ -471,7 +463,7 @@ query SearchPendingTransaction(
           label: 'transfers',
           accountIds: accountIds,
           limit: limit,
-          offset: offset,
+          offset: transfersOffset,
           parser: (event) {
             if (event['transfer'] == null) return null;
             final d = event['transfer'] as Map<String, dynamic>;
@@ -484,7 +476,7 @@ query SearchPendingTransaction(
           label: 'reversible',
           accountIds: accountIds,
           limit: limit,
-          offset: offset,
+          offset: reversibleOffset,
           parser: (event) {
             if (event['reversibleTransfer'] == null) return null;
             final d = event['reversibleTransfer'] as Map<String, dynamic>;
@@ -497,7 +489,7 @@ query SearchPendingTransaction(
           label: 'rewards',
           accountIds: accountIds,
           limit: limit,
-          offset: offset,
+          offset: rewardsOffset,
           parser: (event) {
             if (event['minerReward'] == null) return null;
             final d = event['minerReward'] as Map<String, dynamic>;
@@ -510,15 +502,23 @@ query SearchPendingTransaction(
       final all = [...results[0], ...results[1], ...results[2]];
       all.sort((a, b) => b.timestamp.compareTo(a.timestamp));
       final trimmed = all.take(limit).toList();
-      final totalFetched = results[0].length + results[1].length + results[2].length;
 
-      sw.stop();
-      printTiming('_fetchOtherTransfers TOTAL', sw.elapsedMilliseconds);
+      final usedTransfers = trimmed.whereType<TransferEvent>().length;
+      final usedReversible = trimmed.whereType<ReversibleTransferEvent>().length;
+      final usedRewards = trimmed.whereType<MinerRewardEvent>().length;
 
-      return TransferList(transfers: trimmed, hasMore: totalFetched >= limit, nextOffset: offset + trimmed.length);
+      final anyHasMore = results[0].length == limit ||
+          results[1].length == limit ||
+          results[2].length == limit;
+
+      return TransferList(
+        transfers: trimmed,
+        hasMore: anyHasMore,
+        nextTransfersOffset: transfersOffset + usedTransfers,
+        nextReversibleOffset: reversibleOffset + usedReversible,
+        nextRewardsOffset: rewardsOffset + usedRewards,
+      );
     } catch (e, stackTrace) {
-      sw.stop();
-      printTiming('_fetchOtherTransfers FAILED', sw.elapsedMilliseconds);
       print('Error fetching transfers: $e');
       print(stackTrace);
       rethrow;
