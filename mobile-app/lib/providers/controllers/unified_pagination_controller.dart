@@ -71,18 +71,18 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
   Future<void> _fetchPage(List<String> targetAccountIds) async {
     try {
       state = state.copyWith(isFetching: true);
-      final newTransactions = await ref.read(chainHistoryServiceProvider).fetchAllTransactionTypes(
-        accountIds: targetAccountIds,
-        limit: _limit,
-        transfersOffset: state.transfersOffset,
-        reversibleOffset: state.reversibleOffset,
-        rewardsOffset: state.rewardsOffset,
-      );
+      final newTransactions = await ref
+          .read(chainHistoryServiceProvider)
+          .fetchAllTransactionTypes(
+            accountIds: targetAccountIds,
+            limit: _limit,
+            transfersOffset: state.transfersOffset,
+            reversibleOffset: state.reversibleOffset,
+            rewardsOffset: state.rewardsOffset,
+          );
 
       final newItems = newTransactions.otherTransfers;
-      final isFirstPage = state.transfersOffset == 0 &&
-          state.reversibleOffset == 0 &&
-          state.rewardsOffset == 0;
+      final isFirstPage = state.transfersOffset == 0 && state.reversibleOffset == 0 && state.rewardsOffset == 0;
 
       state = state.copyWith(
         items: [...state.items, ...newItems],

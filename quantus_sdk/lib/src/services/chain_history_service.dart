@@ -507,9 +507,7 @@ query SearchPendingTransaction(
       final usedReversible = trimmed.whereType<ReversibleTransferEvent>().length;
       final usedRewards = trimmed.whereType<MinerRewardEvent>().length;
 
-      final anyHasMore = results[0].length == limit ||
-          results[1].length == limit ||
-          results[2].length == limit;
+      final anyHasMore = results[0].length == limit || results[1].length == limit || results[2].length == limit;
 
       return TransferList(
         transfers: trimmed,
