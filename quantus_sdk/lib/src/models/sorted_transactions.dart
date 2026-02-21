@@ -7,6 +7,7 @@ class SortedTransactionsList {
   final int nextTransfersOffset;
   final int nextReversibleOffset;
   final int nextRewardsOffset;
+  final int nextScheduledOffset;
   final bool hasMore;
 
   const SortedTransactionsList({
@@ -15,6 +16,7 @@ class SortedTransactionsList {
     this.nextTransfersOffset = 0,
     this.nextReversibleOffset = 0,
     this.nextRewardsOffset = 0,
+    this.nextScheduledOffset = 0,
     this.hasMore = false,
   });
 

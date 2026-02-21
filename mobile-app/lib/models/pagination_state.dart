@@ -7,6 +7,7 @@ class PaginationState {
   final int transfersOffset;
   final int reversibleOffset;
   final int rewardsOffset;
+  final int scheduledOffset;
   final bool hasMore;
   final bool isFetching;
   final Object? error;
@@ -18,6 +19,7 @@ class PaginationState {
     this.transfersOffset = 0,
     this.reversibleOffset = 0,
     this.rewardsOffset = 0,
+    this.scheduledOffset = 0,
     required this.hasMore,
     required this.isFetching,
     this.error,
@@ -33,6 +35,7 @@ class PaginationState {
     int? transfersOffset,
     int? reversibleOffset,
     int? rewardsOffset,
+    int? scheduledOffset,
     bool? hasMore,
     bool? isFetching,
     Object? error,
@@ -44,6 +47,7 @@ class PaginationState {
       transfersOffset: transfersOffset ?? this.transfersOffset,
       reversibleOffset: reversibleOffset ?? this.reversibleOffset,
       rewardsOffset: rewardsOffset ?? this.rewardsOffset,
+      scheduledOffset: scheduledOffset ?? this.scheduledOffset,
       hasMore: hasMore ?? this.hasMore,
       isFetching: isFetching ?? this.isFetching,
       error: error ?? this.error,

@@ -79,17 +79,18 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
             transfersOffset: state.transfersOffset,
             reversibleOffset: state.reversibleOffset,
             rewardsOffset: state.rewardsOffset,
+            scheduledOffset: state.scheduledOffset,
           );
 
       final newItems = newTransactions.otherTransfers;
-      final isFirstPage = state.transfersOffset == 0 && state.reversibleOffset == 0 && state.rewardsOffset == 0;
 
       state = state.copyWith(
         items: [...state.items, ...newItems],
-        reversibleTransfers: isFirstPage ? newTransactions.reversibleTransfers : state.reversibleTransfers,
+        reversibleTransfers: [...state.reversibleTransfers, ...newTransactions.reversibleTransfers],
         transfersOffset: newTransactions.nextTransfersOffset,
         reversibleOffset: newTransactions.nextReversibleOffset,
         rewardsOffset: newTransactions.nextRewardsOffset,
+        scheduledOffset: newTransactions.nextScheduledOffset,
         hasMore: newTransactions.hasMore,
         isFetching: false,
         error: null,
@@ -161,6 +162,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
         transfersOffset: newTransactions.nextTransfersOffset,
         reversibleOffset: newTransactions.nextReversibleOffset,
         rewardsOffset: newTransactions.nextRewardsOffset,
+        scheduledOffset: newTransactions.nextScheduledOffset,
         hasMore: newTransactions.hasMore,
         error: null,
         stackTrace: null,

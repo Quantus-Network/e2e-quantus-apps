@@ -277,9 +277,10 @@ query SearchPendingTransaction(
     int transfersOffset = 0,
     int reversibleOffset = 0,
     int rewardsOffset = 0,
+    int scheduledOffset = 0,
   }) async {
     final results = await Future.wait([
-      fetchScheduledTransfers(accountIds: accountIds),
+      fetchScheduledTransfers(accountIds: accountIds, limit: limit, offset: scheduledOffset),
       _fetchOtherTransfers(
         accountIds: accountIds,
         limit: limit,
@@ -297,6 +298,7 @@ query SearchPendingTransaction(
       nextTransfersOffset: other.nextTransfersOffset,
       nextReversibleOffset: other.nextReversibleOffset,
       nextRewardsOffset: other.nextRewardsOffset,
+      nextScheduledOffset: scheduledOffset + scheduled.length,
       hasMore: other.hasMore,
     );
   }
