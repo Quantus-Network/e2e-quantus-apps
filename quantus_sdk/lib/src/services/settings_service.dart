@@ -24,6 +24,7 @@ class SettingsService {
   static const String _activeAccountIndexKey = 'active_account_index';
   static const String _activeAccountIdKey = 'active_account_id';
   static const String _activeDisplayAccountKey = 'active_display_account';
+  static const String _balanceHiddenKey = 'balance_hidden';
 
   // Local authentication keys
   static const String _isLocalAuthEnabledKey = 'is_local_auth_enabled';
@@ -264,13 +265,49 @@ class SettingsService {
     return await _secureStorage.read(key: getMnemonicKey(walletIndex));
   }
 
-  // Reversible Time Settings
+  // PIN Code Settings
+  Future<void> setPin(String pin) async {
+    await _secureStorage.write(key: 'wallet_pin', value: pin);
+  }
+
+  Future<String?> getPin() async {
+    return await _secureStorage.read(key: 'wallet_pin');
+  }
+
+  Future<bool> hasPin() async {
+    final pin = await _secureStorage.read(key: 'wallet_pin');
+    return pin != null && pin.isNotEmpty;
+  }
+
+  Future<bool> verifyPin(String pin) async {
+    final stored = await _secureStorage.read(key: 'wallet_pin');
+    return stored == pin;
+  }
+
+  // Reversible Transaction Settings
+  Future<void> setReversibleEnabled(bool enabled) async {
+    await _prefs.setBool('reversible_enabled', enabled);
+  }
+
+  bool isReversibleEnabled() {
+    return _prefs.getBool('reversible_enabled') ?? false;
+  }
+
   Future<void> setReversibleTimeSeconds(int seconds) async {
     await _prefs.setInt('reversible_time_seconds', seconds);
   }
 
   Future<int?> getReversibleTimeSeconds() async {
     return _prefs.getInt('reversible_time_seconds');
+  }
+
+  // Balance Hidden Settings
+  Future<void> setBalanceHidden(bool hidden) async {
+    await _prefs.setBool(_balanceHiddenKey, hidden);
+  }
+
+  bool isBalanceHidden() {
+    return _prefs.getBool(_balanceHiddenKey) ?? false;
   }
 
   // --- Primitive Accessors for General Use ---

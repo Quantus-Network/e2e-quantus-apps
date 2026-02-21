@@ -8,7 +8,7 @@ import 'package:resonance_network_wallet/features/components/referral_action_she
 import 'package:resonance_network_wallet/features/main/screens/quests/quests_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/wallet_main/wallet_main.dart';
+import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
@@ -214,7 +214,7 @@ class _NavbarState extends ConsumerState<Navbar> {
     return IndexedStack(
       index: _selectedIndex,
       children: [
-        const WalletMain(),
+        const HomeScreen(),
         const TransactionsScreen(),
         const SettingsScreen(),
         QuestsScreen(key: _questsScreenKey),

@@ -464,27 +464,28 @@ class TaskmasterService {
     }
   }
 
+  Future<T> _authenticatedGet<T>(Uri uri, T Function(Map<String, dynamic>) fromJson) async {
+    try {
+      final response = await _authenticatedHttpClient.get(uri);
+
+      if (response.statusCode != 200) {
+        throw Exception('HTTP request failed with status: ${response.statusCode}. Body: ${response.body}');
+      }
+
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return fromJson(json);
+    } catch (e, stackTrace) {
+      print('Error fetching data from $uri: $e');
+      print(stackTrace);
+      rethrow;
+    }
+  }
+
   Future<AccountAssociations> getAccountAssociations() async {
     final activeAccount = await getMainAccount();
     print('getAccountAssociations ${activeAccount.accountId}');
     final accountAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/associations');
-
-    try {
-      final http.Response response = await _authenticatedHttpClient.get(accountAssociationsEndpoint);
-
-      if (response.statusCode != 200) {
-        throw Exception(
-          'Account Associations http request failed with status: ${response.statusCode}. Body: ${response.body}',
-        );
-      }
-
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return AccountAssociations.fromJson(json);
-    } catch (e, stackTrace) {
-      print('Error fetching miner stats: $e');
-      print(stackTrace);
-      rethrow;
-    }
+    return _authenticatedGet(accountAssociationsEndpoint, AccountAssociations.fromJson);
   }
 
   Future<void> submitAddress() async {
@@ -561,24 +562,23 @@ class TaskmasterService {
 
   Future<OptedInPosition> getOptInPosition() async {
     final Uri uri = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/my-position');
-
-    try {
-      final http.Response response = await _authenticatedHttpClient.get(uri);
-
-      if (response.statusCode != 200) {
-        throw Exception('HTTP request failed with status: ${response.statusCode}. Body: ${response.body}');
-      }
-
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return OptedInPosition.fromJson(json);
-    } catch (e, stackTrace) {
-      print('Error fetching address stats: $e');
-      print(stackTrace);
-      rethrow;
-    }
+    return _authenticatedGet(uri, OptedInPosition.fromJson);
   }
 
   Future<void> logout() async {
     _clearToken();
+  }
+
+  Future<ReferralRank> getReferralRank(String referralCode) async {
+    final Uri uri = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/leaderboard?referral_code=$referralCode');
+    return _authenticatedGet(uri, ReferralRank.fromJson);
+  }
+
+  Future<RaidStats> getRaidStats(int raidId) async {
+    final activeAccount = await getMainAccount();
+    final Uri uri = Uri.parse(
+      '${AppConstants.taskMasterEndpoint}/raid-quests/raiders/${activeAccount.accountId}/leaderboards/$raidId',
+    );
+    return _authenticatedGet(uri, RaidStats.fromJson);
   }
 }

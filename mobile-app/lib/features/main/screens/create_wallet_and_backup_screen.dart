@@ -1,7 +1,6 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
@@ -10,7 +9,6 @@ import 'package:resonance_network_wallet/features/components/copy_icon.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
 import 'package:resonance_network_wallet/features/components/mnemonic_grid.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
@@ -21,6 +19,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 
 class CreateWalletAndBackupScreen extends ConsumerStatefulWidget {
   const CreateWalletAndBackupScreen({super.key, this.walletIndex = 0, this.popOnComplete = false});
@@ -96,7 +95,7 @@ class CreateWalletAndBackupScreenState extends ConsumerState<CreateWalletAndBack
     if (_mnemonic.isEmpty) {
       debugPrint('Cannot save wallet, mnemonic is empty.');
       if (mounted) {
-        showTopSnackBar(context, title: 'Error', message: 'Recovery phrase not generated.');
+        context.showErrorToaster(message: 'Recovery phrase not generated.');
       }
       return;
     }
@@ -140,7 +139,7 @@ class CreateWalletAndBackupScreenState extends ConsumerState<CreateWalletAndBack
     } catch (e) {
       debugPrint('Error saving wallet: $e');
       if (mounted) {
-        showTopSnackBar(context, title: 'Error', message: 'Error saving wallet: $e');
+        context.showErrorToaster(message: 'Error saving wallet: $e');
       }
     } finally {
       if (mounted) {
@@ -209,7 +208,7 @@ class CreateWalletAndBackupScreenState extends ConsumerState<CreateWalletAndBack
                         : AddressFormattingService.splitIntoChunks(_address).join(' '),
                     icon: const CopyIcon(),
                     onPressed: () {
-                      ClipboardExtensions.copyTextWithSnackbar(context, _address);
+                      context.copyTextWithToaster(_address);
                     },
                     label: 'ACCOUNT ADDRESS',
                   ),
@@ -334,12 +333,7 @@ void showRecoveryPhraseSheet(BuildContext context, List<String> words, bool isLo
                           width: double.infinity,
                           child: GestureDetector(
                             onTap: () {
-                              Clipboard.setData(ClipboardData(text: mnemonic));
-                              showTopSnackBar(
-                                context,
-                                title: 'Copied!',
-                                message: 'Recovery phrase copied to clipboard',
-                              );
+                              context.copyTextWithToaster(mnemonic, message: 'Recovery phrase copied to clipboard');
                               telemetry.sendEvent('onboarding_copy_recovery_phrase');
                             },
                             child: Opacity(

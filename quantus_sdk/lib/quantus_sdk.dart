@@ -33,6 +33,8 @@ export 'src/models/transaction_event.dart';
 export 'src/models/transaction_state.dart';
 export 'src/models/raider_submissions.dart';
 export 'src/models/raid_quest.dart';
+export 'src/models/referral_rank.dart';
+export 'src/models/raid_stats.dart';
 // note we have to hide some things here because they're exported by substrate service
 // should probably expise all of crypto.dart through substrateservice instead
 export 'src/rust/api/crypto.dart' hide crystalAlice, crystalCharlie, crystalBob;
@@ -55,7 +57,9 @@ export 'src/services/recovery_service.dart';
 export 'src/services/reversible_transfers_service.dart';
 export 'src/services/settings_service.dart';
 export 'src/services/substrate_service.dart';
+export 'src/services/swap_service.dart';
 export 'src/services/taskmaster_service.dart';
+export 'src/services/senoti_service.dart';
 export 'src/extensions/account_extension.dart';
 export 'src/quantus_signing_payload.dart';
 export 'src/quantus_payload_parser.dart';

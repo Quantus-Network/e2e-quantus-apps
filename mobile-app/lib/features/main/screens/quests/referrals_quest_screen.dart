@@ -23,7 +23,9 @@ class ReferralsQuestScreen extends ConsumerStatefulWidget {
 
 class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
   final ReferralService _referralService = ReferralService();
+  final TaskmasterService _taskmasterService = TaskmasterService();
   String? _referralCode;
+  int? _rank;
 
   Future<void> _loadReferralCode() async {
     try {
@@ -31,11 +33,22 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
       setState(() {
         _referralCode = myReferralCode;
       });
+      _loadRank(myReferralCode);
     } catch (e) {
-      debugPrint('Error loading account data: $e');
+      debugPrint('Error loading referral code: $e');
+    }
+  }
+
+  Future<void> _loadRank(String referralCode) async {
+    try {
+      final rankData = await _taskmasterService.getReferralRank(referralCode);
       if (mounted) {
-        setState(() {});
+        setState(() {
+          _rank = rankData.rank;
+        });
       }
+    } catch (e) {
+      debugPrint('Error loading rank: $e');
     }
   }
 
@@ -46,7 +59,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
 
   void _copyReferralCode() {
     if (_referralCode != null) {
-      ClipboardExtensions.copyTextWithSnackbar(context, _referralCode!, message: 'Referral code copied to clipboard');
+      context.copyTextWithToaster(_referralCode!, message: 'Referral code copied to clipboard');
     }
   }
 
@@ -145,7 +158,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
   @override
   Widget build(BuildContext context) {
     final statsAsync = ref.watch(accountsStatsProvider);
-    final referralsCount = statsAsync.value?.referralCount ?? 0;
+    final referralsCount = statsAsync.value?.referralCount;
 
     return ScaffoldBase(
       appBar: WalletAppBar(
@@ -248,9 +261,12 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                               ),
                               child: Column(
                                 children: [
-                                  _buildStatRow('Referrals', '$referralsCount', Colors.white),
+                                  _buildStatRow('Referrals', _buildLoadingOrValue(referralsCount, Colors.white)),
                                   const SizedBox(height: 16),
-                                  _buildStatRow('Rank', '#-', context.themeColors.pink),
+                                  _buildStatRow(
+                                    'Rank',
+                                    _buildLoadingOrValue(_rank, context.themeColors.pink, isRank: true),
+                                  ),
                                 ],
                               ),
                             ),
@@ -349,7 +365,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
     );
   }
 
-  Widget _buildStatRow(String label, String value, Color valueColor) {
+  Widget _buildStatRow(String label, Widget valueWidget) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -362,12 +378,20 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
             fontWeight: FontWeight.w400,
           ),
         ),
-        Text(
-          value,
-          textAlign: TextAlign.center,
-          style: TextStyle(color: valueColor, fontSize: 14, fontFamily: 'Fira Code', fontWeight: FontWeight.w400),
-        ),
+        valueWidget,
       ],
+    );
+  }
+
+  Widget _buildLoadingOrValue(int? value, Color color, {bool isRank = false}) {
+    if (value == null) {
+      return SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: color));
+    }
+    final text = isRank ? (value > 0 ? '#$value' : '#-') : '$value';
+    return Text(
+      text,
+      textAlign: TextAlign.center,
+      style: TextStyle(color: color, fontSize: 14, fontFamily: 'Fira Code', fontWeight: FontWeight.w400),
     );
   }
 }

@@ -2,7 +2,7 @@ name: resonance_network_wallet
 description: A Flutter wallet for the Quantus blockchain.
 publish_to: "none"
 
-version: 1.1.5+65
+version: 1.2.0+71
 
 environment:
   sdk: ">=3.8.0 <4.0.0"
@@ -42,7 +42,7 @@ dependencies:
       ref: v1.1.0
       path: dart
   provider: ^6.1.5
-  polkadart: ^0.7.3
+  polkadart: ^0.7.1
   share_plus: ^12.0.1
   flutter_riverpod: ^2.6.1
   riverpod_annotation: ^2.6.1
@@ -57,6 +57,9 @@ dependencies:
   timezone: ^0.10.1
   flutter_timezone: ^5.0.1
   collection: ^1.19.1
+  glass_kit: ^4.0.2
+  firebase_core: ^4.4.0
+  firebase_messaging: ^16.1.1
 
 dev_dependencies:
   flutter_test:
@@ -101,6 +104,31 @@ flutter:
     - assets/high_security/big_red_button_icon.png
     - assets/high_security/intercept_icon.svg
     - assets/quests/quests_top_logo.png
+    - assets/v2/green_checkmark.png
+    - assets/v2/pin_number_background.png
+    - assets/v2/caret_left.svg
+    - assets/v2/send_button.png
+    - assets/v2/receive_button.png
+    - assets/v2/swap_button.png
+    - assets/v2/glass_border_bg.png
+    - assets/v2/glass_medium_button_bg.png
+    - assets/v2/glass_medium_clear.png
+    - assets/v2/glass_medium_clear_small.png
+    - assets/v2/glass_button_wide_340_bg.png
+    - assets/v2/glass_circle_icon_button_bg.png
+    - assets/v2/glass_104_x_80.png
+    - assets/v2/glass_40.png
+    - assets/v2/action_receive.svg
+    - assets/v2/action_send.svg
+    - assets/v2/action_swap.svg
+    - assets/v2/swap_arrows_down_up.svg
+    - assets/v2/swap_clock_counter_clockwise.svg
+    - assets/v2/swap_qr_code.svg
+    - assets/v2/quantus_white_logo.png
+    - assets/v2/auth_wrapper_bracket.png
+    - assets/v2/glass_wide_clear.png
+
+    
 
   fonts:
     - family: Fira Code
@@ -114,6 +142,18 @@ flutter:
         - asset: assets/fonts/FiraCode-SemiBold.ttf
           weight: 600
         - asset: assets/fonts/FiraCode-Bold.ttf
+          weight: 700
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Inter-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
           weight: 700
 
 # Add flutter_native_splash configuration section
