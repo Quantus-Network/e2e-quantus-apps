@@ -26,7 +26,11 @@ class AppConstants {
   static const String senotiEndpoint = 'http://localhost:3100/api';
 
   static const String explorerEndpoint = 'https://explorer.quantus.com';
-  static const String helpAndSupportUrl = 'https://t.me/c/quantusnetwork/2457';
+
+  // internal group URL is this (note the /c)
+  // https://t.me/c/quantusnetwork/2457
+  // removing the c, we get a better preview page though so we use it without c...
+  static const String techSupportUrl = 'https://t.me/quantusnetwork/2457';
   static const String termsOfServiceUrl = 'https://www.quantus.com/terms-and-privacy';
   static const String tutorialsAndGuidesUrl = 'https://github.com/Quantus-Network/chain';
   static const String shillQuestsPageUrl = 'https://www.quantus.com/quests/shill';
@@ -56,6 +60,9 @@ class AppConstants {
   // This starts the hardware wallet flow using a soft wallet - quite useful for debugging
   // hardware wallet flow without using a hardware wallet.
   static const debugHardwareWallet = false;
+
+  // Debug the timing of subsquid queries
+  static const bool debugQueryTiming = false;
 
   static const String accountSettingsRouteName = 'account-settings';
   static const int highSecurityStepsCount = 3;

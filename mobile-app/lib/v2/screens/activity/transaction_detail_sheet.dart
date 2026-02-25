@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
+import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -31,7 +32,10 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
   bool get _isSend => widget.tx.from == widget.activeAccountId;
   String get _counterparty => _isSend ? widget.tx.to : widget.tx.from;
 
+  bool get _isPending => widget.tx is PendingTransactionEvent;
+
   String get _title {
+    if (_isPending) return 'Sending';
     if (widget.tx.isReversibleScheduled) return _isSend ? 'Pending' : 'Receiving';
     return _isSend ? 'Sent' : 'Received';
   }
@@ -176,23 +180,23 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
   }
 
   Widget _explorerButton(AppColorsV2 colors, AppTextTheme text) {
+    final isPending = widget.tx is PendingTransactionEvent;
+    final color = isPending ? colors.textPrimary.withValues(alpha: 0.3) : colors.textPrimary;
+
     return GestureDetector(
-      onTap: _openExplorer,
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.44)),
-        ),
+      onTap: isPending ? null : _openExplorer,
+      child: GlassContainer(
+        asset: GlassContainer.wideAsset,
+        filled: false,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               'View in Explorer',
-              style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+              style: text.paragraph?.copyWith(color: color, fontWeight: FontWeight.w500),
             ),
             const SizedBox(width: 8),
-            Icon(Icons.open_in_new, size: 16, color: colors.textPrimary),
+            Icon(Icons.open_in_new, size: 16, color: color),
           ],
         ),
       ),
