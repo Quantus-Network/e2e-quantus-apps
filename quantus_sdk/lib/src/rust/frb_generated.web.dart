@@ -22,17 +22,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     required super.portManager,
   });
 
-  CrossPlatformFinalizerArg
-  get rust_arc_decrement_strong_count_HdLatticeErrorPtr => wire
-      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError;
+  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_HdLatticeErrorPtr =>
+      wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError;
 
-  CrossPlatformFinalizerArg
-  get rust_arc_decrement_strong_count_WormholeProofAggregatorPtr => wire
+  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_WormholeProofAggregatorPtr => wire
       .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator;
 
   @protected
-  HdLatticeError
-  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
+  HdLatticeError dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
     dynamic raw,
   );
 
@@ -49,16 +46,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  HdLatticeError
-  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
-    dynamic raw,
-  );
+  HdLatticeError dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(dynamic raw);
 
   @protected
   WormholeProofAggregator
-  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
-    dynamic raw,
-  );
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(dynamic raw);
 
   @protected
   String dco_decode_String(dynamic raw);
@@ -79,17 +71,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Keypair dco_decode_box_autoadd_keypair(dynamic raw);
 
   @protected
-  ProofOutputAssignment dco_decode_box_autoadd_proof_output_assignment(
-    dynamic raw,
-  );
+  ProofOutputAssignment dco_decode_box_autoadd_proof_output_assignment(dynamic raw);
 
   @protected
   StorageProofData dco_decode_box_autoadd_storage_proof_data(dynamic raw);
 
   @protected
-  WormholeProofGenerator dco_decode_box_autoadd_wormhole_proof_generator(
-    dynamic raw,
-  );
+  WormholeProofGenerator dco_decode_box_autoadd_wormhole_proof_generator(dynamic raw);
 
   @protected
   WormholeUtxo dco_decode_box_autoadd_wormhole_utxo(dynamic raw);
@@ -155,8 +143,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   WormholeUtxo dco_decode_wormhole_utxo(dynamic raw);
 
   @protected
-  HdLatticeError
-  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
+  HdLatticeError sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
     SseDeserializer deserializer,
   );
 
@@ -173,8 +160,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  HdLatticeError
-  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
+  HdLatticeError sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
     SseDeserializer deserializer,
   );
 
@@ -197,32 +183,22 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
-  BlockHeaderData sse_decode_box_autoadd_block_header_data(
-    SseDeserializer deserializer,
-  );
+  BlockHeaderData sse_decode_box_autoadd_block_header_data(SseDeserializer deserializer);
 
   @protected
   Keypair sse_decode_box_autoadd_keypair(SseDeserializer deserializer);
 
   @protected
-  ProofOutputAssignment sse_decode_box_autoadd_proof_output_assignment(
-    SseDeserializer deserializer,
-  );
+  ProofOutputAssignment sse_decode_box_autoadd_proof_output_assignment(SseDeserializer deserializer);
 
   @protected
-  StorageProofData sse_decode_box_autoadd_storage_proof_data(
-    SseDeserializer deserializer,
-  );
+  StorageProofData sse_decode_box_autoadd_storage_proof_data(SseDeserializer deserializer);
 
   @protected
-  WormholeProofGenerator sse_decode_box_autoadd_wormhole_proof_generator(
-    SseDeserializer deserializer,
-  );
+  WormholeProofGenerator sse_decode_box_autoadd_wormhole_proof_generator(SseDeserializer deserializer);
 
   @protected
-  WormholeUtxo sse_decode_box_autoadd_wormhole_utxo(
-    SseDeserializer deserializer,
-  );
+  WormholeUtxo sse_decode_box_autoadd_wormhole_utxo(SseDeserializer deserializer);
 
   @protected
   CircuitConfig sse_decode_circuit_config(SseDeserializer deserializer);
@@ -246,9 +222,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   U8Array32? sse_decode_opt_u_8_array_32(SseDeserializer deserializer);
 
   @protected
-  ProofOutputAssignment sse_decode_proof_output_assignment(
-    SseDeserializer deserializer,
-  );
+  ProofOutputAssignment sse_decode_proof_output_assignment(SseDeserializer deserializer);
 
   @protected
   StorageProofData sse_decode_storage_proof_data(SseDeserializer deserializer);
@@ -278,14 +252,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   WormholeError sse_decode_wormhole_error(SseDeserializer deserializer);
 
   @protected
-  WormholePairResult sse_decode_wormhole_pair_result(
-    SseDeserializer deserializer,
-  );
+  WormholePairResult sse_decode_wormhole_pair_result(SseDeserializer deserializer);
 
   @protected
-  WormholeProofGenerator sse_decode_wormhole_proof_generator(
-    SseDeserializer deserializer,
-  );
+  WormholeProofGenerator sse_decode_wormhole_proof_generator(SseDeserializer deserializer);
 
   @protected
   WormholeUtxo sse_decode_wormhole_utxo(SseDeserializer deserializer);
@@ -294,36 +264,31 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int sse_decode_i_32(SseDeserializer deserializer);
 
   @protected
-  void
-  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
+  void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
     HdLatticeError self,
     SseSerializer serializer,
   );
 
   @protected
-  void
-  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
+  void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
     WormholeProofAggregator self,
     SseSerializer serializer,
   );
 
   @protected
-  void
-  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
+  void sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
     WormholeProofAggregator self,
     SseSerializer serializer,
   );
 
   @protected
-  void
-  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
+  void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
     HdLatticeError self,
     SseSerializer serializer,
   );
 
   @protected
-  void
-  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
+  void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
     WormholeProofAggregator self,
     SseSerializer serializer,
   );
@@ -332,61 +297,37 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_String(String self, SseSerializer serializer);
 
   @protected
-  void sse_encode_aggregated_proof(
-    AggregatedProof self,
-    SseSerializer serializer,
-  );
+  void sse_encode_aggregated_proof(AggregatedProof self, SseSerializer serializer);
 
   @protected
-  void sse_encode_block_header_data(
-    BlockHeaderData self,
-    SseSerializer serializer,
-  );
+  void sse_encode_block_header_data(BlockHeaderData self, SseSerializer serializer);
 
   @protected
   void sse_encode_bool(bool self, SseSerializer serializer);
 
   @protected
-  void sse_encode_box_autoadd_block_header_data(
-    BlockHeaderData self,
-    SseSerializer serializer,
-  );
+  void sse_encode_box_autoadd_block_header_data(BlockHeaderData self, SseSerializer serializer);
 
   @protected
   void sse_encode_box_autoadd_keypair(Keypair self, SseSerializer serializer);
 
   @protected
-  void sse_encode_box_autoadd_proof_output_assignment(
-    ProofOutputAssignment self,
-    SseSerializer serializer,
-  );
+  void sse_encode_box_autoadd_proof_output_assignment(ProofOutputAssignment self, SseSerializer serializer);
 
   @protected
-  void sse_encode_box_autoadd_storage_proof_data(
-    StorageProofData self,
-    SseSerializer serializer,
-  );
+  void sse_encode_box_autoadd_storage_proof_data(StorageProofData self, SseSerializer serializer);
 
   @protected
-  void sse_encode_box_autoadd_wormhole_proof_generator(
-    WormholeProofGenerator self,
-    SseSerializer serializer,
-  );
+  void sse_encode_box_autoadd_wormhole_proof_generator(WormholeProofGenerator self, SseSerializer serializer);
 
   @protected
-  void sse_encode_box_autoadd_wormhole_utxo(
-    WormholeUtxo self,
-    SseSerializer serializer,
-  );
+  void sse_encode_box_autoadd_wormhole_utxo(WormholeUtxo self, SseSerializer serializer);
 
   @protected
   void sse_encode_circuit_config(CircuitConfig self, SseSerializer serializer);
 
   @protected
-  void sse_encode_generated_proof(
-    GeneratedProof self,
-    SseSerializer serializer,
-  );
+  void sse_encode_generated_proof(GeneratedProof self, SseSerializer serializer);
 
   @protected
   void sse_encode_keypair(Keypair self, SseSerializer serializer);
@@ -398,25 +339,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_list_prim_u_8_loose(List<int> self, SseSerializer serializer);
 
   @protected
-  void sse_encode_list_prim_u_8_strict(
-    Uint8List self,
-    SseSerializer serializer,
-  );
+  void sse_encode_list_prim_u_8_strict(Uint8List self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_u_8_array_32(U8Array32? self, SseSerializer serializer);
 
   @protected
-  void sse_encode_proof_output_assignment(
-    ProofOutputAssignment self,
-    SseSerializer serializer,
-  );
+  void sse_encode_proof_output_assignment(ProofOutputAssignment self, SseSerializer serializer);
 
   @protected
-  void sse_encode_storage_proof_data(
-    StorageProofData self,
-    SseSerializer serializer,
-  );
+  void sse_encode_storage_proof_data(StorageProofData self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_16(int self, SseSerializer serializer);
@@ -443,16 +375,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_wormhole_error(WormholeError self, SseSerializer serializer);
 
   @protected
-  void sse_encode_wormhole_pair_result(
-    WormholePairResult self,
-    SseSerializer serializer,
-  );
+  void sse_encode_wormhole_pair_result(WormholePairResult self, SseSerializer serializer);
 
   @protected
-  void sse_encode_wormhole_proof_generator(
-    WormholeProofGenerator self,
-    SseSerializer serializer,
-  );
+  void sse_encode_wormhole_proof_generator(WormholeProofGenerator self, SseSerializer serializer);
 
   @protected
   void sse_encode_wormhole_utxo(WormholeUtxo self, SseSerializer serializer);
@@ -466,16 +392,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 class RustLibWire implements BaseWire {
   RustLibWire.fromExternalLibrary(ExternalLibrary lib);
 
-  void
-  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
+  void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
     int ptr,
   ) => wasmModule
       .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
         ptr,
       );
 
-  void
-  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
+  void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
     int ptr,
   ) => wasmModule
       .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
@@ -506,14 +430,10 @@ external RustLibWasmModule get wasmModule;
 @anonymous
 extension type RustLibWasmModule._(JSObject _) implements JSObject {
   external void
-  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
-    int ptr,
-  );
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(int ptr);
 
   external void
-  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
-    int ptr,
-  );
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(int ptr);
 
   external void
   rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(

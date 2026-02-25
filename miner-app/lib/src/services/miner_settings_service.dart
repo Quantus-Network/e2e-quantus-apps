@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:quantus_miner/src/config/miner_config.dart';
 import 'package:quantus_miner/src/services/binary_manager.dart';
+import 'package:quantus_miner/src/services/miner_wallet_service.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -68,26 +69,21 @@ class MinerSettingsService {
       final identityFile = File('$quantusHome/node_key.p2p');
       if (await identityFile.exists()) {
         await identityFile.delete();
-        _log.i('✅ Node identity file deleted: ${identityFile.path}');
+        _log.i('Node identity file deleted: ${identityFile.path}');
       } else {
-        _log.d('ℹ️ Node identity file not found, skipping deletion.');
+        _log.d('Node identity file not found, skipping deletion.');
       }
     } catch (e) {
-      _log.e('❌ Error deleting node identity file', error: e);
+      _log.e('Error deleting node identity file', error: e);
     }
 
-    // 2. Delete rewards address file
+    // 2. Delete wallet data (mnemonic from secure storage + preimage file)
     try {
-      final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
-      final rewardsFile = File('$quantusHome/rewards-address.txt');
-      if (await rewardsFile.exists()) {
-        await rewardsFile.delete();
-        _log.i('✅ Rewards address file deleted: ${rewardsFile.path}');
-      } else {
-        _log.d('ℹ️ Rewards address file not found, skipping deletion.');
-      }
+      final walletService = MinerWalletService();
+      await walletService.deleteWalletData();
+      _log.i('Wallet data deleted');
     } catch (e) {
-      _log.e('❌ Error deleting rewards address file', error: e);
+      _log.e('Error deleting wallet data', error: e);
     }
 
     // 3. Delete node binary

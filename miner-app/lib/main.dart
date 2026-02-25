@@ -8,6 +8,7 @@ import 'features/setup/node_identity_setup_screen.dart';
 import 'features/setup/rewards_address_setup_screen.dart';
 import 'features/miner/miner_dashboard_screen.dart';
 import 'src/services/binary_manager.dart';
+import 'src/services/miner_wallet_service.dart';
 import 'src/services/mining_orchestrator.dart';
 import 'src/services/process_cleanup_service.dart';
 import 'src/utils/app_logger.dart';
@@ -102,18 +103,17 @@ Future<String?> initialRedirect(BuildContext context, GoRouterState state) async
     return (currentRoute == '/node_identity_setup') ? null : '/node_identity_setup';
   }
 
-  // Check 3: Rewards Address Set
-  bool isRewardsAddressSet = false;
+  // Check 3: Rewards Wallet Set (mnemonic-based wormhole address)
+  bool isRewardsWalletSet = false;
   try {
-    final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
-    final rewardsFile = File('$quantusHome/rewards-address.txt');
-    isRewardsAddressSet = await rewardsFile.exists();
+    final walletService = MinerWalletService();
+    isRewardsWalletSet = await walletService.isSetupComplete();
   } catch (e) {
-    _log.e('Error checking rewards address', error: e);
-    isRewardsAddressSet = false;
+    _log.e('Error checking rewards wallet', error: e);
+    isRewardsWalletSet = false;
   }
 
-  if (!isRewardsAddressSet) {
+  if (!isRewardsWalletSet) {
     return (currentRoute == '/rewards_address_setup') ? null : '/rewards_address_setup';
   }
 
