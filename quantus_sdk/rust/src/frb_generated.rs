@@ -26,6 +26,7 @@
 // Section: imports
 
 use crate::api::crypto::*;
+use crate::api::wormhole::*;
 use flutter_rust_bridge::for_generated::byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
 use flutter_rust_bridge::for_generated::{transform_result_dco, Lifetimeable, Lockable};
 use flutter_rust_bridge::{Handler, IntoIntoDart};
@@ -38,7 +39,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.11.1";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1692591137;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 784201645;
 
 // Section: executor
 
@@ -46,6 +47,426 @@ flutter_rust_bridge::frb_generated_default_handler!();
 
 // Section: wire_funcs
 
+fn wire__crate__api__wormhole__WormholeProofAggregator_add_proof_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "WormholeProofAggregator_add_proof",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WormholeProofAggregator>,
+            >>::sse_decode(&mut deserializer);
+            let api_proof_hex = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::api::wormhole::WormholeError>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok = crate::api::wormhole::WormholeProofAggregator::add_proof(
+                        &*api_that_guard,
+                        api_proof_hex,
+                    )?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__wormhole__WormholeProofAggregator_aggregate_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "WormholeProofAggregator_aggregate",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WormholeProofAggregator>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::api::wormhole::WormholeError>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok =
+                        crate::api::wormhole::WormholeProofAggregator::aggregate(&*api_that_guard)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__wormhole__WormholeProofAggregator_batch_size_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "WormholeProofAggregator_batch_size",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WormholeProofAggregator>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok = Result::<_, ()>::Ok(
+                        crate::api::wormhole::WormholeProofAggregator::batch_size(&*api_that_guard),
+                    )?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__wormhole__WormholeProofAggregator_clear_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "WormholeProofAggregator_clear",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WormholeProofAggregator>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::api::wormhole::WormholeError>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok =
+                        crate::api::wormhole::WormholeProofAggregator::clear(&*api_that_guard)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__wormhole__WormholeProofAggregator_new_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "WormholeProofAggregator_new",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_bins_dir = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::api::wormhole::WormholeError>((move || {
+                    let output_ok =
+                        crate::api::wormhole::WormholeProofAggregator::new(api_bins_dir)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__wormhole__WormholeProofAggregator_proof_count_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "WormholeProofAggregator_proof_count",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WormholeProofAggregator>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::api::wormhole::WormholeError>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok = crate::api::wormhole::WormholeProofAggregator::proof_count(
+                        &*api_that_guard,
+                    )?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__wormhole__circuit_config_load_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "circuit_config_load",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_bins_dir = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::api::wormhole::WormholeError>((move || {
+                    let output_ok = crate::api::wormhole::CircuitConfig::load(&api_bins_dir)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__wormhole__compute_nullifier_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "compute_nullifier",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_secret_hex = <String>::sse_decode(&mut deserializer);
+            let api_transfer_count = <u64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, crate::api::wormhole::WormholeError>((move || {
+                let output_ok =
+                    crate::api::wormhole::compute_nullifier(api_secret_hex, api_transfer_count)?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api__wormhole__create_proof_aggregator_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "create_proof_aggregator",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_bins_dir = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::api::wormhole::WormholeError>((move || {
+                    let output_ok = crate::api::wormhole::create_proof_aggregator(api_bins_dir)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__wormhole__create_proof_generator_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "create_proof_generator",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_bins_dir = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::api::wormhole::WormholeError>((move || {
+                    let output_ok = crate::api::wormhole::create_proof_generator(api_bins_dir)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__crypto__crystal_alice_impl(
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -163,6 +584,68 @@ fn wire__crate__api__ur__decode_ur_impl(
         },
     )
 }
+fn wire__crate__api__wormhole__dequantize_amount_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "dequantize_amount",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_quantized_amount = <u32>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, ()>((move || {
+                let output_ok = Result::<_, ()>::Ok(crate::api::wormhole::dequantize_amount(
+                    api_quantized_amount,
+                ))?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api__wormhole__derive_address_from_secret_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "derive_address_from_secret",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_secret_hex = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, crate::api::wormhole::WormholeError>((move || {
+                let output_ok = crate::api::wormhole::derive_address_from_secret(api_secret_hex)?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
 fn wire__crate__api__crypto__derive_hd_path_impl(
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -195,6 +678,42 @@ fn wire__crate__api__crypto__derive_hd_path_impl(
         },
     )
 }
+fn wire__crate__api__wormhole__derive_wormhole_pair_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "derive_wormhole_pair",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_mnemonic = <String>::sse_decode(&mut deserializer);
+            let api_purpose = <u32>::sse_decode(&mut deserializer);
+            let api_index = <u32>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, crate::api::wormhole::WormholeError>((move || {
+                let output_ok = crate::api::wormhole::derive_wormhole_pair(
+                    api_mnemonic,
+                    api_purpose,
+                    api_index,
+                )?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
 fn wire__crate__api__ur__encode_ur_impl(
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -220,6 +739,36 @@ fn wire__crate__api__ur__encode_ur_impl(
             deserializer.end();
             transform_result_sse::<_, String>((move || {
                 let output_ok = crate::api::ur::encode_ur(api_data)?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api__wormhole__first_hash_to_address_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "first_hash_to_address",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_first_hash_hex = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, crate::api::wormhole::WormholeError>((move || {
+                let output_ok = crate::api::wormhole::first_hash_to_address(api_first_hash_hex)?;
                 Ok(output_ok)
             })())
         },
@@ -319,6 +868,69 @@ fn wire__crate__api__crypto__generate_keypair_from_seed_impl(
         },
     )
 }
+fn wire__crate__api__wormhole__get_aggregation_batch_size_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "get_aggregation_batch_size",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_bins_dir = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, crate::api::wormhole::WormholeError>((move || {
+                let output_ok = crate::api::wormhole::get_aggregation_batch_size(api_bins_dir)?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api__wormhole__get_wormhole_derivation_path_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "get_wormhole_derivation_path",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_purpose = <u32>::sse_decode(&mut deserializer);
+            let api_index = <u32>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, ()>((move || {
+                let output_ok = Result::<_, ()>::Ok(
+                    crate::api::wormhole::get_wormhole_derivation_path(api_purpose, api_index),
+                )?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
 fn wire__crate__api__crypto__init_app_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -407,6 +1019,36 @@ fn wire__crate__api__crypto__public_key_bytes_impl(
             deserializer.end();
             transform_result_sse::<_, ()>((move || {
                 let output_ok = Result::<_, ()>::Ok(crate::api::crypto::public_key_bytes())?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api__wormhole__quantize_amount_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "quantize_amount",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_amount_planck = <u64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, crate::api::wormhole::WormholeError>((move || {
+                let output_ok = crate::api::wormhole::quantize_amount(api_amount_planck)?;
                 Ok(output_ok)
             })())
         },
@@ -671,11 +1313,97 @@ fn wire__crate__api__crypto__verify_message_impl(
         },
     )
 }
+fn wire__crate__api__wormhole__wormhole_proof_generator_generate_proof_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "wormhole_proof_generator_generate_proof",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that =
+                <crate::api::wormhole::WormholeProofGenerator>::sse_decode(&mut deserializer);
+            let api_utxo = <crate::api::wormhole::WormholeUtxo>::sse_decode(&mut deserializer);
+            let api_output =
+                <crate::api::wormhole::ProofOutputAssignment>::sse_decode(&mut deserializer);
+            let api_fee_bps = <u32>::sse_decode(&mut deserializer);
+            let api_block_header =
+                <crate::api::wormhole::BlockHeaderData>::sse_decode(&mut deserializer);
+            let api_storage_proof =
+                <crate::api::wormhole::StorageProofData>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::api::wormhole::WormholeError>((move || {
+                    let output_ok = crate::api::wormhole::WormholeProofGenerator::generate_proof(
+                        &api_that,
+                        api_utxo,
+                        api_output,
+                        api_fee_bps,
+                        api_block_header,
+                        api_storage_proof,
+                    )?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__wormhole__wormhole_proof_generator_new_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "wormhole_proof_generator_new",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_bins_dir = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::api::wormhole::WormholeError>((move || {
+                    let output_ok =
+                        crate::api::wormhole::WormholeProofGenerator::new(api_bins_dir)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 
 // Section: related_funcs
 
 flutter_rust_bridge::frb_generated_moi_arc_impl_value!(
     flutter_rust_bridge::for_generated::RustAutoOpaqueInner<HDLatticeError>
+);
+flutter_rust_bridge::frb_generated_moi_arc_impl_value!(
+    flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WormholeProofAggregator>
 );
 
 // Section: dart2rust
@@ -690,8 +1418,30 @@ impl SseDecode for HDLatticeError {
     }
 }
 
+impl SseDecode for WormholeProofAggregator {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <RustOpaqueMoi<
+            flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WormholeProofAggregator>,
+        >>::sse_decode(deserializer);
+        return flutter_rust_bridge::for_generated::rust_auto_opaque_decode_owned(inner);
+    }
+}
+
 impl SseDecode
     for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<HDLatticeError>>
+{
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <usize>::sse_decode(deserializer);
+        return decode_rust_opaque_moi(inner);
+    }
+}
+
+impl SseDecode
+    for RustOpaqueMoi<
+        flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WormholeProofAggregator>,
+    >
 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -708,10 +1458,62 @@ impl SseDecode for String {
     }
 }
 
+impl SseDecode for crate::api::wormhole::AggregatedProof {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_proofHex = <String>::sse_decode(deserializer);
+        let mut var_numRealProofs = <usize>::sse_decode(deserializer);
+        return crate::api::wormhole::AggregatedProof {
+            proof_hex: var_proofHex,
+            num_real_proofs: var_numRealProofs,
+        };
+    }
+}
+
+impl SseDecode for crate::api::wormhole::BlockHeaderData {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_parentHashHex = <String>::sse_decode(deserializer);
+        let mut var_stateRootHex = <String>::sse_decode(deserializer);
+        let mut var_extrinsicsRootHex = <String>::sse_decode(deserializer);
+        let mut var_blockNumber = <u32>::sse_decode(deserializer);
+        let mut var_digestHex = <String>::sse_decode(deserializer);
+        return crate::api::wormhole::BlockHeaderData {
+            parent_hash_hex: var_parentHashHex,
+            state_root_hex: var_stateRootHex,
+            extrinsics_root_hex: var_extrinsicsRootHex,
+            block_number: var_blockNumber,
+            digest_hex: var_digestHex,
+        };
+    }
+}
+
 impl SseDecode for bool {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         deserializer.cursor.read_u8().unwrap() != 0
+    }
+}
+
+impl SseDecode for crate::api::wormhole::CircuitConfig {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_numLeafProofs = <usize>::sse_decode(deserializer);
+        return crate::api::wormhole::CircuitConfig {
+            num_leaf_proofs: var_numLeafProofs,
+        };
+    }
+}
+
+impl SseDecode for crate::api::wormhole::GeneratedProof {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_proofHex = <String>::sse_decode(deserializer);
+        let mut var_nullifierHex = <String>::sse_decode(deserializer);
+        return crate::api::wormhole::GeneratedProof {
+            proof_hex: var_proofHex,
+            nullifier_hex: var_nullifierHex,
+        };
     }
 }
 
@@ -762,10 +1564,52 @@ impl SseDecode for Option<[u8; 32]> {
     }
 }
 
+impl SseDecode for crate::api::wormhole::ProofOutputAssignment {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_outputAmount1 = <u32>::sse_decode(deserializer);
+        let mut var_exitAccount1 = <String>::sse_decode(deserializer);
+        let mut var_outputAmount2 = <u32>::sse_decode(deserializer);
+        let mut var_exitAccount2 = <String>::sse_decode(deserializer);
+        return crate::api::wormhole::ProofOutputAssignment {
+            output_amount_1: var_outputAmount1,
+            exit_account_1: var_exitAccount1,
+            output_amount_2: var_outputAmount2,
+            exit_account_2: var_exitAccount2,
+        };
+    }
+}
+
+impl SseDecode for crate::api::wormhole::StorageProofData {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_proofNodesHex = <Vec<String>>::sse_decode(deserializer);
+        let mut var_stateRootHex = <String>::sse_decode(deserializer);
+        return crate::api::wormhole::StorageProofData {
+            proof_nodes_hex: var_proofNodesHex,
+            state_root_hex: var_stateRootHex,
+        };
+    }
+}
+
 impl SseDecode for u16 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         deserializer.cursor.read_u16::<NativeEndian>().unwrap()
+    }
+}
+
+impl SseDecode for u32 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        deserializer.cursor.read_u32::<NativeEndian>().unwrap()
+    }
+}
+
+impl SseDecode for u64 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        deserializer.cursor.read_u64::<NativeEndian>().unwrap()
     }
 }
 
@@ -796,6 +1640,62 @@ impl SseDecode for usize {
     }
 }
 
+impl SseDecode for crate::api::wormhole::WormholeError {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_message = <String>::sse_decode(deserializer);
+        return crate::api::wormhole::WormholeError {
+            message: var_message,
+        };
+    }
+}
+
+impl SseDecode for crate::api::wormhole::WormholePairResult {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_address = <String>::sse_decode(deserializer);
+        let mut var_addressHex = <String>::sse_decode(deserializer);
+        let mut var_firstHashSs58 = <String>::sse_decode(deserializer);
+        let mut var_firstHashHex = <String>::sse_decode(deserializer);
+        let mut var_secretHex = <String>::sse_decode(deserializer);
+        return crate::api::wormhole::WormholePairResult {
+            address: var_address,
+            address_hex: var_addressHex,
+            first_hash_ss58: var_firstHashSs58,
+            first_hash_hex: var_firstHashHex,
+            secret_hex: var_secretHex,
+        };
+    }
+}
+
+impl SseDecode for crate::api::wormhole::WormholeProofGenerator {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_binsDir = <String>::sse_decode(deserializer);
+        return crate::api::wormhole::WormholeProofGenerator {
+            bins_dir: var_binsDir,
+        };
+    }
+}
+
+impl SseDecode for crate::api::wormhole::WormholeUtxo {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_secretHex = <String>::sse_decode(deserializer);
+        let mut var_amount = <u64>::sse_decode(deserializer);
+        let mut var_transferCount = <u64>::sse_decode(deserializer);
+        let mut var_fundingAccountHex = <String>::sse_decode(deserializer);
+        let mut var_blockHashHex = <String>::sse_decode(deserializer);
+        return crate::api::wormhole::WormholeUtxo {
+            secret_hex: var_secretHex,
+            amount: var_amount,
+            transfer_count: var_transferCount,
+            funding_account_hex: var_fundingAccountHex,
+            block_hash_hex: var_blockHashHex,
+        };
+    }
+}
+
 impl SseDecode for i32 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -812,7 +1712,70 @@ fn pde_ffi_dispatcher_primary_impl(
 ) {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        10 => wire__crate__api__crypto__init_app_impl(port, ptr, rust_vec_len, data_len),
+        1 => wire__crate__api__wormhole__WormholeProofAggregator_add_proof_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        2 => wire__crate__api__wormhole__WormholeProofAggregator_aggregate_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        3 => wire__crate__api__wormhole__WormholeProofAggregator_batch_size_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        4 => wire__crate__api__wormhole__WormholeProofAggregator_clear_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        5 => wire__crate__api__wormhole__WormholeProofAggregator_new_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        6 => wire__crate__api__wormhole__WormholeProofAggregator_proof_count_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        7 => {
+            wire__crate__api__wormhole__circuit_config_load_impl(port, ptr, rust_vec_len, data_len)
+        }
+        9 => wire__crate__api__wormhole__create_proof_aggregator_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        10 => wire__crate__api__wormhole__create_proof_generator_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        26 => wire__crate__api__crypto__init_app_impl(port, ptr, rust_vec_len, data_len),
+        38 => wire__crate__api__wormhole__wormhole_proof_generator_generate_proof_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        39 => wire__crate__api__wormhole__wormhole_proof_generator_new_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
         _ => unreachable!(),
     }
 }
@@ -825,25 +1788,43 @@ fn pde_ffi_dispatcher_sync_impl(
 ) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        1 => wire__crate__api__crypto__crystal_alice_impl(ptr, rust_vec_len, data_len),
-        2 => wire__crate__api__crypto__crystal_bob_impl(ptr, rust_vec_len, data_len),
-        3 => wire__crate__api__crypto__crystal_charlie_impl(ptr, rust_vec_len, data_len),
-        4 => wire__crate__api__ur__decode_ur_impl(ptr, rust_vec_len, data_len),
-        5 => wire__crate__api__crypto__derive_hd_path_impl(ptr, rust_vec_len, data_len),
-        6 => wire__crate__api__ur__encode_ur_impl(ptr, rust_vec_len, data_len),
-        7 => wire__crate__api__crypto__generate_derived_keypair_impl(ptr, rust_vec_len, data_len),
-        8 => wire__crate__api__crypto__generate_keypair_impl(ptr, rust_vec_len, data_len),
-        9 => wire__crate__api__crypto__generate_keypair_from_seed_impl(ptr, rust_vec_len, data_len),
-        11 => wire__crate__api__ur__is_complete_ur_impl(ptr, rust_vec_len, data_len),
-        12 => wire__crate__api__crypto__public_key_bytes_impl(ptr, rust_vec_len, data_len),
-        13 => wire__crate__api__crypto__secret_key_bytes_impl(ptr, rust_vec_len, data_len),
-        14 => wire__crate__api__crypto__set_default_ss58_prefix_impl(ptr, rust_vec_len, data_len),
-        15 => wire__crate__api__crypto__sign_message_impl(ptr, rust_vec_len, data_len),
-        16 => wire__crate__api__crypto__sign_message_with_pubkey_impl(ptr, rust_vec_len, data_len),
-        17 => wire__crate__api__crypto__signature_bytes_impl(ptr, rust_vec_len, data_len),
-        18 => wire__crate__api__crypto__ss58_to_account_id_impl(ptr, rust_vec_len, data_len),
-        19 => wire__crate__api__crypto__to_account_id_impl(ptr, rust_vec_len, data_len),
-        20 => wire__crate__api__crypto__verify_message_impl(ptr, rust_vec_len, data_len),
+        8 => wire__crate__api__wormhole__compute_nullifier_impl(ptr, rust_vec_len, data_len),
+        11 => wire__crate__api__crypto__crystal_alice_impl(ptr, rust_vec_len, data_len),
+        12 => wire__crate__api__crypto__crystal_bob_impl(ptr, rust_vec_len, data_len),
+        13 => wire__crate__api__crypto__crystal_charlie_impl(ptr, rust_vec_len, data_len),
+        14 => wire__crate__api__ur__decode_ur_impl(ptr, rust_vec_len, data_len),
+        15 => wire__crate__api__wormhole__dequantize_amount_impl(ptr, rust_vec_len, data_len),
+        16 => {
+            wire__crate__api__wormhole__derive_address_from_secret_impl(ptr, rust_vec_len, data_len)
+        }
+        17 => wire__crate__api__crypto__derive_hd_path_impl(ptr, rust_vec_len, data_len),
+        18 => wire__crate__api__wormhole__derive_wormhole_pair_impl(ptr, rust_vec_len, data_len),
+        19 => wire__crate__api__ur__encode_ur_impl(ptr, rust_vec_len, data_len),
+        20 => wire__crate__api__wormhole__first_hash_to_address_impl(ptr, rust_vec_len, data_len),
+        21 => wire__crate__api__crypto__generate_derived_keypair_impl(ptr, rust_vec_len, data_len),
+        22 => wire__crate__api__crypto__generate_keypair_impl(ptr, rust_vec_len, data_len),
+        23 => {
+            wire__crate__api__crypto__generate_keypair_from_seed_impl(ptr, rust_vec_len, data_len)
+        }
+        24 => {
+            wire__crate__api__wormhole__get_aggregation_batch_size_impl(ptr, rust_vec_len, data_len)
+        }
+        25 => wire__crate__api__wormhole__get_wormhole_derivation_path_impl(
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        27 => wire__crate__api__ur__is_complete_ur_impl(ptr, rust_vec_len, data_len),
+        28 => wire__crate__api__crypto__public_key_bytes_impl(ptr, rust_vec_len, data_len),
+        29 => wire__crate__api__wormhole__quantize_amount_impl(ptr, rust_vec_len, data_len),
+        30 => wire__crate__api__crypto__secret_key_bytes_impl(ptr, rust_vec_len, data_len),
+        31 => wire__crate__api__crypto__set_default_ss58_prefix_impl(ptr, rust_vec_len, data_len),
+        32 => wire__crate__api__crypto__sign_message_impl(ptr, rust_vec_len, data_len),
+        33 => wire__crate__api__crypto__sign_message_with_pubkey_impl(ptr, rust_vec_len, data_len),
+        34 => wire__crate__api__crypto__signature_bytes_impl(ptr, rust_vec_len, data_len),
+        35 => wire__crate__api__crypto__ss58_to_account_id_impl(ptr, rust_vec_len, data_len),
+        36 => wire__crate__api__crypto__to_account_id_impl(ptr, rust_vec_len, data_len),
+        37 => wire__crate__api__crypto__verify_message_impl(ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -866,6 +1847,109 @@ impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<HDLatticeError>> for HDLattice
 }
 
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for FrbWrapper<WormholeProofAggregator> {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        flutter_rust_bridge::for_generated::rust_auto_opaque_encode::<_, MoiArc<_>>(self.0)
+            .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for FrbWrapper<WormholeProofAggregator>
+{
+}
+
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<WormholeProofAggregator>>
+    for WormholeProofAggregator
+{
+    fn into_into_dart(self) -> FrbWrapper<WormholeProofAggregator> {
+        self.into()
+    }
+}
+
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::wormhole::AggregatedProof {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.proof_hex.into_into_dart().into_dart(),
+            self.num_real_proofs.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::wormhole::AggregatedProof
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::wormhole::AggregatedProof>
+    for crate::api::wormhole::AggregatedProof
+{
+    fn into_into_dart(self) -> crate::api::wormhole::AggregatedProof {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::wormhole::BlockHeaderData {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.parent_hash_hex.into_into_dart().into_dart(),
+            self.state_root_hex.into_into_dart().into_dart(),
+            self.extrinsics_root_hex.into_into_dart().into_dart(),
+            self.block_number.into_into_dart().into_dart(),
+            self.digest_hex.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::wormhole::BlockHeaderData
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::wormhole::BlockHeaderData>
+    for crate::api::wormhole::BlockHeaderData
+{
+    fn into_into_dart(self) -> crate::api::wormhole::BlockHeaderData {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::wormhole::CircuitConfig {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [self.num_leaf_proofs.into_into_dart().into_dart()].into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::wormhole::CircuitConfig
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::wormhole::CircuitConfig>
+    for crate::api::wormhole::CircuitConfig
+{
+    fn into_into_dart(self) -> crate::api::wormhole::CircuitConfig {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::wormhole::GeneratedProof {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.proof_hex.into_into_dart().into_dart(),
+            self.nullifier_hex.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::wormhole::GeneratedProof
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::wormhole::GeneratedProof>
+    for crate::api::wormhole::GeneratedProof
+{
+    fn into_into_dart(self) -> crate::api::wormhole::GeneratedProof {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api::crypto::Keypair {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -883,6 +1967,132 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::crypto::Keypair>
         self
     }
 }
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::wormhole::ProofOutputAssignment {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.output_amount_1.into_into_dart().into_dart(),
+            self.exit_account_1.into_into_dart().into_dart(),
+            self.output_amount_2.into_into_dart().into_dart(),
+            self.exit_account_2.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::wormhole::ProofOutputAssignment
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::wormhole::ProofOutputAssignment>
+    for crate::api::wormhole::ProofOutputAssignment
+{
+    fn into_into_dart(self) -> crate::api::wormhole::ProofOutputAssignment {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::wormhole::StorageProofData {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.proof_nodes_hex.into_into_dart().into_dart(),
+            self.state_root_hex.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::wormhole::StorageProofData
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::wormhole::StorageProofData>
+    for crate::api::wormhole::StorageProofData
+{
+    fn into_into_dart(self) -> crate::api::wormhole::StorageProofData {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::wormhole::WormholeError {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [self.message.into_into_dart().into_dart()].into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::wormhole::WormholeError
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::wormhole::WormholeError>
+    for crate::api::wormhole::WormholeError
+{
+    fn into_into_dart(self) -> crate::api::wormhole::WormholeError {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::wormhole::WormholePairResult {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.address.into_into_dart().into_dart(),
+            self.address_hex.into_into_dart().into_dart(),
+            self.first_hash_ss58.into_into_dart().into_dart(),
+            self.first_hash_hex.into_into_dart().into_dart(),
+            self.secret_hex.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::wormhole::WormholePairResult
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::wormhole::WormholePairResult>
+    for crate::api::wormhole::WormholePairResult
+{
+    fn into_into_dart(self) -> crate::api::wormhole::WormholePairResult {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::wormhole::WormholeProofGenerator {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [self.bins_dir.into_into_dart().into_dart()].into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::wormhole::WormholeProofGenerator
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::wormhole::WormholeProofGenerator>
+    for crate::api::wormhole::WormholeProofGenerator
+{
+    fn into_into_dart(self) -> crate::api::wormhole::WormholeProofGenerator {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::wormhole::WormholeUtxo {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.secret_hex.into_into_dart().into_dart(),
+            self.amount.into_into_dart().into_dart(),
+            self.transfer_count.into_into_dart().into_dart(),
+            self.funding_account_hex.into_into_dart().into_dart(),
+            self.block_hash_hex.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::wormhole::WormholeUtxo
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::wormhole::WormholeUtxo>
+    for crate::api::wormhole::WormholeUtxo
+{
+    fn into_into_dart(self) -> crate::api::wormhole::WormholeUtxo {
+        self
+    }
+}
 
 impl SseEncode for HDLatticeError {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -891,8 +2101,33 @@ impl SseEncode for HDLatticeError {
     }
 }
 
+impl SseEncode for WormholeProofAggregator {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <RustOpaqueMoi<
+            flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WormholeProofAggregator>,
+        >>::sse_encode(
+            flutter_rust_bridge::for_generated::rust_auto_opaque_encode::<_, MoiArc<_>>(self),
+            serializer,
+        );
+    }
+}
+
 impl SseEncode
     for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<HDLatticeError>>
+{
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        let (ptr, size) = self.sse_encode_raw();
+        <usize>::sse_encode(ptr, serializer);
+        <i32>::sse_encode(size, serializer);
+    }
+}
+
+impl SseEncode
+    for RustOpaqueMoi<
+        flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WormholeProofAggregator>,
+    >
 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -909,10 +2144,44 @@ impl SseEncode for String {
     }
 }
 
+impl SseEncode for crate::api::wormhole::AggregatedProof {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.proof_hex, serializer);
+        <usize>::sse_encode(self.num_real_proofs, serializer);
+    }
+}
+
+impl SseEncode for crate::api::wormhole::BlockHeaderData {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.parent_hash_hex, serializer);
+        <String>::sse_encode(self.state_root_hex, serializer);
+        <String>::sse_encode(self.extrinsics_root_hex, serializer);
+        <u32>::sse_encode(self.block_number, serializer);
+        <String>::sse_encode(self.digest_hex, serializer);
+    }
+}
+
 impl SseEncode for bool {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         serializer.cursor.write_u8(self as _).unwrap();
+    }
+}
+
+impl SseEncode for crate::api::wormhole::CircuitConfig {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <usize>::sse_encode(self.num_leaf_proofs, serializer);
+    }
+}
+
+impl SseEncode for crate::api::wormhole::GeneratedProof {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.proof_hex, serializer);
+        <String>::sse_encode(self.nullifier_hex, serializer);
     }
 }
 
@@ -954,10 +2223,42 @@ impl SseEncode for Option<[u8; 32]> {
     }
 }
 
+impl SseEncode for crate::api::wormhole::ProofOutputAssignment {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <u32>::sse_encode(self.output_amount_1, serializer);
+        <String>::sse_encode(self.exit_account_1, serializer);
+        <u32>::sse_encode(self.output_amount_2, serializer);
+        <String>::sse_encode(self.exit_account_2, serializer);
+    }
+}
+
+impl SseEncode for crate::api::wormhole::StorageProofData {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<String>>::sse_encode(self.proof_nodes_hex, serializer);
+        <String>::sse_encode(self.state_root_hex, serializer);
+    }
+}
+
 impl SseEncode for u16 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         serializer.cursor.write_u16::<NativeEndian>(self).unwrap();
+    }
+}
+
+impl SseEncode for u32 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        serializer.cursor.write_u32::<NativeEndian>(self).unwrap();
+    }
+}
+
+impl SseEncode for u64 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        serializer.cursor.write_u64::<NativeEndian>(self).unwrap();
     }
 }
 
@@ -996,6 +2297,42 @@ impl SseEncode for usize {
     }
 }
 
+impl SseEncode for crate::api::wormhole::WormholeError {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.message, serializer);
+    }
+}
+
+impl SseEncode for crate::api::wormhole::WormholePairResult {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.address, serializer);
+        <String>::sse_encode(self.address_hex, serializer);
+        <String>::sse_encode(self.first_hash_ss58, serializer);
+        <String>::sse_encode(self.first_hash_hex, serializer);
+        <String>::sse_encode(self.secret_hex, serializer);
+    }
+}
+
+impl SseEncode for crate::api::wormhole::WormholeProofGenerator {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.bins_dir, serializer);
+    }
+}
+
+impl SseEncode for crate::api::wormhole::WormholeUtxo {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.secret_hex, serializer);
+        <u64>::sse_encode(self.amount, serializer);
+        <u64>::sse_encode(self.transfer_count, serializer);
+        <String>::sse_encode(self.funding_account_hex, serializer);
+        <String>::sse_encode(self.block_hash_hex, serializer);
+    }
+}
+
 impl SseEncode for i32 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -1012,6 +2349,7 @@ mod io {
 
     use super::*;
     use crate::api::crypto::*;
+    use crate::api::wormhole::*;
     use flutter_rust_bridge::for_generated::byteorder::{
         NativeEndian, ReadBytesExt, WriteBytesExt,
     };
@@ -1035,6 +2373,20 @@ mod io {
     ) {
         MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<HDLatticeError>>::decrement_strong_count(ptr as _);
     }
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_quantus_sdk_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
+        ptr: *const std::ffi::c_void,
+    ) {
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WormholeProofAggregator>>::increment_strong_count(ptr as _);
+    }
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_quantus_sdk_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
+        ptr: *const std::ffi::c_void,
+    ) {
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WormholeProofAggregator>>::decrement_strong_count(ptr as _);
+    }
 }
 #[cfg(not(target_family = "wasm"))]
 pub use io::*;
@@ -1049,6 +2401,7 @@ mod web {
 
     use super::*;
     use crate::api::crypto::*;
+    use crate::api::wormhole::*;
     use flutter_rust_bridge::for_generated::byteorder::{
         NativeEndian, ReadBytesExt, WriteBytesExt,
     };
@@ -1073,6 +2426,20 @@ mod web {
         ptr: *const std::ffi::c_void,
     ) {
         MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<HDLatticeError>>::decrement_strong_count(ptr as _);
+    }
+
+    #[wasm_bindgen]
+    pub fn rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
+        ptr: *const std::ffi::c_void,
+    ) {
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WormholeProofAggregator>>::increment_strong_count(ptr as _);
+    }
+
+    #[wasm_bindgen]
+    pub fn rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
+        ptr: *const std::ffi::c_void,
+    ) {
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WormholeProofAggregator>>::decrement_strong_count(ptr as _);
     }
 }
 #[cfg(target_family = "wasm")]

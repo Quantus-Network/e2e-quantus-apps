@@ -39,6 +39,10 @@ export 'src/models/raid_stats.dart';
 // should probably expise all of crypto.dart through substrateservice instead
 export 'src/rust/api/crypto.dart' hide crystalAlice, crystalCharlie, crystalBob;
 export 'src/rust/api/ur.dart';
+// Re-export raw FFI wormhole types (prefixed with 'Ffi' via the service layer for clarity)
+// Most users should use WormholeService instead
+export 'src/rust/api/wormhole.dart'
+    show WormholePairResult, WormholeError, CircuitConfig;
 export 'src/services/account_discovery_service.dart';
 export 'src/services/accounts_service.dart';
 export 'src/services/address_formatting_service.dart';
@@ -60,6 +64,8 @@ export 'src/services/substrate_service.dart';
 export 'src/services/swap_service.dart';
 export 'src/services/taskmaster_service.dart';
 export 'src/services/senoti_service.dart';
+export 'src/services/wormhole_service.dart';
+export 'src/services/wormhole_utxo_service.dart';
 export 'src/extensions/account_extension.dart';
 export 'src/quantus_signing_payload.dart';
 export 'src/quantus_payload_parser.dart';
