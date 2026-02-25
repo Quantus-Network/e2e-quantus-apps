@@ -164,6 +164,35 @@ class WormholeService {
     final aggregator = await wormhole.createProofAggregator(binsDir: circuitBinsDir);
     return WormholeProofAggregator._(aggregator);
   }
+
+  /// Generate circuit binary files for ZK proof generation.
+  ///
+  /// This is a **long-running operation** (10-30 minutes on most devices) that
+  /// generates the circuit binaries needed for wormhole withdrawal proofs.
+  ///
+  /// [outputDir] - Directory to write the binaries to
+  /// [numLeafProofs] - Number of leaf proofs per aggregation (typically 8)
+  ///
+  /// Returns a [CircuitGenerationResult] indicating success or failure.
+  ///
+  /// Generated files (~163MB total):
+  /// - `prover.bin` - Prover circuit data (largest file)
+  /// - `common.bin` - Common circuit data
+  /// - `verifier.bin` - Verifier circuit data
+  /// - `dummy_proof.bin` - Dummy proof for aggregation padding
+  /// - `aggregated_common.bin` - Aggregated circuit common data
+  /// - `aggregated_verifier.bin` - Aggregated circuit verifier data
+  /// - `config.json` - Configuration with hashes
+  Future<wormhole.CircuitGenerationResult> generateCircuitBinaries({required String outputDir, int numLeafProofs = 8}) {
+    return wormhole.generateCircuitBinaries(outputDir: outputDir, numLeafProofs: numLeafProofs);
+  }
+
+  /// Check if circuit binaries exist in a directory.
+  ///
+  /// Returns true if all required circuit files are present.
+  bool checkCircuitBinariesExist(String binsDir) {
+    return wormhole.checkCircuitBinariesExist(binsDir: binsDir);
+  }
 }
 
 /// A UTXO (unspent transaction output) from a wormhole address.

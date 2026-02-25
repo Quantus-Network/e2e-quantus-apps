@@ -84,6 +84,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   CircuitConfig dco_decode_circuit_config(dynamic raw);
 
   @protected
+  CircuitGenerationResult dco_decode_circuit_generation_result(dynamic raw);
+
+  @protected
   GeneratedProof dco_decode_generated_proof(dynamic raw);
 
   @protected
@@ -97,6 +100,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
+
+  @protected
+  String? dco_decode_opt_String(dynamic raw);
 
   @protected
   U8Array32? dco_decode_opt_u_8_array_32(dynamic raw);
@@ -202,6 +208,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   CircuitConfig sse_decode_circuit_config(SseDeserializer deserializer);
 
   @protected
+  CircuitGenerationResult sse_decode_circuit_generation_result(SseDeserializer deserializer);
+
+  @protected
   GeneratedProof sse_decode_generated_proof(SseDeserializer deserializer);
 
   @protected
@@ -215,6 +224,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
+
+  @protected
+  String? sse_decode_opt_String(SseDeserializer deserializer);
 
   @protected
   U8Array32? sse_decode_opt_u_8_array_32(SseDeserializer deserializer);
@@ -325,6 +337,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_circuit_config(CircuitConfig self, SseSerializer serializer);
 
   @protected
+  void sse_encode_circuit_generation_result(CircuitGenerationResult self, SseSerializer serializer);
+
+  @protected
   void sse_encode_generated_proof(GeneratedProof self, SseSerializer serializer);
 
   @protected
@@ -338,6 +353,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_list_prim_u_8_strict(Uint8List self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_String(String? self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_u_8_array_32(U8Array32? self, SseSerializer serializer);

@@ -130,6 +130,39 @@ Future<WormholeProofGenerator> createProofGenerator({required String binsDir}) =
 Future<WormholeProofAggregator> createProofAggregator({required String binsDir}) =>
     RustLib.instance.api.crateApiWormholeCreateProofAggregator(binsDir: binsDir);
 
+/// Generate circuit binary files for ZK proof generation.
+///
+/// This is a long-running operation (10-30 minutes) that generates the
+/// circuit binaries needed for wormhole withdrawal proofs.
+///
+/// # Arguments
+/// * `output_dir` - Directory to write the binaries to
+/// * `num_leaf_proofs` - Number of leaf proofs per aggregation (typically 8)
+///
+/// # Returns
+/// A `CircuitGenerationResult` indicating success or failure.
+///
+/// # Generated Files
+/// - `prover.bin` - Prover circuit data (~163MB)
+/// - `common.bin` - Common circuit data
+/// - `verifier.bin` - Verifier circuit data
+/// - `dummy_proof.bin` - Dummy proof for aggregation padding
+/// - `aggregated_common.bin` - Aggregated circuit common data
+/// - `aggregated_verifier.bin` - Aggregated circuit verifier data
+/// - `config.json` - Configuration with hashes for integrity verification
+Future<CircuitGenerationResult> generateCircuitBinaries({required String outputDir, required int numLeafProofs}) =>
+    RustLib.instance.api.crateApiWormholeGenerateCircuitBinaries(outputDir: outputDir, numLeafProofs: numLeafProofs);
+
+/// Check if circuit binaries exist and are valid in a directory.
+///
+/// # Arguments
+/// * `bins_dir` - Directory containing the circuit binaries
+///
+/// # Returns
+/// True if all required files exist, false otherwise.
+bool checkCircuitBinariesExist({required String binsDir}) =>
+    RustLib.instance.api.crateApiWormholeCheckCircuitBinariesExist(binsDir: binsDir);
+
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WormholeProofAggregator>>
 abstract class WormholeProofAggregator implements RustOpaqueInterface {
   /// Add a proof to the aggregation buffer.
@@ -253,6 +286,32 @@ class CircuitConfig {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is CircuitConfig && runtimeType == other.runtimeType && numLeafProofs == other.numLeafProofs;
+}
+
+/// Result of circuit binary generation
+class CircuitGenerationResult {
+  /// Whether generation succeeded
+  final bool success;
+
+  /// Error message if failed
+  final String? error;
+
+  /// Path to the generated binaries directory
+  final String? outputDir;
+
+  const CircuitGenerationResult({required this.success, this.error, this.outputDir});
+
+  @override
+  int get hashCode => success.hashCode ^ error.hashCode ^ outputDir.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CircuitGenerationResult &&
+          runtimeType == other.runtimeType &&
+          success == other.success &&
+          error == other.error &&
+          outputDir == other.outputDir;
 }
 
 /// Result of proof generation.

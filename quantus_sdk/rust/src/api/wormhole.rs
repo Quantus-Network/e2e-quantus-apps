@@ -853,6 +853,101 @@ fn compute_block_hash_internal(
     Ok(hash)
 }
 
+// ============================================================================
+// Circuit Binary Generation
+// ============================================================================
+
+/// Result of circuit binary generation
+#[flutter_rust_bridge::frb(sync)]
+pub struct CircuitGenerationResult {
+    /// Whether generation succeeded
+    pub success: bool,
+    /// Error message if failed
+    pub error: Option<String>,
+    /// Path to the generated binaries directory
+    pub output_dir: Option<String>,
+}
+
+/// Progress callback for circuit generation (phase name, progress 0.0-1.0)
+pub type CircuitGenerationProgress = extern "C" fn(phase: *const i8, progress: f64);
+
+/// Generate circuit binary files for ZK proof generation.
+///
+/// This is a long-running operation (10-30 minutes) that generates the
+/// circuit binaries needed for wormhole withdrawal proofs.
+///
+/// # Arguments
+/// * `output_dir` - Directory to write the binaries to
+/// * `num_leaf_proofs` - Number of leaf proofs per aggregation (typically 8)
+///
+/// # Returns
+/// A `CircuitGenerationResult` indicating success or failure.
+///
+/// # Generated Files
+/// - `prover.bin` - Prover circuit data (~163MB)
+/// - `common.bin` - Common circuit data
+/// - `verifier.bin` - Verifier circuit data
+/// - `dummy_proof.bin` - Dummy proof for aggregation padding
+/// - `aggregated_common.bin` - Aggregated circuit common data
+/// - `aggregated_verifier.bin` - Aggregated circuit verifier data
+/// - `config.json` - Configuration with hashes for integrity verification
+pub fn generate_circuit_binaries(
+    output_dir: String,
+    num_leaf_proofs: u32,
+) -> CircuitGenerationResult {
+    match qp_wormhole_circuit_builder::generate_all_circuit_binaries(
+        &output_dir,
+        true, // include_prover - we need it for proof generation
+        num_leaf_proofs as usize,
+    ) {
+        Ok(()) => CircuitGenerationResult {
+            success: true,
+            error: None,
+            output_dir: Some(output_dir),
+        },
+        Err(e) => CircuitGenerationResult {
+            success: false,
+            error: Some(e.to_string()),
+            output_dir: None,
+        },
+    }
+}
+
+/// Check if circuit binaries exist and are valid in a directory.
+///
+/// # Arguments
+/// * `bins_dir` - Directory containing the circuit binaries
+///
+/// # Returns
+/// True if all required files exist, false otherwise.
+#[flutter_rust_bridge::frb(sync)]
+pub fn check_circuit_binaries_exist(bins_dir: String) -> bool {
+    use std::path::Path;
+
+    let required_files = [
+        "prover.bin",
+        "common.bin",
+        "verifier.bin",
+        "dummy_proof.bin",
+        "aggregated_common.bin",
+        "aggregated_verifier.bin",
+        "config.json",
+    ];
+
+    let path = Path::new(&bins_dir);
+    if !path.exists() {
+        return false;
+    }
+
+    for file in &required_files {
+        if !path.join(file).exists() {
+            return false;
+        }
+    }
+
+    true
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

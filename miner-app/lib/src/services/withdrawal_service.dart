@@ -8,8 +8,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 final _log = log.withTag('Withdrawal');
 
 /// Progress callback for withdrawal operations.
-typedef WithdrawalProgressCallback =
-    void Function(double progress, String message);
+typedef WithdrawalProgressCallback = void Function(double progress, String message);
 
 /// Result of a withdrawal operation.
 class WithdrawalResult {
@@ -18,12 +17,7 @@ class WithdrawalResult {
   final String? error;
   final BigInt? exitAmount;
 
-  const WithdrawalResult({
-    required this.success,
-    this.txHash,
-    this.error,
-    this.exitAmount,
-  });
+  const WithdrawalResult({required this.success, this.txHash, this.error, this.exitAmount});
 }
 
 /// Service for handling wormhole withdrawals.
@@ -42,8 +36,7 @@ class WithdrawalService {
   static const int feeBps = 10;
 
   // Minimum output after quantization (3 units = 0.03 QTN)
-  static final BigInt minOutputPlanck =
-      BigInt.from(3) * BigInt.from(10).pow(10);
+  static final BigInt minOutputPlanck = BigInt.from(3) * BigInt.from(10).pow(10);
 
   /// Withdraw funds from a wormhole address.
   ///
@@ -71,28 +64,19 @@ class WithdrawalService {
       );
 
       if (unspentTransfers.isEmpty) {
-        return const WithdrawalResult(
-          success: false,
-          error: 'No unspent rewards found',
-        );
+        return const WithdrawalResult(success: false, error: 'No unspent rewards found');
       }
 
       // Calculate total available
-      final totalAvailable = unspentTransfers.fold<BigInt>(
-        BigInt.zero,
-        (sum, t) => sum + t.amount,
-      );
-      _log.i(
-        'Total available: $totalAvailable planck (${unspentTransfers.length} UTXOs)',
-      );
+      final totalAvailable = unspentTransfers.fold<BigInt>(BigInt.zero, (sum, t) => sum + t.amount);
+      _log.i('Total available: $totalAvailable planck (${unspentTransfers.length} UTXOs)');
 
       // Determine amount to withdraw
       final withdrawAmount = amount ?? totalAvailable;
       if (withdrawAmount > totalAvailable) {
         return WithdrawalResult(
           success: false,
-          error:
-              'Insufficient balance. Available: $totalAvailable, requested: $withdrawAmount',
+          error: 'Insufficient balance. Available: $totalAvailable, requested: $withdrawAmount',
         );
       }
 
@@ -100,37 +84,23 @@ class WithdrawalService {
 
       // 2. Select UTXOs (for now, use simple largest-first selection)
       final selectedTransfers = _selectUtxos(unspentTransfers, withdrawAmount);
-      final selectedTotal = selectedTransfers.fold<BigInt>(
-        BigInt.zero,
-        (sum, t) => sum + t.amount,
-      );
+      final selectedTotal = selectedTransfers.fold<BigInt>(BigInt.zero, (sum, t) => sum + t.amount);
 
-      _log.i(
-        'Selected ${selectedTransfers.length} UTXOs totaling $selectedTotal planck',
-      );
+      _log.i('Selected ${selectedTransfers.length} UTXOs totaling $selectedTotal planck');
 
       // Calculate output amounts after fee
-      final totalAfterFee =
-          selectedTotal -
-          (selectedTotal * BigInt.from(feeBps) ~/ BigInt.from(10000));
+      final totalAfterFee = selectedTotal - (selectedTotal * BigInt.from(feeBps) ~/ BigInt.from(10000));
 
       if (totalAfterFee < minOutputPlanck) {
-        return WithdrawalResult(
-          success: false,
-          error: 'Amount too small after fee (minimum ~0.03 QTN)',
-        );
+        return WithdrawalResult(success: false, error: 'Amount too small after fee (minimum ~0.03 QTN)');
       }
 
       onProgress?.call(0.15, 'Loading circuit data...');
 
       // 3. Create proof generator (this loads ~171MB of circuit data)
       final wormholeService = WormholeService();
-      final generator = await wormholeService.createProofGenerator(
-        circuitBinsDir,
-      );
-      final aggregator = await wormholeService.createProofAggregator(
-        circuitBinsDir,
-      );
+      final generator = await wormholeService.createProofGenerator(circuitBinsDir);
+      final aggregator = await wormholeService.createProofAggregator(circuitBinsDir);
 
       onProgress?.call(0.2, 'Generating proofs...');
 
@@ -141,10 +111,7 @@ class WithdrawalService {
       for (int i = 0; i < selectedTransfers.length; i++) {
         final transfer = selectedTransfers[i];
         final progress = 0.2 + (0.5 * (i / selectedTransfers.length));
-        onProgress?.call(
-          progress,
-          'Generating proof ${i + 1}/${selectedTransfers.length}...',
-        );
+        onProgress?.call(progress, 'Generating proof ${i + 1}/${selectedTransfers.length}...');
 
         try {
           final proof = await _generateProofForTransfer(
@@ -157,14 +124,8 @@ class WithdrawalService {
           );
           proofs.add(proof);
         } catch (e) {
-          _log.e(
-            'Failed to generate proof for transfer ${transfer.id}',
-            error: e,
-          );
-          return WithdrawalResult(
-            success: false,
-            error: 'Failed to generate proof: $e',
-          );
+          _log.e('Failed to generate proof for transfer ${transfer.id}', error: e);
+          return WithdrawalResult(success: false, error: 'Failed to generate proof: $e');
         }
       }
 
@@ -181,18 +142,11 @@ class WithdrawalService {
       onProgress?.call(0.85, 'Submitting transaction...');
 
       // 6. Submit to chain
-      final txHash = await _submitProof(
-        proofHex: aggregatedProof.proofHex,
-        rpcUrl: chainConfig.rpcUrl,
-      );
+      final txHash = await _submitProof(proofHex: aggregatedProof.proofHex, rpcUrl: chainConfig.rpcUrl);
 
       onProgress?.call(1.0, 'Withdrawal complete!');
 
-      return WithdrawalResult(
-        success: true,
-        txHash: txHash,
-        exitAmount: totalAfterFee,
-      );
+      return WithdrawalResult(success: true, txHash: txHash, exitAmount: totalAfterFee);
     } catch (e) {
       _log.e('Withdrawal failed', error: e);
       return WithdrawalResult(success: false, error: e.toString());
@@ -200,13 +154,9 @@ class WithdrawalService {
   }
 
   /// Select UTXOs to cover the target amount using largest-first strategy.
-  List<WormholeTransfer> _selectUtxos(
-    List<WormholeTransfer> available,
-    BigInt targetAmount,
-  ) {
+  List<WormholeTransfer> _selectUtxos(List<WormholeTransfer> available, BigInt targetAmount) {
     // Sort by amount descending (largest first)
-    final sorted = List<WormholeTransfer>.from(available)
-      ..sort((a, b) => b.amount.compareTo(a.amount));
+    final sorted = List<WormholeTransfer>.from(available)..sort((a, b) => b.amount.compareTo(a.amount));
 
     final selected = <WormholeTransfer>[];
     var total = BigInt.zero;
@@ -230,9 +180,7 @@ class WithdrawalService {
     required String rpcUrl,
   }) async {
     // Fetch block header and storage proof from RPC
-    final blockHash = transfer.blockHash.startsWith('0x')
-        ? transfer.blockHash
-        : '0x${transfer.blockHash}';
+    final blockHash = transfer.blockHash.startsWith('0x') ? transfer.blockHash : '0x${transfer.blockHash}';
 
     // Get block header
     final blockHeader = await _fetchBlockHeader(rpcUrl, blockHash);
@@ -252,10 +200,7 @@ class WithdrawalService {
     final utxo = transfer.toUtxo(secretHex);
 
     // Create output assignment (single output, no change for simplicity)
-    final output = ProofOutput.single(
-      amount: quantizedAmount,
-      exitAccount: destinationAddress,
-    );
+    final output = ProofOutput.single(amount: quantizedAmount, exitAccount: destinationAddress);
 
     // Generate the proof
     return await generator.generateProof(
@@ -294,10 +239,7 @@ class WithdrawalService {
       parentHashHex: header['parentHash'] as String,
       stateRootHex: header['stateRoot'] as String,
       extrinsicsRootHex: header['extrinsicsRoot'] as String,
-      blockNumber: int.parse(
-        (header['number'] as String).substring(2),
-        radix: 16,
-      ),
+      blockNumber: int.parse((header['number'] as String).substring(2), radix: 16),
       digestHex: _encodeDigest(header['digest']),
     );
   }
@@ -345,9 +287,7 @@ class WithdrawalService {
     }
 
     final proof = result['result'];
-    final proofNodes = (proof['proof'] as List)
-        .map((p) => p as String)
-        .toList();
+    final proofNodes = (proof['proof'] as List).map((p) => p as String).toList();
 
     // Get state root from block header
     final headerResponse = await http.post(
@@ -368,10 +308,7 @@ class WithdrawalService {
   }
 
   /// Submit aggregated proof to chain.
-  Future<String> _submitProof({
-    required String proofHex,
-    required String rpcUrl,
-  }) async {
+  Future<String> _submitProof({required String proofHex, required String rpcUrl}) async {
     // Submit as unsigned transaction
     // The actual extrinsic encoding would be: Wormhole.verify_aggregated_proof(proof_bytes)
     // TODO: Implement proper extrinsic submission using Polkadart

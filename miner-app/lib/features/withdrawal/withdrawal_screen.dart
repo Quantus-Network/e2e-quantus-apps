@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quantus_miner/src/services/circuit_manager.dart';
 import 'package:quantus_miner/src/services/withdrawal_service.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
@@ -41,6 +42,11 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
   double _progress = 0;
   String _statusMessage = '';
 
+  // Circuit status
+  final _circuitManager = CircuitManager();
+  CircuitStatus _circuitStatus = CircuitStatus.unavailable;
+  bool _isGeneratingCircuits = false;
+
   // Fee is 10 basis points (0.1%)
   static const int _feeBps = 10;
 
@@ -49,6 +55,50 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
     super.initState();
     // Default to max amount
     _updateAmountToMax();
+    // Check circuit availability
+    _checkCircuits();
+  }
+
+  Future<void> _checkCircuits() async {
+    final status = await _circuitManager.checkStatus();
+    if (mounted) {
+      setState(() {
+        _circuitStatus = status;
+      });
+    }
+  }
+
+  Future<void> _generateCircuits() async {
+    setState(() {
+      _isGeneratingCircuits = true;
+      _error = null;
+      _statusMessage = 'Generating circuits (this takes 10-30 minutes)...';
+    });
+
+    final success = await _circuitManager.generateCircuits(
+      onProgress: (progress, message) {
+        if (mounted) {
+          setState(() {
+            _progress = progress;
+            _statusMessage = message;
+          });
+        }
+      },
+    );
+
+    if (mounted) {
+      setState(() {
+        _isGeneratingCircuits = false;
+      });
+
+      if (success) {
+        await _checkCircuits();
+      } else {
+        setState(() {
+          _error = 'Failed to generate circuit files. Please try again.';
+        });
+      }
+    }
   }
 
   @override
@@ -59,10 +109,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
   }
 
   void _updateAmountToMax() {
-    final formatted = NumberFormattingService().formatBalance(
-      widget.availableBalance,
-      addSymbol: false,
-    );
+    final formatted = NumberFormattingService().formatBalance(widget.availableBalance, addSymbol: false);
     _amountController.text = formatted;
   }
 
@@ -117,8 +164,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
       return 'Amount exceeds available balance';
     }
     // Check minimum after fee
-    final afterFee =
-        amount - (amount * BigInt.from(_feeBps) ~/ BigInt.from(10000));
+    final afterFee = amount - (amount * BigInt.from(_feeBps) ~/ BigInt.from(10000));
     // Minimum is 0.03 QTN (3 quantized units = 3 * 10^10 planck)
     final minAmount = BigInt.from(3) * BigInt.from(10).pow(10);
     if (afterFee < minAmount) {
@@ -139,29 +185,23 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
 
     try {
       final destination = _destinationController.text.trim();
-      final amount = _withdrawAll
-          ? widget.availableBalance
-          : _parseAmount(_amountController.text);
+      final amount = _withdrawAll ? widget.availableBalance : _parseAmount(_amountController.text);
 
       _log.i('Starting withdrawal of $amount planck to $destination');
 
-      final withdrawalService = WithdrawalService();
-
-      // TODO: Get circuit bins directory - for now show not implemented
-      // The circuit binaries (~171MB) need to be bundled with the app or downloaded
-      const circuitBinsDir = ''; // Not yet available
-
-      if (circuitBinsDir.isEmpty) {
-        // Circuit binaries not available yet
+      // Check circuit availability
+      if (!_circuitStatus.isAvailable || _circuitStatus.circuitDir == null) {
         if (mounted) {
           context.showErrorSnackbar(
-            title: 'Not Yet Available',
-            message:
-                'Withdrawal requires circuit binaries (~171MB). Use quantus-cli for now.',
+            title: 'Circuits Required',
+            message: 'Please download circuit files first (~163MB).',
           );
         }
         return;
       }
+
+      final withdrawalService = WithdrawalService();
+      final circuitBinsDir = _circuitStatus.circuitDir!;
 
       final result = await withdrawalService.withdraw(
         secretHex: widget.secretHex,
@@ -182,10 +222,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
       if (result.success) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Withdrawal successful! TX: ${result.txHash}'),
-              backgroundColor: Colors.green,
-            ),
+            SnackBar(content: Text('Withdrawal successful! TX: ${result.txHash}'), backgroundColor: Colors.green),
           );
           context.pop();
         }
@@ -208,22 +245,133 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
     }
   }
 
+  Widget _buildCircuitStatusCard() {
+    if (_isGeneratingCircuits) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.blue.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(_statusMessage, style: TextStyle(fontSize: 14, color: Colors.blue.shade200)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            LinearProgressIndicator(
+              value: _progress,
+              backgroundColor: Colors.white.withValues(alpha: 0.1),
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_circuitStatus.isAvailable) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.green.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green.shade400, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Circuit files ready',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.green.shade200),
+                  ),
+                  if (_circuitStatus.totalSizeBytes != null)
+                    Text(
+                      CircuitManager.formatBytes(_circuitStatus.totalSizeBytes!),
+                      style: TextStyle(fontSize: 12, color: Colors.green.shade300),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Circuit files not available - show generate prompt
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.build_circle, color: Colors.amber.shade400, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Circuit files required',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.amber.shade200),
+                    ),
+                    Text(
+                      'Generate ~163MB (one-time, 10-30 min)',
+                      style: TextStyle(fontSize: 12, color: Colors.amber.shade300),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _generateCircuits,
+              icon: const Icon(Icons.build, size: 18),
+              label: const Text('Generate Circuit Files'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber.shade700,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final formattedBalance = NumberFormattingService().formatBalance(
-      widget.availableBalance,
-      addSymbol: true,
-    );
+    final formattedBalance = NumberFormattingService().formatBalance(widget.availableBalance, addSymbol: true);
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         title: const Text('Withdraw Rewards'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: _isWithdrawing ? null : () => context.pop(),
-        ),
+        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: _isWithdrawing ? null : () => context.pop()),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -244,32 +392,27 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                       ],
                     ),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.3),
-                    ),
+                    border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Available Balance',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white.withValues(alpha: 0.7),
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.7)),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         formattedBalance,
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF10B981),
-                        ),
+                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
+
+                // Circuit status card
+                _buildCircuitStatusCard(),
                 const SizedBox(height: 32),
 
                 // Destination address
@@ -293,27 +436,20 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                     fillColor: Colors.white.withValues(alpha: 0.05),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.1),
-                      ),
+                      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.1),
-                      ),
+                      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
                     ),
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.paste),
                       onPressed: _isWithdrawing
                           ? null
                           : () async {
-                              final data = await Clipboard.getData(
-                                Clipboard.kTextPlain,
-                              );
+                              final data = await Clipboard.getData(Clipboard.kTextPlain);
                               if (data?.text != null) {
-                                _destinationController.text = data!.text!
-                                    .trim();
+                                _destinationController.text = data!.text!.trim();
                               }
                             },
                     ),
@@ -350,10 +486,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                         ),
                         Text(
                           'Withdraw all',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white.withValues(alpha: 0.7),
-                          ),
+                          style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.7)),
                         ),
                       ],
                     ),
@@ -364,9 +497,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                   controller: _amountController,
                   enabled: !_isWithdrawing && !_withdrawAll,
                   validator: _validateAmount,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   style: const TextStyle(fontSize: 18),
                   decoration: InputDecoration(
                     hintText: '0.00',
@@ -374,21 +505,15 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                     fillColor: Colors.white.withValues(alpha: 0.05),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.1),
-                      ),
+                      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.1),
-                      ),
+                      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
                     ),
                     disabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.05),
-                      ),
+                      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
                     ),
                     suffixText: 'QTN',
                   ),
@@ -404,19 +529,12 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.info_outline,
-                        size: 16,
-                        color: Colors.blue.shade300,
-                      ),
+                      Icon(Icons.info_outline, size: 16, color: Colors.blue.shade300),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Network fee: 0.1% of withdrawal amount',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.blue.shade200,
-                          ),
+                          style: TextStyle(fontSize: 12, color: Colors.blue.shade200),
                         ),
                       ),
                     ],
@@ -431,26 +549,14 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                     decoration: BoxDecoration(
                       color: Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: Colors.red.withValues(alpha: 0.3),
-                      ),
+                      border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       children: [
-                        const Icon(
-                          Icons.error_outline,
-                          size: 16,
-                          color: Colors.red,
-                        ),
+                        const Icon(Icons.error_outline, size: 16, color: Colors.red),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Text(
-                            _error!,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.red,
-                            ),
-                          ),
+                          child: Text(_error!, style: const TextStyle(fontSize: 12, color: Colors.red)),
                         ),
                       ],
                     ),
@@ -470,18 +576,13 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                       children: [
                         Text(
                           _statusMessage,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white.withValues(alpha: 0.9),
-                          ),
+                          style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.9)),
                         ),
                         const SizedBox(height: 12),
                         LinearProgressIndicator(
                           value: _progress,
                           backgroundColor: Colors.white.withValues(alpha: 0.1),
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            Color(0xFF10B981),
-                          ),
+                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
                         ),
                       ],
                     ),
@@ -493,33 +594,22 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                 SizedBox(
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: _isWithdrawing ? null : _startWithdrawal,
+                    onPressed: (_isWithdrawing || _isGeneratingCircuits || !_circuitStatus.isAvailable)
+                        ? null
+                        : _startWithdrawal,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF10B981),
                       foregroundColor: Colors.white,
-                      disabledBackgroundColor: const Color(
-                        0xFF10B981,
-                      ).withValues(alpha: 0.5),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      disabledBackgroundColor: const Color(0xFF10B981).withValues(alpha: 0.5),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     child: _isWithdrawing
                         ? const SizedBox(
                             height: 24,
                             width: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
-                        : const Text(
-                            'Withdraw',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                        : const Text('Withdraw', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                   ),
                 ),
               ],
