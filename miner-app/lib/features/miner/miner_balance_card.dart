@@ -1,16 +1,11 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:polkadart/polkadart.dart';
-import 'package:quantus_miner/src/config/miner_config.dart';
-import 'package:quantus_miner/src/services/binary_manager.dart';
-import 'package:quantus_miner/src/services/miner_settings_service.dart';
+import 'package:quantus_miner/src/services/miner_wallet_service.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
 import 'package:quantus_miner/src/shared/miner_app_constants.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_sdk/generated/schrodinger/schrodinger.dart';
 
 final _log = log.withTag('BalanceCard');
 
@@ -18,28 +13,37 @@ class MinerBalanceCard extends StatefulWidget {
   /// Current block number - when this changes, balance is refreshed
   final int currentBlock;
 
-  const MinerBalanceCard({super.key, this.currentBlock = 0});
+  /// Callback when withdraw button is pressed
+  final void Function(BigInt balance, String address, String secretHex)?
+  onWithdraw;
+
+  const MinerBalanceCard({super.key, this.currentBlock = 0, this.onWithdraw});
 
   @override
   State<MinerBalanceCard> createState() => _MinerBalanceCardState();
 }
 
 class _MinerBalanceCardState extends State<MinerBalanceCard> {
-  String _walletBalance = 'Loading...';
-  String? _walletAddress;
-  String _chainId = MinerConfig.defaultChainId;
+  final _walletService = MinerWalletService();
+  final _utxoService = WormholeUtxoService();
+
+  String _rewardsBalance = 'Loading...';
+  String? _wormholeAddress;
+  String? _secretHex;
+  BigInt _balancePlanck = BigInt.zero;
+  bool _canTrackBalance = false;
+  bool _canWithdraw = false;
+  bool _isLoading = true;
   Timer? _balanceTimer;
-  final _settingsService = MinerSettingsService();
   int _lastRefreshedBlock = 0;
 
   @override
   void initState() {
     super.initState();
-
-    _loadChainAndFetchBalance();
-    // Start automatic polling as backup
-    _balanceTimer = Timer.periodic(MinerConfig.balancePollingInterval, (_) {
-      _loadChainAndFetchBalance();
+    _loadWalletAndBalance();
+    // Poll every 30 seconds for balance updates
+    _balanceTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      _fetchBalance();
     });
   }
 
@@ -49,7 +53,7 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
     // Refresh balance when block number increases (new block found)
     if (widget.currentBlock > _lastRefreshedBlock && widget.currentBlock > 0) {
       _lastRefreshedBlock = widget.currentBlock;
-      _loadChainAndFetchBalance();
+      _fetchBalance();
     }
   }
 
@@ -59,93 +63,103 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
     super.dispose();
   }
 
-  Future<void> _loadChainAndFetchBalance() async {
-    final chainId = await _settingsService.getChainId();
-    if (mounted) {
-      setState(() => _chainId = chainId);
-    }
-    await _fetchWalletBalance();
-  }
+  Future<void> _loadWalletAndBalance() async {
+    setState(() => _isLoading = true);
 
-  Future<void> _fetchWalletBalance() async {
-    _log.d('Fetching wallet balance for chain: $_chainId');
     try {
-      final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
-      final rewardsFile = File('$quantusHome/rewards-address.txt');
+      // Check if we have a mnemonic (can derive secret for balance tracking)
+      final canWithdraw = await _walletService.canWithdraw();
+      _canTrackBalance = canWithdraw;
 
-      if (await rewardsFile.exists()) {
-        final address = (await rewardsFile.readAsString()).trim();
-
-        if (address.isNotEmpty) {
-          final chainConfig = MinerConfig.getChainById(_chainId);
-          _log.d('Chain: ${chainConfig.id}, rpcUrl: ${chainConfig.rpcUrl}, isLocal: ${chainConfig.isLocalNode}');
-          BigInt balance;
-
-          if (chainConfig.isLocalNode) {
-            // Use local node RPC for dev chain
-            _log.d('Querying balance from local node: ${chainConfig.rpcUrl}');
-            balance = await _queryBalanceFromLocalNode(address, chainConfig.rpcUrl);
-          } else {
-            // Use SDK's SubstrateService for remote chains (dirac)
-            _log.d('Querying balance from remote (SDK SubstrateService)');
-            balance = await SubstrateService().queryBalance(address);
-          }
-
-          _log.d('Balance: $balance');
-
-          if (mounted) {
-            setState(() {
-              _walletBalance = NumberFormattingService().formatBalance(balance, addSymbol: true);
-              _walletAddress = address;
-            });
-          }
+      if (canWithdraw) {
+        // We have the mnemonic - get the full key pair
+        final keyPair = await _walletService.getWormholeKeyPair();
+        if (keyPair != null) {
+          _wormholeAddress = keyPair.address;
+          _secretHex = keyPair.secretHex;
+          _canWithdraw = true;
+          await _fetchBalanceWithSecret(keyPair.address, keyPair.secretHex);
         } else {
-          _handleAddressNotSet();
+          _handleNotSetup();
         }
       } else {
-        _handleAddressNotSet();
+        // Only preimage - we can show the address but not track balance
+        final preimage = await _walletService.readRewardsPreimageFile();
+        if (preimage != null) {
+          // We have a preimage but can't derive the address without the secret
+          setState(() {
+            _wormholeAddress = null;
+            _rewardsBalance = 'Import wallet to track';
+            _isLoading = false;
+          });
+        } else {
+          _handleNotSetup();
+        }
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          // Show helpful message for dev chain when node not running
-          if (_chainId == 'dev') {
-            _walletBalance = 'Start node to view';
-          } else {
-            _walletBalance = 'Error';
-          }
-        });
-      }
-      _log.w('Error fetching wallet balance', error: e);
-    }
-  }
-
-  /// Query balance directly from local node using Polkadart
-  Future<BigInt> _queryBalanceFromLocalNode(String address, String rpcUrl) async {
-    try {
-      final provider = Provider.fromUri(Uri.parse(rpcUrl));
-      final quantusApi = Schrodinger(provider);
-
-      // Convert SS58 address to account ID using the SDK's crypto
-      final accountId = ss58ToAccountId(s: address);
-
-      final accountInfo = await quantusApi.query.system.account(accountId);
-      return accountInfo.data.free;
-    } catch (e) {
-      _log.d('Error querying local node balance: $e');
-      // Return zero if node is not running or address has no balance
-      return BigInt.zero;
-    }
-  }
-
-  void _handleAddressNotSet() {
-    if (mounted) {
+      _log.e('Error loading wallet', error: e);
       setState(() {
-        _walletBalance = 'Address not set';
-        _walletAddress = null;
+        _rewardsBalance = 'Error';
+        _isLoading = false;
       });
     }
-    _log.w('Rewards address file not found or empty');
+  }
+
+  Future<void> _fetchBalance() async {
+    if (!_canTrackBalance) return;
+
+    try {
+      final keyPair = await _walletService.getWormholeKeyPair();
+      if (keyPair != null) {
+        await _fetchBalanceWithSecret(keyPair.address, keyPair.secretHex);
+      }
+    } catch (e) {
+      _log.w('Error fetching balance', error: e);
+    }
+  }
+
+  Future<void> _fetchBalanceWithSecret(String address, String secretHex) async {
+    try {
+      _log.d('Fetching unspent balance for $address');
+
+      // Get total unspent balance from Subsquid
+      final totalBalance = await _utxoService.getUnspentBalance(
+        wormholeAddress: address,
+        secretHex: secretHex,
+      );
+
+      if (mounted) {
+        setState(() {
+          _rewardsBalance = NumberFormattingService().formatBalance(
+            totalBalance,
+            addSymbol: true,
+          );
+          _wormholeAddress = address;
+          _balancePlanck = totalBalance;
+          _isLoading = false;
+        });
+      }
+
+      _log.d('Balance: $totalBalance planck');
+    } catch (e) {
+      _log.w('Error fetching balance from Subsquid', error: e);
+      if (mounted) {
+        setState(() {
+          _rewardsBalance = 'Indexer unavailable';
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _handleNotSetup() {
+    if (mounted) {
+      setState(() {
+        _rewardsBalance = 'Not configured';
+        _wormholeAddress = null;
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -157,12 +171,23 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.white.useOpacity(0.1), Colors.white.useOpacity(0.05)],
+          colors: [
+            Colors.white.withValues(alpha: 0.1),
+            Colors.white.withValues(alpha: 0.05),
+          ],
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.useOpacity(0.1), width: 1),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.1),
+          width: 1,
+        ),
         boxShadow: [
-          BoxShadow(color: Colors.black.useOpacity(0.2), blurRadius: 20, spreadRadius: 1, offset: const Offset(0, 8)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 20,
+            spreadRadius: 1,
+            offset: const Offset(0, 8),
+          ),
         ],
       ),
       child: Padding(
@@ -176,67 +201,156 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [
-                        Color(0xFF6366F1), // Deep purple
-                        Color(0xFF1E3A8A), // Deep blue
-                      ],
+                      colors: [Color(0xFF10B981), Color(0xFF059669)],
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.account_balance_wallet, color: Colors.white, size: 20),
+                  child: const Icon(
+                    Icons.savings,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Wallet Balance',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white.useOpacity(0.9)),
+                  'Mining Rewards',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 20),
-            Text(
-              _walletBalance,
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF6366F1), // Deep purple
-                letterSpacing: -1,
+            if (_isLoading)
+              const SizedBox(
+                height: 32,
+                width: 32,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              Text(
+                _rewardsBalance,
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF10B981),
+                  letterSpacing: -1,
+                ),
               ),
-            ),
-            if (_walletAddress != null) ...[
+            if (_wormholeAddress != null) ...[
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.useOpacity(0.05),
+                  color: Colors.white.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.useOpacity(0.1), width: 1),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    width: 1,
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.link, color: Colors.white.useOpacity(0.5), size: 16),
+                    Icon(
+                      Icons.link,
+                      color: Colors.white.withValues(alpha: 0.5),
+                      size: 16,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        _walletAddress!,
+                        _wormholeAddress!,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.white.useOpacity(0.6),
+                          color: Colors.white.withValues(alpha: 0.6),
                           fontFamily: 'Fira Code',
                           letterSpacing: 0.5,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.copy, color: Colors.white.useOpacity(0.5), size: 16),
+                      icon: Icon(
+                        Icons.copy,
+                        color: Colors.white.withValues(alpha: 0.5),
+                        size: 16,
+                      ),
                       onPressed: () {
-                        if (_walletAddress != null) {
-                          context.copyTextWithSnackbar(_walletAddress!);
+                        if (_wormholeAddress != null) {
+                          context.copyTextWithSnackbar(_wormholeAddress!);
                         }
                       },
                       constraints: const BoxConstraints(),
                       padding: EdgeInsets.zero,
                     ),
                   ],
+                ),
+              ),
+            ],
+            if (!_canTrackBalance && !_isLoading) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.amber.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.amber.shade300,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Import your full wallet to track balance and withdraw rewards.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.amber.shade200,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            // Withdraw button
+            if (_canWithdraw &&
+                _balancePlanck > BigInt.zero &&
+                !_isLoading) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    if (widget.onWithdraw != null &&
+                        _wormholeAddress != null &&
+                        _secretHex != null) {
+                      widget.onWithdraw!(
+                        _balancePlanck,
+                        _wormholeAddress!,
+                        _secretHex!,
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.output, size: 18),
+                  label: const Text('Withdraw Rewards'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ),
             ],
