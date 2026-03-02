@@ -72,7 +72,7 @@ class SubstrateService {
 
       final accountInfo = await _rpcEndpointService.rpcTask((uri) async {
         final provider = Provider.fromUri(uri);
-        final quantusApi = Schrodinger(provider);
+        final quantusApi = Planck(provider);
         return await quantusApi.query.system.account(accountID);
       });
 
@@ -310,7 +310,7 @@ class SubstrateService {
 
     final registry = await _rpcEndpointService.rpcTask((uri) async {
       final provider = Provider.fromUri(uri);
-      return Schrodinger(provider).registry;
+      return Planck(provider).registry;
     });
 
     final payload = payloadToSign.encode(registry);
@@ -388,7 +388,7 @@ class SubstrateService {
 
     final registry = await _rpcEndpointService.rpcTask((uri) async {
       final provider = Provider.fromUri(uri);
-      return Schrodinger(provider).registry;
+      return Planck(provider).registry;
     });
 
     return UnsignedTransactionData(payloadToSign: payloadToSign, signer: accountIdBytes, registry: registry);

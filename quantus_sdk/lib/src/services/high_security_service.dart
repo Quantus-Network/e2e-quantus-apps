@@ -119,7 +119,7 @@ class HighSecurityService {
 
     final recoveryService = RecoveryService();
     final balancesService = BalancesService();
-    final quantusApi = Schrodinger(_substrateService.provider!);
+    final quantusApi = Planck(_substrateService.provider!);
 
     // 1. Initiate recovery (rescuer = guardian)
     calls.add(recoveryService.getInitiateRecoveryCall(lostAccountAddress));
