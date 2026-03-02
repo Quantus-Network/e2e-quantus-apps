@@ -53,7 +53,7 @@ polkadart:
   output_dir: lib/generated # Optional. Sets the directory of generated files. Provided value should be a valid path on your system. Default: lib/generated
   chains: # Dictionary of chains and endpoints
       # schrodinger: wss://a1-dirac.quantus.cat
-      planck: ws://127.0.0.1:9933
+      planck: ws://127.0.0.1:9944
 
 dev_dependencies:
   flutter_test:
