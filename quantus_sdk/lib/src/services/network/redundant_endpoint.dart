@@ -22,6 +22,19 @@ class GraphQlEndpointService extends RedundantEndpointService {
 
   GraphQlEndpointService._internal()
     : super(endpoints: AppConstants.graphQlEndpoints.map((e) => Endpoint(url: e)).toList());
+
+  /// Override the endpoints with custom URLs.
+  /// Useful for local development or connecting to different chains.
+  void setEndpoints(List<String> urls) {
+    endpoints.clear();
+    endpoints.addAll(urls.map((e) => Endpoint(url: e)));
+  }
+
+  /// Reset to default endpoints from AppConstants.
+  void resetToDefaults() {
+    endpoints.clear();
+    endpoints.addAll(AppConstants.graphQlEndpoints.map((e) => Endpoint(url: e)));
+  }
 }
 
 class RpcEndpointService extends RedundantEndpointService {
@@ -31,10 +44,31 @@ class RpcEndpointService extends RedundantEndpointService {
 
   RpcEndpointService._internal() : super(endpoints: AppConstants.rpcEndpoints.map((e) => Endpoint(url: e)).toList());
 
-  String get bestEndpointUrl => endpoints.first.url;
+  String get bestEndpointUrl {
+    if (endpoints.isEmpty) {
+      throw StateError(
+        'RpcEndpointService has no endpoints configured. '
+        'Call setEndpoints() first or check AppConstants.rpcEndpoints.',
+      );
+    }
+    return endpoints.first.url;
+  }
 
   Future<T> rpcTask<T>(Future<T> Function(Uri uri) task) async {
     return _executeTask((url) => task(Uri.parse(url)));
+  }
+
+  /// Override the endpoints with custom URLs.
+  /// Useful for local development or connecting to different chains.
+  void setEndpoints(List<String> urls) {
+    endpoints.clear();
+    endpoints.addAll(urls.map((e) => Endpoint(url: e)));
+  }
+
+  /// Reset to default endpoints from AppConstants.
+  void resetToDefaults() {
+    endpoints.clear();
+    endpoints.addAll(AppConstants.rpcEndpoints.map((e) => Endpoint(url: e)));
   }
 }
 

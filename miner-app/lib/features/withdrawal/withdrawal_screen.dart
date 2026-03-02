@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quantus_miner/src/services/circuit_manager.dart';
+import 'package:quantus_miner/src/services/miner_settings_service.dart';
+import 'package:quantus_miner/src/services/transfer_tracking_service.dart';
 import 'package:quantus_miner/src/services/withdrawal_service.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
@@ -47,6 +49,11 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
   CircuitStatus _circuitStatus = CircuitStatus.unavailable;
   bool _isGeneratingCircuits = false;
 
+  // Transfer tracking
+  final _transferTrackingService = TransferTrackingService();
+  List<TrackedTransfer> _trackedTransfers = [];
+  bool _hasLoadedTransfers = false;
+
   // Fee is 10 basis points (0.1%)
   static const int _feeBps = 10;
 
@@ -57,6 +64,43 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
     _updateAmountToMax();
     // Check circuit availability
     _checkCircuits();
+    // Load tracked transfers
+    _loadTrackedTransfers();
+  }
+
+  Future<void> _loadTrackedTransfers() async {
+    try {
+      // Initialize the tracking service with current chain config
+      final settingsService = MinerSettingsService();
+      final chainConfig = await settingsService.getChainConfig();
+
+      _transferTrackingService.initialize(rpcUrl: chainConfig.rpcUrl, wormholeAddress: widget.wormholeAddress);
+
+      // Load from disk first
+      await _transferTrackingService.loadFromDisk();
+
+      // Get unspent transfers
+      final transfers = await _transferTrackingService.getUnspentTransfers(
+        wormholeAddress: widget.wormholeAddress,
+        secretHex: widget.secretHex,
+      );
+
+      if (mounted) {
+        setState(() {
+          _trackedTransfers = transfers;
+          _hasLoadedTransfers = true;
+        });
+      }
+
+      _log.i('Loaded ${transfers.length} tracked transfers for withdrawal');
+    } catch (e) {
+      _log.e('Failed to load tracked transfers', error: e);
+      if (mounted) {
+        setState(() {
+          _hasLoadedTransfers = true; // Mark as loaded even on error
+        });
+      }
+    }
   }
 
   Future<void> _checkCircuits() async {
@@ -69,36 +113,69 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
   }
 
   Future<void> _generateCircuits() async {
+    _log.i('Starting circuit generation...');
+    if (!mounted) return;
+
     setState(() {
       _isGeneratingCircuits = true;
       _error = null;
-      _statusMessage = 'Generating circuits (this takes 10-30 minutes)...';
+      _progress = 0.1; // Show some initial progress (indeterminate)
+      _statusMessage =
+          'Generating ZK circuits... This is a one-time process that takes 10-30 minutes. Please keep the app open.';
     });
 
-    final success = await _circuitManager.generateCircuits(
-      onProgress: (progress, message) {
-        if (mounted) {
-          setState(() {
-            _progress = progress;
-            _statusMessage = message;
-          });
-        }
-      },
+    bool success = false;
+    try {
+      final result = await _circuitManager.generateCircuits(
+        onProgress: (progress, message) {
+          _log.i('Circuit progress: $progress - $message');
+          if (mounted) {
+            setState(() {
+              _progress = progress;
+              _statusMessage = message;
+            });
+          }
+        },
+      );
+      success = result;
+      _log.i('Circuit generation finished. Success: $success');
+    } catch (e) {
+      _log.e('Circuit generation threw exception', error: e);
+      success = false;
+    }
+
+    // Always update state after completion, regardless of success
+    if (!mounted) {
+      _log.w('Widget not mounted after circuit generation');
+      return;
+    }
+
+    // Check circuit status first
+    final status = await _circuitManager.checkStatus();
+    _log.i(
+      'Circuit status after generation: isAvailable=${status.isAvailable}, dir=${status.circuitDir}, size=${status.totalSizeBytes}',
     );
 
-    if (mounted) {
-      setState(() {
-        _isGeneratingCircuits = false;
-      });
+    if (!mounted) return;
 
-      if (success) {
-        await _checkCircuits();
+    // Update all state in a single setState call
+    setState(() {
+      _isGeneratingCircuits = false;
+      _circuitStatus = status;
+      if (success && status.isAvailable) {
+        _progress = 1.0;
+        _statusMessage = 'Circuit files ready!';
+        _error = null;
+      } else if (!success) {
+        _error = 'Failed to generate circuit files. Please try again.';
       } else {
-        setState(() {
-          _error = 'Failed to generate circuit files. Please try again.';
-        });
+        _error = 'Files generated but verification failed. Missing files?';
       }
-    }
+    });
+
+    _log.i(
+      'State updated: _isGeneratingCircuits=$_isGeneratingCircuits, _circuitStatus.isAvailable=${_circuitStatus.isAvailable}',
+    );
   }
 
   @override
@@ -139,16 +216,20 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
     if (value == null || value.trim().isEmpty) {
       return 'Please enter a destination address';
     }
-    // Basic SS58 validation
+
     final trimmed = value.trim();
-    if (trimmed.length < 40 || trimmed.length > 50) {
-      return 'Invalid address length';
+
+    // Quantus addresses (SS58 prefix 189) must start with "qz"
+    if (!trimmed.startsWith('qz')) {
+      return 'Address must start with "qz"';
     }
+
     // Check for valid base58 characters
     final base58Regex = RegExp(r'^[1-9A-HJ-NP-Za-km-z]+$');
     if (!base58Regex.hasMatch(trimmed)) {
       return 'Invalid address format';
     }
+
     return null;
   }
 
@@ -203,12 +284,26 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
       final withdrawalService = WithdrawalService();
       final circuitBinsDir = _circuitStatus.circuitDir!;
 
+      // Check if we have tracked transfers (required for exact amounts)
+      if (_trackedTransfers.isEmpty) {
+        setState(() {
+          _error =
+              'No tracked transfers available. Mining rewards can only be '
+              'withdrawn for blocks mined while the app was open.';
+          _isWithdrawing = false;
+        });
+        return;
+      }
+
+      _log.i('Using ${_trackedTransfers.length} tracked transfers with exact amounts');
+
       final result = await withdrawalService.withdraw(
         secretHex: widget.secretHex,
         wormholeAddress: widget.wormholeAddress,
         destinationAddress: destination,
         amount: _withdrawAll ? null : amount,
         circuitBinsDir: circuitBinsDir,
+        trackedTransfers: _trackedTransfers.isNotEmpty ? _trackedTransfers : null,
         onProgress: (progress, message) {
           if (mounted) {
             setState(() {
@@ -267,10 +362,10 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            LinearProgressIndicator(
-              value: _progress,
-              backgroundColor: Colors.white.withValues(alpha: 0.1),
-              valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+            // Use indeterminate progress since we don't get intermediate updates from FFI
+            const LinearProgressIndicator(
+              backgroundColor: Color(0x1AFFFFFF),
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
             ),
           ],
         ),
@@ -278,6 +373,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
     }
 
     if (_circuitStatus.isAvailable) {
+      final batchSize = _circuitStatus.numLeafProofs ?? 16;
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -297,11 +393,10 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                     'Circuit files ready',
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.green.shade200),
                   ),
-                  if (_circuitStatus.totalSizeBytes != null)
-                    Text(
-                      CircuitManager.formatBytes(_circuitStatus.totalSizeBytes!),
-                      style: TextStyle(fontSize: 12, color: Colors.green.shade300),
-                    ),
+                  Text(
+                    'Batch size: $batchSize proofs${_circuitStatus.totalSizeBytes != null ? ' • ${CircuitManager.formatBytes(_circuitStatus.totalSizeBytes!)}' : ''}',
+                    style: TextStyle(fontSize: 12, color: Colors.green.shade300),
+                  ),
                 ],
               ),
             ),
@@ -362,6 +457,99 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
     );
   }
 
+  Widget _buildTransferTrackingCard() {
+    if (!_hasLoadedTransfers) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+        ),
+        child: const Row(
+          children: [
+            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+            SizedBox(width: 12),
+            Text('Loading transfer data...', style: TextStyle(fontSize: 14, color: Colors.grey)),
+          ],
+        ),
+      );
+    }
+
+    if (_trackedTransfers.isNotEmpty) {
+      final totalTracked = _trackedTransfers.fold<BigInt>(BigInt.zero, (sum, t) => sum + t.amount);
+      final formattedTotal = NumberFormattingService().formatBalance(totalTracked, addSymbol: true);
+
+      // Calculate dummy proofs needed
+      final batchSize = _circuitStatus.numLeafProofs ?? 16;
+      final realProofs = _trackedTransfers.length;
+      final dummyProofs = batchSize - (realProofs % batchSize);
+      final effectiveDummies = dummyProofs == batchSize ? 0 : dummyProofs;
+
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.green.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green.shade400, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${_trackedTransfers.length} transfer(s) tracked',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.green.shade200),
+                  ),
+                  Text('Total: $formattedTotal', style: TextStyle(fontSize: 12, color: Colors.green.shade300)),
+                  Text(
+                    '$realProofs real + $effectiveDummies dummy = $batchSize proofs per batch',
+                    style: TextStyle(fontSize: 11, color: Colors.green.shade400),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // No tracked transfers - show warning
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.warning_amber, color: Colors.orange.shade400, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'No tracked transfers',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.orange.shade200),
+                ),
+                Text(
+                  'Mining rewards are only tracked while the app is open. Withdrawal may fail.',
+                  style: TextStyle(fontSize: 12, color: Colors.orange.shade300),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final formattedBalance = NumberFormattingService().formatBalance(widget.availableBalance, addSymbol: true);
@@ -413,6 +601,10 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
 
                 // Circuit status card
                 _buildCircuitStatusCard(),
+                const SizedBox(height: 16),
+
+                // Transfer tracking status card
+                _buildTransferTrackingCard(),
                 const SizedBox(height: 32),
 
                 // Destination address

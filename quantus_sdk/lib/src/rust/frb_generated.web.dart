@@ -77,6 +77,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   StorageProofData dco_decode_box_autoadd_storage_proof_data(dynamic raw);
 
   @protected
+  WormholeError dco_decode_box_autoadd_wormhole_error(dynamic raw);
+
+  @protected
   WormholeProofGenerator dco_decode_box_autoadd_wormhole_proof_generator(dynamic raw);
 
   @protected
@@ -199,6 +202,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   StorageProofData sse_decode_box_autoadd_storage_proof_data(SseDeserializer deserializer);
+
+  @protected
+  WormholeError sse_decode_box_autoadd_wormhole_error(SseDeserializer deserializer);
 
   @protected
   WormholeProofGenerator sse_decode_box_autoadd_wormhole_proof_generator(SseDeserializer deserializer);
@@ -328,6 +334,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_box_autoadd_storage_proof_data(StorageProofData self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_wormhole_error(WormholeError self, SseSerializer serializer);
 
   @protected
   void sse_encode_box_autoadd_wormhole_proof_generator(WormholeProofGenerator self, SseSerializer serializer);

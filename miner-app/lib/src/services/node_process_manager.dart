@@ -19,8 +19,9 @@ class NodeConfig {
   /// Path to the node identity key file.
   final File identityFile;
 
-  /// The rewards address for mining.
-  final String rewardsAddress;
+  /// The rewards preimage (first hash) for mining rewards.
+  /// This is passed to the node via --rewards-preimage flag.
+  final String rewardsPreimage;
 
   /// Chain ID to connect to ('dev' or 'dirac').
   final String chainId;
@@ -40,7 +41,7 @@ class NodeConfig {
   NodeConfig({
     required this.binary,
     required this.identityFile,
-    required this.rewardsAddress,
+    required this.rewardsPreimage,
     this.chainId = 'dev',
     this.minerListenPort = 9833,
     this.rpcPort = 9933,
@@ -137,7 +138,7 @@ class NodeProcessManager extends BaseProcessManager {
       // Only use --base-path for non-dev chains (dev uses temp storage for fresh state)
       if (config.chainId != 'dev') ...['--base-path', basePath],
       '--node-key-file', config.identityFile.path,
-      '--rewards-address', config.rewardsAddress,
+      '--rewards-preimage', config.rewardsPreimage,
       '--validator',
       // Chain selection
       if (config.chainId == 'dev') '--dev' else ...['--chain', config.chainId],

@@ -129,6 +129,18 @@ class WormholeService {
     return wormhole.dequantizeAmount(quantizedAmount: quantizedAmount);
   }
 
+  /// Compute the output amount after fee deduction.
+  ///
+  /// The ZK circuit enforces that output amounts don't exceed input minus fee.
+  /// Use this function to compute the correct output amount for proof generation.
+  ///
+  /// Formula: `output = input * (10000 - fee_bps) / 10000`
+  ///
+  /// Example: `computeOutputAmount(38, 10)` = 37 (0.1% fee deducted)
+  int computeOutputAmount(int inputAmount, int feeBps) {
+    return wormhole.computeOutputAmount(inputAmount: inputAmount, feeBps: feeBps);
+  }
+
   /// Get the HD derivation path for a wormhole address.
   String getDerivationPath({required int purpose, required int index}) {
     return wormhole.getWormholeDerivationPath(purpose: purpose, index: index);
@@ -192,6 +204,87 @@ class WormholeService {
   /// Returns true if all required circuit files are present.
   bool checkCircuitBinariesExist(String binsDir) {
     return wormhole.checkCircuitBinariesExist(binsDir: binsDir);
+  }
+
+  /// Compute the full storage key for a wormhole TransferProof.
+  ///
+  /// This key can be used with `state_getReadProof` RPC to fetch the Merkle proof
+  /// needed for ZK proof generation.
+  ///
+  /// The storage key is: twox128("Wormhole") ++ twox128("TransferProof") ++ poseidon_hash(key)
+  ///
+  /// Parameters:
+  /// - [secretHex]: The wormhole secret (32 bytes, hex with 0x prefix)
+  /// - [transferCount]: The transfer count from NativeTransferred event
+  /// - [fundingAccount]: The account that sent the funds (SS58 format)
+  /// - [amount]: The exact transfer amount in planck
+  ///
+  /// Returns the full storage key as hex string with 0x prefix.
+  String computeTransferProofStorageKey({
+    required String secretHex,
+    required BigInt transferCount,
+    required String fundingAccount,
+    required BigInt amount,
+  }) {
+    return wormhole.computeTransferProofStorageKey(
+      secretHex: secretHex,
+      transferCount: transferCount,
+      fundingAccount: fundingAccount,
+      amount: amount,
+    );
+  }
+
+  /// Encode digest logs from RPC format to SCALE-encoded bytes.
+  ///
+  /// The RPC returns digest logs as an array of hex-encoded SCALE bytes.
+  /// This function properly encodes them as a SCALE Vec<DigestItem> which
+  /// matches what the circuit expects.
+  ///
+  /// Parameters:
+  /// - [logsHex]: Array of hex-encoded digest log items from RPC
+  ///   (e.g., from `header.digest.logs` in the RPC response)
+  ///
+  /// Returns SCALE-encoded digest as hex string (with 0x prefix),
+  /// padded/truncated to 110 bytes as required by the circuit.
+  ///
+  /// Example:
+  /// ```dart
+  /// // From RPC: header['digest']['logs'] = ['0x0642...', '0x0561...']
+  /// final digestHex = service.encodeDigestFromRpcLogs(
+  ///   logsHex: (header['digest']['logs'] as List).cast<String>(),
+  /// );
+  /// ```
+  String encodeDigestFromRpcLogs({required List<String> logsHex}) {
+    return wormhole.encodeDigestFromRpcLogs(logsHex: logsHex);
+  }
+
+  /// Compute block hash from header components.
+  ///
+  /// This matches the Poseidon block hash computation used by the Quantus chain.
+  /// The hash is computed over the SCALE-encoded header components.
+  ///
+  /// Parameters:
+  /// - [parentHashHex]: Parent block hash (32 bytes, hex with 0x prefix)
+  /// - [stateRootHex]: State root (32 bytes, hex with 0x prefix)
+  /// - [extrinsicsRootHex]: Extrinsics root (32 bytes, hex with 0x prefix)
+  /// - [blockNumber]: Block number
+  /// - [digestHex]: SCALE-encoded digest (from [encodeDigestFromRpcLogs])
+  ///
+  /// Returns block hash as hex string with 0x prefix.
+  String computeBlockHash({
+    required String parentHashHex,
+    required String stateRootHex,
+    required String extrinsicsRootHex,
+    required int blockNumber,
+    required String digestHex,
+  }) {
+    return wormhole.computeBlockHash(
+      parentHashHex: parentHashHex,
+      stateRootHex: stateRootHex,
+      extrinsicsRootHex: extrinsicsRootHex,
+      blockNumber: blockNumber,
+      digestHex: digestHex,
+    );
   }
 }
 

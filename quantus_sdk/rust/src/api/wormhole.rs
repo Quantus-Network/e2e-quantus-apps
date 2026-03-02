@@ -23,6 +23,7 @@
 //! - 0 = Mobile app wormhole sends (future)
 //! - 1 = Miner rewards
 
+use plonky2::field::types::PrimeField64;
 use qp_rusty_crystals_hdwallet::{
     derive_wormhole_from_mnemonic, WormholePair, QUANTUS_WORMHOLE_CHAIN_ID,
 };
@@ -63,6 +64,14 @@ impl From<WormholePair> for WormholePairResult {
 #[derive(Debug)]
 pub struct WormholeError {
     pub message: String,
+}
+
+impl WormholeError {
+    /// Returns the error message as a string for display.
+    #[flutter_rust_bridge::frb(sync, name = "toString")]
+    pub fn to_display_string(&self) -> String {
+        format!("WormholeError: {}", self.message)
+    }
 }
 
 impl std::fmt::Display for WormholeError {
@@ -116,7 +125,14 @@ pub fn derive_wormhole_pair(
 
 /// Convert a first_hash (rewards preimage) to its corresponding wormhole address.
 ///
-/// This is useful for verifying that a given preimage produces the expected address.
+/// This computes the address exactly as the chain and ZK circuit do:
+/// - Convert first_hash (32 bytes) to 4 field elements using unsafe_digest_bytes_to_felts
+///   (8 bytes per element)
+/// - Hash once without padding using hash_variable_length
+///
+/// The wormhole address derivation is:
+/// - secret -> hash(salt + secret) = first_hash (preimage for node)
+/// - first_hash -> hash(first_hash) = address
 ///
 /// # Arguments
 /// * `first_hash_hex` - The first_hash bytes as hex string (with or without 0x prefix)
@@ -135,14 +151,13 @@ pub fn first_hash_to_address(first_hash_hex: String) -> Result<String, WormholeE
             message: "First hash must be exactly 32 bytes".to_string(),
         })?;
 
-    // The address is the Poseidon hash of the first_hash
-    // We need to use the same hashing as WormholePair::generate_pair_from_secret
-    use qp_poseidon_core::{
-        double_hash_variable_length, serialization::unsafe_digest_bytes_to_felts,
-    };
+    // The address is hash(first_hash) using the same method as the ZK circuit:
+    // - unsafe_digest_bytes_to_felts: 32 bytes -> 4 field elements (8 bytes each)
+    // - hash_variable_length: hash without padding
+    use qp_poseidon_core::{hash_variable_length, serialization::unsafe_digest_bytes_to_felts};
 
     let first_hash_felts = unsafe_digest_bytes_to_felts(&first_hash_bytes);
-    let address_bytes = double_hash_variable_length(first_hash_felts.to_vec());
+    let address_bytes = hash_variable_length(first_hash_felts.to_vec());
 
     let account = AccountId32::from(address_bytes);
     Ok(account.to_ss58check())
@@ -373,6 +388,30 @@ pub fn dequantize_amount(quantized_amount: u32) -> u64 {
     quantized_amount as u64 * QUANTIZATION_FACTOR
 }
 
+/// Compute the output amount after fee deduction.
+///
+/// The circuit enforces that output amounts don't exceed input minus fee.
+/// Use this function to compute the correct output amount for proof generation.
+///
+/// Formula: `output = input * (10000 - fee_bps) / 10000`
+///
+/// # Arguments
+/// * `input_amount` - Input amount in quantized units (from quantize_amount)
+/// * `fee_bps` - Fee rate in basis points (e.g., 10 = 0.1%)
+///
+/// # Returns
+/// Maximum output amount in quantized units.
+///
+/// # Example
+/// ```ignore
+/// let input = quantize_amount(383561629241)?; // 38 in quantized
+/// let output = compute_output_amount(input, 10); // 37 (after 0.1% fee)
+/// ```
+#[flutter_rust_bridge::frb(sync)]
+pub fn compute_output_amount(input_amount: u32, fee_bps: u32) -> u32 {
+    ((input_amount as u64) * (10000 - fee_bps as u64) / 10000) as u32
+}
+
 /// Get the batch size for proof aggregation.
 ///
 /// # Arguments
@@ -384,6 +423,121 @@ pub fn dequantize_amount(quantized_amount: u32) -> u64 {
 pub fn get_aggregation_batch_size(bins_dir: String) -> Result<usize, WormholeError> {
     let config = CircuitConfig::load(&bins_dir)?;
     Ok(config.num_leaf_proofs)
+}
+
+/// Encode digest logs from RPC format to SCALE-encoded bytes.
+///
+/// The RPC returns digest logs as an array of hex-encoded SCALE bytes.
+/// This function properly encodes them as a SCALE Vec<DigestItem> which
+/// matches what the circuit expects.
+///
+/// # Arguments
+/// * `logs_hex` - Array of hex-encoded digest log items from RPC
+///
+/// # Returns
+/// SCALE-encoded digest as hex string (with 0x prefix), padded/truncated to 110 bytes.
+///
+/// # Example
+/// ```ignore
+/// // From RPC: header.digest.logs = ["0x0642...", "0x0561..."]
+/// let digest_hex = encode_digest_from_rpc_logs(vec!["0x0642...".into(), "0x0561...".into()])?;
+/// ```
+#[flutter_rust_bridge::frb(sync)]
+pub fn encode_digest_from_rpc_logs(logs_hex: Vec<String>) -> Result<String, WormholeError> {
+    use codec::Encode;
+
+    // Each log is already a SCALE-encoded DigestItem
+    // We need to encode them as Vec<DigestItem>: compact(length) ++ items
+    let mut encoded = Vec::new();
+
+    // Encode compact length prefix
+    codec::Compact(logs_hex.len() as u32).encode_to(&mut encoded);
+
+    // Append each log's raw bytes
+    for log_hex in &logs_hex {
+        let log_bytes = parse_hex(log_hex)?;
+        encoded.extend_from_slice(&log_bytes);
+    }
+
+    // Pad or truncate to exactly 110 bytes (DIGEST_LOGS_SIZE)
+    const DIGEST_LOGS_SIZE: usize = 110;
+    let mut result = [0u8; DIGEST_LOGS_SIZE];
+    let copy_len = encoded.len().min(DIGEST_LOGS_SIZE);
+    result[..copy_len].copy_from_slice(&encoded[..copy_len]);
+
+    Ok(format!("0x{}", hex::encode(result)))
+}
+
+/// Compute the full storage key for a wormhole TransferProof.
+///
+/// This key can be used with `state_getReadProof` RPC to fetch the Merkle proof
+/// needed for ZK proof generation.
+///
+/// The storage key is: module_prefix ++ storage_prefix ++ poseidon_hash(key)
+///
+/// # Arguments
+/// * `secret_hex` - The wormhole secret (32 bytes, hex with 0x prefix)
+/// * `transfer_count` - The transfer count from NativeTransferred event
+/// * `funding_account` - The account that sent the funds (SS58 format)
+/// * `amount` - The exact transfer amount in planck
+///
+/// # Returns
+/// The full storage key as hex string with 0x prefix.
+#[flutter_rust_bridge::frb(sync)]
+pub fn compute_transfer_proof_storage_key(
+    secret_hex: String,
+    transfer_count: u64,
+    funding_account: String,
+    amount: u64,
+) -> Result<String, WormholeError> {
+    // Compute wormhole address from secret
+    let secret_bytes = parse_hex_32(&secret_hex)?;
+    let secret_digest: qp_zk_circuits_common::utils::BytesDigest =
+        secret_bytes.try_into().map_err(|e| WormholeError {
+            message: format!("Invalid secret: {:?}", e),
+        })?;
+
+    let unspendable =
+        qp_wormhole_circuit::unspendable_account::UnspendableAccount::from_secret(secret_digest);
+    let unspendable_bytes =
+        qp_zk_circuits_common::utils::digest_felts_to_bytes(unspendable.account_id);
+    let wormhole_address: [u8; 32] = unspendable_bytes
+        .as_ref()
+        .try_into()
+        .expect("BytesDigest is always 32 bytes");
+
+    // Parse funding account
+    let funding_account_bytes = ss58_to_bytes(&funding_account)?;
+
+    // Compute the Poseidon hash of the storage key
+    let leaf_hash = compute_transfer_proof_leaf_hash(
+        0, // asset_id = 0 for native token
+        transfer_count,
+        &funding_account_bytes,
+        &wormhole_address,
+        amount as u128,
+    )?;
+
+    // Build the full storage key:
+    // twox128("Wormhole") ++ twox128("TransferProof") ++ poseidon_hash
+    //
+    // Pre-computed twox128 hashes:
+    // twox128("Wormhole") = 0x1cbfc5e0de51116eb98c56a3b9fd8c8b
+    // twox128("TransferProof") = 0x4a4ee9c5fb3e0a4c6f3b6daa9b1c7b28
+    //
+    // Note: These hashes are computed using xxhash and are deterministic.
+    // Using the standard Substrate storage prefix computation.
+    use sp_core::twox_128;
+
+    let module_prefix = twox_128(b"Wormhole");
+    let storage_prefix = twox_128(b"TransferProof");
+
+    let mut full_key = Vec::with_capacity(32 + 32);
+    full_key.extend_from_slice(&module_prefix);
+    full_key.extend_from_slice(&storage_prefix);
+    full_key.extend_from_slice(&leaf_hash);
+
+    Ok(format!("0x{}", hex::encode(full_key)))
 }
 
 // ============================================================================
@@ -450,7 +604,9 @@ impl WormholeProofGenerator {
         // Parse all hex inputs
         let secret = parse_hex_32(&utxo.secret_hex)?;
         let funding_account = parse_hex_32(&utxo.funding_account_hex)?;
-        let _block_hash = parse_hex_32(&utxo.block_hash_hex)?;
+        // Use the actual block hash from the chain (from the UTXO), not a computed one.
+        // The circuit will verify this matches the hash of the header components.
+        let block_hash = parse_hex_32(&utxo.block_hash_hex)?;
 
         let parent_hash = parse_hex_32(&block_header.parent_hash_hex)?;
         let state_root = parse_hex_32(&block_header.state_root_hex)?;
@@ -519,14 +675,8 @@ impl WormholeProofGenerator {
         let copy_len = digest.len().min(DIGEST_LOGS_SIZE);
         digest_padded[..copy_len].copy_from_slice(&digest[..copy_len]);
 
-        // Compute block hash
-        let block_hash = compute_block_hash_internal(
-            &parent_hash,
-            &state_root,
-            &extrinsics_root,
-            block_header.block_number,
-            &digest,
-        )?;
+        // NOTE: We use the actual block_hash from the UTXO (parsed above), not a computed one.
+        // The circuit will verify that hash(header_components) == block_hash.
 
         // Build circuit inputs
         let private =
@@ -702,6 +852,21 @@ impl WormholeProofAggregator {
                 message: format!("Failed to deserialize proof: {:?}", e),
             })?;
 
+        // Debug: Log the block_hash from public inputs to verify it's not all zeros
+        // Block hash is at indices 16-19 (4 field elements after asset_id, output_amount_1, output_amount_2, volume_fee_bps, nullifier[4], exit_1[4], exit_2[4])
+        if proof.public_inputs.len() >= 20 {
+            let block_hash: Vec<u64> = proof.public_inputs[16..20]
+                .iter()
+                .map(|f| f.to_canonical_u64())
+                .collect();
+            let is_dummy = block_hash.iter().all(|&v| v == 0);
+            log::info!(
+                "[SDK Aggregator] Adding proof with block_hash={:?}, is_dummy={}",
+                block_hash,
+                is_dummy
+            );
+        }
+
         let mut aggregator = self.inner.lock().map_err(|e| WormholeError {
             message: format!("Failed to lock aggregator: {}", e),
         })?;
@@ -728,6 +893,31 @@ impl WormholeProofAggregator {
             .as_ref()
             .map(|b| b.len())
             .unwrap_or(0);
+
+        log::info!(
+            "[SDK Aggregator] Starting aggregation with {} real proofs, batch_size={}",
+            num_real,
+            self.batch_size
+        );
+
+        // Debug: Log block_hash of each proof in the buffer
+        if let Some(ref proofs) = aggregator.proofs_buffer {
+            for (i, proof) in proofs.iter().enumerate() {
+                if proof.public_inputs.len() >= 20 {
+                    let block_hash: Vec<u64> = proof.public_inputs[16..20]
+                        .iter()
+                        .map(|f| f.to_canonical_u64())
+                        .collect();
+                    let is_dummy = block_hash.iter().all(|&v| v == 0);
+                    log::info!(
+                        "[SDK Aggregator] Proof {} in buffer: block_hash={:?}, is_dummy={}",
+                        i,
+                        block_hash,
+                        is_dummy
+                    );
+                }
+            }
+        }
 
         let result = aggregator.aggregate().map_err(|e| WormholeError {
             message: format!("Aggregation failed: {}", e),
@@ -804,6 +994,9 @@ fn ss58_to_bytes(ss58: &str) -> Result<[u8; 32], WormholeError> {
 }
 
 /// Compute the transfer proof leaf hash for storage proof verification.
+///
+/// Uses `hash_storage` to match the chain's PoseidonStorageHasher behavior,
+/// which decodes the SCALE-encoded key and converts to felts via `ToFelts`.
 fn compute_transfer_proof_leaf_hash(
     asset_id: u32,
     transfer_count: u64,
@@ -811,25 +1004,68 @@ fn compute_transfer_proof_leaf_hash(
     wormhole_address: &[u8; 32],
     amount: u128,
 ) -> Result<[u8; 32], WormholeError> {
-    // The storage key is computed using SCALE encoding + Poseidon hash
-    // This matches the chain's TransferProof storage key construction
     use codec::Encode;
 
-    // Encode the storage key components (matches chain's TransferProofKey)
-    let mut encoded = Vec::new();
-    encoded.extend(asset_id.encode());
-    encoded.extend(transfer_count.encode());
-    encoded.extend(funding_account.encode());
-    encoded.extend(wormhole_address.encode());
-    encoded.extend(amount.encode());
+    // TransferProofKey type on chain: (AssetId, TransferCount, AccountId, AccountId, Balance)
+    // AccountId is [u8; 32] internally, and ToFelts is implemented for [u8; 32]
+    type TransferProofKey = (u32, u64, [u8; 32], [u8; 32], u128);
 
-    // Hash with Poseidon (matches chain's PoseidonHasher)
-    let hash = qp_poseidon::PoseidonHasher::hash_variable_length_bytes(&encoded);
+    // SCALE encode the key tuple
+    let key: TransferProofKey = (
+        asset_id,
+        transfer_count,
+        *funding_account,
+        *wormhole_address,
+        amount,
+    );
+    let encoded = key.encode();
+
+    // Use hash_storage which decodes and converts to felts via ToFelts trait
+    // This matches how the chain's PoseidonStorageHasher works
+    let hash = qp_poseidon::PoseidonHasher::hash_storage::<TransferProofKey>(&encoded);
 
     Ok(hash)
 }
 
 /// Compute block hash from header components.
+///
+/// This matches the Poseidon block hash computation used by the Quantus chain.
+/// The hash is computed over the SCALE-encoded header components.
+///
+/// # Arguments
+/// * `parent_hash_hex` - Parent block hash (32 bytes, hex with 0x prefix)
+/// * `state_root_hex` - State root (32 bytes, hex with 0x prefix)
+/// * `extrinsics_root_hex` - Extrinsics root (32 bytes, hex with 0x prefix)
+/// * `block_number` - Block number
+/// * `digest_hex` - SCALE-encoded digest (hex with 0x prefix, from encode_digest_from_rpc_logs)
+///
+/// # Returns
+/// Block hash as hex string with 0x prefix.
+#[flutter_rust_bridge::frb(sync)]
+pub fn compute_block_hash(
+    parent_hash_hex: String,
+    state_root_hex: String,
+    extrinsics_root_hex: String,
+    block_number: u32,
+    digest_hex: String,
+) -> Result<String, WormholeError> {
+    let parent_hash = parse_hex_32(&parent_hash_hex)?;
+    let state_root = parse_hex_32(&state_root_hex)?;
+    let extrinsics_root = parse_hex_32(&extrinsics_root_hex)?;
+    let digest = parse_hex(&digest_hex)?;
+
+    let hash = compute_block_hash_internal(
+        &parent_hash,
+        &state_root,
+        &extrinsics_root,
+        block_number,
+        &digest,
+    )?;
+
+    Ok(format!("0x{}", hex::encode(hash)))
+}
+
+/// Internal function to compute block hash from raw bytes.
 fn compute_block_hash_internal(
     parent_hash: &[u8; 32],
     state_root: &[u8; 32],

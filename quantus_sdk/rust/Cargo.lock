@@ -2955,6 +2955,7 @@ dependencies = [
  "anyhow",
  "flutter_rust_bridge",
  "hex",
+ "log",
  "nam-tiny-hderive",
  "parity-scale-codec",
  "qp-plonky2",

@@ -225,4 +225,18 @@ mod tests {
         let is_valid = verify_message(&keypair, message, &signature);
         assert!(is_valid, "Signature verification failed for long message");
     }
+
+    #[test]
+    fn test_ss58_to_account_id() {
+        // Test with a Quantus address (prefix 189)
+        let addr = "qzjUYyuN4L3HKmBPMxHvK2n8HYnaLZcQvLSQTgdwB2nQ1g2mc";
+        let bytes = ss58_to_account_id(addr);
+        assert_eq!(bytes.len(), 32, "Account ID should be 32 bytes");
+        println!("Account bytes: 0x{}", hex::encode(&bytes));
+        // Verify it's not all zeros or ones
+        assert!(
+            bytes.iter().any(|&b| b != 0 && b != 1),
+            "Account bytes should not be trivial"
+        );
+    }
 }

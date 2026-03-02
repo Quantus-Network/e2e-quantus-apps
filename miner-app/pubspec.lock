@@ -1049,7 +1049,7 @@ packages:
     source: hosted
     version: "0.7.1"
   ss58:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: ss58
       sha256: ad12bcdc909e73648aba52754b1eab81880bd2cbc4fc6cbaa02695affe49201d

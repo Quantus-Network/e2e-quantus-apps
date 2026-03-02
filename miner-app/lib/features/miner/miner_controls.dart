@@ -3,10 +3,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:quantus_miner/src/config/miner_config.dart';
+import 'package:quantus_miner/src/services/miner_wallet_service.dart';
 import 'package:quantus_miner/src/services/mining_orchestrator.dart';
 import 'package:quantus_miner/src/services/mining_stats_service.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 import '../../main.dart';
 import '../../src/services/binary_manager.dart';
@@ -98,10 +100,23 @@ class _MinerControlsState extends State<MinerControls> {
       setState(() => _chainId = chainId);
     }
 
+    // Get rewards preimage directly from the wallet (not from file)
+    final walletService = MinerWalletService();
+    final wormholeKeyPair = await walletService.getWormholeKeyPair();
+    if (wormholeKeyPair == null) {
+      _log.w('No wormhole keypair - wallet not set up');
+      if (mounted) {
+        context.showWarningSnackbar(
+          title: 'Wallet not configured!',
+          message: 'Please set up your rewards address first.',
+        );
+      }
+      return;
+    }
+
     // Check for required files
     final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
     final identityFile = File('$quantusHome/node_key.p2p');
-    final rewardsFile = File('$quantusHome/rewards-address.txt');
     final nodeBinPath = await BinaryManager.getNodeBinaryFilePath();
     final nodeBin = File(nodeBinPath);
     final minerBinPath = await BinaryManager.getExternalMinerBinaryFilePath();
@@ -115,6 +130,21 @@ class _MinerControlsState extends State<MinerControls> {
       return;
     }
 
+    // Log comprehensive wormhole derivation info for debugging
+    _log.i('=== WORMHOLE DERIVATION DEBUG ===');
+    _log.i('Preimage (SS58): ${wormholeKeyPair.rewardsPreimage}');
+    _log.i('Preimage (hex):  ${wormholeKeyPair.rewardsPreimageHex}');
+    _log.i('Address (SS58):  ${wormholeKeyPair.address}');
+    _log.i('Address (hex):   ${wormholeKeyPair.addressHex}');
+    _log.i('Secret (hex):    ${wormholeKeyPair.secretHex.substring(0, 10)}...[redacted]');
+
+    // Verify: compute address from preimage hex and check it matches
+    final wormholeService = WormholeService();
+    final verifiedAddress = wormholeService.preimageToAddress(wormholeKeyPair.rewardsPreimageHex);
+    _log.i('Verified addr:   $verifiedAddress');
+    _log.i('Addresses match: ${verifiedAddress == wormholeKeyPair.address}');
+    _log.i('=================================');
+
     // Create new orchestrator
     final orchestrator = MiningOrchestrator();
     widget.onOrchestratorChanged(orchestrator);
@@ -125,7 +155,8 @@ class _MinerControlsState extends State<MinerControls> {
           nodeBinary: nodeBin,
           minerBinary: minerBin,
           identityFile: identityFile,
-          rewardsFile: rewardsFile,
+          rewardsPreimage: wormholeKeyPair.rewardsPreimage,
+          wormholeAddress: wormholeKeyPair.address,
           chainId: _chainId,
           cpuWorkers: _cpuWorkers,
           gpuDevices: _gpuDevices,

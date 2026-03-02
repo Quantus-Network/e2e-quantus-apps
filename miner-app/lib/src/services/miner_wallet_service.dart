@@ -30,6 +30,7 @@ class MinerWalletService {
           const FlutterSecureStorage(
             aOptions: AndroidOptions(encryptedSharedPreferences: true),
             iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+            mOptions: MacOsOptions(useDataProtectionKeyChain: false),
           );
 
   /// Generate a new 24-word mnemonic.

@@ -34,7 +34,14 @@ WormholePairResult deriveWormholePair({required String mnemonic, required int pu
 
 /// Convert a first_hash (rewards preimage) to its corresponding wormhole address.
 ///
-/// This is useful for verifying that a given preimage produces the expected address.
+/// This computes the address exactly as the chain and ZK circuit do:
+/// - Convert first_hash (32 bytes) to 4 field elements using unsafe_digest_bytes_to_felts
+///   (8 bytes per element)
+/// - Hash once without padding using hash_variable_length
+///
+/// The wormhole address derivation is:
+/// - secret -> hash(salt + secret) = first_hash (preimage for node)
+/// - first_hash -> hash(first_hash) = address
 ///
 /// # Arguments
 /// * `first_hash_hex` - The first_hash bytes as hex string (with or without 0x prefix)
@@ -104,6 +111,28 @@ int quantizeAmount({required BigInt amountPlanck}) =>
 BigInt dequantizeAmount({required int quantizedAmount}) =>
     RustLib.instance.api.crateApiWormholeDequantizeAmount(quantizedAmount: quantizedAmount);
 
+/// Compute the output amount after fee deduction.
+///
+/// The circuit enforces that output amounts don't exceed input minus fee.
+/// Use this function to compute the correct output amount for proof generation.
+///
+/// Formula: `output = input * (10000 - fee_bps) / 10000`
+///
+/// # Arguments
+/// * `input_amount` - Input amount in quantized units (from quantize_amount)
+/// * `fee_bps` - Fee rate in basis points (e.g., 10 = 0.1%)
+///
+/// # Returns
+/// Maximum output amount in quantized units.
+///
+/// # Example
+/// ```ignore
+/// let input = quantize_amount(383561629241)?; // 38 in quantized
+/// let output = compute_output_amount(input, 10); // 37 (after 0.1% fee)
+/// ```
+int computeOutputAmount({required int inputAmount, required int feeBps}) =>
+    RustLib.instance.api.crateApiWormholeComputeOutputAmount(inputAmount: inputAmount, feeBps: feeBps);
+
 /// Get the batch size for proof aggregation.
 ///
 /// # Arguments
@@ -113,6 +142,53 @@ BigInt dequantizeAmount({required int quantizedAmount}) =>
 /// Number of proofs that must be aggregated together.
 BigInt getAggregationBatchSize({required String binsDir}) =>
     RustLib.instance.api.crateApiWormholeGetAggregationBatchSize(binsDir: binsDir);
+
+/// Encode digest logs from RPC format to SCALE-encoded bytes.
+///
+/// The RPC returns digest logs as an array of hex-encoded SCALE bytes.
+/// This function properly encodes them as a SCALE Vec<DigestItem> which
+/// matches what the circuit expects.
+///
+/// # Arguments
+/// * `logs_hex` - Array of hex-encoded digest log items from RPC
+///
+/// # Returns
+/// SCALE-encoded digest as hex string (with 0x prefix), padded/truncated to 110 bytes.
+///
+/// # Example
+/// ```ignore
+/// // From RPC: header.digest.logs = ["0x0642...", "0x0561..."]
+/// let digest_hex = encode_digest_from_rpc_logs(vec!["0x0642...".into(), "0x0561...".into()])?;
+/// ```
+String encodeDigestFromRpcLogs({required List<String> logsHex}) =>
+    RustLib.instance.api.crateApiWormholeEncodeDigestFromRpcLogs(logsHex: logsHex);
+
+/// Compute the full storage key for a wormhole TransferProof.
+///
+/// This key can be used with `state_getReadProof` RPC to fetch the Merkle proof
+/// needed for ZK proof generation.
+///
+/// The storage key is: module_prefix ++ storage_prefix ++ poseidon_hash(key)
+///
+/// # Arguments
+/// * `secret_hex` - The wormhole secret (32 bytes, hex with 0x prefix)
+/// * `transfer_count` - The transfer count from NativeTransferred event
+/// * `funding_account` - The account that sent the funds (SS58 format)
+/// * `amount` - The exact transfer amount in planck
+///
+/// # Returns
+/// The full storage key as hex string with 0x prefix.
+String computeTransferProofStorageKey({
+  required String secretHex,
+  required BigInt transferCount,
+  required String fundingAccount,
+  required BigInt amount,
+}) => RustLib.instance.api.crateApiWormholeComputeTransferProofStorageKey(
+  secretHex: secretHex,
+  transferCount: transferCount,
+  fundingAccount: fundingAccount,
+  amount: amount,
+);
 
 /// Create a new proof generator.
 ///
@@ -129,6 +205,34 @@ Future<WormholeProofGenerator> createProofGenerator({required String binsDir}) =
 /// * `bins_dir` - Path to directory containing aggregator circuit files
 Future<WormholeProofAggregator> createProofAggregator({required String binsDir}) =>
     RustLib.instance.api.crateApiWormholeCreateProofAggregator(binsDir: binsDir);
+
+/// Compute block hash from header components.
+///
+/// This matches the Poseidon block hash computation used by the Quantus chain.
+/// The hash is computed over the SCALE-encoded header components.
+///
+/// # Arguments
+/// * `parent_hash_hex` - Parent block hash (32 bytes, hex with 0x prefix)
+/// * `state_root_hex` - State root (32 bytes, hex with 0x prefix)
+/// * `extrinsics_root_hex` - Extrinsics root (32 bytes, hex with 0x prefix)
+/// * `block_number` - Block number
+/// * `digest_hex` - SCALE-encoded digest (hex with 0x prefix, from encode_digest_from_rpc_logs)
+///
+/// # Returns
+/// Block hash as hex string with 0x prefix.
+String computeBlockHash({
+  required String parentHashHex,
+  required String stateRootHex,
+  required String extrinsicsRootHex,
+  required int blockNumber,
+  required String digestHex,
+}) => RustLib.instance.api.crateApiWormholeComputeBlockHash(
+  parentHashHex: parentHashHex,
+  stateRootHex: stateRootHex,
+  extrinsicsRootHex: extrinsicsRootHex,
+  blockNumber: blockNumber,
+  digestHex: digestHex,
+);
 
 /// Generate circuit binary files for ZK proof generation.
 ///
@@ -398,6 +502,10 @@ class WormholeError implements FrbException {
   final String message;
 
   const WormholeError({required this.message});
+
+  /// Returns the error message as a string for display.
+  @override
+  String toString() => RustLib.instance.api.crateApiWormholeWormholeErrorToDisplayString(that: this);
 
   @override
   int get hashCode => message.hashCode;

@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:quantus_miner/src/services/miner_settings_service.dart';
 import 'package:quantus_miner/src/services/miner_wallet_service.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
-import 'package:quantus_miner/src/shared/miner_app_constants.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
@@ -24,7 +24,7 @@ class MinerBalanceCard extends StatefulWidget {
 
 class _MinerBalanceCardState extends State<MinerBalanceCard> {
   final _walletService = MinerWalletService();
-  final _utxoService = WormholeUtxoService();
+  final _substrateService = SubstrateService();
 
   String _rewardsBalance = 'Loading...';
   String? _wormholeAddress;
@@ -66,6 +66,11 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
     setState(() => _isLoading = true);
 
     try {
+      // Ensure RPC endpoint is configured for the current chain
+      final settingsService = MinerSettingsService();
+      final chainId = await settingsService.getChainId();
+      _log.i('Loading balance with chain: $chainId');
+
       // Check if we have a mnemonic (can derive secret for balance tracking)
       final canWithdraw = await _walletService.canWithdraw();
       _canTrackBalance = canWithdraw;
@@ -119,26 +124,34 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
 
   Future<void> _fetchBalanceWithSecret(String address, String secretHex) async {
     try {
-      _log.d('Fetching unspent balance for $address');
+      // Get the full keypair to log hex address
+      final keyPair = await _walletService.getWormholeKeyPair();
+      _log.i('=== BALANCE QUERY DEBUG ===');
+      _log.i('Address (SS58): $address');
+      if (keyPair != null) {
+        _log.i('Address (hex):  ${keyPair.addressHex}');
+      }
+      _log.i('RPC endpoint: ${RpcEndpointService().bestEndpointUrl}');
+      _log.i('===========================');
 
-      // Get total unspent balance from Subsquid
-      final totalBalance = await _utxoService.getUnspentBalance(wormholeAddress: address, secretHex: secretHex);
+      // Use raw RPC to avoid metadata mismatch with local dev chain
+      final balance = await _substrateService.queryBalanceRaw(address);
+
+      _log.i('Got balance: $balance planck');
 
       if (mounted) {
         setState(() {
-          _rewardsBalance = NumberFormattingService().formatBalance(totalBalance, addSymbol: true);
+          _rewardsBalance = NumberFormattingService().formatBalance(balance, addSymbol: true);
           _wormholeAddress = address;
-          _balancePlanck = totalBalance;
+          _balancePlanck = balance;
           _isLoading = false;
         });
       }
-
-      _log.d('Balance: $totalBalance planck');
-    } catch (e) {
-      _log.w('Error fetching balance from Subsquid', error: e);
+    } catch (e, st) {
+      _log.e('Error fetching balance', error: e, stackTrace: st);
       if (mounted) {
         setState(() {
-          _rewardsBalance = 'Indexer unavailable';
+          _rewardsBalance = 'RPC unavailable';
           _isLoading = false;
         });
       }
@@ -159,7 +172,6 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
-      height: MinerAppConstants.cardHeight,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' as path;
@@ -17,7 +18,16 @@ class CircuitStatus {
   final int? totalSizeBytes;
   final String? version;
 
-  const CircuitStatus({required this.isAvailable, this.circuitDir, this.totalSizeBytes, this.version});
+  /// Number of leaf proofs per aggregation batch (read from config.json)
+  final int? numLeafProofs;
+
+  const CircuitStatus({
+    required this.isAvailable,
+    this.circuitDir,
+    this.totalSizeBytes,
+    this.version,
+    this.numLeafProofs,
+  });
 
   static const unavailable = CircuitStatus(isAvailable: false);
 }
@@ -38,8 +48,9 @@ class CircuitManager {
     'config.json',
   ];
 
-  // Number of leaf proofs per aggregation (must match chain config)
-  static const int numLeafProofs = 8;
+  // Default number of leaf proofs per aggregation (used only for circuit generation)
+  // When using pre-built circuits, the actual value is read from config.json
+  static const int defaultNumLeafProofs = 16;
 
   /// Get the directory where circuit files should be stored.
   static Future<String> getCircuitDirectory() async {
@@ -68,20 +79,29 @@ class CircuitManager {
         totalSize += await file.length();
       }
 
-      // Read version from config.json if available
+      // Read config from config.json
       String? version;
+      int? numLeafProofs;
       try {
         final configFile = File(path.join(circuitDir, 'config.json'));
         if (await configFile.exists()) {
           final content = await configFile.readAsString();
-          final versionMatch = RegExp(r'"version"\s*:\s*"([^"]+)"').firstMatch(content);
-          version = versionMatch?.group(1);
+          final config = jsonDecode(content) as Map<String, dynamic>;
+          version = config['version'] as String?;
+          numLeafProofs = config['num_leaf_proofs'] as int?;
+          _log.d('Circuit config: version=$version, numLeafProofs=$numLeafProofs');
         }
       } catch (e) {
         _log.w('Could not read circuit config', error: e);
       }
 
-      return CircuitStatus(isAvailable: true, circuitDir: circuitDir, totalSizeBytes: totalSize, version: version);
+      return CircuitStatus(
+        isAvailable: true,
+        circuitDir: circuitDir,
+        totalSizeBytes: totalSize,
+        version: version,
+        numLeafProofs: numLeafProofs,
+      );
     } catch (e) {
       _log.e('Error checking circuit status', error: e);
       return CircuitStatus.unavailable;
@@ -107,15 +127,19 @@ class CircuitManager {
       }
 
       onProgress?.call(0.0, 'Starting circuit generation...');
-      _log.i('Starting circuit generation in $circuitDir');
+      _log.i('Starting circuit generation in $circuitDir (numLeafProofs=$defaultNumLeafProofs)');
 
       // Run the FFI call directly (it's async so won't block UI)
+      _log.i('Calling FFI generateCircuitBinaries with outputDir=$circuitDir');
       final service = WormholeService();
-      final result = await service.generateCircuitBinaries(outputDir: circuitDir, numLeafProofs: numLeafProofs);
+      final result = await service.generateCircuitBinaries(outputDir: circuitDir, numLeafProofs: defaultNumLeafProofs);
+      _log.i('FFI call returned: success=${result.success}, error=${result.error}, outputDir=${result.outputDir}');
 
       if (result.success) {
-        onProgress?.call(1.0, 'Circuit generation complete!');
         _log.i('Circuit generation completed successfully');
+        onProgress?.call(1.0, 'Circuit generation complete!');
+        // Allow event loop to process UI updates
+        await Future.delayed(const Duration(milliseconds: 100));
         return true;
       } else {
         final error = result.error ?? 'Unknown error';
@@ -125,8 +149,9 @@ class CircuitManager {
         await deleteCircuits();
         return false;
       }
-    } catch (e) {
-      _log.e('Circuit generation failed', error: e);
+    } catch (e, st) {
+      _log.e('Circuit generation failed with exception', error: e, stackTrace: st);
+      onProgress?.call(0.0, 'Generation failed: $e');
       return false;
     }
   }

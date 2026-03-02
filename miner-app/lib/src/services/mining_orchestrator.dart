@@ -7,10 +7,12 @@ import 'package:quantus_miner/src/services/chain_rpc_client.dart';
 import 'package:quantus_miner/src/services/external_miner_api_client.dart';
 import 'package:quantus_miner/src/services/log_stream_processor.dart';
 import 'package:quantus_miner/src/services/miner_process_manager.dart';
+import 'package:quantus_miner/src/services/miner_settings_service.dart';
 import 'package:quantus_miner/src/services/mining_stats_service.dart';
 import 'package:quantus_miner/src/services/node_process_manager.dart';
 import 'package:quantus_miner/src/services/process_cleanup_service.dart';
 import 'package:quantus_miner/src/services/prometheus_service.dart';
+import 'package:quantus_miner/src/services/transfer_tracking_service.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
 
 final _log = log.withTag('Orchestrator');
@@ -56,8 +58,13 @@ class MiningSessionConfig {
   /// Path to the node identity key file.
   final File identityFile;
 
-  /// Path to the rewards address file.
-  final File rewardsFile;
+  /// The rewards preimage (SS58 format) to pass to the node.
+  /// This is the first_hash derived from the wormhole secret.
+  final String rewardsPreimage;
+
+  /// The wormhole address (SS58) where mining rewards are sent.
+  /// Used for transfer tracking.
+  final String? wormholeAddress;
 
   /// Chain ID to connect to.
   final String chainId;
@@ -78,7 +85,8 @@ class MiningSessionConfig {
     required this.nodeBinary,
     required this.minerBinary,
     required this.identityFile,
-    required this.rewardsFile,
+    required this.rewardsPreimage,
+    this.wormholeAddress,
     this.chainId = 'dev',
     this.cpuWorkers = 8,
     this.gpuDevices = 0,
@@ -118,6 +126,10 @@ class MiningOrchestrator {
   // Hashrate tracking for resilience
   double _lastValidHashrate = 0.0;
   int _consecutiveMetricsFailures = 0;
+
+  // Transfer tracking for withdrawal proofs
+  final TransferTrackingService _transferTrackingService = TransferTrackingService();
+  int _lastTrackedBlock = 0;
 
   // Stream controllers
   final _logsController = StreamController<LogEntry>.broadcast();
@@ -227,15 +239,12 @@ class MiningOrchestrator {
       _actualMetricsPort = ports['metrics']!;
       _updateMetricsClient();
 
-      // Read rewards address
-      final rewardsAddress = await _readRewardsAddress(config.rewardsFile);
-
-      // Start node
+      // Start node with rewards preimage directly from config
       await _nodeManager.start(
         NodeConfig(
           binary: config.nodeBinary,
           identityFile: config.identityFile,
-          rewardsAddress: rewardsAddress,
+          rewardsPreimage: config.rewardsPreimage,
           chainId: config.chainId,
           minerListenPort: config.minerListenPort,
         ),
@@ -251,6 +260,22 @@ class MiningOrchestrator {
       // Start Prometheus polling for target block
       _prometheusTimer?.cancel();
       _prometheusTimer = Timer.periodic(MinerConfig.prometheusPollingInterval, (_) => _fetchPrometheusMetrics());
+
+      // Initialize transfer tracking for withdrawal proof generation
+      if (config.wormholeAddress != null) {
+        _transferTrackingService.initialize(
+          rpcUrl: MinerConfig.nodeRpcUrl(MinerConfig.defaultNodeRpcPort),
+          wormholeAddress: config.wormholeAddress!,
+        );
+
+        // For local dev chains, clear old transfers since the chain resets
+        final settingsService = MinerSettingsService();
+        final chainConfig = await settingsService.getChainConfig();
+        final isDevChain = chainConfig.isLocalNode;
+
+        await _transferTrackingService.loadFromDisk(clearForDevChain: isDevChain);
+        _log.i('Transfer tracking initialized for ${config.wormholeAddress} (devChain=$isDevChain)');
+      }
 
       _setState(MiningState.nodeRunning);
       _log.i('Node started successfully');
@@ -274,7 +299,7 @@ class MiningOrchestrator {
       nodeBinary: _currentConfig!.nodeBinary,
       minerBinary: _currentConfig!.minerBinary,
       identityFile: _currentConfig!.identityFile,
-      rewardsFile: _currentConfig!.rewardsFile,
+      rewardsPreimage: _currentConfig!.rewardsPreimage,
       chainId: _currentConfig!.chainId,
       cpuWorkers: cpuWorkers ?? _currentConfig!.cpuWorkers,
       gpuDevices: gpuDevices ?? _currentConfig!.gpuDevices,
@@ -482,14 +507,6 @@ class MiningOrchestrator {
     }
   }
 
-  Future<String> _readRewardsAddress(File rewardsFile) async {
-    if (!await rewardsFile.exists()) {
-      throw Exception('Rewards address file not found: ${rewardsFile.path}');
-    }
-    final address = await rewardsFile.readAsString();
-    return address.trim();
-  }
-
   Future<void> _waitForNodeRpc() async {
     _log.d('Waiting for node RPC...');
     int attempts = 0;
@@ -618,6 +635,37 @@ class MiningOrchestrator {
     _statsService.updateChainName(info.chainName);
     _statsService.setSyncingState(info.isSyncing, info.currentBlock, info.targetBlock ?? info.currentBlock);
     _emitStats();
+
+    // Track transfers when new blocks are detected (for withdrawal proofs)
+    // Initialize _lastTrackedBlock on first chain info to avoid processing old blocks
+    if (_lastTrackedBlock == 0 && info.currentBlock > 0) {
+      _lastTrackedBlock = info.currentBlock;
+      _log.i('Initialized transfer tracking at block $_lastTrackedBlock');
+    } else if (info.currentBlock > _lastTrackedBlock && _state == MiningState.mining) {
+      _trackNewBlockTransfers(info.currentBlock);
+    }
+  }
+
+  /// Track transfers in newly detected blocks for withdrawal proof generation.
+  void _trackNewBlockTransfers(int currentBlock) {
+    // Process all blocks since last tracked (in case we missed some)
+    for (int block = _lastTrackedBlock + 1; block <= currentBlock; block++) {
+      _getBlockHashAndTrack(block);
+    }
+    _lastTrackedBlock = currentBlock;
+  }
+
+  /// Get block hash and process for transfer tracking.
+  Future<void> _getBlockHashAndTrack(int blockNumber) async {
+    try {
+      // Get block hash from block number
+      final blockHash = await _chainRpcClient.getBlockHash(blockNumber);
+      if (blockHash != null) {
+        await _transferTrackingService.processBlock(blockNumber, blockHash);
+      }
+    } catch (e) {
+      _log.w('Failed to track transfers for block $blockNumber: $e');
+    }
   }
 
   void _handleChainRpcError(String error) {

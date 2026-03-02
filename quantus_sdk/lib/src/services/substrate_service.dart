@@ -84,6 +84,90 @@ class SubstrateService {
     }
   }
 
+  /// Query balance using raw RPC calls instead of generated metadata.
+  /// This is useful when the chain metadata doesn't match the generated code.
+  Future<BigInt> queryBalanceRaw(String address) async {
+    try {
+      final accountID = crypto.ss58ToAccountId(s: address);
+
+      final result = await _rpcEndpointService.rpcTask((uri) async {
+        final provider = Provider.fromUri(uri);
+
+        // Build the storage key for System::Account
+        // twox128("System") ++ twox128("Account") ++ blake2_128_concat(account_id)
+        const systemPrefix = '26aa394eea5630e07c48ae0c9558cef7';
+        const accountPrefix = 'b99d880ec681799c0cf30e8886371da9';
+
+        // blake2_128_concat = blake2_128(data) ++ data
+        final accountIdHex = hex.encode(accountID);
+        final blake2Hash = _blake2b128Hex(accountID);
+
+        final storageKey = '0x$systemPrefix$accountPrefix$blake2Hash$accountIdHex';
+
+        // Query storage
+        final response = await provider.send('state_getStorage', [storageKey]);
+        return response.result as String?;
+      });
+
+      if (result == null) {
+        // Account doesn't exist, balance is 0
+        print('Account $address not found, returning 0');
+        return BigInt.zero;
+      }
+
+      // Decode the AccountInfo structure
+      // AccountInfo { nonce: u32, consumers: u32, providers: u32, sufficients: u32, data: AccountData }
+      // AccountData { free: u128, reserved: u128, frozen: u128, flags: u128 }
+      final balance = _decodeAccountBalance(result);
+      print('user balance (raw) $address: $balance');
+      return balance;
+    } catch (e, st) {
+      print('Error querying balance (raw): $e, $st');
+      throw Exception('Failed to query balance: $e');
+    }
+  }
+
+  /// Compute blake2b-128 hash and return as hex string
+  String _blake2b128Hex(Uint8List data) {
+    // Use the Blake2bHash from polkadart
+    final hasher = Hasher.blake2b128;
+    final hash = hasher.hash(data);
+    return hex.encode(hash);
+  }
+
+  /// Decode AccountInfo hex to extract free balance
+  BigInt _decodeAccountBalance(String hexData) {
+    // Remove 0x prefix
+    String hexStr = hexData.startsWith('0x') ? hexData.substring(2) : hexData;
+
+    // AccountInfo structure (SCALE encoded):
+    // - nonce: u32 (4 bytes, little-endian)
+    // - consumers: u32 (4 bytes)
+    // - providers: u32 (4 bytes)
+    // - sufficients: u32 (4 bytes)
+    // - data.free: u128 (16 bytes, little-endian)
+    // - data.reserved: u128 (16 bytes)
+    // - data.frozen: u128 (16 bytes)
+    // - data.flags: u128 (16 bytes)
+
+    // Skip to free balance: offset = 4 + 4 + 4 + 4 = 16 bytes = 32 hex chars
+    if (hexStr.length < 64) {
+      throw Exception('AccountInfo hex too short: ${hexStr.length}');
+    }
+
+    // Extract free balance (16 bytes = 32 hex chars, little-endian)
+    final freeHex = hexStr.substring(32, 64);
+
+    // Convert little-endian hex to BigInt
+    final bytes = hex.decode(freeHex);
+    BigInt value = BigInt.zero;
+    for (int i = bytes.length - 1; i >= 0; i--) {
+      value = (value << 8) + BigInt.from(bytes[i]);
+    }
+
+    return value;
+  }
+
   Uint8List _combineSignatureAndPubkey(List<int> signature, List<int> pubkey) {
     final result = Uint8List(signature.length + pubkey.length);
     result.setAll(0, signature);

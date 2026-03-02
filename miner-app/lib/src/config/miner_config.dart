@@ -108,6 +108,7 @@ class MinerConfig {
       displayName: 'Development',
       description: 'Local development chain',
       rpcUrl: 'http://127.0.0.1:9933',
+      subsquidUrl: 'http://127.0.0.1:4350/graphql',
       isDefault: true,
     ),
     ChainConfig(
@@ -115,6 +116,7 @@ class MinerConfig {
       displayName: 'Dirac',
       description: 'Dirac testnet',
       rpcUrl: 'https://a1-dirac.quantus.cat',
+      subsquidUrl: 'https://subsquid.quantus.com/graphql',
       isDefault: false,
     ),
   ];
@@ -169,6 +171,7 @@ class ChainConfig {
   final String displayName;
   final String description;
   final String rpcUrl;
+  final String subsquidUrl;
   final bool isDefault;
 
   const ChainConfig({
@@ -176,6 +179,7 @@ class ChainConfig {
     required this.displayName,
     required this.description,
     required this.rpcUrl,
+    required this.subsquidUrl,
     required this.isDefault,
   });
 

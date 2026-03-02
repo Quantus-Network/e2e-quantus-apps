@@ -76,6 +76,11 @@ class GlobalMinerManager {
 Future<String?> initialRedirect(BuildContext context, GoRouterState state) async {
   final currentRoute = state.uri.toString();
 
+  // Don't redirect if already on a sub-route (like /withdraw)
+  if (currentRoute == '/withdraw') {
+    return null;
+  }
+
   // Check 1: Node Installed
   bool isNodeInstalled = false;
   try {
