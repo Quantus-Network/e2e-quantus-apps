@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
+import 'package:polkadart/polkadart.dart' show Hasher;
 import 'package:polkadart/scale_codec.dart' as scale;
 import 'package:quantus_miner/src/services/miner_settings_service.dart';
 import 'package:quantus_miner/src/services/transfer_tracking_service.dart';
@@ -191,8 +192,26 @@ class WithdrawalService {
 
       onProgress?.call(0.85, 'Submitting transaction...');
 
-      // 6. Submit to chain
+      // 6. Submit to chain and wait for inclusion
       final txHash = await _submitProof(proofHex: aggregatedProof.proofHex, rpcUrl: rpcUrl);
+
+      onProgress?.call(0.90, 'Waiting for confirmation...');
+
+      // 7. Wait for the transaction to be included in a block and verify success
+      final confirmed = await _waitForTransactionConfirmation(
+        txHash: txHash,
+        rpcUrl: rpcUrl,
+        destinationAddress: destinationAddress,
+        expectedAmount: totalAfterFee,
+      );
+
+      if (!confirmed) {
+        return WithdrawalResult(
+          success: false,
+          txHash: txHash,
+          error: 'Transaction submitted but could not confirm success. Check tx: $txHash',
+        );
+      }
 
       onProgress?.call(1.0, 'Withdrawal complete!');
 
@@ -715,6 +734,102 @@ class WithdrawalService {
     return txHash;
   }
 
+  /// Wait for a transaction to be included in a block and verify success.
+  ///
+  /// This polls for new blocks and checks if the destination balance increased.
+  /// Returns true if the withdrawal was confirmed successful.
+  Future<bool> _waitForTransactionConfirmation({
+    required String txHash,
+    required String rpcUrl,
+    required String destinationAddress,
+    required BigInt expectedAmount,
+    int maxAttempts = 30,
+    Duration pollInterval = const Duration(seconds: 2),
+  }) async {
+    _log.i('Waiting for transaction confirmation: $txHash');
+
+    // Get initial balance
+    final initialBalance = await _getBalance(rpcUrl: rpcUrl, address: destinationAddress);
+    _log.d('Initial destination balance: $initialBalance');
+
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+      await Future.delayed(pollInterval);
+
+      // Check current balance
+      final currentBalance = await _getBalance(rpcUrl: rpcUrl, address: destinationAddress);
+      final balanceIncrease = currentBalance - initialBalance;
+
+      _log.d('Attempt ${attempt + 1}/$maxAttempts: balance=$currentBalance, increase=$balanceIncrease');
+
+      if (balanceIncrease > BigInt.zero) {
+        // Balance increased - withdrawal successful!
+        // Note: We check for any increase rather than exact amount match
+        // because there could be fees or rounding differences
+        _log.i('Withdrawal confirmed! Balance increased by $balanceIncrease');
+        return true;
+      }
+    }
+
+    _log.w('Transaction confirmation timeout after $maxAttempts attempts');
+    return false;
+  }
+
+  /// Get the free balance of an account.
+  Future<BigInt> _getBalance({required String rpcUrl, required String address}) async {
+    // Decode SS58 address to account ID bytes
+    final decoded = ss58.Codec.fromNetwork('substrate').decode(address);
+    final accountIdHex = _bytesToHex(decoded);
+
+    // Build storage key for System.Account(accountId)
+    // twox128("System") ++ twox128("Account") ++ blake2_128_concat(accountId)
+    final systemHash = _twox128('System');
+    final accountHash = _twox128('Account');
+    final accountIdConcat = _blake2128Concat(decoded);
+
+    final storageKey = '0x$systemHash$accountHash$accountIdConcat';
+
+    final response = await http.post(
+      Uri.parse(rpcUrl),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'jsonrpc': '2.0',
+        'id': 1,
+        'method': 'state_getStorage',
+        'params': [storageKey],
+      }),
+    );
+
+    final result = jsonDecode(response.body);
+
+    if (result['error'] != null) {
+      _log.e('Failed to get balance: ${result['error']}');
+      return BigInt.zero;
+    }
+
+    final storageData = result['result'] as String?;
+    if (storageData == null || storageData == '0x' || storageData.isEmpty) {
+      return BigInt.zero;
+    }
+
+    // Decode AccountInfo struct
+    // Layout: nonce (u32) + consumers (u32) + providers (u32) + sufficients (u32) + AccountData
+    // AccountData: free (u128) + reserved (u128) + frozen (u128) + flags (u128)
+    final bytes = _hexToBytes(storageData.substring(2));
+    if (bytes.length < 32) {
+      return BigInt.zero;
+    }
+
+    // Skip nonce(4) + consumers(4) + providers(4) + sufficients(4) = 16 bytes
+    // Then read free balance (u128 = 16 bytes, little endian)
+    final freeBalanceBytes = bytes.sublist(16, 32);
+    var freeBalance = BigInt.zero;
+    for (var i = freeBalanceBytes.length - 1; i >= 0; i--) {
+      freeBalance = (freeBalance << 8) | BigInt.from(freeBalanceBytes[i]);
+    }
+
+    return freeBalance;
+  }
+
   /// Convert bytes to hex string
   String _bytesToHex(List<int> bytes) {
     return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
@@ -724,29 +839,28 @@ class WithdrawalService {
   // Helper functions for storage key computation
   // ============================================================
 
+  /// Compute twox128 hash of a string (for Substrate storage key prefixes).
   String _twox128(String input) {
-    // XXHash128 - for now use a simple implementation
-    // In production, use a proper xxhash library
-    final bytes = utf8.encode(input);
-    // This is a placeholder - proper implementation needed
-    // The actual twox128 hash is needed for storage queries
-    return _simpleHash(bytes, 16);
+    final bytes = Uint8List.fromList(utf8.encode(input));
+    final hash = Hasher.twoxx128.hash(bytes);
+    return _bytesToHex(hash);
   }
 
-  String _blake2128Concat(String hexInput) {
-    // Blake2b-128 concat: hash(input) ++ input
-    // For now, return just the input (placeholder)
-    // In production, use a proper blake2b library
-    return hexInput;
-  }
-
-  String _simpleHash(List<int> input, int length) {
-    // Placeholder hash function
-    var hash = 0;
-    for (final byte in input) {
-      hash = ((hash << 5) - hash + byte) & 0xFFFFFFFF;
+  /// Compute blake2b-128 hash concatenated with input (for Substrate storage keys).
+  /// Returns: blake2b_128(input) ++ input
+  String _blake2128Concat(dynamic input) {
+    final Uint8List bytes;
+    if (input is List<int>) {
+      bytes = Uint8List.fromList(input);
+    } else if (input is String) {
+      // Assume hex string without 0x prefix
+      bytes = Uint8List.fromList(_hexToBytes(input));
+    } else {
+      throw ArgumentError('Expected List<int> or hex String, got ${input.runtimeType}');
     }
-    return hash.toRadixString(16).padLeft(length * 2, '0');
+
+    final hash = Hasher.blake2b128.hash(bytes);
+    return _bytesToHex(hash) + _bytesToHex(bytes);
   }
 
   String _ss58ToHex(String ss58Address) {
