@@ -46,7 +46,6 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
   // Circuit status
   final _circuitManager = CircuitManager();
   CircuitStatus _circuitStatus = CircuitStatus.unavailable;
-  bool _isExtractingCircuits = false;
 
   // Transfer tracking
   final _transferTrackingService = TransferTrackingService();
@@ -114,69 +113,55 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
     }
   }
 
-  Future<void> _extractCircuits() async {
-    _log.i('Starting circuit extraction...');
-    if (!mounted) return;
+  /// Extract circuit files if needed. Returns true if circuits are ready.
+  Future<bool> _ensureCircuitsExtracted() async {
+    // Check if already available
+    if (_circuitStatus.isAvailable && _circuitStatus.circuitDir != null) {
+      return true;
+    }
 
+    _log.i('Circuits not available, extracting from assets...');
     setState(() {
-      _isExtractingCircuits = true;
-      _error = null;
-      _progress = 0.1;
-      _statusMessage = 'Extracting circuit files...';
+      _progress = 0.05;
+      _statusMessage = 'Extracting circuit files (one-time setup)...';
     });
 
     bool success = false;
     try {
-      final result = await _circuitManager.extractCircuitsFromAssets(
+      success = await _circuitManager.extractCircuitsFromAssets(
         onProgress: (progress, message) {
-          _log.i('Circuit extraction progress: $progress - $message');
+          _log.d('Circuit extraction progress: $progress - $message');
           if (mounted) {
             setState(() {
-              _progress = progress;
+              // Scale extraction progress to 0-20% of total withdrawal progress
+              _progress = progress * 0.2;
               _statusMessage = message;
             });
           }
         },
       );
-      success = result;
       _log.i('Circuit extraction finished. Success: $success');
     } catch (e) {
       _log.e('Circuit extraction threw exception', error: e);
       success = false;
     }
 
-    // Always update state after completion, regardless of success
-    if (!mounted) {
-      _log.w('Widget not mounted after circuit extraction');
-      return;
-    }
+    if (!mounted) return false;
 
-    // Check circuit status first
+    // Update circuit status
     final status = await _circuitManager.checkStatus();
-    _log.i(
-      'Circuit status after extraction: isAvailable=${status.isAvailable}, dir=${status.circuitDir}, size=${status.totalSizeBytes}',
-    );
-
-    if (!mounted) return;
-
-    // Update all state in a single setState call
     setState(() {
-      _isExtractingCircuits = false;
       _circuitStatus = status;
-      if (success && status.isAvailable) {
-        _progress = 1.0;
-        _statusMessage = 'Circuit files ready!';
-        _error = null;
-      } else if (!success) {
-        _error = 'Failed to extract circuit files. Please try again.';
-      } else {
-        _error = 'Extraction completed but verification failed. Missing files?';
-      }
     });
 
-    _log.i(
-      'State updated: _isExtractingCircuits=$_isExtractingCircuits, _circuitStatus.isAvailable=${_circuitStatus.isAvailable}',
-    );
+    if (!success || !status.isAvailable) {
+      setState(() {
+        _error = 'Failed to extract circuit files. Please try again.';
+      });
+      return false;
+    }
+
+    return true;
   }
 
   @override
@@ -277,14 +262,12 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
 
       _log.i('Starting withdrawal of $amount planck to $destination');
 
-      // Check circuit availability
-      if (!_circuitStatus.isAvailable || _circuitStatus.circuitDir == null) {
-        if (mounted) {
-          context.showErrorSnackbar(
-            title: 'Circuits Required',
-            message: 'Please download circuit files first (~163MB).',
-          );
-        }
+      // Extract circuits if needed (auto-extracts on first withdrawal)
+      final circuitsReady = await _ensureCircuitsExtracted();
+      if (!circuitsReady) {
+        setState(() {
+          _isWithdrawing = false;
+        });
         return;
       }
 
@@ -318,7 +301,8 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
         onProgress: (progress, message) {
           if (mounted) {
             setState(() {
-              _progress = progress;
+              // Scale withdrawal progress to 20-100% (extraction uses 0-20%)
+              _progress = 0.2 + (progress * 0.8);
               _statusMessage = message;
             });
           }
@@ -355,44 +339,6 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
   }
 
   Widget _buildCircuitStatusCard() {
-    if (_isExtractingCircuits) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.blue.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    _statusMessage,
-                    style: TextStyle(fontSize: 14, color: Colors.blue.shade200),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // Use indeterminate progress since we don't get intermediate updates from FFI
-            const LinearProgressIndicator(
-              backgroundColor: Color(0x1AFFFFFF),
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-            ),
-          ],
-        ),
-      );
-    }
-
     if (_circuitStatus.isAvailable) {
       final batchSize = _circuitStatus.numLeafProofs ?? 16;
       return Container(
@@ -433,60 +379,38 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
       );
     }
 
-    // Circuit files not available - show extract prompt
+    // Circuit files not yet extracted - will auto-extract on first withdrawal
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.amber.withValues(alpha: 0.1),
+        color: Colors.blue.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Icon(Icons.folder_zip, color: Colors.amber.shade400, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Circuit files required',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.amber.shade200,
-                      ),
-                    ),
-                    Text(
-                      'Extract bundled files (~163MB)',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.amber.shade300,
-                      ),
-                    ),
-                  ],
+          Icon(Icons.info_outline, color: Colors.blue.shade400, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Circuit files will be extracted',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.blue.shade200,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _extractCircuits,
-              icon: const Icon(Icons.unarchive, size: 18),
-              label: const Text('Extract Circuit Files'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.amber.shade700,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                Text(
+                  'One-time setup (~163MB, takes a few seconds)',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.blue.shade300,
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ],
@@ -910,12 +834,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                 SizedBox(
                   height: 56,
                   child: ElevatedButton(
-                    onPressed:
-                        (_isWithdrawing ||
-                            _isExtractingCircuits ||
-                            !_circuitStatus.isAvailable)
-                        ? null
-                        : _startWithdrawal,
+                    onPressed: _isWithdrawing ? null : _startWithdrawal,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF10B981),
                       foregroundColor: Colors.white,

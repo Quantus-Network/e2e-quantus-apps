@@ -190,9 +190,17 @@ class WithdrawalService {
         circuitBinsDir,
       );
 
+      onProgress?.call(0.18, 'Fetching current block...');
+
+      // 4. Get the current best block hash - ALL proofs must use the same block
+      // This is required by the aggregation circuit which enforces all proofs
+      // reference the same storage state snapshot.
+      final proofBlockHash = await _fetchBestBlockHash(rpcUrl);
+      _log.i('Using block $proofBlockHash for all proofs');
+
       onProgress?.call(0.2, 'Generating proofs...');
 
-      // 4. Generate proofs for each transfer
+      // 5. Generate proofs for each transfer
       final proofs = <GeneratedProof>[];
 
       for (int i = 0; i < selectedTransfers.length; i++) {
@@ -211,6 +219,7 @@ class WithdrawalService {
             secretHex: secretHex,
             destinationAddress: destinationAddress,
             rpcUrl: rpcUrl,
+            proofBlockHash: proofBlockHash,
           );
           proofs.add(proof);
         } catch (e) {
@@ -542,6 +551,10 @@ class WithdrawalService {
   }
 
   /// Generate a ZK proof for a single transfer.
+  ///
+  /// [proofBlockHash] - The block hash to use for the storage proof. All proofs
+  /// in an aggregation batch MUST use the same block hash. This should be the
+  /// current best block, not the block where the transfer originally occurred.
   Future<GeneratedProof> _generateProofForTransfer({
     required WormholeProofGenerator generator,
     required WormholeService wormholeService,
@@ -549,15 +562,17 @@ class WithdrawalService {
     required String secretHex,
     required String destinationAddress,
     required String rpcUrl,
+    required String proofBlockHash,
   }) async {
-    final blockHash = transfer.blockHash.startsWith('0x')
-        ? transfer.blockHash
-        : '0x${transfer.blockHash}';
+    // Use the common proof block hash for storage proof (required by aggregation circuit)
+    final blockHash = proofBlockHash.startsWith('0x')
+        ? proofBlockHash
+        : '0x$proofBlockHash';
 
-    // Get block header
+    // Get block header for the proof block (not the original transfer block)
     final blockHeader = await _fetchBlockHeader(rpcUrl, blockHash);
 
-    // Get storage proof for this transfer
+    // Get storage proof for this transfer at the proof block
     final storageProof = await _fetchStorageProof(
       rpcUrl: rpcUrl,
       blockHash: blockHash,
@@ -618,6 +633,40 @@ class WithdrawalService {
       blockHeader: blockHeader,
       storageProof: storageProof,
     );
+  }
+
+  /// Fetch the current best (latest) block hash from the chain.
+  ///
+  /// All proofs in an aggregation batch must use the same block hash for their
+  /// storage proofs. This ensures all proofs reference the same chain state.
+  Future<String> _fetchBestBlockHash(String rpcUrl) async {
+    final response = await http.post(
+      Uri.parse(rpcUrl),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'jsonrpc': '2.0',
+        'id': 1,
+        'method': 'chain_getBlockHash',
+        'params': [], // Empty params returns the best block hash
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to fetch best block hash: ${response.statusCode}');
+    }
+
+    final result = jsonDecode(response.body);
+    if (result['error'] != null) {
+      throw Exception('RPC error fetching best block hash: ${result['error']}');
+    }
+
+    final blockHash = result['result'] as String?;
+    if (blockHash == null) {
+      throw Exception('No best block hash returned from chain');
+    }
+
+    _log.d('Got best block hash: $blockHash');
+    return blockHash;
   }
 
   /// Fetch block header from RPC.
@@ -843,14 +892,83 @@ class WithdrawalService {
     }
 
     final txHash = result['result'] as String;
+    print('=== TRANSACTION SUBMITTED ===');
+    print('TX Hash: $txHash');
+    print('Extrinsic length: ${extrinsicHex.length} chars');
+    print('RPC endpoint: $rpcUrl');
+    print('==============================');
     _log.i('Transaction submitted: $txHash');
     return txHash;
   }
 
-  /// Wait for a transaction to be included in a block and verify success.
+  /// Check events in a specific block for wormhole activity.
+  /// This is useful for debugging - call it with a known block hash.
+  Future<void> debugBlockEvents(String rpcUrl, String blockHash) async {
+    _log.i('=== DEBUG: Checking events in block $blockHash ===');
+
+    final eventsKey = '0x${_twox128('System')}${_twox128('Events')}';
+    final eventsResponse = await http.post(
+      Uri.parse(rpcUrl),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'jsonrpc': '2.0',
+        'id': 1,
+        'method': 'state_getStorage',
+        'params': [eventsKey, blockHash],
+      }),
+    );
+    final eventsResult = jsonDecode(eventsResponse.body);
+    final eventsHex = eventsResult['result'] as String?;
+
+    if (eventsHex == null) {
+      _log.w('No events found');
+      return;
+    }
+
+    _log.i('Events hex length: ${eventsHex.length}');
+    _parseAndLogAllEvents(eventsHex);
+  }
+
+  /// Parse and log all events in a block (for debugging).
+  void _parseAndLogAllEvents(String eventsHex) {
+    final bytes = _hexToBytes(eventsHex.substring(2));
+    _log.d('Total events data: ${bytes.length} bytes');
+
+    // Scan for event patterns
+    for (var i = 0; i < bytes.length - 4; i++) {
+      // Look for ApplyExtrinsic phase (0x00)
+      if (bytes[i] == 0x00) {
+        final compactByte = bytes[i + 1];
+        if (compactByte & 0x03 == 0) {
+          final extrinsicIdx = compactByte >> 2;
+          if (i + 3 < bytes.length) {
+            final palletIndex = bytes[i + 2];
+            final eventIndex = bytes[i + 3];
+
+            // Log interesting events
+            String eventName = 'Pallet$palletIndex.Event$eventIndex';
+            if (palletIndex == 0) {
+              eventName = eventIndex == 0 ? 'System.ExtrinsicSuccess' : 
+                          eventIndex == 1 ? 'System.ExtrinsicFailed' : eventName;
+            } else if (palletIndex == 20) {
+              eventName = 'Wormhole.Event$eventIndex';
+            } else if (palletIndex == 4) {
+              eventName = eventIndex == 2 ? 'Balances.Transfer' : 'Balances.Event$eventIndex';
+            }
+
+            if (palletIndex == 0 || palletIndex == 20 || palletIndex == 4) {
+              _log.i('  [Ext $extrinsicIdx] $eventName');
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /// Wait for a transaction to be included in a block and check events.
   ///
-  /// This polls for new blocks and checks if the destination balance increased.
-  /// Returns true if the withdrawal was confirmed successful.
+  /// Polls for new blocks and looks for wormhole extrinsics, then examines
+  /// the events to determine success or failure.
   Future<bool> _waitForTransactionConfirmation({
     required String txHash,
     required String rpcUrl,
@@ -859,40 +977,208 @@ class WithdrawalService {
     int maxAttempts = 30,
     Duration pollInterval = const Duration(seconds: 2),
   }) async {
-    _log.i('Waiting for transaction confirmation: $txHash');
+    print('=== WAITING FOR CONFIRMATION ===');
+    print('TX Hash: $txHash');
+    print('Destination: $destinationAddress');
+    print('Expected amount: $expectedAmount');
 
-    // Get initial balance
-    final initialBalance = await _getBalance(
-      rpcUrl: rpcUrl,
-      address: destinationAddress,
-    );
-    _log.d('Initial destination balance: $initialBalance');
+    String? startBlockHash;
+    int blocksChecked = 0;
+
+    // Get starting block number for reference
+    try {
+      final response = await http.post(
+        Uri.parse(rpcUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 1,
+          'method': 'chain_getHeader',
+          'params': [],
+        }),
+      );
+      final result = jsonDecode(response.body);
+      final blockNum = result['result']?['number'] as String?;
+      startBlockHash = result['result']?['parentHash'] as String?;
+      _log.i('Starting at block: $blockNum');
+    } catch (e) {
+      _log.w('Could not get starting block: $e');
+    }
+
+    String? lastBlockHash = startBlockHash;
 
     for (var attempt = 0; attempt < maxAttempts; attempt++) {
       await Future.delayed(pollInterval);
 
-      // Check current balance
-      final currentBalance = await _getBalance(
-        rpcUrl: rpcUrl,
-        address: destinationAddress,
-      );
-      final balanceIncrease = currentBalance - initialBalance;
+      try {
+        // Get latest block
+        final headerResponse = await http.post(
+          Uri.parse(rpcUrl),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'jsonrpc': '2.0',
+            'id': 1,
+            'method': 'chain_getHeader',
+            'params': [],
+          }),
+        );
+        final headerResult = jsonDecode(headerResponse.body);
+        final header = headerResult['result'];
+        if (header == null) continue;
 
-      _log.d(
-        'Attempt ${attempt + 1}/$maxAttempts: balance=$currentBalance, increase=$balanceIncrease',
-      );
+        final blockNumber = header['number'] as String?;
+        final parentHash = header['parentHash'] as String?;
 
-      if (balanceIncrease > BigInt.zero) {
-        // Balance increased - withdrawal successful!
-        // Note: We check for any increase rather than exact amount match
-        // because there could be fees or rounding differences
-        _log.i('Withdrawal confirmed! Balance increased by $balanceIncrease');
-        return true;
+        // Get block hash
+        final hashResponse = await http.post(
+          Uri.parse(rpcUrl),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'jsonrpc': '2.0',
+            'id': 1,
+            'method': 'chain_getBlockHash',
+            'params': [],
+          }),
+        );
+        final hashResult = jsonDecode(hashResponse.body);
+        final currentBlockHash = hashResult['result'] as String?;
+
+        if (currentBlockHash == null || currentBlockHash == lastBlockHash) {
+          continue;
+        }
+
+        lastBlockHash = currentBlockHash;
+        blocksChecked++;
+
+        _log.d('Checking block $blockNumber ($currentBlockHash)');
+
+        // Check events in this block for wormhole activity
+        final eventsKey = '0x${_twox128('System')}${_twox128('Events')}';
+        final eventsResponse = await http.post(
+          Uri.parse(rpcUrl),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'jsonrpc': '2.0',
+            'id': 1,
+            'method': 'state_getStorage',
+            'params': [eventsKey, currentBlockHash],
+          }),
+        );
+        final eventsResult = jsonDecode(eventsResponse.body);
+        final eventsHex = eventsResult['result'] as String?;
+
+        if (eventsHex == null) continue;
+
+        // Look for wormhole events in this block
+        final wormholeResult = _checkForWormholeEvents(eventsHex);
+
+        if (wormholeResult != null) {
+          print('=== WORMHOLE RESULT IN BLOCK $blockNumber ===');
+          print('Block hash: $currentBlockHash');
+
+          if (wormholeResult['success'] == true) {
+            print('STATUS: SUCCESS');
+            if (wormholeResult['events'] != null) {
+              for (final event in wormholeResult['events'] as List) {
+                print('  Event: $event');
+              }
+            }
+            print('=============================================');
+            return true;
+          } else {
+            print('STATUS: FAILED');
+            if (wormholeResult['error'] != null) {
+              print('  Error: ${wormholeResult['error']}');
+            }
+            print('=============================================');
+            return false;
+          }
+        }
+      } catch (e, st) {
+        print('Error checking block: $e');
+        print('$st');
       }
     }
 
-    _log.w('Transaction confirmation timeout after $maxAttempts attempts');
+    print('No wormhole transaction found after checking $blocksChecked blocks');
+    print('The transaction may still be pending or may have been rejected.');
     return false;
+  }
+
+  /// Check events hex for wormhole-related activity.
+  /// Returns null if no wormhole activity, or a map with success/failure info.
+  Map<String, dynamic>? _checkForWormholeEvents(String eventsHex) {
+    final bytes = _hexToBytes(eventsHex.substring(2));
+    final events = <String>[];
+    bool foundWormholeExtrinsic = false;
+    bool? success;
+    String? error;
+    int? wormholeExtrinsicIndex;
+
+    // Scan for wormhole pallet (20) events
+    for (var i = 0; i < bytes.length - 4; i++) {
+      if (bytes[i] == 0x00) {
+        final compactByte = bytes[i + 1];
+        if (compactByte & 0x03 == 0) {
+          final extrinsicIdx = compactByte >> 2;
+          if (i + 3 < bytes.length) {
+            final palletIndex = bytes[i + 2];
+            final eventIndex = bytes[i + 3];
+
+            // Wormhole events
+            if (palletIndex == 20) {
+              foundWormholeExtrinsic = true;
+              wormholeExtrinsicIndex = extrinsicIdx;
+              final eventNames = ['WormholeExitSuccess', 'TransferProofStored', 'VolumeAccumulated'];
+              final name = eventIndex < eventNames.length ? eventNames[eventIndex] : 'Event$eventIndex';
+              events.add('Wormhole.$name');
+            }
+
+            // System success/failure for wormhole extrinsic
+            if (palletIndex == 0 && wormholeExtrinsicIndex != null && extrinsicIdx == wormholeExtrinsicIndex) {
+              if (eventIndex == 0) {
+                success = true;
+              } else if (eventIndex == 1) {
+                success = false;
+                // Try to decode error
+                if (i + 5 < bytes.length) {
+                  final errorModule = bytes[i + 4];
+                  final errorIdx = bytes[i + 5];
+                  if (errorModule == 20) {
+                    final wormholeErrors = [
+                      'ProofVerificationFailed',
+                      'InvalidProof', 
+                      'InvalidPublicInputs',
+                      'NullifierAlreadyUsed',
+                      'InvalidBlockHash',
+                      'BlockTooOld',
+                      'InvalidAmount',
+                      'InvalidExitAccount',
+                    ];
+                    error = errorIdx < wormholeErrors.length ? wormholeErrors[errorIdx] : 'Error$errorIdx';
+                  } else {
+                    error = 'Module$errorModule.Error$errorIdx';
+                  }
+                }
+              }
+            }
+
+            // Balance transfers
+            if (palletIndex == 4 && eventIndex == 2) {
+              events.add('Balances.Transfer');
+            }
+          }
+        }
+      }
+    }
+
+    if (!foundWormholeExtrinsic) return null;
+
+    return {
+      'success': success ?? false,
+      'events': events,
+      'error': error,
+    };
   }
 
   /// Get the free balance of an account.
@@ -900,15 +1186,15 @@ class WithdrawalService {
     required String rpcUrl,
     required String address,
   }) async {
-    // Decode SS58 address to account ID bytes
-    final decoded = ss58.Codec.fromNetwork('substrate').decode(address);
-    final accountIdHex = _bytesToHex(decoded);
+    // Decode SS58 address to account ID bytes (prefix-agnostic)
+    final decoded = ss58.Address.decode(address);
+    final accountIdHex = _bytesToHex(decoded.pubkey);
 
     // Build storage key for System.Account(accountId)
     // twox128("System") ++ twox128("Account") ++ blake2_128_concat(accountId)
     final systemHash = _twox128('System');
     final accountHash = _twox128('Account');
-    final accountIdConcat = _blake2128Concat(decoded);
+    final accountIdConcat = _blake2128Concat(decoded.pubkey);
 
     final storageKey = '0x$systemHash$accountHash$accountIdConcat';
 
