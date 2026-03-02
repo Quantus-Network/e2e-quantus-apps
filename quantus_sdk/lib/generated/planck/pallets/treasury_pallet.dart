@@ -14,8 +14,7 @@ class Queries {
 
   final _i1.StateApi __api;
 
-  final _i1.StorageValue<_i2.AccountId32> _treasuryAccount =
-      const _i1.StorageValue<_i2.AccountId32>(
+  final _i1.StorageValue<_i2.AccountId32> _treasuryAccount = const _i1.StorageValue<_i2.AccountId32>(
     prefix: 'TreasuryPallet',
     storage: 'TreasuryAccount',
     valueCodec: _i2.AccountId32Codec(),
@@ -30,10 +29,7 @@ class Queries {
   /// The treasury account that receives mining rewards.
   _i4.Future<_i2.AccountId32?> treasuryAccount({_i1.BlockHash? at}) async {
     final hashedKey = _treasuryAccount.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _treasuryAccount.decodeValue(bytes);
     }
@@ -43,10 +39,7 @@ class Queries {
   /// The portion of mining rewards that goes to treasury (0-100).
   _i4.Future<int> treasuryPortion({_i1.BlockHash? at}) async {
     final hashedKey = _treasuryPortion.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _treasuryPortion.decodeValue(bytes);
     }

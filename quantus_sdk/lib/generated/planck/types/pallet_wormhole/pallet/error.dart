@@ -16,8 +16,7 @@ enum Error {
   blockNotFound('BlockNotFound', 8),
   invalidBlockNumber('InvalidBlockNumber', 9),
   aggregatedVerifierNotAvailable('AggregatedVerifierNotAvailable', 10),
-  aggregatedProofDeserializationFailed(
-      'AggregatedProofDeserializationFailed', 11),
+  aggregatedProofDeserializationFailed('AggregatedProofDeserializationFailed', 11),
   aggregatedVerificationFailed('AggregatedVerificationFailed', 12),
   invalidAggregatedPublicInputs('InvalidAggregatedPublicInputs', 13),
 
@@ -27,10 +26,7 @@ enum Error {
   /// Transfer amount is below the minimum required
   transferAmountBelowMinimum('TransferAmountBelowMinimum', 15);
 
-  const Error(
-    this.variantName,
-    this.codecIndex,
-  );
+  const Error(this.variantName, this.codecIndex);
 
   factory Error.decode(_i1.Input input) {
     return codec.decode(input);
@@ -94,13 +90,7 @@ class $ErrorCodec with _i1.Codec<Error> {
   }
 
   @override
-  void encodeTo(
-    Error value,
-    _i1.Output output,
-  ) {
-    _i1.U8Codec.codec.encodeTo(
-      value.codecIndex,
-      output,
-    );
+  void encodeTo(Error value, _i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
   }
 }

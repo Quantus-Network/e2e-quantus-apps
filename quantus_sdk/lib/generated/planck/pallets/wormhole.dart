@@ -16,50 +16,39 @@ class Queries {
 
   final _i1.StateApi __api;
 
-  final _i1.StorageMap<List<int>, bool> _usedNullifiers =
-      const _i1.StorageMap<List<int>, bool>(
+  final _i1.StorageMap<List<int>, bool> _usedNullifiers = const _i1.StorageMap<List<int>, bool>(
     prefix: 'Wormhole',
     storage: 'UsedNullifiers',
     valueCodec: _i2.BoolCodec.codec,
     hasher: _i1.StorageHasher.blake2b128Concat(_i2.U8ArrayCodec(32)),
   );
 
-  final _i1.StorageMap<
-          _i3.Tuple5<int, BigInt, _i4.AccountId32, _i4.AccountId32, BigInt>,
-          dynamic> _transferProof =
-      const _i1.StorageMap<
-          _i3.Tuple5<int, BigInt, _i4.AccountId32, _i4.AccountId32, BigInt>,
-          dynamic>(
-    prefix: 'Wormhole',
-    storage: 'TransferProof',
-    valueCodec: _i2.NullCodec.codec,
-    hasher: _i1.StorageHasher.identity(
-        _i3.Tuple5Codec<int, BigInt, _i4.AccountId32, _i4.AccountId32, BigInt>(
-      _i2.U32Codec.codec,
-      _i2.U64Codec.codec,
-      _i4.AccountId32Codec(),
-      _i4.AccountId32Codec(),
-      _i2.U128Codec.codec,
-    )),
-  );
+  final _i1.StorageMap<_i3.Tuple5<int, BigInt, _i4.AccountId32, _i4.AccountId32, BigInt>, dynamic> _transferProof =
+      const _i1.StorageMap<_i3.Tuple5<int, BigInt, _i4.AccountId32, _i4.AccountId32, BigInt>, dynamic>(
+        prefix: 'Wormhole',
+        storage: 'TransferProof',
+        valueCodec: _i2.NullCodec.codec,
+        hasher: _i1.StorageHasher.identity(
+          _i3.Tuple5Codec<int, BigInt, _i4.AccountId32, _i4.AccountId32, BigInt>(
+            _i2.U32Codec.codec,
+            _i2.U64Codec.codec,
+            _i4.AccountId32Codec(),
+            _i4.AccountId32Codec(),
+            _i2.U128Codec.codec,
+          ),
+        ),
+      );
 
-  final _i1.StorageMap<_i4.AccountId32, BigInt> _transferCount =
-      const _i1.StorageMap<_i4.AccountId32, BigInt>(
+  final _i1.StorageMap<_i4.AccountId32, BigInt> _transferCount = const _i1.StorageMap<_i4.AccountId32, BigInt>(
     prefix: 'Wormhole',
     storage: 'TransferCount',
     valueCodec: _i2.U64Codec.codec,
     hasher: _i1.StorageHasher.blake2b128Concat(_i4.AccountId32Codec()),
   );
 
-  _i5.Future<bool> usedNullifiers(
-    List<int> key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i5.Future<bool> usedNullifiers(List<int> key1, {_i1.BlockHash? at}) async {
     final hashedKey = _usedNullifiers.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _usedNullifiers.decodeValue(bytes);
     }
@@ -72,10 +61,7 @@ class Queries {
     _i1.BlockHash? at,
   }) async {
     final hashedKey = _transferProof.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _transferProof.decodeValue(bytes);
     }
@@ -83,77 +69,45 @@ class Queries {
   }
 
   /// Transfer count for all wormhole transfers
-  _i5.Future<BigInt> transferCount(
-    _i4.AccountId32 key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i5.Future<BigInt> transferCount(_i4.AccountId32 key1, {_i1.BlockHash? at}) async {
     final hashedKey = _transferCount.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _transferCount.decodeValue(bytes);
     }
     return BigInt.zero; /* Default */
   }
 
-  _i5.Future<List<bool>> multiUsedNullifiers(
-    List<List<int>> keys, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKeys =
-        keys.map((key) => _usedNullifiers.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+  _i5.Future<List<bool>> multiUsedNullifiers(List<List<int>> keys, {_i1.BlockHash? at}) async {
+    final hashedKeys = keys.map((key) => _usedNullifiers.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _usedNullifiers.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _usedNullifiers.decodeValue(v.key)).toList();
     }
     return (keys.map((key) => false).toList() as List<bool>); /* Default */
   }
 
   /// Transfer proofs for wormhole transfers (both native and assets)
   _i5.Future<List<dynamic>> multiTransferProof(
-    List<_i3.Tuple5<int, BigInt, _i4.AccountId32, _i4.AccountId32, BigInt>>
-        keys, {
+    List<_i3.Tuple5<int, BigInt, _i4.AccountId32, _i4.AccountId32, BigInt>> keys, {
     _i1.BlockHash? at,
   }) async {
-    final hashedKeys =
-        keys.map((key) => _transferProof.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+    final hashedKeys = keys.map((key) => _transferProof.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _transferProof.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _transferProof.decodeValue(v.key)).toList();
     }
     return []; /* Nullable */
   }
 
   /// Transfer count for all wormhole transfers
-  _i5.Future<List<BigInt>> multiTransferCount(
-    List<_i4.AccountId32> keys, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKeys =
-        keys.map((key) => _transferCount.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+  _i5.Future<List<BigInt>> multiTransferCount(List<_i4.AccountId32> keys, {_i1.BlockHash? at}) async {
+    final hashedKeys = keys.map((key) => _transferCount.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _transferCount.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _transferCount.decodeValue(v.key)).toList();
     }
-    return (keys.map((key) => BigInt.zero).toList()
-        as List<BigInt>); /* Default */
+    return (keys.map((key) => BigInt.zero).toList() as List<BigInt>); /* Default */
   }
 
   /// Returns the storage key for `usedNullifiers`.
@@ -163,8 +117,7 @@ class Queries {
   }
 
   /// Returns the storage key for `transferProof`.
-  _i6.Uint8List transferProofKey(
-      _i3.Tuple5<int, BigInt, _i4.AccountId32, _i4.AccountId32, BigInt> key1) {
+  _i6.Uint8List transferProofKey(_i3.Tuple5<int, BigInt, _i4.AccountId32, _i4.AccountId32, BigInt> key1) {
     final hashedKey = _transferProof.hashedKeyFor(key1);
     return hashedKey;
   }

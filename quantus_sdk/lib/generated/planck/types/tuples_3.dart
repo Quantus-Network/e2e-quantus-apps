@@ -2,13 +2,7 @@
 import 'package:polkadart/scale_codec.dart' as _i1;
 
 class Tuple5<T0, T1, T2, T3, T4> {
-  const Tuple5(
-    this.value0,
-    this.value1,
-    this.value2,
-    this.value3,
-    this.value4,
-  );
+  const Tuple5(this.value0, this.value1, this.value2, this.value3, this.value4);
 
   final T0 value0;
 
@@ -21,15 +15,8 @@ class Tuple5<T0, T1, T2, T3, T4> {
   final T4 value4;
 }
 
-class Tuple5Codec<T0, T1, T2, T3, T4>
-    with _i1.Codec<Tuple5<T0, T1, T2, T3, T4>> {
-  const Tuple5Codec(
-    this.codec0,
-    this.codec1,
-    this.codec2,
-    this.codec3,
-    this.codec4,
-  );
+class Tuple5Codec<T0, T1, T2, T3, T4> with _i1.Codec<Tuple5<T0, T1, T2, T3, T4>> {
+  const Tuple5Codec(this.codec0, this.codec1, this.codec2, this.codec3, this.codec4);
 
   final _i1.Codec<T0> codec0;
 
@@ -42,10 +29,7 @@ class Tuple5Codec<T0, T1, T2, T3, T4>
   final _i1.Codec<T4> codec4;
 
   @override
-  void encodeTo(
-    Tuple5<T0, T1, T2, T3, T4> tuple,
-    _i1.Output output,
-  ) {
+  void encodeTo(Tuple5<T0, T1, T2, T3, T4> tuple, _i1.Output output) {
     codec0.encodeTo(tuple.value0, output);
     codec1.encodeTo(tuple.value1, output);
     codec2.encodeTo(tuple.value2, output);
