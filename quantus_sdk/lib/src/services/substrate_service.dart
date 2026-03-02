@@ -5,7 +5,7 @@ import 'package:bip39_mnemonic/bip39_mnemonic.dart';
 import 'package:convert/convert.dart';
 import 'package:flutter/foundation.dart';
 import 'package:polkadart/polkadart.dart';
-import 'package:quantus_sdk/generated/schrodinger/schrodinger.dart';
+import 'package:quantus_sdk/generated/planck/planck.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/resonance_extrinsic_payload.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
