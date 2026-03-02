@@ -8,8 +8,10 @@ import 'package:polkadart/scale_codec.dart' as scale;
 import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/generated/planck/types/frame_system/event_record.dart';
-import 'package:quantus_sdk/generated/planck/types/pallet_wormhole/pallet/event.dart' as wormhole_event;
-import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_event.dart' as runtime_event;
+import 'package:quantus_sdk/generated/planck/types/pallet_wormhole/pallet/event.dart'
+    as wormhole_event;
+import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_event.dart'
+    as runtime_event;
 import 'package:ss58/ss58.dart' as ss58;
 
 final _log = log.withTag('TransferTracking');
@@ -60,7 +62,8 @@ class TrackedTransfer {
   }
 
   @override
-  String toString() => 'TrackedTransfer(block: $blockNumber, count: $transferCount, amount: $amount)';
+  String toString() =>
+      'TrackedTransfer(block: $blockNumber, count: $transferCount, amount: $amount)';
 }
 
 /// Service for tracking mining reward transfers.
@@ -122,7 +125,9 @@ class TransferTrackingService {
         }
 
         _lastProcessedBlock = data['lastProcessedBlock'] as int? ?? 0;
-        _log.i('Loaded ${_transfersByAddress.values.expand((t) => t).length} transfers from disk');
+        _log.i(
+          'Loaded ${_transfersByAddress.values.expand((t) => t).length} transfers from disk',
+        );
       }
     } catch (e) {
       _log.e('Failed to load transfers from disk', error: e);
@@ -151,7 +156,8 @@ class TransferTrackingService {
       final data = {
         'lastProcessedBlock': _lastProcessedBlock,
         'transfers': _transfersByAddress.map(
-          (address, transfers) => MapEntry(address, transfers.map((t) => t.toJson()).toList()),
+          (address, transfers) =>
+              MapEntry(address, transfers.map((t) => t.toJson()).toList()),
         ),
       };
       await file.writeAsString(jsonEncode(data));
@@ -185,7 +191,9 @@ class TransferTrackingService {
 
     // Skip if we've already processed this block
     if (blockNumber <= _lastProcessedBlock) {
-      _log.d('Skipping block $blockNumber (already processed up to $_lastProcessedBlock)');
+      _log.d(
+        'Skipping block $blockNumber (already processed up to $_lastProcessedBlock)',
+      );
       return;
     }
 
@@ -193,18 +201,28 @@ class TransferTrackingService {
 
     try {
       final transfers = await _getTransfersFromBlock(blockHash);
-      _log.i('Block $blockNumber has ${transfers.length} total wormhole transfers');
+      _log.i(
+        'Block $blockNumber has ${transfers.length} total wormhole transfers',
+      );
 
       // Filter for transfers to our wormhole address
-      final relevantTransfers = transfers.where((t) => t.wormholeAddress == _wormholeAddress).toList();
+      final relevantTransfers = transfers
+          .where((t) => t.wormholeAddress == _wormholeAddress)
+          .toList();
 
-      _log.i('Block $blockNumber: ${relevantTransfers.length} transfers match our address');
+      _log.i(
+        'Block $blockNumber: ${relevantTransfers.length} transfers match our address',
+      );
 
       if (relevantTransfers.isNotEmpty) {
-        _log.i('Found ${relevantTransfers.length} transfer(s) to $_wormholeAddress in block $blockNumber');
+        _log.i(
+          'Found ${relevantTransfers.length} transfer(s) to $_wormholeAddress in block $blockNumber',
+        );
 
         // Add to in-memory cache
-        _transfersByAddress.putIfAbsent(_wormholeAddress!, () => []).addAll(relevantTransfers);
+        _transfersByAddress
+            .putIfAbsent(_wormholeAddress!, () => [])
+            .addAll(relevantTransfers);
 
         // Persist to disk
         await saveToDisk();
@@ -236,7 +254,10 @@ class TransferTrackingService {
     final unspent = <TrackedTransfer>[];
 
     for (final transfer in transfers) {
-      final nullifier = wormholeService.computeNullifier(secretHex: secretHex, transferCount: transfer.transferCount);
+      final nullifier = wormholeService.computeNullifier(
+        secretHex: secretHex,
+        transferCount: transfer.transferCount,
+      );
 
       final isConsumed = await _isNullifierConsumed(nullifier);
       if (!isConsumed) {
@@ -256,7 +277,9 @@ class TransferTrackingService {
       // twox128("Wormhole") = 0x1cbfc5e0de51116eb98c56a3b9fd8c8b
       // twox128("UsedNullifiers") = 0x9eb8e0d9e2c3f29e0b14c4e5a7f6e8d9 (placeholder)
       // Key: blake2_128_concat(nullifier_bytes)
-      final nullifierBytes = nullifierHex.startsWith('0x') ? nullifierHex.substring(2) : nullifierHex;
+      final nullifierBytes = nullifierHex.startsWith('0x')
+          ? nullifierHex.substring(2)
+          : nullifierHex;
 
       // Build storage key - this needs proper implementation with correct hashes
       // For now, return false (assume not consumed) until proper storage key computation
@@ -301,7 +324,8 @@ class TransferTrackingService {
   Future<String?> _getBlockEvents(String blockHash) async {
     // Storage key for System::Events
     // twox128("System") ++ twox128("Events")
-    const storageKey = '0x26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7';
+    const storageKey =
+        '0x26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7';
 
     final response = await http.post(
       Uri.parse(_rpcUrl!),
@@ -327,7 +351,10 @@ class TransferTrackingService {
   ///
   /// The events are SCALE-encoded as Vec<EventRecord<RuntimeEvent, H256>>.
   /// We look for Wormhole::NativeTransferred events.
-  List<TrackedTransfer> _decodeNativeTransferredEvents(String eventsHex, String blockHash) {
+  List<TrackedTransfer> _decodeNativeTransferredEvents(
+    String eventsHex,
+    String blockHash,
+  ) {
     final transfers = <TrackedTransfer>[];
 
     try {
@@ -353,8 +380,12 @@ class TransferTrackingService {
 
             // Check if it's a NativeTransferred event
             if (wormholeEvent is wormhole_event.NativeTransferred) {
-              final toSs58 = _accountIdToSs58(Uint8List.fromList(wormholeEvent.to));
-              final fromSs58 = _accountIdToSs58(Uint8List.fromList(wormholeEvent.from));
+              final toSs58 = _accountIdToSs58(
+                Uint8List.fromList(wormholeEvent.to),
+              );
+              final fromSs58 = _accountIdToSs58(
+                Uint8List.fromList(wormholeEvent.from),
+              );
 
               _log.i(
                 'Found NativeTransferred: to=$toSs58, amount=${wormholeEvent.amount}, count=${wormholeEvent.transferCount}',

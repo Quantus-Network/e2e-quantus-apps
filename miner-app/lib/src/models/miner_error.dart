@@ -66,7 +66,10 @@ class MinerError {
   );
 
   /// Create a miner startup failure error.
-  factory MinerError.minerStartupFailed(Object error, [StackTrace? stackTrace]) => MinerError(
+  factory MinerError.minerStartupFailed(
+    Object error, [
+    StackTrace? stackTrace,
+  ]) => MinerError(
     type: MinerErrorType.minerStartupFailed,
     message: 'Failed to start miner: $error',
     exception: error,
@@ -74,7 +77,10 @@ class MinerError {
   );
 
   /// Create a node startup failure error.
-  factory MinerError.nodeStartupFailed(Object error, [StackTrace? stackTrace]) => MinerError(
+  factory MinerError.nodeStartupFailed(
+    Object error, [
+    StackTrace? stackTrace,
+  ]) => MinerError(
     type: MinerErrorType.nodeStartupFailed,
     message: 'Failed to start node: $error',
     exception: error,

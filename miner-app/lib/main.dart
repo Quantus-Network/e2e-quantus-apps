@@ -73,7 +73,10 @@ class GlobalMinerManager {
   }
 }
 
-Future<String?> initialRedirect(BuildContext context, GoRouterState state) async {
+Future<String?> initialRedirect(
+  BuildContext context,
+  GoRouterState state,
+) async {
   final currentRoute = state.uri.toString();
 
   // Don't redirect if already on a sub-route (like /withdraw)
@@ -98,7 +101,8 @@ Future<String?> initialRedirect(BuildContext context, GoRouterState state) async
   // Check 2: Node Identity Set
   bool isIdentitySet = false;
   try {
-    final identityPath = '${await BinaryManager.getQuantusHomeDirectoryPath()}/node_key.p2p';
+    final identityPath =
+        '${await BinaryManager.getQuantusHomeDirectoryPath()}/node_key.p2p';
     isIdentitySet = await File(identityPath).exists();
   } catch (e) {
     _log.e('Error checking node identity', error: e);
@@ -106,7 +110,9 @@ Future<String?> initialRedirect(BuildContext context, GoRouterState state) async
   }
 
   if (!isIdentitySet) {
-    return (currentRoute == '/node_identity_setup') ? null : '/node_identity_setup';
+    return (currentRoute == '/node_identity_setup')
+        ? null
+        : '/node_identity_setup';
   }
 
   // Check 3: Rewards Wallet Set (mnemonic-based wormhole address)
@@ -120,7 +126,9 @@ Future<String?> initialRedirect(BuildContext context, GoRouterState state) async
   }
 
   if (!isRewardsWalletSet) {
-    return (currentRoute == '/rewards_address_setup') ? null : '/rewards_address_setup';
+    return (currentRoute == '/rewards_address_setup')
+        ? null
+        : '/rewards_address_setup';
   }
 
   // If all setup steps are complete, go to the miner dashboard
@@ -135,12 +143,25 @@ final _router = GoRouter(
       path: '/',
       // Builder is not strictly necessary if initialLocation and redirect handle it,
       // but can be a fallback or initial loading screen.
-      builder: (context, state) => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      builder: (context, state) =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
     ),
-    GoRoute(path: '/node_setup', builder: (context, state) => const NodeSetupScreen()),
-    GoRoute(path: '/node_identity_setup', builder: (context, state) => const NodeIdentitySetupScreen()),
-    GoRoute(path: '/rewards_address_setup', builder: (context, state) => const RewardsAddressSetupScreen()),
-    GoRoute(path: '/miner_dashboard', builder: (context, state) => const MinerDashboardScreen()),
+    GoRoute(
+      path: '/node_setup',
+      builder: (context, state) => const NodeSetupScreen(),
+    ),
+    GoRoute(
+      path: '/node_identity_setup',
+      builder: (context, state) => const NodeIdentitySetupScreen(),
+    ),
+    GoRoute(
+      path: '/rewards_address_setup',
+      builder: (context, state) => const RewardsAddressSetupScreen(),
+    ),
+    GoRoute(
+      path: '/miner_dashboard',
+      builder: (context, state) => const MinerDashboardScreen(),
+    ),
     GoRoute(
       path: '/withdraw',
       builder: (context, state) {
@@ -223,6 +244,9 @@ class _MinerAppState extends State<MinerApp> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      MaterialApp.router(title: 'Quantus Miner', theme: ThemeData.dark(useMaterial3: true), routerConfig: _router);
+  Widget build(BuildContext context) => MaterialApp.router(
+    title: 'Quantus Miner',
+    theme: ThemeData.dark(useMaterial3: true),
+    routerConfig: _router,
+  );
 }
