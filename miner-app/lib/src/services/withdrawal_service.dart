@@ -7,7 +7,7 @@ import 'package:quantus_miner/src/services/miner_settings_service.dart';
 import 'package:quantus_miner/src/services/transfer_tracking_service.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_sdk/generated/schrodinger/types/pallet_wormhole/pallet/call.dart' as wormhole_call;
+import 'package:quantus_sdk/generated/planck/types/pallet_wormhole/pallet/call.dart' as wormhole_call;
 import 'package:ss58/ss58.dart' as ss58;
 
 final _log = log.withTag('Withdrawal');

@@ -7,9 +7,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:polkadart/scale_codec.dart' as scale;
 import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_sdk/generated/schrodinger/types/frame_system/event_record.dart';
-import 'package:quantus_sdk/generated/schrodinger/types/pallet_wormhole/pallet/event.dart' as wormhole_event;
-import 'package:quantus_sdk/generated/schrodinger/types/quantus_runtime/runtime_event.dart' as runtime_event;
+import 'package:quantus_sdk/generated/planck/types/frame_system/event_record.dart';
+import 'package:quantus_sdk/generated/planck/types/pallet_wormhole/pallet/event.dart' as wormhole_event;
+import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_event.dart' as runtime_event;
 import 'package:ss58/ss58.dart' as ss58;
 
 final _log = log.withTag('TransferTracking');
