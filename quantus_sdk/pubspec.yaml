@@ -61,3 +61,7 @@ dev_dependencies:
   flutter_lints: # Version managed by melos.yaml
   integration_test:
     sdk: flutter
+
+flutter:
+  assets:
+    - assets/circuits/
