@@ -8,7 +8,7 @@ enum ButtonVariant { transparent, primary, secondary, danger }
 
 enum IconPlacement { leading, trailing, top }
 
-class Button extends StatelessWidget {
+class GlassButton extends StatelessWidget {
   final String label;
   final Widget? icon;
   final IconPlacement iconPlacement;
@@ -23,7 +23,7 @@ class Button extends StatelessWidget {
   static const double buttonRadius = 14.0;
   static const double buttonFontSize = 16.0;
 
-  const Button({
+  const GlassButton({
     super.key,
     required this.label,
     this.icon,

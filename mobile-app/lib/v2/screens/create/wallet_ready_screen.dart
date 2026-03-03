@@ -9,7 +9,6 @@ import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.da
 import 'package:resonance_network_wallet/utils/feature_flags.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
 import 'package:resonance_network_wallet/v2/components/button.dart';
-import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
 import 'package:resonance_network_wallet/v2/screens/create/recovery_phrase_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
@@ -191,7 +190,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Button(
+                GlassButton(
                   label: 'Continue',
                   onTap: _continue,
                   isLoading: _isSubmitting,
@@ -231,7 +230,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
               ),
             ),
             const SizedBox(height: 24),
-            Button(
+            GlassButton(
               label: 'Save',
               onTap: () async {
                 final v = controller.text.trim();
@@ -293,16 +292,16 @@ class _Field extends StatelessWidget {
               SizedBox(
                 width: 40,
                 height: 40,
-                child: GlassContainer(
-                  asset: GlassContainer.smallAsset,
-                  filled: true,
+                child: GlassButton(
+                  label: '',
+                  variant: ButtonVariant.primary,
                   padding: EdgeInsets.zero,
+                  icon: Icon(actionIcon, size: 20, color: colors.textPrimary),
                   onTap: isLoading
                       ? null
                       : () async {
                           onAction();
                         },
-                  child: Icon(actionIcon, size: 20, color: colors.textPrimary),
                 ),
               ),
             ],
