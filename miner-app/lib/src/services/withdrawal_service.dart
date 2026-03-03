@@ -3,12 +3,23 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:polkadart/polkadart.dart' show Hasher;
+import 'package:polkadart/scale_codec.dart' as scale;
 import 'package:quantus_miner/src/services/miner_settings_service.dart';
 import 'package:quantus_miner/src/services/transfer_tracking_service.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/generated/planck/planck.dart';
+import 'package:quantus_sdk/generated/planck/types/frame_system/event_record.dart';
 import 'package:quantus_sdk/generated/planck/types/pallet_wormhole/pallet/call.dart'
     as wormhole_call;
+import 'package:quantus_sdk/generated/planck/types/pallet_wormhole/pallet/event.dart'
+    as wormhole_event;
+import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_event.dart'
+    as runtime_event;
+import 'package:quantus_sdk/generated/planck/types/sp_runtime/dispatch_error.dart'
+    as dispatch_error;
+import 'package:quantus_sdk/generated/planck/types/frame_system/pallet/event.dart'
+    as system_event;
 import 'package:ss58/ss58.dart' as ss58;
 
 final _log = log.withTag('Withdrawal');
@@ -360,10 +371,10 @@ class WithdrawalService {
 
   /// Get the minting account from chain constants.
   Future<String> _getMintingAccount(String rpcUrl) async {
-    // The minting account is a well-known constant: PalletId(*b"wormhole").into_account_truncating()
-    // For simplicity, we'll use the known value. In production, query the constant.
-    // AccountId from PalletId("wormhole") = 0x6d6f646c776f726d686f6c6500000000000000000000000000000000000000
-    return '5EYCAe5ijiYfAXEth5Dvwn96Q98woB3vy9jG6RezWkrjZNKx';
+    // Get the minting account from the generated Planck constants
+    // This is PalletId(*b"wormhole").into_account_truncating()
+    final mintingAccountBytes = Planck.url(Uri.parse(rpcUrl)).constant.wormhole.mintingAccount;
+    return _accountIdToSs58(Uint8List.fromList(mintingAccountBytes));
   }
 
   /// Get the transfer count for a wormhole address.
@@ -992,7 +1003,7 @@ class WithdrawalService {
         lastBlockHash = currentBlockHash;
         blocksChecked++;
 
-        _log.d('Checking block $blockNumber ($currentBlockHash)');
+        print('--- Checking block $blockNumber ($currentBlockHash) ---');
 
         // Check events in this block for wormhole activity
         final eventsKey = '0x${_twox128('System')}${_twox128('Events')}';
@@ -1009,28 +1020,26 @@ class WithdrawalService {
         final eventsResult = jsonDecode(eventsResponse.body);
         final eventsHex = eventsResult['result'] as String?;
 
-        if (eventsHex == null) continue;
+        if (eventsHex == null) {
+          print('  (no events)');
+          continue;
+        }
 
-        // Look for wormhole events in this block
+        // Look for wormhole events in this block (this also prints all events)
         final wormholeResult = _checkForWormholeEvents(eventsHex);
 
         if (wormholeResult != null) {
-          print('=== WORMHOLE RESULT IN BLOCK $blockNumber ===');
+          print('=== WORMHOLE TX FOUND IN BLOCK $blockNumber ===');
           print('Block hash: $currentBlockHash');
 
           if (wormholeResult['success'] == true) {
             print('STATUS: SUCCESS');
-            if (wormholeResult['events'] != null) {
-              for (final event in wormholeResult['events'] as List) {
-                print('  Event: $event');
-              }
-            }
             print('=============================================');
             return true;
           } else {
             print('STATUS: FAILED');
             if (wormholeResult['error'] != null) {
-              print('  Error: ${wormholeResult['error']}');
+              print('Error: ${wormholeResult['error']}');
             }
             print('=============================================');
             return false;
@@ -1047,80 +1056,183 @@ class WithdrawalService {
     return false;
   }
 
-  /// Check events hex for wormhole-related activity.
-  /// Returns null if no wormhole activity, or a map with success/failure info.
+  /// Wormhole error names (order from pallet Error enum, index 20)
+  static const _wormholeErrors = [
+    'InvalidProof',
+    'ProofDeserializationFailed',
+    'VerificationFailed',
+    'InvalidPublicInputs',
+    'NullifierAlreadyUsed',
+    'VerifierNotAvailable',
+    'InvalidStorageRoot',
+    'StorageRootMismatch',
+    'BlockNotFound',
+    'InvalidBlockNumber',
+    'AggregatedVerifierNotAvailable',
+    'AggregatedProofDeserializationFailed',
+    'AggregatedVerificationFailed',
+    'InvalidAggregatedPublicInputs',
+    'InvalidVolumeFeeRate',
+    'TransferAmountBelowMinimum',
+  ];
+
+  /// Check events hex for wormhole withdrawal verification activity.
+  /// Returns null if no withdrawal verification found, or a map with success/failure info.
+  /// 
+  /// We specifically look for:
+  /// - Wormhole.ProofVerified -> withdrawal succeeded
+  /// - System.ExtrinsicFailed (any non-inherent) -> withdrawal failed
+  /// 
+  /// We ignore Wormhole.NativeTransferred as those are mining rewards, not withdrawals.
   Map<String, dynamic>? _checkForWormholeEvents(String eventsHex) {
-    final bytes = _hexToBytes(eventsHex.substring(2));
-    final events = <String>[];
-    bool foundWormholeExtrinsic = false;
+    final bytes = _hexToBytes(eventsHex.startsWith('0x') ? eventsHex.substring(2) : eventsHex);
+    final input = scale.ByteInput(Uint8List.fromList(bytes));
+    final allEvents = <String>[];
     bool? success;
     String? error;
-    int? wormholeExtrinsicIndex;
+    BigInt? exitAmount;
 
-    // Scan for wormhole pallet (20) events
-    for (var i = 0; i < bytes.length - 4; i++) {
-      if (bytes[i] == 0x00) {
-        final compactByte = bytes[i + 1];
-        if (compactByte & 0x03 == 0) {
-          final extrinsicIdx = compactByte >> 2;
-          if (i + 3 < bytes.length) {
-            final palletIndex = bytes[i + 2];
-            final eventIndex = bytes[i + 3];
+    print('=== DECODING EVENTS (${bytes.length} bytes) ===');
 
-            // Wormhole events
-            if (palletIndex == 20) {
-              foundWormholeExtrinsic = true;
-              wormholeExtrinsicIndex = extrinsicIdx;
-              final eventNames = ['WormholeExitSuccess', 'TransferProofStored', 'VolumeAccumulated'];
-              final name = eventIndex < eventNames.length ? eventNames[eventIndex] : 'Event$eventIndex';
-              events.add('Wormhole.$name');
-            }
+    try {
+      // Decode Vec<EventRecord>
+      final numEvents = scale.CompactCodec.codec.decode(input);
+      print('Block has $numEvents events');
 
-            // System success/failure for wormhole extrinsic
-            if (palletIndex == 0 && wormholeExtrinsicIndex != null && extrinsicIdx == wormholeExtrinsicIndex) {
-              if (eventIndex == 0) {
-                success = true;
-              } else if (eventIndex == 1) {
-                success = false;
-                // Try to decode error
-                if (i + 5 < bytes.length) {
-                  final errorModule = bytes[i + 4];
-                  final errorIdx = bytes[i + 5];
-                  if (errorModule == 20) {
-                    final wormholeErrors = [
-                      'ProofVerificationFailed',
-                      'InvalidProof', 
-                      'InvalidPublicInputs',
-                      'NullifierAlreadyUsed',
-                      'InvalidBlockHash',
-                      'BlockTooOld',
-                      'InvalidAmount',
-                      'InvalidExitAccount',
-                    ];
-                    error = errorIdx < wormholeErrors.length ? wormholeErrors[errorIdx] : 'Error$errorIdx';
-                  } else {
-                    error = 'Module$errorModule.Error$errorIdx';
-                  }
-                }
-              }
-            }
+      for (var i = 0; i < numEvents; i++) {
+        try {
+          final eventRecord = EventRecord.decode(input);
+          final event = eventRecord.event;
+          final eventName = _getEventName(event);
+          allEvents.add(eventName);
+          print('  [$i] $eventName');
 
-            // Balance transfers
-            if (palletIndex == 4 && eventIndex == 2) {
-              events.add('Balances.Transfer');
+          // Check for Wormhole.ProofVerified - this means withdrawal succeeded
+          if (event is runtime_event.Wormhole) {
+            final wormholeEvent = event.value0;
+
+            if (wormholeEvent is wormhole_event.ProofVerified) {
+              success = true;
+              exitAmount = wormholeEvent.exitAmount;
+              print('      -> ProofVerified: exitAmount=${_formatAmount(exitAmount)}');
+            } else if (wormholeEvent is wormhole_event.NativeTransferred) {
+              // Log but don't treat as withdrawal verification (these are mining rewards)
+              final toSs58 = _accountIdToSs58(Uint8List.fromList(wormholeEvent.to));
+              final fromSs58 = _accountIdToSs58(Uint8List.fromList(wormholeEvent.from));
+              print('      -> NativeTransferred: from=$fromSs58, to=$toSs58, amount=${_formatAmount(wormholeEvent.amount)}');
             }
           }
+
+          // Check for System.ExtrinsicFailed - capture any failure (could be our withdrawal tx)
+          if (event is runtime_event.System) {
+            final systemEvent = event.value0;
+
+            if (systemEvent is system_event.ExtrinsicFailed) {
+              // Capture any ExtrinsicFailed as potential withdrawal failure
+              // The first ExtrinsicSuccess is usually the inherent, so ExtrinsicFailed
+              // at index > 0 is likely our submitted tx
+              if (i > 0) {
+                success = false;
+                error = _formatDispatchError(systemEvent.dispatchError);
+                print('      -> ExtrinsicFailed: $error');
+              }
+            }
+          }
+        } catch (e) {
+          print('  [$i] Failed to decode event: $e');
+          // Stop decoding on error - remaining events can't be reliably decoded
+          break;
         }
       }
+    } catch (e) {
+      print('Failed to decode events: $e');
     }
 
-    if (!foundWormholeExtrinsic) return null;
+    print('==============================');
+
+    // Only return result if we found a withdrawal verification (success or failure)
+    if (success == null) return null;
 
     return {
-      'success': success ?? false,
-      'events': events,
+      'success': success,
+      'events': allEvents,
       'error': error,
+      'exitAmount': exitAmount,
     };
+  }
+
+  /// Format a DispatchError into a human-readable string.
+  String _formatDispatchError(dispatch_error.DispatchError err) {
+    if (err is dispatch_error.Module) {
+      final moduleError = err.value0;
+      final palletIndex = moduleError.index;
+      final errorIndex = moduleError.error.isNotEmpty ? moduleError.error[0] : 0;
+
+      if (palletIndex == 20 && errorIndex < _wormholeErrors.length) {
+        return 'Wormhole.${_wormholeErrors[errorIndex]}';
+      }
+      return 'Module(pallet=$palletIndex, error=$errorIndex)';
+    } else if (err is dispatch_error.Token) {
+      return 'Token.${err.value0.toJson()}';
+    } else if (err is dispatch_error.Arithmetic) {
+      return 'Arithmetic.${err.value0.toJson()}';
+    } else if (err is dispatch_error.Transactional) {
+      return 'Transactional.${err.value0.toJson()}';
+    } else if (err is dispatch_error.Other) {
+      return 'Other';
+    } else if (err is dispatch_error.CannotLookup) {
+      return 'CannotLookup';
+    } else if (err is dispatch_error.BadOrigin) {
+      return 'BadOrigin';
+    } else if (err is dispatch_error.ConsumerRemaining) {
+      return 'ConsumerRemaining';
+    } else if (err is dispatch_error.NoProviders) {
+      return 'NoProviders';
+    } else if (err is dispatch_error.TooManyConsumers) {
+      return 'TooManyConsumers';
+    } else if (err is dispatch_error.Exhausted) {
+      return 'Exhausted';
+    } else if (err is dispatch_error.Corruption) {
+      return 'Corruption';
+    } else if (err is dispatch_error.Unavailable) {
+      return 'Unavailable';
+    } else if (err is dispatch_error.RootNotAllowed) {
+      return 'RootNotAllowed';
+    } else {
+      return err.toJson().toString();
+    }
+  }
+
+  /// Get a human-readable name for a runtime event.
+  String _getEventName(runtime_event.RuntimeEvent event) {
+    if (event is runtime_event.System) {
+      return 'System.${event.value0.runtimeType}';
+    } else if (event is runtime_event.Wormhole) {
+      return 'Wormhole.${event.value0.runtimeType}';
+    } else if (event is runtime_event.Balances) {
+      return 'Balances.${event.value0.runtimeType}';
+    } else if (event is runtime_event.QPoW) {
+      return 'QPoW.${event.value0.runtimeType}';
+    } else if (event is runtime_event.MiningRewards) {
+      return 'MiningRewards.${event.value0.runtimeType}';
+    } else if (event is runtime_event.TransactionPayment) {
+      return 'TransactionPayment.${event.value0.runtimeType}';
+    } else {
+      return event.runtimeType.toString();
+    }
+  }
+
+  /// Format amount for display (divide by 10^12 for UNIT).
+  String _formatAmount(BigInt amount) {
+    final units = amount ~/ BigInt.from(1000000000000);
+    final remainder = amount % BigInt.from(1000000000000);
+    return '$units.${remainder.toString().padLeft(12, '0').substring(0, 4)} UNIT';
+  }
+
+  /// Convert AccountId32 bytes to SS58 address with Quantus prefix (189).
+  String _accountIdToSs58(Uint8List accountId) {
+    const quantusPrefix = 189;
+    return ss58.Address(prefix: quantusPrefix, pubkey: accountId).encode();
   }
 
   /// Get the free balance of an account.
