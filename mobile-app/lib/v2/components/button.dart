@@ -135,9 +135,9 @@ class Button extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         spacing: 8,
         children: [
-          if (_iconPlacement == IconPlacement.leading && _icon != null) _icon!,
+          if (_iconPlacement == IconPlacement.leading && _icon != null) _icon,
           Text(_label!, style: effectiveTextStyle),
-          if (_iconPlacement == IconPlacement.trailing && _icon != null) _icon!,
+          if (_iconPlacement == IconPlacement.trailing && _icon != null) _icon,
         ],
       );
     }

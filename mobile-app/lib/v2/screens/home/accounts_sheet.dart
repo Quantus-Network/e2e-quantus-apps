@@ -756,7 +756,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
   }
 
   Widget _buildPrimarySheetButton({required String label, required VoidCallback onTap, bool isLoading = false}) {
-    return Button(label: label, onTap: onTap, isLoading: isLoading);
+    return Button.label(label: label, onTap: onTap, isLoading: isLoading);
   }
 
   Future<void> _submitCreatedAccount() async {
