@@ -143,7 +143,7 @@ query TransfersByAccounts($accounts: [String!]!, $limit: Int!, $offset: Int!) {
   }
 }''';
 
-  final String _reversibleByAccountsQuery = r'''
+  final String _reversibleCompletedByAccountsQuery = r'''
 query ReversibleByAccounts($accounts: [String!]!, $limit: Int!, $offset: Int!) {
   events(
     limit: $limit, offset: $offset,
@@ -474,7 +474,7 @@ query SearchPendingTransaction(
           },
         ),
         _fetchSingleType(
-          query: _reversibleByAccountsQuery,
+          query: _reversibleCompletedByAccountsQuery,
           label: 'reversible',
           accountIds: accountIds,
           limit: limit,
