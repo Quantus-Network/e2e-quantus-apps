@@ -270,7 +270,7 @@ class MiningOrchestrator {
       if (config.wormholeAddress != null) {
         _transferTrackingService.initialize(
           rpcUrl: MinerConfig.nodeRpcUrl(MinerConfig.defaultNodeRpcPort),
-          wormholeAddress: config.wormholeAddress!,
+          wormholeAddresses: {config.wormholeAddress!},
         );
 
         // For local dev chains, clear old transfers since the chain resets

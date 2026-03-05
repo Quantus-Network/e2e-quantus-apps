@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:quantus_miner/src/services/miner_settings_service.dart';
 import 'package:quantus_miner/src/services/miner_wallet_service.dart';
+import 'package:quantus_miner/src/services/transfer_tracking_service.dart';
+import 'package:quantus_miner/src/services/wormhole_address_manager.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -17,7 +19,15 @@ class MinerBalanceCard extends StatefulWidget {
   final void Function(BigInt balance, String address, String secretHex)?
   onWithdraw;
 
-  const MinerBalanceCard({super.key, this.currentBlock = 0, this.onWithdraw});
+  /// Increment this to force a balance refresh (e.g., after withdrawal)
+  final int refreshKey;
+
+  const MinerBalanceCard({
+    super.key,
+    this.currentBlock = 0,
+    this.onWithdraw,
+    this.refreshKey = 0,
+  });
 
   @override
   State<MinerBalanceCard> createState() => _MinerBalanceCardState();
@@ -25,12 +35,14 @@ class MinerBalanceCard extends StatefulWidget {
 
 class _MinerBalanceCardState extends State<MinerBalanceCard> {
   final _walletService = MinerWalletService();
-  final _substrateService = SubstrateService();
+  final _addressManager = WormholeAddressManager();
+  final _transferTrackingService = TransferTrackingService();
 
   String _rewardsBalance = 'Loading...';
   String? _wormholeAddress;
   String? _secretHex;
   BigInt _balancePlanck = BigInt.zero;
+  int _unspentTransferCount = 0;
   bool _canTrackBalance = false;
   bool _canWithdraw = false;
   bool _isLoading = true;
@@ -53,6 +65,10 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
     // Refresh balance when block number increases (new block found)
     if (widget.currentBlock > _lastRefreshedBlock && widget.currentBlock > 0) {
       _lastRefreshedBlock = widget.currentBlock;
+      _fetchBalance();
+    }
+    // Refresh balance when refreshKey changes (e.g., after withdrawal)
+    if (widget.refreshKey != oldWidget.refreshKey) {
       _fetchBalance();
     }
   }
@@ -125,29 +141,88 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
 
   Future<void> _fetchBalanceWithSecret(String address, String secretHex) async {
     try {
-      // Get the full keypair to log hex address
-      final keyPair = await _walletService.getWormholeKeyPair();
-      _log.i('=== BALANCE QUERY DEBUG ===');
-      _log.i('Address (SS58): $address');
-      if (keyPair != null) {
-        _log.i('Address (hex):  ${keyPair.addressHex}');
+      // Initialize address manager and transfer tracking
+      await _addressManager.initialize();
+
+      // Get chain config for RPC URL
+      final settingsService = MinerSettingsService();
+      final chainConfig = await settingsService.getChainConfig();
+
+      // Initialize transfer tracking with all known addresses
+      final allAddresses = _addressManager.allAddressStrings;
+      if (allAddresses.isEmpty) {
+        _transferTrackingService.initialize(
+          rpcUrl: chainConfig.rpcUrl,
+          wormholeAddresses: {address},
+        );
+      } else {
+        _transferTrackingService.initialize(
+          rpcUrl: chainConfig.rpcUrl,
+          wormholeAddresses: allAddresses,
+        );
       }
-      _log.i('RPC endpoint: ${RpcEndpointService().bestEndpointUrl}');
+      await _transferTrackingService.loadFromDisk();
+
+      _log.i('=== BALANCE QUERY DEBUG ===');
+      _log.i('Primary address (SS58): $address');
+      _log.i('Total tracked addresses: ${_addressManager.allAddresses.length}');
       _log.i('===========================');
 
-      // Use raw RPC to avoid metadata mismatch with local dev chain
-      final balance = await _substrateService.queryBalanceRaw(address);
+      // Get unspent transfers for all tracked addresses
+      var totalBalance = BigInt.zero;
+      var totalUnspentCount = 0;
 
-      _log.i('Got balance: $balance planck');
+      // Check primary address
+      final primaryUnspent = await _transferTrackingService.getUnspentTransfers(
+        wormholeAddress: address,
+        secretHex: secretHex,
+      );
+      for (final transfer in primaryUnspent) {
+        totalBalance += transfer.amount;
+        totalUnspentCount++;
+      }
+      _log.i(
+        'Primary address: ${primaryUnspent.length} unspent, ${_formatBalance(totalBalance)}',
+      );
+
+      // Check other tracked addresses (change addresses)
+      for (final tracked in _addressManager.allAddresses) {
+        if (tracked.address == address)
+          continue; // Skip primary, already counted
+
+        final unspent = await _transferTrackingService.getUnspentTransfers(
+          wormholeAddress: tracked.address,
+          secretHex: tracked.secretHex,
+        );
+        for (final transfer in unspent) {
+          totalBalance += transfer.amount;
+          totalUnspentCount++;
+        }
+        if (unspent.isNotEmpty) {
+          final addrBalance = unspent.fold<BigInt>(
+            BigInt.zero,
+            (sum, t) => sum + t.amount,
+          );
+          _log.i(
+            'Change address ${tracked.address}: ${unspent.length} unspent, ${_formatBalance(addrBalance)}',
+          );
+        }
+      }
+
+      _log.i(
+        'Total withdrawable: $totalUnspentCount UTXOs, ${_formatBalance(totalBalance)}',
+      );
 
       if (mounted) {
         setState(() {
           _rewardsBalance = NumberFormattingService().formatBalance(
-            balance,
+            totalBalance,
             addSymbol: true,
           );
           _wormholeAddress = address;
-          _balancePlanck = balance;
+          _secretHex = secretHex;
+          _balancePlanck = totalBalance;
+          _unspentTransferCount = totalUnspentCount;
           _isLoading = false;
         });
       }
@@ -155,11 +230,15 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
       _log.e('Error fetching balance', error: e, stackTrace: st);
       if (mounted) {
         setState(() {
-          _rewardsBalance = 'RPC unavailable';
+          _rewardsBalance = 'Unable to connect';
           _isLoading = false;
         });
       }
     }
+  }
+
+  String _formatBalance(BigInt planck) {
+    return NumberFormattingService().formatBalance(planck, addSymbol: true);
   }
 
   void _handleNotSetup() {

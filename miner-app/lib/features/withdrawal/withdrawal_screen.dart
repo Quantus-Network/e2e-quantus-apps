@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:quantus_miner/src/services/miner_settings_service.dart';
 import 'package:quantus_miner/src/services/transfer_tracking_service.dart';
 import 'package:quantus_miner/src/services/withdrawal_service.dart';
+import 'package:quantus_miner/src/services/wormhole_address_manager.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -52,6 +53,10 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
   List<TrackedTransfer> _trackedTransfers = [];
   bool _hasLoadedTransfers = false;
 
+  // Address manager for change addresses
+  final _addressManager = WormholeAddressManager();
+  bool _addressManagerReady = false;
+
   // Fee is 10 basis points (0.1%)
   static const int _feeBps = 10;
 
@@ -64,36 +69,99 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
     _checkCircuits();
     // Load tracked transfers
     _loadTrackedTransfers();
+    // Initialize address manager for change addresses
+    _initAddressManager();
+  }
+
+  Future<void> _initAddressManager() async {
+    try {
+      await _addressManager.initialize();
+      if (mounted) {
+        setState(() {
+          _addressManagerReady = true;
+        });
+      }
+      _log.i(
+        'Address manager initialized with ${_addressManager.allAddresses.length} addresses',
+      );
+    } catch (e) {
+      _log.e('Failed to initialize address manager', error: e);
+      // Still mark as ready so full withdrawals can proceed
+      if (mounted) {
+        setState(() {
+          _addressManagerReady = true;
+        });
+      }
+    }
   }
 
   Future<void> _loadTrackedTransfers() async {
     try {
+      // Wait for address manager to be ready
+      if (!_addressManagerReady) {
+        await _addressManager.initialize();
+      }
+
       // Initialize the tracking service with current chain config
       final settingsService = MinerSettingsService();
       final chainConfig = await settingsService.getChainConfig();
 
+      // Get all known addresses (primary + change addresses)
+      final allAddresses = _addressManager.allAddressStrings;
+      final addressesToTrack = allAddresses.isNotEmpty
+          ? allAddresses
+          : {widget.wormholeAddress};
+
       _transferTrackingService.initialize(
         rpcUrl: chainConfig.rpcUrl,
-        wormholeAddress: widget.wormholeAddress,
+        wormholeAddresses: addressesToTrack,
       );
 
       // Load from disk first
       await _transferTrackingService.loadFromDisk();
 
-      // Get unspent transfers
-      final transfers = await _transferTrackingService.getUnspentTransfers(
-        wormholeAddress: widget.wormholeAddress,
-        secretHex: widget.secretHex,
+      // Get unspent transfers for ALL tracked addresses
+      final allTransfers = <TrackedTransfer>[];
+
+      // Check primary address
+      final primaryTransfers = await _transferTrackingService
+          .getUnspentTransfers(
+            wormholeAddress: widget.wormholeAddress,
+            secretHex: widget.secretHex,
+          );
+      allTransfers.addAll(primaryTransfers);
+      _log.i(
+        'Primary address ${widget.wormholeAddress}: ${primaryTransfers.length} unspent',
       );
+
+      // Check change addresses from address manager
+      for (final tracked in _addressManager.allAddresses) {
+        if (tracked.address == widget.wormholeAddress) continue; // Skip primary
+
+        final transfers = await _transferTrackingService.getUnspentTransfers(
+          wormholeAddress: tracked.address,
+          secretHex: tracked.secretHex,
+        );
+        if (transfers.isNotEmpty) {
+          allTransfers.addAll(transfers);
+          _log.i(
+            'Change address ${tracked.address}: ${transfers.length} unspent',
+          );
+        }
+      }
 
       if (mounted) {
         setState(() {
-          _trackedTransfers = transfers;
+          _trackedTransfers = allTransfers;
           _hasLoadedTransfers = true;
         });
+        // Update amount field now that we know the real withdrawable balance
+        _updateAmountToMax();
       }
 
-      _log.i('Loaded ${transfers.length} tracked transfers for withdrawal');
+      _log.i(
+        'Loaded ${allTransfers.length} total tracked transfers for withdrawal',
+      );
     } catch (e) {
       _log.e('Failed to load tracked transfers', error: e);
       if (mounted) {
@@ -173,7 +241,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
 
   void _updateAmountToMax() {
     final formatted = NumberFormattingService().formatBalance(
-      widget.availableBalance,
+      _withdrawableBalance,
       addSymbol: false,
     );
     _amountController.text = formatted;
@@ -230,7 +298,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
     if (amount <= BigInt.zero) {
       return 'Amount must be greater than 0';
     }
-    if (amount > widget.availableBalance) {
+    if (amount > _withdrawableBalance) {
       return 'Amount exceeds available balance';
     }
     // Check minimum after fee
@@ -247,6 +315,14 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
   Future<void> _startWithdrawal() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Check if address manager is ready (needed for partial withdrawals with change)
+    if (!_addressManagerReady) {
+      setState(() {
+        _error = 'Please wait, initializing...';
+      });
+      return;
+    }
+
     setState(() {
       _isWithdrawing = true;
       _error = null;
@@ -257,7 +333,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
     try {
       final destination = _destinationController.text.trim();
       final amount = _withdrawAll
-          ? widget.availableBalance
+          ? _withdrawableBalance
           : _parseAmount(_amountController.text);
 
       _log.i('Starting withdrawal of $amount planck to $destination');
@@ -298,6 +374,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
         trackedTransfers: _trackedTransfers.isNotEmpty
             ? _trackedTransfers
             : null,
+        addressManager: _addressManager,
         onProgress: (progress, message) {
           if (mounted) {
             setState(() {
@@ -310,10 +387,20 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
       );
 
       if (result.success) {
+        // If change was generated, add the change address to transfer tracking
+        if (result.changeAddress != null) {
+          _transferTrackingService.addTrackedAddress(result.changeAddress!);
+          _log.i('Added change address to tracking: ${result.changeAddress}');
+          _log.i('Change amount: ${result.changeAmount} planck');
+        }
+
         if (mounted) {
+          final message = result.changeAddress != null
+              ? 'Withdrawal successful! Change sent to new address.'
+              : 'Withdrawal successful!';
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Withdrawal successful! TX: ${result.txHash}'),
+              content: Text('$message TX: ${result.txHash}'),
               backgroundColor: Colors.green,
             ),
           );
@@ -405,10 +492,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                 ),
                 Text(
                   'One-time setup (~163MB, takes a few seconds)',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.blue.shade300,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.blue.shade300),
                 ),
               ],
             ),
@@ -541,10 +625,22 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
     );
   }
 
+  /// Get the actual withdrawable balance from tracked unspent transfers.
+  BigInt get _withdrawableBalance {
+    if (_trackedTransfers.isEmpty) {
+      // Fall back to on-chain balance if no tracked transfers
+      return widget.availableBalance;
+    }
+    return _trackedTransfers.fold<BigInt>(
+      BigInt.zero,
+      (sum, t) => sum + t.amount,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final formattedBalance = NumberFormattingService().formatBalance(
-      widget.availableBalance,
+      _withdrawableBalance,
       addSymbol: true,
     );
 

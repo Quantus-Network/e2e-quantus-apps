@@ -37,6 +37,9 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
 
   MiningStats _miningStats = MiningStats.empty();
 
+  // Key to force balance card refresh (incremented after withdrawal)
+  int _balanceRefreshKey = 0;
+
   // The orchestrator manages all mining operations
   MiningOrchestrator? _orchestrator;
 
@@ -409,10 +412,23 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
   }
 
   void _onWithdraw(BigInt balance, String address, String secretHex) {
-    context.push(
-      '/withdraw',
-      extra: {'balance': balance, 'address': address, 'secretHex': secretHex},
-    );
+    context
+        .push(
+          '/withdraw',
+          extra: {
+            'balance': balance,
+            'address': address,
+            'secretHex': secretHex,
+          },
+        )
+        .then((_) {
+          // Refresh balance when returning from withdrawal screen
+          if (mounted) {
+            setState(() {
+              _balanceRefreshKey++;
+            });
+          }
+        });
   }
 
   Widget _buildResponsiveCards() {
@@ -425,6 +441,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                 child: MinerBalanceCard(
                   currentBlock: _miningStats.currentBlock,
                   onWithdraw: _onWithdraw,
+                  refreshKey: _balanceRefreshKey,
                 ),
               ),
               const SizedBox(width: 16),
@@ -437,6 +454,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
               MinerBalanceCard(
                 currentBlock: _miningStats.currentBlock,
                 onWithdraw: _onWithdraw,
+                refreshKey: _balanceRefreshKey,
               ),
               MinerStatsCard(miningStats: _miningStats),
             ],

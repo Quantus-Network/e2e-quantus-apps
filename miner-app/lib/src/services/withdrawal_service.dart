@@ -6,6 +6,7 @@ import 'package:polkadart/polkadart.dart' show Hasher;
 import 'package:polkadart/scale_codec.dart' as scale;
 import 'package:quantus_miner/src/services/miner_settings_service.dart';
 import 'package:quantus_miner/src/services/transfer_tracking_service.dart';
+import 'package:quantus_miner/src/services/wormhole_address_manager.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/generated/planck/planck.dart';
@@ -34,12 +35,18 @@ class WithdrawalResult {
   final String? txHash;
   final String? error;
   final BigInt? exitAmount;
+  /// If change was generated, this is the address where it was sent.
+  final String? changeAddress;
+  /// The amount sent to the change address (in planck).
+  final BigInt? changeAmount;
 
   const WithdrawalResult({
     required this.success,
     this.txHash,
     this.error,
     this.exitAmount,
+    this.changeAddress,
+    this.changeAmount,
   });
 }
 
@@ -85,6 +92,10 @@ class WithdrawalService {
   // Native asset ID (0 for native token)
   static const int nativeAssetId = 0;
 
+  // Default batch size (number of proofs per aggregation)
+  // This should match the circuit config, but 16 is the current standard.
+  static const int defaultBatchSize = 16;
+
   /// Withdraw funds from a wormhole address.
   ///
   /// [secretHex] - The wormhole secret for proof generation
@@ -93,6 +104,7 @@ class WithdrawalService {
   /// [amount] - Amount to withdraw in planck (null = withdraw all)
   /// [circuitBinsDir] - Directory containing circuit binary files
   /// [trackedTransfers] - Optional pre-tracked transfers with exact amounts (from TransferTrackingService)
+  /// [addressManager] - Optional address manager for deriving change addresses
   /// [onProgress] - Progress callback for UI updates
   Future<WithdrawalResult> withdraw({
     required String secretHex,
@@ -101,6 +113,7 @@ class WithdrawalService {
     BigInt? amount,
     required String circuitBinsDir,
     List<TrackedTransfer>? trackedTransfers,
+    WormholeAddressManager? addressManager,
     WithdrawalProgressCallback? onProgress,
   }) async {
     try {
@@ -208,18 +221,72 @@ class WithdrawalService {
       final proofBlockHash = await _fetchBestBlockHash(rpcUrl);
       _log.i('Using block $proofBlockHash for all proofs');
 
+      // Calculate if we need change
+      // Change is needed when we're withdrawing less than the total available after fees
+      final requestedAmountQuantized = wormholeService.quantizeAmount(withdrawAmount);
+      
+      // Calculate max possible outputs for each transfer (after fee deduction)
+      final maxOutputsQuantized = selectedTransfers.map((t) {
+        final inputQuantized = wormholeService.quantizeAmount(t.amount);
+        return wormholeService.computeOutputAmount(inputQuantized, feeBps);
+      }).toList();
+      final totalMaxOutputQuantized = maxOutputsQuantized.fold<int>(0, (a, b) => a + b);
+      
+      // Determine if change is needed
+      final needsChange = requestedAmountQuantized < totalMaxOutputQuantized;
+      String? changeAddress;
+      TrackedWormholeAddress? changeAddressInfo;
+      
+      if (needsChange) {
+        if (addressManager == null) {
+          return const WithdrawalResult(
+            success: false,
+            error: 'Partial withdrawal requires address manager for change address',
+          );
+        }
+        
+        onProgress?.call(0.19, 'Deriving change address...');
+        changeAddressInfo = await addressManager.deriveNextChangeAddress();
+        changeAddress = changeAddressInfo.address;
+        _log.i('Change address: $changeAddress');
+      }
+
       onProgress?.call(0.2, 'Generating proofs...');
 
       // 5. Generate proofs for each transfer
+      // If change is needed, the last transfer sends remaining to change address
       final proofs = <GeneratedProof>[];
+      var remainingToSend = requestedAmountQuantized;
 
       for (int i = 0; i < selectedTransfers.length; i++) {
         final transfer = selectedTransfers[i];
+        final maxOutput = maxOutputsQuantized[i];
+        final isLastTransfer = i == selectedTransfers.length - 1;
+        
         final progress = 0.2 + (0.5 * (i / selectedTransfers.length));
         onProgress?.call(
           progress,
           'Generating proof ${i + 1}/${selectedTransfers.length}...',
         );
+
+        // Determine output and change amounts for this proof
+        int outputAmount;
+        int changeAmount = 0;
+        
+        if (isLastTransfer && needsChange) {
+          // Last transfer: send remaining to destination, rest to change
+          outputAmount = remainingToSend;
+          changeAmount = maxOutput - outputAmount;
+          if (changeAmount < 0) changeAmount = 0;
+        } else if (needsChange) {
+          // Not last transfer: send min of maxOutput or remaining
+          outputAmount = remainingToSend < maxOutput ? remainingToSend : maxOutput;
+        } else {
+          // No change needed: send max output
+          outputAmount = maxOutput;
+        }
+        
+        remainingToSend -= outputAmount;
 
         try {
           final proof = await _generateProofForTransfer(
@@ -230,6 +297,9 @@ class WithdrawalService {
             destinationAddress: destinationAddress,
             rpcUrl: rpcUrl,
             proofBlockHash: proofBlockHash,
+            outputAmount: needsChange ? outputAmount : null,
+            changeAmount: changeAmount,
+            changeAddress: changeAddress,
           );
           proofs.add(proof);
         } catch (e) {
@@ -244,28 +314,57 @@ class WithdrawalService {
         }
       }
 
-      onProgress?.call(0.75, 'Aggregating proofs...');
+      // 5. Get the batch size from the aggregator
+      final batchSize = await aggregator.batchSize;
+      _log.i('Circuit batch size: $batchSize proofs per aggregation');
 
-      // 5. Aggregate proofs
-      for (final proof in proofs) {
-        await aggregator.addGeneratedProof(proof);
+      // 6. Split proofs into batches if needed
+      final numBatches = (proofs.length + batchSize - 1) ~/ batchSize;
+      _log.i('Splitting ${proofs.length} proofs into $numBatches batch(es)');
+
+      final txHashes = <String>[];
+      
+      for (int batchIdx = 0; batchIdx < numBatches; batchIdx++) {
+        final batchStart = batchIdx * batchSize;
+        final batchEnd = (batchStart + batchSize).clamp(0, proofs.length);
+        final batchProofs = proofs.sublist(batchStart, batchEnd);
+
+        final aggregateProgress = 0.7 + (0.1 * (batchIdx / numBatches));
+        onProgress?.call(
+          aggregateProgress,
+          'Aggregating batch ${batchIdx + 1}/$numBatches (${batchProofs.length} proofs)...',
+        );
+
+        // Clear aggregator and add proofs for this batch
+        await aggregator.clear();
+        for (final proof in batchProofs) {
+          await aggregator.addGeneratedProof(proof);
+        }
+        final aggregatedProof = await aggregator.aggregate();
+
+        _log.i('Batch ${batchIdx + 1}: Aggregated ${aggregatedProof.numRealProofs} proofs');
+
+        final submitProgress = 0.8 + (0.15 * (batchIdx / numBatches));
+        onProgress?.call(
+          submitProgress,
+          'Submitting batch ${batchIdx + 1}/$numBatches...',
+        );
+
+        // Submit this batch
+        final txHash = await _submitProof(
+          proofHex: aggregatedProof.proofHex,
+        );
+        txHashes.add(txHash);
+        _log.i('Batch ${batchIdx + 1} submitted: $txHash');
       }
-      final aggregatedProof = await aggregator.aggregate();
 
-      _log.i('Aggregated ${aggregatedProof.numRealProofs} proofs');
+      onProgress?.call(0.95, 'Waiting for confirmations...');
 
-      onProgress?.call(0.85, 'Submitting transaction...');
-
-      // 6. Submit to chain and wait for inclusion
-      final txHash = await _submitProof(
-        proofHex: aggregatedProof.proofHex,
-      );
-
-      onProgress?.call(0.90, 'Waiting for confirmation...');
-
-      // 7. Wait for the transaction to be included in a block and verify success
+      // 7. Wait for all transactions to be confirmed
+      // For simplicity, we wait for the last one (all should be in same or adjacent blocks)
+      final lastTxHash = txHashes.last;
       final confirmed = await _waitForTransactionConfirmation(
-        txHash: txHash,
+        txHash: lastTxHash,
         rpcUrl: rpcUrl,
         destinationAddress: destinationAddress,
         expectedAmount: totalAfterFee,
@@ -274,18 +373,27 @@ class WithdrawalService {
       if (!confirmed) {
         return WithdrawalResult(
           success: false,
-          txHash: txHash,
+          txHash: txHashes.join(', '),
           error:
-              'Transaction submitted but could not confirm success. Check tx: $txHash',
+              'Transactions submitted but could not confirm success. Check txs: ${txHashes.join(', ')}',
         );
       }
 
       onProgress?.call(1.0, 'Withdrawal complete!');
 
+      // Calculate change amount in planck if change was used
+      BigInt? changeAmountPlanck;
+      if (needsChange && changeAddress != null) {
+        final changeQuantized = totalMaxOutputQuantized - requestedAmountQuantized;
+        changeAmountPlanck = wormholeService.dequantizeAmount(changeQuantized);
+      }
+
       return WithdrawalResult(
         success: true,
-        txHash: txHash,
+        txHash: txHashes.join(', '),
         exitAmount: totalAfterFee,
+        changeAddress: changeAddress,
+        changeAmount: changeAmountPlanck,
       );
     } catch (e) {
       _log.e('Withdrawal failed', error: e);
@@ -564,6 +672,14 @@ class WithdrawalService {
   /// [proofBlockHash] - The block hash to use for the storage proof. All proofs
   /// in an aggregation batch MUST use the same block hash. This should be the
   /// current best block, not the block where the transfer originally occurred.
+  ///
+  /// [outputAmount] - Optional override for output amount (quantized). If not provided,
+  /// uses the full amount after fee deduction.
+  ///
+  /// [changeAmount] - Optional change amount (quantized). If > 0, sends this amount
+  /// to [changeAddress].
+  ///
+  /// [changeAddress] - Address to send change to (required if changeAmount > 0).
   Future<GeneratedProof> _generateProofForTransfer({
     required WormholeProofGenerator generator,
     required WormholeService wormholeService,
@@ -572,6 +688,9 @@ class WithdrawalService {
     required String destinationAddress,
     required String rpcUrl,
     required String proofBlockHash,
+    int? outputAmount,
+    int changeAmount = 0,
+    String? changeAddress,
   }) async {
     // Use the common proof block hash for storage proof (required by aggregation circuit)
     final blockHash = proofBlockHash.startsWith('0x')
@@ -594,17 +713,29 @@ class WithdrawalService {
       transfer.amount,
     );
 
-    // Compute the output amount after fee deduction
+    // Compute the max output amount after fee deduction
     // The circuit enforces: output <= input * (10000 - fee_bps) / 10000
-    final quantizedOutputAmount = wormholeService.computeOutputAmount(
+    final maxOutputAmount = wormholeService.computeOutputAmount(
       quantizedInputAmount,
       feeBps,
     );
 
+    // Use provided output amount or default to max
+    final quantizedOutputAmount = outputAmount ?? maxOutputAmount;
+
+    // Validate that output + change doesn't exceed max
+    if (quantizedOutputAmount + changeAmount > maxOutputAmount) {
+      throw ArgumentError(
+        'Output ($quantizedOutputAmount) + change ($changeAmount) exceeds max allowed ($maxOutputAmount)',
+      );
+    }
+
     _log.i('=== Proof Generation Inputs ===');
     _log.i('  Transfer amount (planck): ${transfer.amount}');
     _log.i('  Quantized input amount: $quantizedInputAmount');
-    _log.i('  Quantized output amount (after fee): $quantizedOutputAmount');
+    _log.i('  Max output amount (after fee): $maxOutputAmount');
+    _log.i('  Output amount: $quantizedOutputAmount');
+    _log.i('  Change amount: $changeAmount');
     _log.i('  Transfer count: ${transfer.transferCount}');
     _log.i('  Block number: ${blockHeader.blockNumber}');
     _log.i('  Fee BPS: $feeBps');
@@ -624,14 +755,24 @@ class WithdrawalService {
     _log.i('  Funding account hex: $fundingAccountHex');
     _log.i('  Block hash: $blockHash');
 
-    // Create output assignment (single output, no change for simplicity)
-    // NOTE: output amount must be <= input * (10000 - fee_bps) / 10000
-    final output = ProofOutput.single(
-      amount: quantizedOutputAmount,
-      exitAccount: destinationAddress,
-    );
-
-    _log.i('  Exit account: $destinationAddress');
+    // Create output assignment
+    final ProofOutput output;
+    if (changeAmount > 0 && changeAddress != null) {
+      output = ProofOutput.withChange(
+        amount: quantizedOutputAmount,
+        exitAccount: destinationAddress,
+        changeAmount: changeAmount,
+        changeAccount: changeAddress,
+      );
+      _log.i('  Exit account: $destinationAddress');
+      _log.i('  Change account: $changeAddress');
+    } else {
+      output = ProofOutput.single(
+        amount: quantizedOutputAmount,
+        exitAccount: destinationAddress,
+      );
+      _log.i('  Exit account: $destinationAddress');
+    }
     _log.i('===============================');
 
     // Generate the proof

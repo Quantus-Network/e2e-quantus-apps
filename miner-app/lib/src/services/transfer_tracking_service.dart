@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+import 'package:polkadart/polkadart.dart' show Hasher;
 import 'package:polkadart/scale_codec.dart' as scale;
 import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -82,18 +83,29 @@ class TransferTrackingService {
   static const String _storageFileName = 'mining_transfers.json';
 
   String? _rpcUrl;
-  String? _wormholeAddress;
+  /// Set of wormhole addresses to track transfers for.
+  final Set<String> _trackedAddresses = {};
   int _lastProcessedBlock = 0;
 
   // In-memory cache of tracked transfers
   final Map<String, List<TrackedTransfer>> _transfersByAddress = {};
 
-  /// Initialize the service with RPC URL and wormhole address to track.
-  void initialize({required String rpcUrl, required String wormholeAddress}) {
+  /// Initialize the service with RPC URL and wormhole addresses to track.
+  void initialize({required String rpcUrl, required Set<String> wormholeAddresses}) {
     _rpcUrl = rpcUrl;
-    _wormholeAddress = wormholeAddress;
-    _log.i('Initialized transfer tracking for $wormholeAddress');
+    _trackedAddresses.clear();
+    _trackedAddresses.addAll(wormholeAddresses);
+    _log.i('Initialized transfer tracking for ${wormholeAddresses.length} addresses');
   }
+
+  /// Add a new address to track.
+  void addTrackedAddress(String address) {
+    _trackedAddresses.add(address);
+    _log.i('Added address to tracking: $address');
+  }
+
+  /// Get all tracked addresses.
+  Set<String> get trackedAddresses => Set.unmodifiable(_trackedAddresses);
 
   /// Load previously tracked transfers from disk.
   ///
@@ -182,9 +194,9 @@ class TransferTrackingService {
   Future<void> processBlock(int blockNumber, String blockHash) async {
     _log.i('processBlock called: block=$blockNumber, hash=$blockHash');
 
-    if (_rpcUrl == null || _wormholeAddress == null) {
+    if (_rpcUrl == null || _trackedAddresses.isEmpty) {
       _log.w(
-        'Service not initialized, skipping block $blockNumber (rpcUrl=$_rpcUrl, wormholeAddress=$_wormholeAddress)',
+        'Service not initialized, skipping block $blockNumber (rpcUrl=$_rpcUrl, trackedAddresses=${_trackedAddresses.length})',
       );
       return;
     }
@@ -197,7 +209,7 @@ class TransferTrackingService {
       return;
     }
 
-    _log.i('Processing block $blockNumber for transfers to $_wormholeAddress');
+    _log.i('Processing block $blockNumber for transfers to ${_trackedAddresses.length} tracked addresses');
 
     try {
       final transfers = await _getTransfersFromBlock(blockHash);
@@ -205,24 +217,26 @@ class TransferTrackingService {
         'Block $blockNumber has ${transfers.length} total wormhole transfers',
       );
 
-      // Filter for transfers to our wormhole address
+      // Filter for transfers to any of our tracked wormhole addresses
       final relevantTransfers = transfers
-          .where((t) => t.wormholeAddress == _wormholeAddress)
+          .where((t) => _trackedAddresses.contains(t.wormholeAddress))
           .toList();
 
       _log.i(
-        'Block $blockNumber: ${relevantTransfers.length} transfers match our address',
+        'Block $blockNumber: ${relevantTransfers.length} transfers match tracked addresses',
       );
 
       if (relevantTransfers.isNotEmpty) {
         _log.i(
-          'Found ${relevantTransfers.length} transfer(s) to $_wormholeAddress in block $blockNumber',
+          'Found ${relevantTransfers.length} transfer(s) to tracked addresses in block $blockNumber',
         );
 
-        // Add to in-memory cache
-        _transfersByAddress
-            .putIfAbsent(_wormholeAddress!, () => [])
-            .addAll(relevantTransfers);
+        // Add to in-memory cache, grouped by address
+        for (final transfer in relevantTransfers) {
+          _transfersByAddress
+              .putIfAbsent(transfer.wormholeAddress, () => [])
+              .add(transfer);
+        }
 
         // Persist to disk
         await saveToDisk();
@@ -238,6 +252,16 @@ class TransferTrackingService {
   /// Get all tracked transfers for a wormhole address.
   List<TrackedTransfer> getTransfers(String wormholeAddress) {
     return _transfersByAddress[wormholeAddress] ?? [];
+  }
+
+  /// Get all tracked transfers across all addresses.
+  List<TrackedTransfer> getAllTransfers() {
+    return _transfersByAddress.values.expand((t) => t).toList();
+  }
+
+  /// Get total tracked balance across all addresses.
+  BigInt getTotalTrackedBalance() {
+    return getAllTransfers().fold(BigInt.zero, (sum, t) => sum + t.amount);
   }
 
   /// Get unspent transfers for a wormhole address.
@@ -274,24 +298,71 @@ class TransferTrackingService {
 
     try {
       // Query Wormhole::UsedNullifiers storage
-      // twox128("Wormhole") = 0x1cbfc5e0de51116eb98c56a3b9fd8c8b
-      // twox128("UsedNullifiers") = 0x9eb8e0d9e2c3f29e0b14c4e5a7f6e8d9 (placeholder)
-      // Key: blake2_128_concat(nullifier_bytes)
+      // Storage key: twox128("Wormhole") ++ twox128("UsedNullifiers") ++ blake2_128_concat(nullifier)
       final nullifierBytes = nullifierHex.startsWith('0x')
           ? nullifierHex.substring(2)
           : nullifierHex;
 
-      // Build storage key - this needs proper implementation with correct hashes
-      // For now, return false (assume not consumed) until proper storage key computation
-      _log.d('Checking nullifier: $nullifierBytes (storage key TBD)');
+      final modulePrefix = _twox128('Wormhole');
+      final storagePrefix = _twox128('UsedNullifiers');
+      final keyHash = _blake2128Concat(nullifierBytes);
 
-      // TODO: Implement proper storage key computation using Polkadart
-      // For now, return false to allow all transfers to be considered unspent
-      return false;
+      final storageKey = '0x$modulePrefix$storagePrefix$keyHash';
+
+      _log.d('Checking nullifier: $nullifierBytes');
+      _log.d('Storage key: $storageKey');
+
+      final response = await http.post(
+        Uri.parse(_rpcUrl!),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 1,
+          'method': 'state_getStorage',
+          'params': [storageKey],
+        }),
+      );
+
+      final result = jsonDecode(response.body);
+      if (result['error'] != null) {
+        _log.e('RPC error checking nullifier: ${result['error']}');
+        return false;
+      }
+
+      // If storage exists and is not empty, nullifier is consumed
+      final value = result['result'] as String?;
+      final isConsumed = value != null && value != '0x' && value.isNotEmpty;
+      
+      if (isConsumed) {
+        _log.i('Nullifier is CONSUMED: $nullifierHex');
+      } else {
+        _log.d('Nullifier is unspent: $nullifierHex');
+      }
+      
+      return isConsumed;
     } catch (e) {
       _log.e('Failed to check nullifier', error: e);
       return false;
     }
+  }
+
+  // ============================================================
+  // Helper functions for storage key computation
+  // ============================================================
+
+  /// Compute twox128 hash of a string (for Substrate storage key prefixes).
+  String _twox128(String input) {
+    final bytes = Uint8List.fromList(utf8.encode(input));
+    final hash = Hasher.twoxx128.hash(bytes);
+    return _bytesToHex(hash);
+  }
+
+  /// Compute blake2b-128 hash concatenated with input (for Substrate storage keys).
+  /// Returns: blake2b_128(input) ++ input
+  String _blake2128Concat(String hexInput) {
+    final bytes = _hexToBytes(hexInput);
+    final hash = Hasher.blake2b128.hash(bytes);
+    return _bytesToHex(hash) + _bytesToHex(bytes);
   }
 
   /// Get transfers from a block by querying events.
