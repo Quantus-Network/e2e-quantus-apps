@@ -7,7 +7,8 @@ import 'package:quantus_miner/src/services/transfer_tracking_service.dart';
 import 'package:quantus_miner/src/services/wormhole_address_manager.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/quantus_sdk.dart'
+    hide WormholeAddressManager, TrackedWormholeAddress, WormholeAddressPurpose;
 
 final _log = log.withTag('BalanceCard');
 
