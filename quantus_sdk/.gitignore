@@ -1,1 +1,3 @@
+# Circuit binaries are generated at build time by rust/build.rs
 assets/circuits/*.bin
+assets/circuits/config.json

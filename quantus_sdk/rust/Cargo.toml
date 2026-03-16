@@ -37,5 +37,17 @@ quantus_ur = { git = "https://github.com/Quantus-Network/quantus_ur.git", tag = 
 # Substrate codec for storage proof processing
 codec = { package = "parity-scale-codec", version = "3.7", features = ["derive"] }
 
+[build-dependencies]
+qp-wormhole-circuit-builder = { version = "1.0.7", default-features = false }
+
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
+
+# Optimize build scripts and their dependencies in dev mode.
+# This is critical for circuit generation which is CPU-intensive.
+# Without this, circuit generation takes ~10 minutes instead of ~30 seconds.
+[profile.dev.build-override]
+opt-level = 3
+
+[profile.release.build-override]
+opt-level = 3
