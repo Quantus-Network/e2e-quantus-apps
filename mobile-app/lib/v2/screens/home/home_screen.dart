@@ -4,15 +4,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
+import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/glass_button.dart' hide ButtonVariant;
 import 'package:resonance_network_wallet/v2/components/glass_icon_button.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
 import 'package:resonance_network_wallet/utils/feature_flags.dart';
+import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
@@ -48,6 +50,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _processIntentIfAvailable() {
+    final payment = ref.read(paymentIntentProvider);
+    if (payment != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(paymentIntentProvider.notifier).state = null;
+        showSendSheetV2(context, address: payment.to, amount: payment.amount, isPayMode: true);
+      });
+      return;
+    }
+
     final shared = ref.read(sharedAccountIntentProvider);
     if (shared != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -67,13 +78,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _processIntentIfAvailable();
 
     final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
+    final isPosMode = ref.watch(posModeProvider);
     final accountAsync = ref.watch(activeAccountProvider);
     final balanceAsync = ref.watch(balanceProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider);
     final colors = context.colors;
     final text = context.themeText;
 
-    return accountAsync.when(
+    Widget screen = accountAsync.when(
       loading: () => ScaffoldBase(
         child: Center(child: CircularProgressIndicator(color: colors.textPrimary)),
       ),
@@ -91,10 +103,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           slivers: [
             _buildContent(active, balanceAsync, isBalanceHidden, colors, text),
             ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
-            const SizedBox(height: 58),
+            SizedBox(height: isPosMode ? 120 : 58),
           ],
         );
       },
+    );
+
+    if (!isPosMode) return screen;
+
+    return Stack(
+      children: [
+        screen,
+        Positioned(
+          left: 24,
+          right: 24,
+          bottom: MediaQuery.of(context).padding.bottom + 24,
+          child: _buildPosButton(colors, text),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPosButton(AppColorsV2 colors, AppTextTheme text) {
+    return Button(
+      label: 'New Charge',
+      variant: ButtonVariant.accent,
+      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosAmountScreen())),
+      textStyle: text.smallTitle?.copyWith(fontWeight: FontWeight.w700, fontSize: 20, decoration: TextDecoration.none),
     );
   }
 
