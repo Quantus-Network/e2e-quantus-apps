@@ -4,7 +4,8 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
-import 'package:resonance_network_wallet/v2/components/glass_container.dart';
+import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/glass_icon_button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -147,14 +148,10 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
   }
 
   Widget _copyButton(AppColorsV2 colors, {required String value, String message = 'Address copied to clipboard'}) {
-    return GestureDetector(
+    return GlassIconButton.rounded(
+      icon: Icons.copy,
       onTap: () => context.copyTextWithToaster(value, message: message),
-      child: Container(
-        width: 20,
-        height: 20,
-        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-        child: const Icon(Icons.copy, size: 12, color: Colors.white),
-      ),
+      size: IconButtonSize.small,
     );
   }
 
@@ -183,23 +180,12 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     final isPending = widget.tx is PendingTransactionEvent;
     final color = isPending ? colors.textPrimary.withValues(alpha: 0.3) : colors.textPrimary;
 
-    return GestureDetector(
-      onTap: isPending ? null : _openExplorer,
-      child: GlassContainer(
-        asset: GlassContainer.wideAsset,
-        filled: false,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'View in Explorer',
-              style: text.paragraph?.copyWith(color: color, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(width: 8),
-            Icon(Icons.open_in_new, size: 16, color: color),
-          ],
-        ),
-      ),
+    return GlassButton.simple(
+      label: 'View in Explorer',
+      onTap: _openExplorer,
+      isDisabled: isPending,
+      variant: ButtonVariant.secondary,
+      icon: Icon(Icons.open_in_new, size: 16, color: color),
     );
   }
 

@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
-import 'package:resonance_network_wallet/v2/components/back_button.dart';
-import 'package:resonance_network_wallet/v2/components/glass_container.dart';
+import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
+import 'package:resonance_network_wallet/v2/components/glass_button.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
-import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/components/success_check.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -56,8 +57,13 @@ class _DepositScreenState extends State<DepositScreen> {
     }
   }
 
+  String _getDepositAddress() {
+    // return _order.depositAddress
+    return 'For demo purposes only - do not send funds!';
+  }
+
   void _copyAddress() {
-    context.copyTextWithToaster(_order.depositAddress);
+    context.copyTextWithToaster(_getDepositAddress());
   }
 
   @override
@@ -67,43 +73,25 @@ class _DepositScreenState extends State<DepositScreen> {
     final quote = _order.quote;
     final usd = quote.fromAmount * _swapService.getUsdPrice(quote.fromToken);
 
-    return Scaffold(
-      backgroundColor: colors.background,
-      body: GradientBackground(
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              children: [
-                const SizedBox(height: 16),
-                _header(colors, text),
-                const SizedBox(height: 40),
-                if (_order.status == SwapStatus.complete)
-                  _completedBody(colors, text)
-                else if (_order.status == SwapStatus.processing)
-                  _processingBody(colors, text)
-                else
-                  _depositBody(colors, text, quote, usd),
-                const Spacer(),
-                if (_order.status == SwapStatus.depositing) _sentButton(colors, text),
-                if (_order.status == SwapStatus.complete) _doneButton(colors, text),
-                const SizedBox(height: 24),
-              ],
-            ),
-          ),
-        ),
+    return ScaffoldBase(
+      appBar: V2AppBar(
+        title: 'Swap',
+        trailing: Icon(Icons.info_outline, color: colors.textPrimary, size: 24),
       ),
-    );
-  }
-
-  Widget _header(AppColorsV2 colors, AppTextTheme text) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const AppBackButton(),
-        Text('Swap', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
-        Icon(Icons.info_outline, color: colors.textPrimary, size: 24),
-      ],
+      child: Column(
+        children: [
+          if (_order.status == SwapStatus.complete)
+            _completedBody(colors, text)
+          else if (_order.status == SwapStatus.processing)
+            _processingBody(colors, text)
+          else
+            _depositBody(colors, text, quote, usd),
+          const Spacer(),
+          if (_order.status == SwapStatus.depositing) _sentButton(colors, text),
+          if (_order.status == SwapStatus.complete) _doneButton(colors, text),
+          const SizedBox(height: 24),
+        ],
+      ),
     );
   }
 
@@ -154,8 +142,8 @@ class _DepositScreenState extends State<DepositScreen> {
             padding: const EdgeInsets.all(8),
 
             /// for now this QR Code is invalid so people don't transfer by accident
-            // child: QrImageView(data: _order.depositAddress, version: QrVersions.auto, size: 184),
-            child: QrImageView(data: 'quantum secure bitcoin - quantus!', version: QrVersions.auto, size: 184),
+            // child: QrImageView(data: _getDepositAddress(), version: QrVersions.auto, size: 184),
+            child: QrImageView(data: 'Quantum secure bitcoin - quantus!', version: QrVersions.auto, size: 184),
           ),
         ),
         const SizedBox(height: 16),
@@ -165,8 +153,8 @@ class _DepositScreenState extends State<DepositScreen> {
             children: [
               // for now put invalid address so people don't transfer by accident
               Text(
-                // _order.depositAddress.toLowerCase(),
-                '-------------------',
+                // _getDepositAddress().toLowerCase(),
+                'For demo purposes only - do not send funds!',
                 style: text.smallParagraph?.copyWith(
                   color: colors.textPrimary,
                   fontWeight: FontWeight.w500,
@@ -194,40 +182,25 @@ class _DepositScreenState extends State<DepositScreen> {
         Row(
           children: [
             Expanded(
-              child: GlassContainer(
-                filled: false,
-                asset: GlassContainer.mediumAsset,
+              child: GlassButton.simple(
+                label: 'Copy',
+                variant: ButtonVariant.transparent,
                 onTap: _copyAddress,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.copy, color: colors.textPrimary, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Copy',
-                      style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
+                icon: Icon(Icons.copy, color: colors.textPrimary, size: 20),
               ),
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: GlassContainer(
-                filled: false,
-                asset: GlassContainer.mediumAsset,
-                onTap: () {},
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.qr_code, color: colors.textPrimary, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Share QR',
-                      style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
+              child: GlassButton.simple(
+                label: 'Share QR',
+                icon: Icon(Icons.qr_code, color: colors.textPrimary, size: 20),
+                variant: ButtonVariant.transparent,
+                onTap: () {
+                  shareText(
+                    context,
+                    'Network: ${_order.quote.fromToken.network}\nToken: ${_order.quote.fromToken.symbol}\nAddress: ${_getDepositAddress()}',
+                  );
+                },
               ),
             ),
           ],
@@ -278,7 +251,7 @@ class _DepositScreenState extends State<DepositScreen> {
         Text('Swap Complete', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
         const SizedBox(height: 12),
         Text(
-          'Your swap for ${SwapService.formatTokenAmount(_order.quote.toAmount, _order.quote.toToken)} QUAN is processing.',
+          'Your swap for ${SwapService.formatTokenAmount(_order.quote.toAmount, _order.quote.toToken)} QUAN is complete.',
           style: text.paragraph?.copyWith(color: colors.textSecondary),
           textAlign: TextAlign.center,
         ),
@@ -294,36 +267,19 @@ class _DepositScreenState extends State<DepositScreen> {
   }
 
   Widget _sentButton(AppColorsV2 colors, AppTextTheme text) {
-    return GlassContainer(
-      asset: GlassContainer.wideAsset,
-      filled: false,
-      onTap: _confirming ? null : _confirmSent,
-      child: Center(
-        child: _confirming
-            ? SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(color: colors.textPrimary, strokeWidth: 2),
-              )
-            : Text(
-                "I've sent the funds",
-                style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-              ),
-      ),
+    return GlassButton.simple(
+      label: "I've sent the funds",
+      onTap: _confirmSent,
+      variant: ButtonVariant.secondary,
+      isLoading: _confirming,
     );
   }
 
   Widget _doneButton(AppColorsV2 colors, AppTextTheme text) {
-    return GlassContainer(
-      asset: GlassContainer.wideAsset,
-      filled: false,
+    return GlassButton.simple(
+      label: 'Done',
       onTap: () => Navigator.popUntil(context, (r) => r.isFirst),
-      child: Center(
-        child: Text(
-          'Done',
-          style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-        ),
-      ),
+      variant: ButtonVariant.secondary,
     );
   }
 }

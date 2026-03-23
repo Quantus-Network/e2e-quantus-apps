@@ -1,98 +1,167 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
+import 'package:resonance_network_wallet/v2/components/inset_button_container.dart';
+import 'package:resonance_network_wallet/v2/components/liquid_glass_base.dart';
+import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
+import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
+
+enum ButtonVariant { transparent, primary, secondary, danger }
+
+enum IconPlacement { leading, trailing, top }
 
 class GlassButton extends StatelessWidget {
+  final Widget? child;
+  final String? _label;
+  final Widget? _icon;
+  final IconPlacement _iconPlacement;
+  final TextStyle? _textStyle;
   final VoidCallback? onTap;
-  final Widget child;
-  final EdgeInsetsGeometry padding;
-  final double radius;
-  final bool filled;
-  final double height;
+  final bool isLoading;
+  final double? width;
+  final EdgeInsets padding;
+  final ButtonVariant variant;
+  final bool isDisabled;
+  final double borderRadius;
+  final bool centered;
+
+  static const double defaultBorderRadius = 14.0;
+  static const double buttonFontSize = 16.0;
 
   const GlassButton({
     super.key,
+    required Widget this.child,
     this.onTap,
-    required this.child,
-    required this.height,
-    this.radius = 14,
-    this.padding = const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-    this.filled = false,
-  });
+    this.isLoading = false,
+    this.width = double.infinity,
+    this.padding = const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+    this.variant = ButtonVariant.primary,
+    this.isDisabled = false,
+    this.borderRadius = defaultBorderRadius,
+    this.centered = true,
+  }) : _label = null,
+       _icon = null,
+       _iconPlacement = IconPlacement.trailing,
+       _textStyle = null;
+
+  // this is a simple button with a label and an icon
+  const GlassButton.simple({
+    super.key,
+    required String label,
+    Widget? icon,
+    IconPlacement iconPlacement = IconPlacement.trailing,
+    this.onTap,
+    this.isLoading = false,
+    this.width = double.infinity,
+    this.padding = const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+    TextStyle? textStyle,
+    this.variant = ButtonVariant.primary,
+    this.isDisabled = false,
+    this.borderRadius = defaultBorderRadius,
+    this.centered = true,
+  }) : _label = label,
+       _icon = icon,
+       _iconPlacement = iconPlacement,
+       _textStyle = textStyle,
+       child = null;
 
   @override
   Widget build(BuildContext context) {
-    final borderRadius = BorderRadius.circular(radius);
-    final outerBorderColor = filled
-        ? const Color(0xFFFFFFFF).withValues(alpha: 0.32)
-        : const Color(0xFFFFFFFF).withValues(alpha: 0.44);
-    final innerBorderColor = filled
-        ? const Color(0xFFFFFFFF).withValues(alpha: 0.18)
-        : const Color(0xFFFFFFFF).withValues(alpha: 0.12);
+    final bool disabled = onTap == null || isLoading || isDisabled;
+    final visibility = disabled ? 0.25 : 1.0;
+    final buttonContent = _buildContent(context);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: SizedBox(
-        height: height,
-        width: double.infinity,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            ClipRRect(
-              borderRadius: borderRadius,
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: borderRadius,
-                    color: filled ? const Color(0xFFFFFFFF).withValues(alpha: 0.1) : Colors.transparent,
-                  ),
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: borderRadius,
-                  border: Border.all(color: outerBorderColor, width: 0.889),
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: Padding(
-                padding: const EdgeInsets.all(1),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(radius - 1),
-                    border: Border.all(color: innerBorderColor, width: 0.6),
-                  ),
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: borderRadius,
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.12),
-                      Colors.transparent,
-                      Colors.transparent,
-                      Colors.black.withValues(alpha: 0.16),
-                    ],
-                    stops: const [0.0, 0.22, 0.78, 1.0],
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: padding,
-              child: Center(child: child),
-            ),
-          ],
+    Widget buttonWidget;
+
+    switch (variant) {
+      case ButtonVariant.primary:
+        buttonWidget = LiquidGlassBase.rounded(
+          glassColor: context.colors.surfaceGlass,
+          visibility: visibility,
+          radius: borderRadius,
+          centered: centered,
+          child: Padding(padding: padding, child: buttonContent),
+        );
+        break;
+
+      case ButtonVariant.secondary:
+        buttonWidget = LiquidGlassBase.rounded(
+          visibility: visibility,
+          radius: borderRadius,
+          centered: centered,
+          child: InsetButtonContainer(
+            width: width,
+            padding: padding,
+            border: BoxBorder.all(color: context.colors.borderSubtle, width: 0.8),
+            child: buttonContent,
+          ),
+        );
+        break;
+
+      case ButtonVariant.danger:
+        buttonWidget = LiquidGlassBase.rounded(
+          visibility: visibility,
+          radius: borderRadius,
+          centered: centered,
+          child: InsetButtonContainer(
+            width: width,
+            padding: padding,
+            backgroundColor: context.colors.buttonDanger,
+            border: BoxBorder.all(color: context.colors.borderDanger, width: 1.5),
+            child: buttonContent,
+          ),
+        );
+        break;
+
+      case ButtonVariant.transparent:
+        buttonWidget = Container(
+          width: width,
+          padding: padding,
+          decoration: ShapeDecoration(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius))),
+          child: Opacity(opacity: visibility, child: buttonContent),
+        );
+        break;
+    }
+
+    return InkWell(onTap: disabled ? null : onTap, child: buttonWidget);
+  }
+
+  Widget _buildContent(BuildContext context) {
+    if (isLoading) {
+      final size = (_textStyle?.fontSize ?? buttonFontSize) + 6;
+      return Center(
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: CircularProgressIndicator(color: context.colors.textPrimary, strokeWidth: 2.0),
         ),
-      ),
-    );
+      );
+    }
+
+    if (child != null) return child!;
+
+    final effectiveTextStyle = _textStyle ?? context.themeText.smallTitle!.copyWith(fontSize: buttonFontSize);
+
+    Widget content;
+    if (_iconPlacement == IconPlacement.top) {
+      content = Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        spacing: 8,
+        children: [
+          ?_icon,
+          Text(_label!, style: effectiveTextStyle),
+        ],
+      );
+    } else {
+      content = Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        spacing: 8,
+        children: [
+          if (_iconPlacement == IconPlacement.leading && _icon != null) _icon,
+          Text(_label!, style: effectiveTextStyle),
+          if (_iconPlacement == IconPlacement.trailing && _icon != null) _icon,
+        ],
+      );
+    }
+
+    return Center(child: content);
   }
 }

@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/app_initializer.dart';
 import 'package:resonance_network_wallet/app_lifecycle_manager.dart';
-import 'package:resonance_network_wallet/features/main/screens/app.dart';
+import 'package:resonance_network_wallet/app.dart';
 import 'package:resonance_network_wallet/utils/env_utils.dart';
 import 'package:resonance_network_wallet/utils/feature_flags.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -15,11 +15,7 @@ import 'package:resonance_network_wallet/firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Enable edge-to-edge display
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(systemNavigationBarColor: Colors.transparent, statusBarColor: Colors.transparent),
-  );
 
   await dotenv.load();
 

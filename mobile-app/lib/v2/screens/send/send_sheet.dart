@@ -1,15 +1,15 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
+import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/glass_icon_button.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/main/screens/send/send_providers.dart';
-import 'package:resonance_network_wallet/features/main/screens/send/send_screen_logic.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
-import 'package:resonance_network_wallet/v2/components/back_button.dart';
-import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/components/success_check.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -19,7 +19,9 @@ enum _Step { form, confirm, sending, complete }
 
 class SendSheet extends ConsumerStatefulWidget {
   final String? initialAddress;
-  const SendSheet({super.key, this.initialAddress});
+  final String? initialAmount;
+  final bool isPayMode;
+  const SendSheet({super.key, this.initialAddress, this.initialAmount, this.isPayMode = false});
 
   @override
   ConsumerState<SendSheet> createState() => _SendSheetState();
@@ -47,6 +49,9 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     _amountController.addListener(_onAmountChanged);
     if (widget.initialAddress != null) {
       _recipientController.text = widget.initialAddress!;
+    }
+    if (widget.initialAmount != null) {
+      _amountController.text = widget.initialAmount!;
     }
   }
 
@@ -168,41 +173,18 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     final text = context.themeText;
     final balance = ref.watch(effectiveMaxBalanceProvider);
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 40, 24, 40),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        border: Border.all(color: const Color(0xFF3D3D3D)),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+    return BottomSheetContainer(
+      title: widget.isPayMode ? 'Pay' : 'Send',
+      onBack: _step == _Step.confirm ? _backToForm : null,
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 200),
+        child: switch (_step) {
+          _Step.form => _buildForm(colors, text, balance),
+          _Step.confirm => _buildConfirm(colors, text),
+          _Step.sending => _buildSending(colors, text),
+          _Step.complete => _buildComplete(colors, text),
+        },
       ),
-      child: SafeArea(
-        top: false,
-        child: AnimatedSize(
-          duration: const Duration(milliseconds: 200),
-          child: switch (_step) {
-            _Step.form => _buildForm(colors, text, balance),
-            _Step.confirm => _buildConfirm(colors, text),
-            _Step.sending => _buildSending(colors, text),
-            _Step.complete => _buildComplete(colors, text),
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _header(AppColorsV2 colors, AppTextTheme text, {VoidCallback? onBack}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        if (onBack != null)
-          AppBackButton(onTap: onBack)
-        else
-          Text('Send', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
-        GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Icon(Icons.close, color: colors.textPrimary, size: 20),
-        ),
-      ],
     );
   }
 
@@ -230,8 +212,6 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _header(colors, text),
-        const SizedBox(height: 40),
         Text('Send To', style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
         const SizedBox(height: 12),
         _addressInput(colors, text),
@@ -391,8 +371,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _header(colors, text, onBack: _backToForm),
-        const SizedBox(height: 72),
+        const SizedBox(height: 40),
         Text(
           '${_fmt.formatBalance(_amount)} ${AppConstants.tokenSymbol}',
           style: text.mediumTitle?.copyWith(color: colors.textPrimary, fontSize: 32),
@@ -427,11 +406,13 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _header(colors, text),
-        const SizedBox(height: 80),
+        const SizedBox(height: 48),
         CircularProgressIndicator(color: colors.textPrimary),
         const SizedBox(height: 24),
-        Text('Sending...', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+        Text(
+          widget.isPayMode ? 'Paying...' : 'Sending...',
+          style: text.smallTitle?.copyWith(color: colors.textPrimary),
+        ),
         const SizedBox(height: 80),
       ],
     );
@@ -441,11 +422,10 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _header(colors, text),
-        const SizedBox(height: 80),
+        const SizedBox(height: 48),
         const SuccessCheck(size: 64),
         const SizedBox(height: 24),
-        Text('Sent!', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+        Text(widget.isPayMode ? 'Paid!' : 'Sent!', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
         const SizedBox(height: 8),
         Text(
           '${_fmt.formatBalance(_amount)} ${AppConstants.tokenSymbol}',
@@ -458,17 +438,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   }
 
   Widget _iconButton(IconData icon, AppColorsV2 colors, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: SizedBox(
-        width: 40,
-        height: 40,
-        child: GlassContainer(
-          asset: GlassContainer.smallAsset,
-          child: Icon(icon, color: colors.textPrimary, size: 20),
-        ),
-      ),
-    );
+    return GlassIconButton.rounded(icon: icon, onTap: onTap);
   }
 
   Widget _actionButton({
@@ -478,35 +448,16 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     bool disabled = false,
     VoidCallback? onTap,
   }) {
-    return GestureDetector(
-      onTap: disabled ? null : onTap,
-      child: Opacity(
-        opacity: disabled ? 0.2 : 1.0,
-        child: GlassContainer(
-          asset: GlassContainer.wideAsset,
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-          ),
-        ),
-      ),
-    );
+    return GlassButton.simple(label: label, onTap: onTap, isDisabled: disabled, variant: ButtonVariant.secondary);
   }
 }
 
-void showSendSheetV2(BuildContext context, {String? address}) {
-  showModalBottomSheet(
-    context: context,
-    backgroundColor: Colors.transparent,
-    isScrollControlled: true,
-    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
-    builder: (_) => BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-      child: Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: SendSheet(initialAddress: address),
-      ),
+void showSendSheetV2(BuildContext context, {String? address, String? amount, bool isPayMode = false}) {
+  BottomSheetContainer.show(
+    context,
+    builder: (_) => Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SendSheet(initialAddress: address, initialAmount: amount, isPayMode: isPayMode),
     ),
   );
 }
