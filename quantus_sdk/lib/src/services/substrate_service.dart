@@ -426,15 +426,14 @@ class SubstrateService {
 
     final callData = call.encode(); // Uint8List
     // 4. Encode as unsigned/bare extrinsic
-  // final encoder = ExtrinsicEncoder(chainInfo);
-  // final unsignedExtrinsic = encoder.encodeUnsigned(callData); // adds version byte (0x04 for V4, 0x05 for V5)
+    // final encoder = ExtrinsicEncoder(chainInfo);
+    // final unsignedExtrinsic = encoder.encodeUnsigned(callData); // adds version byte (0x04 for V4, 0x05 for V5)
     final output = ByteOutput()
       ..pushByte(versionByte)
       ..write(call.encode());
     final extrinsic = U8SequenceCodec.codec.encode(output.toBytes());
     return await _submitExtrinsic(extrinsic);
   }
-
 
   Future<int> _getNextAccountNonceFromAddress(String address) async {
     final nonceResult = await _rpcEndpointService.rpcTask((uri) async {

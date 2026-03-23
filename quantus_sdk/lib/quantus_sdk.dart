@@ -41,12 +41,7 @@ export 'src/rust/api/crypto.dart' hide crystalAlice, crystalCharlie, crystalBob;
 export 'src/rust/api/ur.dart';
 // Re-export raw FFI wormhole types (prefixed with 'Ffi' via the service layer for clarity)
 // Most users should use WormholeService instead
-export 'src/rust/api/wormhole.dart'
-    show
-        WormholePairResult,
-        WormholeError,
-        CircuitConfig,
-        CircuitGenerationResult;
+export 'src/rust/api/wormhole.dart' show WormholePairResult, WormholeError, CircuitConfig, CircuitGenerationResult;
 export 'src/services/account_discovery_service.dart';
 export 'src/services/accounts_service.dart';
 export 'src/services/address_formatting_service.dart';
