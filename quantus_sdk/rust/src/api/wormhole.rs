@@ -152,12 +152,12 @@ pub fn first_hash_to_address(first_hash_hex: String) -> Result<String, WormholeE
         })?;
 
     // The address is hash(first_hash) using the same method as the ZK circuit:
-    // - unsafe_digest_bytes_to_felts: 32 bytes -> 4 field elements (8 bytes each)
-    // - hash_variable_length: hash without padding
-    use qp_poseidon_core::{hash_variable_length, serialization::unsafe_digest_bytes_to_felts};
+    // - bytes_to_digest: 32 bytes -> 4 field elements (8 bytes each)
+    // - hash_to_bytes: hash felts without padding -> 32 bytes
+    use qp_poseidon_core::{hash_to_bytes, serialization::bytes_to_digest};
 
-    let first_hash_felts = unsafe_digest_bytes_to_felts(&first_hash_bytes);
-    let address_bytes = hash_variable_length(first_hash_felts.to_vec());
+    let first_hash_felts: [_; 4] = bytes_to_digest(&first_hash_bytes);
+    let address_bytes = hash_to_bytes(&first_hash_felts);
 
     let account = AccountId32::from(address_bytes);
     Ok(account.to_ss58check())
@@ -317,7 +317,8 @@ pub fn compute_nullifier(secret_hex: String, transfer_count: u64) -> Result<Stri
 
     let nullifier =
         qp_wormhole_circuit::nullifier::Nullifier::from_preimage(secret, transfer_count);
-    let nullifier_bytes = qp_zk_circuits_common::utils::digest_felts_to_bytes(nullifier.hash);
+    // nullifier.hash is 4 felts (8 bytes/felt), use digest_to_bytes
+    let nullifier_bytes = qp_zk_circuits_common::utils::digest_to_bytes(nullifier.hash);
 
     Ok(format!("0x{}", hex::encode(nullifier_bytes.as_ref())))
 }
@@ -341,7 +342,8 @@ pub fn derive_address_from_secret(secret_hex: String) -> Result<String, Wormhole
 
     let unspendable =
         qp_wormhole_circuit::unspendable_account::UnspendableAccount::from_secret(secret);
-    let address_bytes = qp_zk_circuits_common::utils::digest_felts_to_bytes(unspendable.account_id);
+    // account_id is 8 felts (4 bytes/felt), use felts_to_digest
+    let address_bytes = qp_zk_circuits_common::utils::felts_to_digest(unspendable.account_id);
 
     let account = AccountId32::from(
         <[u8; 32]>::try_from(address_bytes.as_ref()).expect("BytesDigest is always 32 bytes"),
@@ -499,8 +501,8 @@ pub fn compute_transfer_proof_storage_key(
 
     let unspendable =
         qp_wormhole_circuit::unspendable_account::UnspendableAccount::from_secret(secret_digest);
-    let unspendable_bytes =
-        qp_zk_circuits_common::utils::digest_felts_to_bytes(unspendable.account_id);
+    // account_id is 8 felts (4 bytes/felt), use felts_to_digest
+    let unspendable_bytes = qp_zk_circuits_common::utils::felts_to_digest(unspendable.account_id);
     let wormhole_address: [u8; 32] = unspendable_bytes
         .as_ref()
         .try_into()
@@ -629,14 +631,16 @@ impl WormholeProofGenerator {
             secret_digest,
             utxo.transfer_count,
         );
-        let nullifier_bytes = qp_zk_circuits_common::utils::digest_felts_to_bytes(nullifier.hash);
+        // nullifier.hash is 4 felts (8 bytes/felt), use digest_to_bytes
+        let nullifier_bytes = qp_zk_circuits_common::utils::digest_to_bytes(nullifier.hash);
 
         // Compute unspendable account
         let unspendable = qp_wormhole_circuit::unspendable_account::UnspendableAccount::from_secret(
             secret_digest,
         );
+        // account_id is 8 felts (4 bytes/felt), use felts_to_digest
         let unspendable_bytes =
-            qp_zk_circuits_common::utils::digest_felts_to_bytes(unspendable.account_id);
+            qp_zk_circuits_common::utils::felts_to_digest(unspendable.account_id);
 
         // Process storage proof
         let proof_nodes: Vec<Vec<u8>> = storage_proof
@@ -778,13 +782,14 @@ use qp_zk_circuits_common::circuit::{C, D, F};
 // Use the same import paths as qp-wormhole-aggregator for type compatibility
 use plonky2::plonk::circuit_data::CommonCircuitData;
 use plonky2::plonk::proof::ProofWithPublicInputs;
+use qp_wormhole_aggregator::aggregator::{AggregationBackend, CircuitType, Layer0Aggregator};
 
 /// Opaque handle to a proof aggregator.
 ///
 /// The aggregator collects proofs and aggregates them into a single proof
 /// for more efficient on-chain verification.
 pub struct WormholeProofAggregator {
-    inner: Mutex<qp_wormhole_aggregator::aggregator::WormholeProofAggregator>,
+    inner: Mutex<Layer0Aggregator>,
     common_data: CommonCircuitData<F, D>,
     batch_size: usize,
 }
@@ -802,18 +807,16 @@ impl WormholeProofAggregator {
 
         // Load config to get batch size
         let config = CircuitConfig::load(&bins_dir)?;
-        let agg_config =
-            qp_zk_circuits_common::aggregation::AggregationConfig::new(config.num_leaf_proofs);
 
-        let aggregator =
-            qp_wormhole_aggregator::aggregator::WormholeProofAggregator::from_prebuilt_dir(
-                bins_path, agg_config,
-            )
+        let aggregator = Layer0Aggregator::new(bins_path).map_err(|e| WormholeError {
+            message: format!("Failed to load aggregator from {:?}: {}", bins_dir, e),
+        })?;
+
+        let common_data = aggregator
+            .load_common_data(CircuitType::Leaf)
             .map_err(|e| WormholeError {
-                message: format!("Failed to load aggregator from {:?}: {}", bins_dir, e),
+                message: format!("Failed to load common data: {}", e),
             })?;
-
-        let common_data = aggregator.leaf_circuit_data.common.clone();
         let batch_size = config.num_leaf_proofs;
 
         Ok(Self {
@@ -833,11 +836,7 @@ impl WormholeProofAggregator {
         let aggregator = self.inner.lock().map_err(|e| WormholeError {
             message: format!("Failed to lock aggregator: {}", e),
         })?;
-        Ok(aggregator
-            .proofs_buffer
-            .as_ref()
-            .map(|b| b.len())
-            .unwrap_or(0))
+        Ok(aggregator.buffer_len())
     }
 
     /// Add a proof to the aggregation buffer.
@@ -888,11 +887,7 @@ impl WormholeProofAggregator {
             message: format!("Failed to lock aggregator: {}", e),
         })?;
 
-        let num_real = aggregator
-            .proofs_buffer
-            .as_ref()
-            .map(|b| b.len())
-            .unwrap_or(0);
+        let num_real = aggregator.buffer_len();
 
         log::info!(
             "[SDK Aggregator] Starting aggregation with {} real proofs, batch_size={}",
@@ -900,42 +895,24 @@ impl WormholeProofAggregator {
             self.batch_size
         );
 
-        // Debug: Log block_hash of each proof in the buffer
-        if let Some(ref proofs) = aggregator.proofs_buffer {
-            for (i, proof) in proofs.iter().enumerate() {
-                if proof.public_inputs.len() >= 20 {
-                    let block_hash: Vec<u64> = proof.public_inputs[16..20]
-                        .iter()
-                        .map(|f| f.to_canonical_u64())
-                        .collect();
-                    let is_dummy = block_hash.iter().all(|&v| v == 0);
-                    log::info!(
-                        "[SDK Aggregator] Proof {} in buffer: block_hash={:?}, is_dummy={}",
-                        i,
-                        block_hash,
-                        is_dummy
-                    );
-                }
-            }
-        }
-
         let result = aggregator.aggregate().map_err(|e| WormholeError {
             message: format!("Aggregation failed: {}", e),
         })?;
 
         Ok(AggregatedProof {
-            proof_hex: format!("0x{}", hex::encode(result.proof.to_bytes())),
+            proof_hex: format!("0x{}", hex::encode(result.to_bytes())),
             num_real_proofs: num_real,
         })
     }
 
     /// Clear the proof buffer without aggregating.
+    ///
+    /// Note: The new Layer0Aggregator API doesn't support clearing the buffer
+    /// directly. To clear, you need to create a new aggregator instance.
     pub fn clear(&self) -> Result<(), WormholeError> {
-        let mut aggregator = self.inner.lock().map_err(|e| WormholeError {
-            message: format!("Failed to lock aggregator: {}", e),
-        })?;
-
-        aggregator.proofs_buffer = None;
+        // The new API doesn't expose buffer clearing directly.
+        // Callers should create a new aggregator if they need to start fresh.
+        log::warn!("[SDK Aggregator] clear() is a no-op with the new API. Create a new aggregator to start fresh.");
         Ok(())
     }
 }
@@ -1103,14 +1080,10 @@ fn compute_block_hash_internal(
     })?;
 
     let block_hash = header.block_hash();
-    let hash: [u8; 32] = block_hash
-        .as_ref()
-        .try_into()
-        .map_err(|_| WormholeError {
-            message: "Block hash conversion failed".to_string(),
-        })?;
+    let hash: [u8; 32] = block_hash.as_ref().try_into().map_err(|_| WormholeError {
+        message: "Block hash conversion failed".to_string(),
+    })?;
     Ok(hash)
-
 }
 
 // ============================================================================
@@ -1159,6 +1132,7 @@ pub fn generate_circuit_binaries(
         &output_dir,
         true, // include_prover - we need it for proof generation
         num_leaf_proofs as usize,
+        None, // num_layer0_proofs - use default
     ) {
         Ok(()) => CircuitGenerationResult {
             success: true,
@@ -1302,6 +1276,33 @@ mod tests {
         assert_eq!(derived_addr, pair.address);
     }
 
+    /// Verify that WormholePair (P3) and UnspendableAccount (P2) produce identical addresses.
+    /// This test ensures the Poseidon2 implementations are compatible after safe injective encoding.
+    #[test]
+    fn test_p2_p3_address_derivation_consistency() {
+        use qp_rusty_crystals_hdwallet::wormhole::WormholePair;
+        use qp_wormhole_circuit::unspendable_account::UnspendableAccount;
+        use qp_zk_circuits_common::utils::felts_to_digest;
+
+        // Test with fixed secret
+        let secret = [0x42u8; 32];
+
+        // Generate address via hdwallet (uses Plonky3 Poseidon2)
+        let mut secret_copy = secret;
+        let pair = WormholePair::generate_pair_from_secret((&mut secret_copy).into());
+
+        // Generate address via circuit (uses Plonky2 Poseidon2)
+        let secret_bytes: qp_wormhole_inputs::BytesDigest = secret.try_into().unwrap();
+        let unspendable = UnspendableAccount::from_secret(secret_bytes);
+        // account_id is 8 felts (4 bytes/felt), use felts_to_digest
+        let address_p2 = felts_to_digest(unspendable.account_id);
+
+        assert_eq!(
+            pair.address, *address_p2,
+            "P2 and P3 Poseidon2 implementations must produce identical wormhole addresses"
+        );
+    }
+
     #[test]
     fn test_block_hash_sdk_matches_circuit() {
         use qp_wormhole_circuit::block_header::header::HeaderInputs;
@@ -1309,12 +1310,11 @@ mod tests {
 
         let parent_hash = [0u8; 32];
         let block_number: u32 = 1;
-        let state_root: [u8; 32] = hex::decode(
-            "713c0468ddc5b657ce758a3fb75ec5ae906d95b334f24a4f5661cc775e1cdb43",
-        )
-        .unwrap()
-        .try_into()
-        .unwrap();
+        let state_root: [u8; 32] =
+            hex::decode("713c0468ddc5b657ce758a3fb75ec5ae906d95b334f24a4f5661cc775e1cdb43")
+                .unwrap()
+                .try_into()
+                .unwrap();
         let extrinsics_root = [0u8; 32];
         #[rustfmt::skip]
         let digest: [u8; 110] = [
@@ -1325,15 +1325,21 @@ mod tests {
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 18, 79, 226,
         ];
+        // Updated fixture for safe injective encoding (qp-plonky2 illuzen/new-rate)
         #[rustfmt::skip]
         let expected: [u8; 32] = [
-            160, 247, 232, 22, 150, 117, 245, 140, 3, 70, 175, 175, 22, 247, 90, 37,
-            231, 80, 170, 11, 27, 183, 40, 51, 5, 19, 164, 19, 188, 192, 229, 212,
+            174, 76, 79, 34, 223, 154, 1, 240, 36, 113, 157, 120, 83, 137, 193, 8,
+            227, 16, 210, 205, 67, 96, 224, 218, 147, 68, 17, 234, 59, 235, 201, 1,
         ];
 
-        let sdk_hash =
-            compute_block_hash_internal(&parent_hash, &state_root, &extrinsics_root, block_number, &digest)
-                .expect("SDK block hash computation failed");
+        let sdk_hash = compute_block_hash_internal(
+            &parent_hash,
+            &state_root,
+            &extrinsics_root,
+            block_number,
+            &digest,
+        )
+        .expect("SDK block hash computation failed");
 
         let circuit_hash = HeaderInputs::new(
             BytesDigest::try_from(parent_hash).unwrap(),
@@ -1361,18 +1367,18 @@ mod tests {
         use qp_wormhole_circuit::block_header::header::HeaderInputs;
         use qp_wormhole_inputs::BytesDigest;
 
+        // Use the new block 1 hash as parent for block 2
         #[rustfmt::skip]
         let parent_hash: [u8; 32] = [
-            160, 247, 232, 22, 150, 117, 245, 140, 3, 70, 175, 175, 22, 247, 90, 37,
-            231, 80, 170, 11, 27, 183, 40, 51, 5, 19, 164, 19, 188, 192, 229, 212,
+            174, 76, 79, 34, 223, 154, 1, 240, 36, 113, 157, 120, 83, 137, 193, 8,
+            227, 16, 210, 205, 67, 96, 224, 218, 147, 68, 17, 234, 59, 235, 201, 1,
         ];
         let block_number: u32 = 2;
-        let state_root: [u8; 32] = hex::decode(
-            "2f10a7c86fdd3758d1174e955a5f6efbbef29b41850720853ee4843a2a0d48a7",
-        )
-        .unwrap()
-        .try_into()
-        .unwrap();
+        let state_root: [u8; 32] =
+            hex::decode("2f10a7c86fdd3758d1174e955a5f6efbbef29b41850720853ee4843a2a0d48a7")
+                .unwrap()
+                .try_into()
+                .unwrap();
         let extrinsics_root = [0u8; 32];
         #[rustfmt::skip]
         let digest: [u8; 110] = [
@@ -1383,15 +1389,21 @@ mod tests {
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 18, 79, 226,
         ];
+        // Updated fixture for safe injective encoding (qp-plonky2 illuzen/new-rate)
         #[rustfmt::skip]
         let expected: [u8; 32] = [
-            123, 3, 1, 4, 129, 152, 164, 69, 52, 213, 96, 85, 78, 201, 4, 176, 26,
-            84, 254, 144, 212, 78, 187, 6, 221, 141, 198, 216, 24, 52, 122, 31,
+            212, 36, 232, 95, 87, 36, 183, 102, 140, 129, 147, 198, 43, 8, 85, 168,
+            0, 188, 49, 6, 38, 176, 23, 38, 42, 124, 117, 158, 67, 17, 108, 89,
         ];
 
-        let sdk_hash =
-            compute_block_hash_internal(&parent_hash, &state_root, &extrinsics_root, block_number, &digest)
-                .expect("SDK block hash computation failed");
+        let sdk_hash = compute_block_hash_internal(
+            &parent_hash,
+            &state_root,
+            &extrinsics_root,
+            block_number,
+            &digest,
+        )
+        .expect("SDK block hash computation failed");
 
         let circuit_hash = HeaderInputs::new(
             BytesDigest::try_from(parent_hash).unwrap(),

@@ -62,6 +62,7 @@ fn main() {
         &output_dir,
         true, // include_prover = true (SDK needs prover for proof generation)
         num_leaf_proofs,
+        None, // num_layer0_proofs - use default
     )
     .expect("Failed to generate circuit binaries");
 
