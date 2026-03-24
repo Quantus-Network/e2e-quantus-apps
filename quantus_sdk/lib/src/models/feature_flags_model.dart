@@ -23,22 +23,22 @@ class FeatureFlagsModel {
 
   Map<String, dynamic> toCacheJson() {
     return <String, dynamic>{
-      'enable_test_buttons': enableTestButtons,
-      'enable_keystone_hardware_wallet': enableKeystoneHardwareWallet,
-      'enable_high_security': enableHighSecurity,
-      'enable_remote_notifications': enableRemoteNotifications,
-      'enable_swap': enableSwap,
+      'enableTestButtons': enableTestButtons,
+      'enableKeystoneHardwareWallet': enableKeystoneHardwareWallet,
+      'enableHighSecurity': enableHighSecurity,
+      'enableRemoteNotifications': enableRemoteNotifications,
+      'enableSwap': enableSwap,
     };
   }
 
   factory FeatureFlagsModel.fromJson(Map<String, dynamic>? json) {
     return FeatureFlagsModel(
-      enableTestButtons: _readBool(json?['enable_test_buttons']) ?? defaults.enableTestButtons,
+      enableTestButtons: _readBool(json?['enableTestButtons']) ?? defaults.enableTestButtons,
       enableKeystoneHardwareWallet:
-          _readBool(json?['enable_keystone_hardware_wallet']) ?? defaults.enableKeystoneHardwareWallet,
-      enableHighSecurity: _readBool(json?['enable_high_security']) ?? defaults.enableHighSecurity,
-      enableRemoteNotifications: _readBool(json?['enable_remote_notifications']) ?? defaults.enableRemoteNotifications,
-      enableSwap: _readBool(json?['enable_swap']) ?? defaults.enableSwap,
+          _readBool(json?['enableKeystoneHardwareWallet']) ?? defaults.enableKeystoneHardwareWallet,
+      enableHighSecurity: _readBool(json?['enableHighSecurity']) ?? defaults.enableHighSecurity,
+      enableRemoteNotifications: _readBool(json?['enableRemoteNotifications']) ?? defaults.enableRemoteNotifications,
+      enableSwap: _readBool(json?['enableSwap']) ?? defaults.enableSwap,
     );
   }
 }
