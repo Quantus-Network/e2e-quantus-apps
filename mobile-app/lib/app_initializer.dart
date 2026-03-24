@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:resonance_network_wallet/providers/feature_flags_provider.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 import 'package:resonance_network_wallet/services/local_notifications_service.dart';
-import 'package:resonance_network_wallet/utils/feature_flags.dart';
 
 /// Widget that initializes the polling services for the entire app.
 /// This should be placed high in the widget tree, typically in your main app
@@ -26,10 +26,13 @@ class _AppInitializerState extends ConsumerState<AppInitializer> {
 
   Future<void> _initialize() async {
     try {
+      await ref.read(featureFlagsProvider.notifier).syncFlags();
+      final featureFlags = ref.read(featureFlagsProvider);
+
       final notificationService = ref.read(localNotificationsServiceProvider);
       await notificationService.init();
 
-      if (FeatureFlags.enableRemoteNotifications) {
+      if (featureFlags.enableRemoteNotifications) {
         final fcmService = ref.read(firebaseMessagingServiceProvider);
         await fcmService.init();
       }

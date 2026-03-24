@@ -7,8 +7,8 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/app_initializer.dart';
 import 'package:resonance_network_wallet/app_lifecycle_manager.dart';
 import 'package:resonance_network_wallet/app.dart';
+import 'package:resonance_network_wallet/services/feature_flags_service.dart';
 import 'package:resonance_network_wallet/utils/env_utils.dart';
-import 'package:resonance_network_wallet/utils/feature_flags.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:telemetrydecksdk/telemetrydecksdk.dart';
 import 'package:resonance_network_wallet/firebase_options.dart';
@@ -22,7 +22,9 @@ void main() async {
   // Initialize Supabase
   await Supabase.initialize(url: EnvUtils.supabaseUrl, anonKey: EnvUtils.supabaseKey);
   await QuantusSdk.init();
-  if (FeatureFlags.enableRemoteNotifications) {
+
+  final featureFlags = await FeatureFlagsService().getFlagsWithFallback();
+  if (featureFlags.enableRemoteNotifications) {
     await Firebase.initializeApp(options: DefaultFirebaseOptions.getOptionsForEnvironment());
   }
 
