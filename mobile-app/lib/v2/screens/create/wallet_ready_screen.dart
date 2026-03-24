@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/main/screens/create_wallet_and_backup_screen.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
-import 'package:resonance_network_wallet/v2/components/back_button.dart';
+import 'package:resonance_network_wallet/utils/feature_flags.dart';
+import 'package:resonance_network_wallet/v2/components/glass_button.dart';
 import 'package:resonance_network_wallet/v2/components/glass_container.dart';
-import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/screens/create/recovery_phrase_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -88,6 +91,10 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
 
+      if (FeatureFlags.enableRemoteNotifications) {
+        ref.read(firebaseMessagingServiceProvider).registerDeviceIfPossible();
+      }
+
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HomeScreen()), (route) => false);
     } catch (e) {
@@ -103,110 +110,82 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
     final text = context.themeText;
     final canContinue = !_isLoading && _error == null && _accountNameError == null;
 
-    return Scaffold(
-      backgroundColor: colors.background,
-      body: GradientBackground(
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              children: [
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const AppBackButton(),
-                    Text(
-                      'Your Wallet Is Ready',
-                      style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20),
-                    ),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Icon(Icons.close, color: colors.textPrimary, size: 24),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 40),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _Field(
-                          label: 'Wallet Name',
-                          value: _accountName.text,
-                          isLoading: _isLoading,
-                          actionIcon: Icons.edit,
-                          onAction: () => _showEditNameSheet(colors, text),
-                        ),
-                        const SizedBox(height: 24),
-                        _Field(
-                          label: 'Wallet Address',
-                          value: _isLoading
-                              ? '...'
-                              : AddressFormattingService.formatAddress(
-                                  _address,
-                                  prefix: 15,
-                                  ellipses: '.......',
-                                  postFix: 14,
-                                ),
-                          isLoading: _isLoading,
-                          actionIcon: Icons.copy,
-                          onAction: () => context.copyTextWithToaster(_address),
-                        ),
-                        const SizedBox(height: 24),
-                        _Field(
-                          label: 'Wallet Checkphrase',
-                          value: _isLoading ? '...' : _checksum,
-                          isLoading: _isLoading,
-                          valueColor: colors.accentPink,
-                          actionIcon: Icons.copy,
-                          onAction: () => context.copyTextWithToaster(_checksum, message: 'Checkphrase copied'),
-                        ),
-                        const SizedBox(height: 16),
-                        GestureDetector(
-                          onTap: () {
-                            final words = _mnemonic.isNotEmpty ? _mnemonic.split(' ') : <String>[];
-                            showRecoveryPhraseSheet(context, words, _isLoading, _error, _mnemonic);
-                          },
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.visibility_outlined, size: 16, color: colors.textSecondary),
-                              const SizedBox(width: 8),
-                              Text('View recovery phrase', style: text.detail?.copyWith(color: colors.textSecondary)),
-                            ],
+    return ScaffoldBase(
+      appBar: V2AppBar(
+        title: 'Your Wallet Is Ready',
+        trailing: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Icon(Icons.close, color: colors.textPrimary, size: 24),
+        ),
+      ),
+      child: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _Field(
+                    label: 'Wallet Name',
+                    value: _accountName.text,
+                    isLoading: _isLoading,
+                    actionIcon: Icons.edit,
+                    onAction: () => _showEditNameSheet(colors, text),
+                  ),
+                  const SizedBox(height: 24),
+                  _Field(
+                    label: 'Wallet Address',
+                    value: _isLoading
+                        ? '...'
+                        : AddressFormattingService.formatAddress(
+                            _address,
+                            prefix: 15,
+                            ellipses: '.......',
+                            postFix: 14,
                           ),
-                        ),
-                        const SizedBox(height: 32),
+                    isLoading: _isLoading,
+                    actionIcon: Icons.copy,
+                    onAction: () => context.copyTextWithToaster(_address),
+                  ),
+                  const SizedBox(height: 24),
+                  _Field(
+                    label: 'Wallet Checkphrase',
+                    value: _isLoading ? '...' : _checksum,
+                    isLoading: _isLoading,
+                    valueColor: colors.accentPink,
+                    actionIcon: Icons.copy,
+                    onAction: () => context.copyTextWithToaster(_checksum, message: 'Checkphrase copied'),
+                  ),
+                  const SizedBox(height: 16),
+                  GestureDetector(
+                    onTap: () {
+                      final words = _mnemonic.isNotEmpty ? _mnemonic.split(' ') : <String>[];
+                      showRecoveryPhraseSheet(context, words, _isLoading, _error, _mnemonic);
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.visibility_outlined, size: 16, color: colors.textSecondary),
+                        const SizedBox(width: 8),
+                        Text('View recovery phrase', style: text.detail?.copyWith(color: colors.textSecondary)),
                       ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                GlassContainer(
-                  asset: GlassContainer.wideAsset,
-                  onTap: canContinue ? _continue : null,
-                  child: _isSubmitting
-                      ? Center(
-                          child: SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: colors.textPrimary),
-                          ),
-                        )
-                      : Center(
-                          child: Text(
-                            'Continue',
-                            style: text.paragraph?.copyWith(fontWeight: FontWeight.w500, color: colors.textPrimary),
-                          ),
-                        ),
-                ),
-                const SizedBox(height: 24),
-              ],
+                  const SizedBox(height: 32),
+                ],
+              ),
             ),
           ),
-        ),
+          const SizedBox(height: 24),
+          GlassButton.simple(
+            label: 'Continue',
+            onTap: _continue,
+            isLoading: _isSubmitting,
+            variant: ButtonVariant.secondary,
+            isDisabled: !canContinue,
+          ),
+          const SizedBox(height: 24),
+        ],
       ),
     );
   }
@@ -235,9 +214,8 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
               ),
             ),
             const SizedBox(height: 24),
-            GlassContainer(
-              asset: GlassContainer.wideAsset,
-              filled: true,
+            GlassButton.simple(
+              label: 'Save',
               onTap: () async {
                 final v = controller.text.trim();
                 if (v.isNotEmpty) {
@@ -248,12 +226,6 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
                   Navigator.pop(ctx);
                 }
               },
-              child: Center(
-                child: Text(
-                  'Save',
-                  style: text.paragraph?.copyWith(fontWeight: FontWeight.w500, color: colors.textPrimary),
-                ),
-              ),
             ),
           ],
         ),

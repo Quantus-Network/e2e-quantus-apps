@@ -102,22 +102,30 @@ class ReversibleTransferEvent extends TransactionEvent {
     required super.blockHash,
   });
 
-  factory ReversibleTransferEvent.fromJson(Map<String, dynamic> json) {
+  // Create a ReversibleTransferEvent with a known status
+  factory ReversibleTransferEvent.fromJson(Map<String, dynamic> json, {required ReversibleTransferStatus status}) {
     final block = json['block'] as Map<String, dynamic>;
-    final blockHeight = block['height'] as int;
-    final blockHash = block['hash'] as String? ?? '';
+    final transfer = json['scheduledTransfer'] as Map<String, dynamic>? ?? json;
     return ReversibleTransferEvent(
       id: json['id'] as String,
-      from: json['from']?['id'] as String? ?? '',
-      to: json['to']?['id'] as String? ?? '',
-      amount: BigInt.parse(json['amount'] as String),
+      from: transfer['from']?['id'] as String? ?? '',
+      to: transfer['to']?['id'] as String? ?? '',
+      amount: BigInt.parse(transfer['amount'] as String),
       timestamp: DateTime.parse(json['timestamp'] as String),
       txId: json['txId'] as String,
-      status: ReversibleTransferStatus.values.byName(json['status'] as String),
-      scheduledAt: DateTime.parse(json['scheduledAt'] as String),
+      status: status,
+      scheduledAt: DateTime.parse(transfer['scheduledAt'] as String),
       extrinsicHash: json['extrinsicHash'] as String?,
-      blockNumber: blockHeight,
-      blockHash: blockHash,
+      blockNumber: block['height'] as int,
+      blockHash: block['hash'] as String? ?? '',
+    );
+  }
+
+  // Create a ReversibleTransferEvent we previously stored as JSON using toJson()
+  factory ReversibleTransferEvent.deserializeFromJson(Map<String, dynamic> json) {
+    return ReversibleTransferEvent.fromJson(
+      json,
+      status: ReversibleTransferStatus.values.byName(json['status'] as String),
     );
   }
 

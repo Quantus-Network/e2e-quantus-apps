@@ -47,7 +47,7 @@ class ReversibleTransferMonitoringService {
     _ref.listen(allTransactionsProvider, (previous, current) {
       current.when(
         data: (combinedData) {
-          _handleTransactionsUpdate(combinedData.reversibleTransfers);
+          _handleTransactionsUpdate(combinedData.scheduledReversibleTransfers);
         },
         loading: () {},
         error: (_, _) {},
@@ -57,19 +57,19 @@ class ReversibleTransferMonitoringService {
 
   void _handleTransactionsUpdate(List<ReversibleTransferEvent> reversibleTransfers) {
     // Find scheduled transfers that need monitoring
-    final scheduledTransfers = reversibleTransfers
+    final scheduledReversibleTransfers = reversibleTransfers
         .where((tx) => tx.status == ReversibleTransferStatus.SCHEDULED)
         .toList();
 
-    if (scheduledTransfers.isNotEmpty) {
+    if (scheduledReversibleTransfers.isNotEmpty) {
       print(
         // ignore: lines_longer_than_80_chars
-        'monitoring setvice: watching ${scheduledTransfers.length} reversible transfers!',
+        'monitoring setvice: watching ${scheduledReversibleTransfers.length} reversible transfers!',
       );
     }
 
     // Start monitoring transfers approaching execution
-    for (final transfer in scheduledTransfers) {
+    for (final transfer in scheduledReversibleTransfers) {
       // If we're not already monitoring this transfer
       if (!_timers.containsKey(transfer.id)) {
         _scheduleExecutionPolling(transfer);
@@ -77,7 +77,7 @@ class ReversibleTransferMonitoringService {
     }
 
     // Stop monitoring transfers that are no longer scheduled
-    final currentIds = scheduledTransfers.map((tx) => tx.id).toSet();
+    final currentIds = scheduledReversibleTransfers.map((tx) => tx.id).toSet();
     final timersToRemove = _timers.keys.where((id) => !currentIds.contains(id)).toList();
 
     for (final id in timersToRemove) {
@@ -132,26 +132,15 @@ class ReversibleTransferMonitoringService {
     }
 
     try {
-      // Use the new targeted query by transaction hash
-      if (transfer.extrinsicHash == null) {
-        print('unexpected null for extrinsic hash $transfer');
-        return;
-      }
-      print('polling execution on ${transfer.extrinsicHash}');
+      print('polling execution on ${transfer.txId}');
       final historyService = _ref.read(chainHistoryServiceProvider);
 
-      // Check if this specific transaction was executed using its hash
+      // Check if this specific transaction was executed using its txId
       // ignore: lines_longer_than_80_chars
-      final transactions = await historyService.fetchTransactionsByTransactionHash(
-        transactionHashes: [transfer.extrinsicHash!],
-        limit: 5,
-      );
+      final transaction = await historyService.fetchExecutedTransactionByTxId(txId: transfer.txId);
 
-      // Look for the executed version of this transfer
-      final status = _checkIfTransferWasExecuted(transfer, transactions);
-
-      if (status != null) {
-        print('Reversible transfer finished: ${transfer.id} $status');
+      if (transaction != null) {
+        print('Reversible transfer finished: ${transfer.id} ${transaction.status}');
 
         // Stop polling for this transfer
         _stopExecutionPolling(transfer.id);
@@ -160,7 +149,7 @@ class ReversibleTransferMonitoringService {
         // to executed list for both global and filtered controllers
         _ref
             .read(paginationControllerProvider.notifier)
-            .updateReversibleTransferToExecuted(transfer.extrinsicHash!, status);
+            .updateReversibleTransferToExecuted(transfer.txId, transaction.status);
         _ref.read(pendingCancellationsProvider.notifier).removePendingCancellation(transfer.id);
 
         // Also update filtered controllers for affected accounts so
@@ -169,7 +158,7 @@ class ReversibleTransferMonitoringService {
         for (final accountId in affectedAccounts) {
           _ref
               .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get([accountId])).notifier)
-              .updateReversibleTransferToExecuted(transfer.extrinsicHash!, status);
+              .updateReversibleTransferToExecuted(transfer.txId, transaction.status);
         }
 
         // Also update filtered controllers for all accounts so
@@ -177,7 +166,7 @@ class ReversibleTransferMonitoringService {
         final accountIds = _ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
         _ref
             .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get(accountIds)).notifier)
-            .updateReversibleTransferToExecuted(transfer.extrinsicHash!, status);
+            .updateReversibleTransferToExecuted(transfer.txId, transaction.status);
 
         // Refresh balance since transfer execution changes balance
         _ref.invalidate(balanceProviderFamily);
@@ -188,28 +177,6 @@ class ReversibleTransferMonitoringService {
       print('Error checking for transfer execution: $e');
       // Continue polling despite errors
     }
-  }
-
-  ReversibleTransferStatus? _checkIfTransferWasExecuted(
-    ReversibleTransferEvent originalTransfer,
-    List<TransactionEvent> transactions,
-  ) {
-    // Look for a reversible transfer with same txId/extrinsicHash but EXECUTED status
-    for (final historyTx in transactions) {
-      if (historyTx is ReversibleTransferEvent) {
-        final matchesHash = historyTx.extrinsicHash == originalTransfer.extrinsicHash;
-
-        if (matchesHash && historyTx.status != ReversibleTransferStatus.SCHEDULED) {
-          print(
-            'Found executed reversible transfer:'
-            ' ${historyTx.id} (status: ${historyTx.status})',
-          );
-          return historyTx.status;
-        }
-      }
-    }
-
-    return null;
   }
 
   void _stopExecutionPolling(String transferId) {

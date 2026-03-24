@@ -15,8 +15,7 @@ class RewardsAddressSetupScreen extends StatefulWidget {
   const RewardsAddressSetupScreen({super.key});
 
   @override
-  State<RewardsAddressSetupScreen> createState() =>
-      _RewardsAddressSetupScreenState();
+  State<RewardsAddressSetupScreen> createState() => _RewardsAddressSetupScreenState();
 }
 
 enum _ImportMode { mnemonic, preimage }
@@ -73,10 +72,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
       });
     } catch (e) {
       if (mounted) {
-        context.showErrorSnackbar(
-          title: 'Error',
-          message: 'Failed to save wallet: $e',
-        );
+        context.showErrorSnackbar(title: 'Error', message: 'Failed to save wallet: $e');
       }
     } finally {
       if (mounted) {
@@ -102,8 +98,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
     final words = mnemonic.split(RegExp(r'\s+'));
     if (words.length != 24) {
       setState(() {
-        _importError =
-            'Recovery phrase must be exactly 24 words (got ${words.length})';
+        _importError = 'Recovery phrase must be exactly 24 words (got ${words.length})';
       });
       return;
     }
@@ -128,10 +123,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
       });
     } catch (e) {
       if (mounted) {
-        context.showErrorSnackbar(
-          title: 'Error',
-          message: 'Failed to save wallet: $e',
-        );
+        context.showErrorSnackbar(title: 'Error', message: 'Failed to save wallet: $e');
       }
     } finally {
       if (mounted) {
@@ -157,8 +149,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final canGoBack =
-        _showImportView && _savedKeyPair == null && _savedPreimageOnly == null;
+    final canGoBack = _showImportView && _savedKeyPair == null && _savedPreimageOnly == null;
 
     return Scaffold(
       appBar: AppBar(
@@ -252,10 +243,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                   Expanded(
                     child: Text(
                       'If you already have a Quantus mobile wallet, you can use the same recovery phrase to receive rewards to the same account.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.amber.shade200,
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.amber.shade200),
                     ),
                   ),
                 ],
@@ -312,31 +300,16 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                   itemCount: words.length,
                   itemBuilder: (context, index) {
                     return Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade800,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(color: Colors.grey.shade800, borderRadius: BorderRadius.circular(6)),
                       child: Row(
                         children: [
-                          Text(
-                            '${index + 1}.',
-                            style: TextStyle(
-                              color: Colors.grey.shade500,
-                              fontSize: 12,
-                            ),
-                          ),
+                          Text('${index + 1}.', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               words[index],
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w500,
-                                fontSize: 13,
-                              ),
+                              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -347,8 +320,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                 ),
                 const SizedBox(height: 12),
                 TextButton.icon(
-                  onPressed: () =>
-                      _copyToClipboard(_generatedMnemonic!, 'Recovery phrase'),
+                  onPressed: () => _copyToClipboard(_generatedMnemonic!, 'Recovery phrase'),
                   icon: const Icon(Icons.copy, size: 18),
                   label: const Text('Copy to clipboard'),
                 ),
@@ -428,8 +400,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
 
     if (!_walletService.validatePreimage(preimage)) {
       setState(() {
-        _importError =
-            'Invalid preimage format. Expected SS58-encoded address.';
+        _importError = 'Invalid preimage format. Expected SS58-encoded address.';
       });
       return;
     }
@@ -446,10 +417,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
       });
     } catch (e) {
       if (mounted) {
-        context.showErrorSnackbar(
-          title: 'Error',
-          message: 'Failed to save preimage: $e',
-        );
+        context.showErrorSnackbar(title: 'Error', message: 'Failed to save preimage: $e');
       }
     } finally {
       if (mounted) {
@@ -469,16 +437,10 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Icon(
-              _importMode == _ImportMode.mnemonic ? Icons.download : Icons.key,
-              size: 48,
-              color: Colors.blue,
-            ),
+            Icon(_importMode == _ImportMode.mnemonic ? Icons.download : Icons.key, size: 48, color: Colors.blue),
             const SizedBox(height: 16),
             Text(
-              _importMode == _ImportMode.mnemonic
-                  ? 'Import Recovery Phrase'
-                  : 'Import Rewards Preimage',
+              _importMode == _ImportMode.mnemonic ? 'Import Recovery Phrase' : 'Import Rewards Preimage',
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
@@ -495,16 +457,8 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
             // Toggle between mnemonic and preimage mode
             SegmentedButton<_ImportMode>(
               segments: const [
-                ButtonSegment(
-                  value: _ImportMode.mnemonic,
-                  label: Text('Recovery Phrase'),
-                  icon: Icon(Icons.vpn_key),
-                ),
-                ButtonSegment(
-                  value: _ImportMode.preimage,
-                  label: Text('Preimage Only'),
-                  icon: Icon(Icons.key),
-                ),
+                ButtonSegment(value: _ImportMode.mnemonic, label: Text('Recovery Phrase'), icon: Icon(Icons.vpn_key)),
+                ButtonSegment(value: _ImportMode.preimage, label: Text('Preimage Only'), icon: Icon(Icons.key)),
               ],
               selected: {_importMode},
               onSelectionChanged: (selected) {
@@ -522,9 +476,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
               focusNode: _importFocusNode,
               maxLines: _importMode == _ImportMode.mnemonic ? 4 : 2,
               decoration: InputDecoration(
-                labelText: _importMode == _ImportMode.mnemonic
-                    ? 'Recovery Phrase'
-                    : 'Rewards Preimage',
+                labelText: _importMode == _ImportMode.mnemonic ? 'Recovery Phrase' : 'Rewards Preimage',
                 hintText: _importMode == _ImportMode.mnemonic
                     ? 'Enter your 24 words separated by spaces'
                     : 'e.g., qXYZ123...',
@@ -561,25 +513,16 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                 decoration: BoxDecoration(
                   color: Colors.amber.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: Colors.amber.withValues(alpha: 0.3),
-                  ),
+                  border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.info_outline,
-                      color: Colors.amber,
-                      size: 20,
-                    ),
+                    const Icon(Icons.info_outline, color: Colors.amber, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Without the recovery phrase, you cannot withdraw rewards from this app. Use this option only if you plan to withdraw using the CLI.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.amber.shade200,
-                        ),
+                        style: TextStyle(fontSize: 13, color: Colors.amber.shade200),
                       ),
                     ),
                   ],
@@ -589,18 +532,12 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
 
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: _importMode == _ImportMode.mnemonic
-                  ? _saveImportedMnemonic
-                  : _saveImportedPreimage,
+              onPressed: _importMode == _ImportMode.mnemonic ? _saveImportedMnemonic : _saveImportedPreimage,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 textStyle: const TextStyle(fontSize: 18),
               ),
-              child: Text(
-                _importMode == _ImportMode.mnemonic
-                    ? 'Import Wallet'
-                    : 'Save Preimage',
-              ),
+              child: Text(_importMode == _ImportMode.mnemonic ? 'Import Wallet' : 'Save Preimage'),
             ),
           ],
         ),
@@ -654,10 +591,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                 Expanded(
                   child: Text(
                     'Without your recovery phrase, you cannot withdraw rewards from this app. Make sure you have access to your secret via the CLI or another tool.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.amber.shade200,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.amber.shade200),
                   ),
                 ),
               ],
@@ -737,10 +671,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                 Expanded(
                   child: Text(
                     'The rewards preimage has been saved automatically. The mining node will use it to direct rewards to your wormhole address.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.green.shade200,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.green.shade200),
                   ),
                 ),
               ],
@@ -786,32 +717,17 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
             children: [
               Icon(icon, color: color, size: 20),
               const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             ],
           ),
           const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-          ),
+          Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
           const SizedBox(height: 12),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade800,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: SelectableText(
-              value,
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
-            ),
+            decoration: BoxDecoration(color: Colors.grey.shade800, borderRadius: BorderRadius.circular(8)),
+            child: SelectableText(value, style: const TextStyle(fontFamily: 'monospace', fontSize: 13)),
           ),
           const SizedBox(height: 8),
           Align(

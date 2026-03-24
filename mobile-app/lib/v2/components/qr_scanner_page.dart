@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:resonance_network_wallet/v2/components/glass_container.dart';
+import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/glass_icon_button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class QrScannerPage extends StatefulWidget {
   const QrScannerPage({super.key});
@@ -46,7 +46,6 @@ class _QrScannerPageState extends State<QrScannerPage> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final text = context.themeText;
     final screen = MediaQuery.of(context).size;
     final frameSize = (screen.width - 112).clamp(220.0, 280.0);
 
@@ -83,21 +82,12 @@ class _QrScannerPageState extends State<QrScannerPage> {
               ],
             ),
           ),
+
           Positioned(
             bottom: 58,
             left: 24,
             right: 24,
-            child: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: GlassContainer(
-                asset: GlassContainer.wideAsset,
-                child: Text(
-                  'Cancel',
-                  textAlign: TextAlign.center,
-                  style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-                ),
-              ),
-            ),
+            child: GlassButton.simple(label: 'Cancel', onTap: () => Navigator.pop(context)),
           ),
         ],
       ),
@@ -105,15 +95,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
   }
 
   Widget _actionButton({required IconData icon, required VoidCallback onTap, required AppColorsV2 colors}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-        child: Icon(icon, size: 20, color: colors.textPrimary),
-      ),
-    );
+    return GlassIconButton.rounded(icon: icon, onTap: onTap);
   }
 }
 

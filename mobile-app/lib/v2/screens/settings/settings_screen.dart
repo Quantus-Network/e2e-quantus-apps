@@ -2,17 +2,21 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/reset_confirmation_bottom_sheet.dart';
+import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
+import 'package:resonance_network_wallet/utils/feature_flags.dart';
+import 'package:resonance_network_wallet/v2/components/glass_button.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/reset_confirmation_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/select_wallet_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart';
 import 'package:resonance_network_wallet/providers/account_associations_providers.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_config_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
-import 'package:resonance_network_wallet/v2/components/back_button.dart';
-import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -61,24 +65,25 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
     });
   }
 
-  void _resetAndClearData() {
+  Future<void> _resetAndClearData() async {
+    if (FeatureFlags.enableRemoteNotifications) {
+      ref.read(firebaseMessagingServiceProvider).unregisterDevice();
+    }
+
     _settingsService.clearAll();
     SubstrateService().logout();
     ref.read(pendingTransactionsProvider.notifier).clear();
     ref.read(accountsProvider.notifier).reset();
     ref.read(activeAccountProvider.notifier).reset();
     ref.read(accountAssociationsProvider.notifier).reset();
+
     if (mounted) {
       Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const WelcomeScreenV2()), (r) => false);
     }
   }
 
   void _showResetConfirmation() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => ResetConfirmationBottomSheet(onReset: _resetAndClearData),
-    );
+    showResetConfirmationSheetV2(context, _resetAndClearData);
   }
 
   String _timeLimitLabel() {
@@ -95,97 +100,82 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
     final colors = context.colors;
     final text = context.themeText;
     final notifConfig = ref.watch(notificationConfigProvider);
+    final posMode = ref.watch(posModeProvider);
 
-    return Scaffold(
-      backgroundColor: colors.background,
-      body: GradientBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const AppBackButton(),
-                    Text('Settings', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
-                    const SizedBox(width: 24),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 48),
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  children: [
-                    _section('Wallet', colors, text, [
-                      _chevronItem('Recovery Phase', 'View Backup', colors, text, onTap: _navigateToRecoveryPhrase),
-                    ]),
-                    const SizedBox(height: 40),
-                    _section('Reversible Transactions', colors, text, [
-                      _comingSoonItem('Reversible Transactions', null, colors, text),
-                      // _toggleItem(
-                      //   'Reversible Transactions',
-                      //   'Coming Soon', //_reversibleEnabled ? 'Enabled' : 'Disabled',
-                      //   _reversibleEnabled,
-                      //   null,
-                      //   colors,
-                      //   text,
-                      // ),
-                      _divider(colors),
-                      _chevronItem('Time Limit', _timeLimitLabel(), colors, text, onTap: () {}),
-                      _divider(colors),
-                      _chevronItem('Amount Limit', 'No Limit', colors, text, onTap: () {}),
-                    ]),
-                    const SizedBox(height: 40),
-                    _section('Account Type', colors, text, [
-                      _comingSoonItem('High Security Account', 'Guardian Approval', colors, text),
-                      _divider(colors),
-                      _comingSoonItem('Multi-Signature', 'Multiple Accounts', colors, text),
-                      _divider(colors),
-                      _comingSoonItem('Hardware Wallet', 'Pair Device', colors, text),
-                    ]),
-                    const SizedBox(height: 40),
-                    _section('Preferences', colors, text, [
-                      // _chevronItem('Currency', 'USD (\$)', colors, text, onTap: () {}),
-                      // _divider(colors),
-                      _toggleItem(
-                        'Notifications',
-                        notifConfig.enabled ? 'Transaction Alerts Enabled' : 'Alerts Disabled',
-                        notifConfig.enabled,
-                        _toggleNotifications,
-                        colors,
-                        text,
-                      ),
-                    ]),
-                    const SizedBox(height: 40),
-                    _section('About & Support', colors, text, [
-                      _externalItem(
-                        'Help & Support',
-                        null,
-                        colors,
-                        text,
-                        onTap: () => launchUrl(Uri.parse(AppConstants.techSupportUrl)),
-                      ),
-                      _divider(colors),
-                      _externalItem(
-                        'Privacy & Terms of Service',
-                        null,
-                        colors,
-                        text,
-                        onTap: () => launchUrl(Uri.parse(AppConstants.termsOfServiceUrl)),
-                      ),
-                    ]),
-                    const SizedBox(height: 40),
-                    _resetButton(colors, text),
-                    const SizedBox(height: 48),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+    return ScaffoldBase(
+      appBar: const V2AppBar(title: 'Settings'),
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          _section('Wallet', colors, text, [
+            _chevronItem('Recovery Phase', 'View Backup', colors, text, onTap: _navigateToRecoveryPhrase),
+          ]),
+          const SizedBox(height: 40),
+          _section('Reversible Transactions', colors, text, [
+            _comingSoonItem('Reversible Transactions', null, colors, text),
+            // _toggleItem(
+            //   'Reversible Transactions',
+            //   'Coming Soon', //_reversibleEnabled ? 'Enabled' : 'Disabled',
+            //   _reversibleEnabled,
+            //   null,
+            //   colors,
+            //   text,
+            // ),
+            _divider(colors),
+            _chevronItem('Time Limit', _timeLimitLabel(), colors, text, onTap: () {}),
+            _divider(colors),
+            _chevronItem('Amount Limit', 'No Limit', colors, text, onTap: () {}),
+          ]),
+          const SizedBox(height: 40),
+          _section('Account Type', colors, text, [
+            _comingSoonItem('High Security Account', 'Guardian Approval', colors, text),
+            _divider(colors),
+            _comingSoonItem('Multi-Signature', 'Multiple Accounts', colors, text),
+            _divider(colors),
+            _comingSoonItem('Hardware Wallet', 'Pair Device', colors, text),
+          ]),
+          const SizedBox(height: 40),
+          _section('Preferences', colors, text, [
+            _toggleItem(
+              'POS Mode',
+              posMode ? 'Point of Sale Enabled' : 'Disabled',
+              posMode,
+              (v) => ref.read(posModeProvider.notifier).setPosMode(v),
+              colors,
+              text,
+            ),
+            _divider(colors),
+            _toggleItem(
+              'Notifications',
+              notifConfig.enabled ? 'Transaction Alerts Enabled' : 'Alerts Disabled',
+              notifConfig.enabled,
+              _toggleNotifications,
+              colors,
+              text,
+            ),
+          ]),
+          const SizedBox(height: 40),
+          _section('About & Support', colors, text, [
+            _externalItem(
+              'Help & Support',
+              null,
+              colors,
+              text,
+              onTap: () => launchUrl(Uri.parse(AppConstants.techSupportUrl)),
+            ),
+            _divider(colors),
+            _externalItem(
+              'Privacy & Terms of Service',
+              null,
+              colors,
+              text,
+              onTap: () => launchUrl(Uri.parse(AppConstants.termsOfServiceUrl)),
+            ),
+          ]),
+          const SizedBox(height: 40),
+          _resetButton(colors, text),
+          const SizedBox(height: 48),
+        ],
       ),
     );
   }
@@ -294,22 +284,6 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
   }
 
   Widget _resetButton(AppColorsV2 colors, AppTextTheme text) {
-    return GestureDetector(
-      onTap: _showResetConfirmation,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: colors.danger),
-        ),
-        child: Center(
-          child: Text(
-            'Reset Quantus',
-            style: text.paragraph?.copyWith(color: colors.danger, fontWeight: FontWeight.w500),
-          ),
-        ),
-      ),
-    );
+    return GlassButton.simple(label: 'Reset Quantus', onTap: _showResetConfirmation, variant: ButtonVariant.danger);
   }
 }

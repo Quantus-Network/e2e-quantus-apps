@@ -29,8 +29,7 @@ class TrackedWormholeAddress {
   final String secretHex;
 
   /// Whether this is the primary miner rewards address.
-  bool get isPrimary =>
-      purpose == WormholeAddressPurpose.minerRewards && index == 0;
+  bool get isPrimary => purpose == WormholeAddressPurpose.minerRewards && index == 0;
 
   const TrackedWormholeAddress({
     required this.address,
@@ -39,12 +38,7 @@ class TrackedWormholeAddress {
     required this.secretHex,
   });
 
-  Map<String, dynamic> toJson() => {
-    'address': address,
-    'purpose': purpose,
-    'index': index,
-    'secretHex': secretHex,
-  };
+  Map<String, dynamic> toJson() => {'address': address, 'purpose': purpose, 'index': index, 'secretHex': secretHex};
 
   factory TrackedWormholeAddress.fromJson(Map<String, dynamic> json) {
     return TrackedWormholeAddress(
@@ -56,8 +50,7 @@ class TrackedWormholeAddress {
   }
 
   @override
-  String toString() =>
-      'TrackedWormholeAddress($address, purpose=$purpose, index=$index)';
+  String toString() => 'TrackedWormholeAddress($address, purpose=$purpose, index=$index)';
 
   @override
   bool operator ==(Object other) {
@@ -154,10 +147,7 @@ class WormholeAddressManager {
 
   /// Ensure the primary miner rewards address is tracked.
   Future<void> _ensurePrimaryAddressTracked(String mnemonic) async {
-    final keyPair = _wormholeService.deriveMinerRewardsKeyPair(
-      mnemonic: mnemonic,
-      index: 0,
-    );
+    final keyPair = _wormholeService.deriveMinerRewardsKeyPair(mnemonic: mnemonic, index: 0);
 
     if (!_addresses.containsKey(keyPair.address)) {
       final tracked = TrackedWormholeAddress(
@@ -250,9 +240,7 @@ class WormholeAddressManager {
         final addressesData = data['addresses'] as List<dynamic>?;
         if (addressesData != null) {
           for (final item in addressesData) {
-            final tracked = TrackedWormholeAddress.fromJson(
-              item as Map<String, dynamic>,
-            );
+            final tracked = TrackedWormholeAddress.fromJson(item as Map<String, dynamic>);
             _addresses[tracked.address] = tracked;
           }
         }

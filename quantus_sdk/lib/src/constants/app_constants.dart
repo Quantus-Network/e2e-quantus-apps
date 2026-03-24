@@ -15,7 +15,7 @@ class AppConstants {
     'https://a2-dirac.quantus.cat',
     'https://matcha-latte.quantus.com',
   ];
-  static const List<String> graphQlEndpoints = ['https://subsquid.quantus.com/graphql'];
+  static const List<String> graphQlEndpoints = ['https://subsquid.quantus.com/green/graphql'];
 
   // local test android use special ip
   // static const String taskMasterEndpoint = 'http://10.0.2.2:3000/api';
@@ -23,7 +23,7 @@ class AppConstants {
   // static const String taskMasterEndpoint = 'http://localhost:3000/api';
   static const String taskMasterEndpoint = 'https://quests.quantus.com/api';
 
-  static const String senotiEndpoint = 'http://localhost:3100/api';
+  static const String senotiEndpoint = 'https://snt.quantus.com/api';
 
   static const String explorerEndpoint = 'https://explorer.quantus.com';
 
@@ -36,7 +36,7 @@ class AppConstants {
   static const String shillQuestsPageUrl = 'https://www.quantus.com/quests/shill';
   static const String raidQuestsPageUrl = 'https://www.quantus.com/quests/raid';
   static const String communityUrl = 'https://t.me/quantusnetwork';
-  static const String faucetBotUrl = 'https://t.me/QuantusFaucetBot';
+  static const String faucetBotUrl = 'https://t.me/quantusnetwork/8740';
 
   // Development accounts
   static const String crystalAlice = '//Crystal Alice';

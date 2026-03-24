@@ -8,8 +8,7 @@ import 'package:quantus_sdk/src/services/mnemonic_provider.dart';
 class MinerMnemonicProvider implements MnemonicProvider {
   final MinerWalletService _walletService;
 
-  MinerMnemonicProvider({MinerWalletService? walletService})
-    : _walletService = walletService ?? MinerWalletService();
+  MinerMnemonicProvider({MinerWalletService? walletService}) : _walletService = walletService ?? MinerWalletService();
 
   @override
   Future<String?> getMnemonic() => _walletService.getMnemonic();
