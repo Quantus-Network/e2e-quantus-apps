@@ -16,9 +16,9 @@ class FeatureFlagsModel {
   static const FeatureFlagsModel defaults = FeatureFlagsModel(
     enableTestButtons: false,
     enableKeystoneHardwareWallet: false,
-    enableHighSecurity: false,
+    enableHighSecurity: true,
     enableRemoteNotifications: true,
-    enableSwap: false,
+    enableSwap: true,
   );
 
   Map<String, dynamic> toCacheJson() {
@@ -33,23 +33,17 @@ class FeatureFlagsModel {
 
   factory FeatureFlagsModel.fromJson(Map<String, dynamic>? json) {
     return FeatureFlagsModel(
-      enableTestButtons: _readBool(json?['enableTestButtons']) ?? defaults.enableTestButtons,
-      enableKeystoneHardwareWallet:
-          _readBool(json?['enableKeystoneHardwareWallet']) ?? defaults.enableKeystoneHardwareWallet,
-      enableHighSecurity: _readBool(json?['enableHighSecurity']) ?? defaults.enableHighSecurity,
-      enableRemoteNotifications: _readBool(json?['enableRemoteNotifications']) ?? defaults.enableRemoteNotifications,
-      enableSwap: _readBool(json?['enableSwap']) ?? defaults.enableSwap,
+      enableTestButtons: _readBool(json?['enableTestButtons']),
+      enableKeystoneHardwareWallet: _readBool(json?['enableKeystoneHardwareWallet']),
+      enableHighSecurity: _readBool(json?['enableHighSecurity']),
+      enableRemoteNotifications: _readBool(json?['enableRemoteNotifications']),
+      enableSwap: _readBool(json?['enableSwap']),
     );
   }
-}
 
-bool? _readBool(dynamic value) {
-  if (value is bool) return value;
-  if (value is num) return value != 0;
-  if (value is String) {
-    final normalized = value.trim().toLowerCase();
-    if (normalized == 'true' || normalized == '1') return true;
-    if (normalized == 'false' || normalized == '0') return false;
+  static bool _readBool(dynamic value) {
+    if (value is! bool) throw Exception('Invalid boolean value: $value');
+
+    return value;
   }
-  return null;
 }

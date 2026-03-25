@@ -1,32 +1,14 @@
 import 'dart:convert';
 
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 const String featureFlagsCacheKey = 'feature_flags_cache_v1';
 
 class FeatureFlagsService {
-  final TaskmasterService _taskmasterService;
+  final TaskmasterService _taskmasterService = TaskmasterService();
+  final SettingsService _settingsService = SettingsService();
 
-  FeatureFlagsService({TaskmasterService? taskmasterService})
-    : _taskmasterService = taskmasterService ?? TaskmasterService();
-
-  Future<FeatureFlagsModel> getFlagsWithFallback() async {
-    final remoteFlags = await _readRemoteFlags();
-    if (remoteFlags != null) {
-      await _saveLocalFlags(remoteFlags);
-      return remoteFlags;
-    }
-
-    final localFlags = await _readLocalFlags();
-    if (localFlags != null) {
-      return localFlags;
-    }
-
-    return FeatureFlagsModel.defaults;
-  }
-
-  Future<FeatureFlagsModel?> _readRemoteFlags() async {
+  Future<FeatureFlagsModel?> readRemoteFlags() async {
     try {
       final remoteData = await _taskmasterService.getWalletFeatureFlags();
       return remoteData;
@@ -36,30 +18,21 @@ class FeatureFlagsService {
     }
   }
 
-  Future<FeatureFlagsModel?> _readLocalFlags() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final jsonString = prefs.getString(featureFlagsCacheKey);
-      if (jsonString == null || jsonString.isEmpty) {
-        return null;
-      }
+  FeatureFlagsModel readLocalFlags() {
+    final jsonString = _settingsService.getString(featureFlagsCacheKey);
 
-      final decoded = jsonDecode(jsonString);
-      if (decoded is! Map) {
-        return null;
-      }
-
-      return FeatureFlagsModel.fromJson(decoded.map((key, value) => MapEntry(key.toString(), value)));
-    } catch (error) {
-      print('Feature flags local read failed: $error');
-      return null;
+    if (jsonString == null || jsonString.isEmpty) {
+      cacheFlags(FeatureFlagsModel.defaults.toCacheJson());
+      return FeatureFlagsModel.defaults;
     }
+
+    final decoded = jsonDecode(jsonString);
+    return FeatureFlagsModel.fromJson(decoded);
   }
 
-  Future<void> _saveLocalFlags(FeatureFlagsModel state) async {
+  Future<void> cacheFlags(Object json) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(featureFlagsCacheKey, jsonEncode(state.toCacheJson()));
+      await _settingsService.setString(featureFlagsCacheKey, jsonEncode(json));
     } catch (error) {
       print('Feature flags local save failed: $error');
     }

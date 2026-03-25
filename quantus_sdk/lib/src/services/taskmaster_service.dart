@@ -503,10 +503,6 @@ class TaskmasterService {
     final Map<String, dynamic> responseBody = jsonDecode(response.body);
     final data = responseBody['data'] as Map<String, dynamic>?;
 
-    if (data is! Map) {
-      throw Exception('Feature flags response body is invalid. Body: ${response.body}');
-    }
-
     return FeatureFlagsModel.fromJson(data);
   }
 

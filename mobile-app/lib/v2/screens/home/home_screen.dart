@@ -226,6 +226,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildActionButtons() {
+    final enableSwap = ref.watch(featureFlagsProvider).enableSwap;
+
     final receiveCard = _actionCard(
       iconAsset: 'assets/v2/action_receive.svg',
       label: 'Receive',
@@ -238,7 +240,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       onTap: () => showSendSheetV2(context),
     );
 
-    if (!ref.read(featureFlagsProvider).enableSwap) {
+    if (!enableSwap) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
