@@ -492,6 +492,24 @@ class TaskmasterService {
     await ensureIsLoggedIn();
   }
 
+  Future<FeatureFlagsModel> getWalletFeatureFlags() async {
+    final Uri uri = Uri.parse('${AppConstants.taskMasterEndpoint}/feature-flags/wallet');
+
+    final http.Response response = await http.get(uri, headers: {'Content-Type': 'application/json'});
+    if (response.statusCode != 200) {
+      throw Exception('Feature flags request failed with status: ${response.statusCode}. Body: ${response.body}');
+    }
+
+    final Map<String, dynamic>? responseBody = jsonDecode(response.body);
+    final Map<String, dynamic>? data = responseBody?['data'];
+
+    if (data == null) {
+      throw Exception('Feature flags request failed with status: ${response.statusCode}. Body: ${response.body}');
+    }
+
+    return FeatureFlagsModel.fromJson(data);
+  }
+
   Future<MinerStats> getMinerStats() async {
     final mainAccount = await getMainAccount();
     final oldMiningAccountId = await getOldMiningAccountId();
