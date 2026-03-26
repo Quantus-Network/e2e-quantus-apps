@@ -28,8 +28,11 @@ class FeatureFlagsNotifier extends StateNotifier<FeatureFlagsModel> {
       try {
         final remote = await _service.readRemoteFlags();
         if (remote == null) return;
-        _service.cacheFlags(remote.toCacheJson());
-        state = remote;
+
+        if (remote != state) {
+          _service.cacheFlags(remote.toCacheJson());
+          state = remote;
+        }
       } catch (e) {
         // Keep using cached flags on failure.
         print('Feature flags remote refresh failed: $e');

@@ -34,9 +34,15 @@ class FeatureFlagsModel {
   factory FeatureFlagsModel.fromJson(Map<String, dynamic>? json) {
     return FeatureFlagsModel(
       enableTestButtons: _readBool(json?['enableTestButtons'], defaultValue: defaults.enableTestButtons),
-      enableKeystoneHardwareWallet: _readBool(json?['enableKeystoneHardwareWallet'], defaultValue: defaults.enableKeystoneHardwareWallet),
+      enableKeystoneHardwareWallet: _readBool(
+        json?['enableKeystoneHardwareWallet'],
+        defaultValue: defaults.enableKeystoneHardwareWallet,
+      ),
       enableHighSecurity: _readBool(json?['enableHighSecurity'], defaultValue: defaults.enableHighSecurity),
-      enableRemoteNotifications: _readBool(json?['enableRemoteNotifications'], defaultValue: defaults.enableRemoteNotifications),
+      enableRemoteNotifications: _readBool(
+        json?['enableRemoteNotifications'],
+        defaultValue: defaults.enableRemoteNotifications,
+      ),
       enableSwap: _readBool(json?['enableSwap'], defaultValue: defaults.enableSwap),
     );
   }
@@ -47,4 +53,23 @@ class FeatureFlagsModel {
 
     return value;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FeatureFlagsModel &&
+          runtimeType == other.runtimeType &&
+          enableTestButtons == other.enableTestButtons &&
+          enableKeystoneHardwareWallet == other.enableKeystoneHardwareWallet &&
+          enableHighSecurity == other.enableHighSecurity &&
+          enableRemoteNotifications == other.enableRemoteNotifications &&
+          enableSwap == other.enableSwap;
+
+  @override
+  int get hashCode =>
+      enableTestButtons.hashCode ^
+      enableKeystoneHardwareWallet.hashCode ^
+      enableHighSecurity.hashCode ^
+      enableRemoteNotifications.hashCode ^
+      enableSwap.hashCode;
 }
