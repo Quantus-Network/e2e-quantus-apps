@@ -13,6 +13,25 @@ class FeatureFlagsModel {
     required this.enableSwap,
   });
 
+  R match<R>({
+    required R Function(
+      bool enableTestButtons,
+      bool enableKeystoneHardwareWallet,
+      bool enableHighSecurity,
+      bool enableRemoteNotifications,
+      bool enableSwap,
+    )
+    fn,
+  }) {
+    return fn(
+      enableTestButtons,
+      enableKeystoneHardwareWallet,
+      enableHighSecurity,
+      enableRemoteNotifications,
+      enableSwap,
+    );
+  }
+
   static const FeatureFlagsModel defaults = FeatureFlagsModel(
     enableTestButtons: false,
     enableKeystoneHardwareWallet: false,
@@ -22,54 +41,47 @@ class FeatureFlagsModel {
   );
 
   Map<String, dynamic> toCacheJson() {
-    return <String, dynamic>{
-      'enableTestButtons': enableTestButtons,
-      'enableKeystoneHardwareWallet': enableKeystoneHardwareWallet,
-      'enableHighSecurity': enableHighSecurity,
-      'enableRemoteNotifications': enableRemoteNotifications,
-      'enableSwap': enableSwap,
-    };
-  }
-
-  factory FeatureFlagsModel.fromJson(Map<String, dynamic>? json) {
-    return FeatureFlagsModel(
-      enableTestButtons: _readBool(json?['enableTestButtons'], defaultValue: defaults.enableTestButtons),
-      enableKeystoneHardwareWallet: _readBool(
-        json?['enableKeystoneHardwareWallet'],
-        defaultValue: defaults.enableKeystoneHardwareWallet,
-      ),
-      enableHighSecurity: _readBool(json?['enableHighSecurity'], defaultValue: defaults.enableHighSecurity),
-      enableRemoteNotifications: _readBool(
-        json?['enableRemoteNotifications'],
-        defaultValue: defaults.enableRemoteNotifications,
-      ),
-      enableSwap: _readBool(json?['enableSwap'], defaultValue: defaults.enableSwap),
+    return match(
+      fn: (test, keystone, security, notifications, swap) => {
+        'enableTestButtons': test,
+        'enableKeystoneHardwareWallet': keystone,
+        'enableHighSecurity': security,
+        'enableRemoteNotifications': notifications,
+        'enableSwap': swap,
+      },
     );
   }
 
-  static bool _readBool(dynamic value, {required bool defaultValue}) {
-    if (value == null) return defaultValue;
-    if (value is! bool) throw Exception('Invalid boolean value: $value');
-
-    return value;
+  factory FeatureFlagsModel.fromJson(Map<String, dynamic> json) {
+    return FeatureFlagsModel(
+      enableTestButtons: json['enableTestButtons'] ?? defaults.enableTestButtons,
+      enableKeystoneHardwareWallet: json['enableKeystoneHardwareWallet'] ?? defaults.enableKeystoneHardwareWallet,
+      enableHighSecurity: json['enableHighSecurity'] ?? defaults.enableHighSecurity,
+      enableRemoteNotifications: json['enableRemoteNotifications'] ?? defaults.enableRemoteNotifications,
+      enableSwap: json['enableSwap'] ?? defaults.enableSwap,
+    );
   }
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is FeatureFlagsModel &&
-          runtimeType == other.runtimeType &&
-          enableTestButtons == other.enableTestButtons &&
-          enableKeystoneHardwareWallet == other.enableKeystoneHardwareWallet &&
-          enableHighSecurity == other.enableHighSecurity &&
-          enableRemoteNotifications == other.enableRemoteNotifications &&
-          enableSwap == other.enableSwap;
-
-  @override
-  int get hashCode =>
-      enableTestButtons.hashCode ^
-      enableKeystoneHardwareWallet.hashCode ^
-      enableHighSecurity.hashCode ^
-      enableRemoteNotifications.hashCode ^
-      enableSwap.hashCode;
+  bool compare(FeatureFlagsModel other) {
+    return match(
+      fn: (enableTestButtons, enableKeystoneHardwareWallet, enableHighSecurity, enableRemoteNotifications, enableSwap) {
+        return other.match(
+          fn:
+              (
+                otherEnableTestButtons,
+                otherEnableKeystoneHardwareWallet,
+                otherEnableHighSecurity,
+                otherEnableRemoteNotifications,
+                otherEnableSwap,
+              ) {
+                return enableTestButtons == otherEnableTestButtons &&
+                    enableKeystoneHardwareWallet == otherEnableKeystoneHardwareWallet &&
+                    enableHighSecurity == otherEnableHighSecurity &&
+                    enableRemoteNotifications == otherEnableRemoteNotifications &&
+                    enableSwap == otherEnableSwap;
+              },
+        );
+      },
+    );
+  }
 }

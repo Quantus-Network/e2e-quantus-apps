@@ -500,8 +500,12 @@ class TaskmasterService {
       throw Exception('Feature flags request failed with status: ${response.statusCode}. Body: ${response.body}');
     }
 
-    final Map<String, dynamic> responseBody = jsonDecode(response.body);
-    final data = responseBody['data'] as Map<String, dynamic>?;
+    final Map<String, dynamic>? responseBody = jsonDecode(response.body);
+    final Map<String, dynamic>? data = responseBody?['data'];
+
+    if (data == null) {
+      throw Exception('Feature flags request failed with status: ${response.statusCode}. Body: ${response.body}');
+    }
 
     return FeatureFlagsModel.fromJson(data);
   }
