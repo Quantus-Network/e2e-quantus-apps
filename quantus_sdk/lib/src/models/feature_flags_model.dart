@@ -33,15 +33,16 @@ class FeatureFlagsModel {
 
   factory FeatureFlagsModel.fromJson(Map<String, dynamic>? json) {
     return FeatureFlagsModel(
-      enableTestButtons: _readBool(json?['enableTestButtons']),
-      enableKeystoneHardwareWallet: _readBool(json?['enableKeystoneHardwareWallet']),
-      enableHighSecurity: _readBool(json?['enableHighSecurity']),
-      enableRemoteNotifications: _readBool(json?['enableRemoteNotifications']),
-      enableSwap: _readBool(json?['enableSwap']),
+      enableTestButtons: _readBool(json?['enableTestButtons'], defaultValue: defaults.enableTestButtons),
+      enableKeystoneHardwareWallet: _readBool(json?['enableKeystoneHardwareWallet'], defaultValue: defaults.enableKeystoneHardwareWallet),
+      enableHighSecurity: _readBool(json?['enableHighSecurity'], defaultValue: defaults.enableHighSecurity),
+      enableRemoteNotifications: _readBool(json?['enableRemoteNotifications'], defaultValue: defaults.enableRemoteNotifications),
+      enableSwap: _readBool(json?['enableSwap'], defaultValue: defaults.enableSwap),
     );
   }
 
-  static bool _readBool(dynamic value) {
+  static bool _readBool(dynamic value, {required bool defaultValue}) {
+    if (value == null) return defaultValue;
     if (value is! bool) throw Exception('Invalid boolean value: $value');
 
     return value;
