@@ -19,8 +19,6 @@ class AppInitializer extends ConsumerStatefulWidget {
 }
 
 class _AppInitializerState extends ConsumerState<AppInitializer> {
-  
-
   @override
   void initState() {
     super.initState();

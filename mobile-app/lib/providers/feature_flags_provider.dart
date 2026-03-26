@@ -57,7 +57,7 @@ class FeatureFlagsNotifier extends StateNotifier<FeatureFlagsModel> {
     });
   }
 
-  Future<void> _enableRemoteNotificationsIfNeeded(WidgetRef ref, ) async {
+  Future<void> _enableRemoteNotificationsIfNeeded(WidgetRef ref) async {
     if (_isEnablingRemoteNotifications) return;
     _isEnablingRemoteNotifications = true;
 
