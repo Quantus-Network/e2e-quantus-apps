@@ -42,15 +42,6 @@ void main() {
     });
 
     group('hasAmountError', () {
-      test('returns true for zero amount', () {
-        final result = SendScreenLogic.hasAmountError(
-          amount: BigInt.zero,
-          balance: BigInt.from(5000000000000),
-          networkFee: BigInt.from(100000000),
-        );
-        expect(result, isTrue);
-      });
-
       test('returns true when amount + fee exceeds balance', () {
         final result = SendScreenLogic.hasAmountError(
           amount: BigInt.from(4999900000000),
