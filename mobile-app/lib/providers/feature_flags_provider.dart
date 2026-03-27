@@ -4,20 +4,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/firebase_options.dart';
-import 'package:resonance_network_wallet/services/feature_flags_service.dart';
+import 'package:resonance_network_wallet/services/remote_config_service.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/shared/global_navigator_key.dart';
 
-final featureFlagsServiceProvider = Provider<FeatureFlagsService>((ref) {
-  return FeatureFlagsService();
+final remoteConfigServiceProvider = Provider<RemoteConfigService>((ref) {
+  return RemoteConfigService();
 });
 
-final featureFlagsProvider = StateNotifierProvider<FeatureFlagsNotifier, FeatureFlagsModel>((ref) {
-  return FeatureFlagsNotifier(ref.read(featureFlagsServiceProvider));
+final remoteConfigProvider = StateNotifierProvider<FeatureFlagsNotifier, RemoteConfigModel>((ref) {
+  return FeatureFlagsNotifier(ref.read(remoteConfigServiceProvider));
 });
 
-class FeatureFlagsNotifier extends StateNotifier<FeatureFlagsModel> {
-  final FeatureFlagsService _service;
+class FeatureFlagsNotifier extends StateNotifier<RemoteConfigModel> {
+  final RemoteConfigService _service;
   bool _isRefreshingRemote = false;
   bool _isEnablingRemoteNotifications = false;
 
@@ -51,7 +51,7 @@ class FeatureFlagsNotifier extends StateNotifier<FeatureFlagsModel> {
   void registerRemoteRefreshListener(WidgetRef ref) {
     // using `listenManual` allows
     // setting up the side-effect listener from `initState`/async code.
-    ref.listenManual<FeatureFlagsModel>(featureFlagsProvider, (previous, next) {
+    ref.listenManual<RemoteConfigModel>(remoteConfigProvider, (previous, next) {
       if (!next.enableRemoteNotifications) return;
       unawaited(_enableRemoteNotificationsIfNeeded(ref));
     });

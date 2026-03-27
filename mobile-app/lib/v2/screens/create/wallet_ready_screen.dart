@@ -91,7 +91,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
 
-      if (ref.read(featureFlagsProvider).enableRemoteNotifications) {
+      if (ref.read(remoteConfigProvider).enableRemoteNotifications) {
         ref.read(firebaseMessagingServiceProvider).registerDeviceIfPossible();
       }
 

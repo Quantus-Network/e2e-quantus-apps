@@ -55,7 +55,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       _settingsService.setReferralCheckCompleted();
       _settingsService.setExistingUserSeenPromoVideo();
 
-      if (ref.read(featureFlagsProvider).enableRemoteNotifications) {
+      if (ref.read(remoteConfigProvider).enableRemoteNotifications) {
         ref.read(firebaseMessagingServiceProvider).registerDeviceIfPossible();
       }
 

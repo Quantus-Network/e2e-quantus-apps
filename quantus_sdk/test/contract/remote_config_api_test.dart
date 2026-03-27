@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 
 void main() {
   group('API Contract Tests', () {
-    test('Remote Feature Flags API exactly matches FeatureFlagsModel properties', () async {
+    test('Remote Feature Flags API exactly matches RemoteConfigModel properties', () async {
       final Uri uri = Uri.parse('${AppConstants.taskMasterEndpoint}/feature-flags/wallet');
       final http.Response response = await http.get(uri, headers: {'Content-Type': 'application/json'});
 
@@ -39,7 +39,7 @@ void main() {
       expect(newKeys, isEmpty, reason: 'WARNING: The API sent new properties not handled in your app: $newKeys');
 
       try {
-        FeatureFlagsModel.fromJson(data);
+        RemoteConfigModel.fromJson(data);
       } catch (e) {
         fail('Failed to parse feature flags model: $e');
       }

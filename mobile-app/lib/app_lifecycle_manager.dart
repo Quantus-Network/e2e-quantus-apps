@@ -104,7 +104,7 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
         _initializeTaskmasterLogin();
 
         // Sync feature flags on background resume
-        unawaited(ref.read(featureFlagsProvider.notifier).syncFlags());
+        unawaited(ref.read(remoteConfigProvider.notifier).syncFlags());
       }
     } else {
       // Handle background states (inactive, paused, hidden, detached)

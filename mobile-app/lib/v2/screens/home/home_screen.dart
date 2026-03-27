@@ -226,7 +226,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildActionButtons() {
-    final enableSwap = ref.watch(featureFlagsProvider).enableSwap;
+    final enableSwap = ref.watch(remoteConfigProvider).enableSwap;
 
     final receiveCard = _actionCard(
       iconAsset: 'assets/v2/action_receive.svg',

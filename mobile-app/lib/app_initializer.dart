@@ -28,7 +28,7 @@ class _AppInitializerState extends ConsumerState<AppInitializer> {
 
   Future<void> _initialize() async {
     try {
-      ref.read(featureFlagsProvider.notifier).registerRemoteRefreshListener(ref);
+      ref.read(remoteConfigProvider.notifier).registerRemoteRefreshListener(ref);
 
       final notificationService = ref.read(localNotificationsServiceProvider);
       await notificationService.init();
