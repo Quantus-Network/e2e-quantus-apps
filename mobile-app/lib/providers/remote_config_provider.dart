@@ -12,36 +12,35 @@ final remoteConfigServiceProvider = Provider<RemoteConfigService>((ref) {
   return RemoteConfigService();
 });
 
-final remoteConfigProvider = StateNotifierProvider<FeatureFlagsNotifier, RemoteConfigModel>((ref) {
-  return FeatureFlagsNotifier(ref.read(remoteConfigServiceProvider));
+final remoteConfigProvider = StateNotifierProvider<RemoteConfigNotifier, RemoteConfigModel>((ref) {
+  return RemoteConfigNotifier(ref.read(remoteConfigServiceProvider));
 });
 
-class FeatureFlagsNotifier extends StateNotifier<RemoteConfigModel> {
+class RemoteConfigNotifier extends StateNotifier<RemoteConfigModel> {
   final RemoteConfigService _service;
   bool _isRefreshingRemote = false;
   bool _isEnablingRemoteNotifications = false;
 
-  FeatureFlagsNotifier(this._service) : super(_service.readLocalFlags()) {
-    syncFlags();
+  RemoteConfigNotifier(this._service) : super(_service.readLocalConfig()) {
+    syncConfig();
   }
 
-  Future<void> syncFlags() async {
+  Future<void> syncConfig() async {
     // Fetch remote in the background. This should not block startup feel.
     if (_isRefreshingRemote) return;
     _isRefreshingRemote = true;
 
     unawaited(() async {
       try {
-        final remote = await _service.readRemoteFlags();
+        final remote = await _service.readRemoteConfig();
         if (remote == null) return;
 
         if (remote != state) {
-          _service.cacheFlags(remote.toCacheJson());
+          _service.cacheConfig(remote.toCacheJson());
           state = remote;
         }
       } catch (e) {
-        // Keep using cached flags on failure.
-        print('Feature flags remote refresh failed: $e');
+        print('Remote config remote refresh failed: $e');
       } finally {
         _isRefreshingRemote = false;
       }
