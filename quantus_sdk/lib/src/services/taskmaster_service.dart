@@ -492,7 +492,7 @@ class TaskmasterService {
     await ensureIsLoggedIn();
   }
 
-  Future<FeatureFlagsModel> getWalletFeatureFlags() async {
+  Future<RemoteConfigModel> getRemoteConfig() async {
     final Uri uri = Uri.parse('${AppConstants.taskMasterEndpoint}/feature-flags/wallet');
 
     final http.Response response = await http.get(uri, headers: {'Content-Type': 'application/json'});
@@ -507,7 +507,7 @@ class TaskmasterService {
       throw Exception('Feature flags request failed with status: ${response.statusCode}. Body: ${response.body}');
     }
 
-    return FeatureFlagsModel.fromJson(data);
+    return RemoteConfigModel.fromJson(data);
   }
 
   Future<MinerStats> getMinerStats() async {

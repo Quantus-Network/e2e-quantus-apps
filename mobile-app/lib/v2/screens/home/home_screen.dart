@@ -6,7 +6,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
-import 'package:resonance_network_wallet/providers/feature_flags_provider.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/v2/components/glass_button.dart' hide ButtonVariant;
 import 'package:resonance_network_wallet/v2/components/glass_icon_button.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_sheet.dart';
@@ -226,7 +226,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildActionButtons() {
-    final enableSwap = ref.watch(featureFlagsProvider).enableSwap;
+    final enableSwap = ref.watch(remoteConfigProvider).enableSwap;
 
     final receiveCard = _actionCard(
       iconAsset: 'assets/v2/action_receive.svg',

@@ -1,11 +1,11 @@
-class FeatureFlagsModel {
+class RemoteConfigModel {
   final bool enableTestButtons;
   final bool enableKeystoneHardwareWallet;
   final bool enableHighSecurity;
   final bool enableRemoteNotifications;
   final bool enableSwap;
 
-  const FeatureFlagsModel({
+  const RemoteConfigModel({
     required this.enableTestButtons,
     required this.enableKeystoneHardwareWallet,
     required this.enableHighSecurity,
@@ -32,7 +32,7 @@ class FeatureFlagsModel {
     );
   }
 
-  static const FeatureFlagsModel defaults = FeatureFlagsModel(
+  static const RemoteConfigModel defaults = RemoteConfigModel(
     enableTestButtons: false,
     enableKeystoneHardwareWallet: false,
     enableHighSecurity: true,
@@ -52,8 +52,8 @@ class FeatureFlagsModel {
     );
   }
 
-  factory FeatureFlagsModel.fromJson(Map<String, dynamic> json) {
-    return FeatureFlagsModel(
+  factory RemoteConfigModel.fromJson(Map<String, dynamic> json) {
+    return RemoteConfigModel(
       enableTestButtons: json['enableTestButtons'] ?? defaults.enableTestButtons,
       enableKeystoneHardwareWallet: json['enableKeystoneHardwareWallet'] ?? defaults.enableKeystoneHardwareWallet,
       enableHighSecurity: json['enableHighSecurity'] ?? defaults.enableHighSecurity,
@@ -62,7 +62,7 @@ class FeatureFlagsModel {
     );
   }
 
-  bool compare(FeatureFlagsModel other) {
+  bool compare(RemoteConfigModel other) {
     return match(
       fn: (enableTestButtons, enableKeystoneHardwareWallet, enableHighSecurity, enableRemoteNotifications, enableSwap) {
         return other.match(
