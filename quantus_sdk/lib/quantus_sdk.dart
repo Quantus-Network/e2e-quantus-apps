@@ -23,7 +23,7 @@ export 'src/models/event_type.dart';
 export 'src/models/extrinsic_data.dart';
 export 'src/models/extrinsic_fee_data.dart';
 export 'src/models/unsigned_transaction_data.dart';
-export 'src/models/feature_flags_model.dart';
+export 'src/models/remote_config_model.dart';
 export 'src/models/miner_reward_event.dart';
 export 'src/models/miner_stats.dart';
 export 'src/models/opted_in_position.dart';
