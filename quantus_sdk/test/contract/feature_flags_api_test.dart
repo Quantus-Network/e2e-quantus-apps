@@ -39,7 +39,7 @@ void main() {
       expect(newKeys, isEmpty, reason: 'WARNING: The API sent new properties not handled in your app: $newKeys');
 
       try {
-        FeatureFlagsModel.fromJson(data);
+        RemoteConfigModel.fromJson(data);
       } catch (e) {
         fail('Failed to parse feature flags model: $e');
       }
