@@ -301,7 +301,7 @@ class SettingsService {
   // --- Primitive Accessors for General Use ---
 
   /// Get a boolean value from SharedPreferences
-  Future<bool?> getBool(String key) async {
+  bool? getBool(String key) {
     return _prefs.getBool(key);
   }
 
@@ -311,8 +311,13 @@ class SettingsService {
   }
 
   /// Get a string value from SharedPreferences
-  Future<String?> getString(String key) async {
+  String? getString(String key) {
     return _prefs.getString(key);
+  }
+
+  /// Set a string value from SharedPreferences
+  Future<void> setString(String key, String value) async {
+    await _prefs.setString(key, value);
   }
 
   DateTime? getLastPausedTime() {

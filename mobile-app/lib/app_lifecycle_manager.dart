@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
+import 'package:resonance_network_wallet/providers/feature_flags_provider.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 
@@ -99,6 +102,9 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
 
         // Initialize Taskmaster login if wallet exists
         _initializeTaskmasterLogin();
+
+        // Sync feature flags on background resume
+        unawaited(ref.read(featureFlagsProvider.notifier).syncFlags());
       }
     } else {
       // Handle background states (inactive, paused, hidden, detached)

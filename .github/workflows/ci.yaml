@@ -33,6 +33,12 @@ jobs:
         run: melos exec --concurrency=1 -- "flutter clean"
       - name: Analyze
         run: melos exec --concurrency=1 -- "flutter analyze ."
+      - name: Create mock .env file to not fail the tests
+        run: touch mobile-app/.env
+      - name: Test Mobile App
+        run: melos exec --concurrency=1 --scope="resonance_network_wallet" -- "flutter test"
+      - name: Test SDK Feature Flags API Contract
+        run: melos exec --concurrency=1 --scope="quantus_sdk" -- "flutter test test/contract"
 
   # build_android:
   #   name: Build Android
