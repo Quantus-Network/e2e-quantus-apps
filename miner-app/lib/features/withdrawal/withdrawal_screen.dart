@@ -5,7 +5,6 @@ import 'package:quantus_miner/src/services/miner_settings_service.dart';
 import 'package:quantus_miner/src/services/transfer_tracking_service.dart';
 import 'package:quantus_miner/src/services/withdrawal_service.dart';
 import 'package:quantus_miner/src/services/wormhole_address_manager.dart';
-import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart'
     hide WormholeAddressManager, TrackedWormholeAddress, WormholeAddressPurpose;
@@ -82,7 +81,9 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
           _addressManagerReady = true;
         });
       }
-      _log.i('Address manager initialized with ${_addressManager.allAddresses.length} addresses');
+      _log.i(
+        'Address manager initialized with ${_addressManager.allAddresses.length} addresses',
+      );
     } catch (e) {
       _log.e('Failed to initialize address manager', error: e);
       // Still mark as ready so full withdrawals can proceed
@@ -107,23 +108,30 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
 
       // Get all known addresses (primary + change addresses)
       final allAddresses = _addressManager.allAddressStrings;
-      final addressesToTrack = allAddresses.isNotEmpty ? allAddresses : {widget.wormholeAddress};
+      final addressesToTrack = allAddresses.isNotEmpty
+          ? allAddresses
+          : {widget.wormholeAddress};
 
-      _transferTrackingService.initialize(rpcUrl: chainConfig.rpcUrl, wormholeAddresses: addressesToTrack);
+      _transferTrackingService.initialize(
+        rpcUrl: chainConfig.rpcUrl,
+        wormholeAddresses: addressesToTrack,
+      );
 
-      // Load from disk first
       await _transferTrackingService.loadFromDisk();
 
       // Get unspent transfers for ALL tracked addresses
       final allTransfers = <TrackedTransfer>[];
 
       // Check primary address
-      final primaryTransfers = await _transferTrackingService.getUnspentTransfers(
-        wormholeAddress: widget.wormholeAddress,
-        secretHex: widget.secretHex,
-      );
+      final primaryTransfers = await _transferTrackingService
+          .getUnspentTransfers(
+            wormholeAddress: widget.wormholeAddress,
+            secretHex: widget.secretHex,
+          );
       allTransfers.addAll(primaryTransfers);
-      _log.i('Primary address ${widget.wormholeAddress}: ${primaryTransfers.length} unspent');
+      _log.i(
+        'Primary address ${widget.wormholeAddress}: ${primaryTransfers.length} unspent',
+      );
 
       // Check change addresses from address manager
       for (final tracked in _addressManager.allAddresses) {
@@ -135,7 +143,9 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
         );
         if (transfers.isNotEmpty) {
           allTransfers.addAll(transfers);
-          _log.i('Change address ${tracked.address}: ${transfers.length} unspent');
+          _log.i(
+            'Change address ${tracked.address}: ${transfers.length} unspent',
+          );
         }
       }
 
@@ -148,7 +158,9 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
         _updateAmountToMax();
       }
 
-      _log.i('Loaded ${allTransfers.length} total tracked transfers for withdrawal');
+      _log.i(
+        'Loaded ${allTransfers.length} total tracked transfers for withdrawal',
+      );
     } catch (e) {
       _log.e('Failed to load tracked transfers', error: e);
       if (mounted) {
@@ -227,7 +239,10 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
   }
 
   void _updateAmountToMax() {
-    final formatted = NumberFormattingService().formatBalance(_withdrawableBalance, addSymbol: false);
+    final formatted = NumberFormattingService().formatBalance(
+      _withdrawableBalance,
+      addSymbol: false,
+    );
     _amountController.text = formatted;
   }
 
@@ -286,7 +301,8 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
       return 'Amount exceeds available balance';
     }
     // Check minimum after fee
-    final afterFee = amount - (amount * BigInt.from(_feeBps) ~/ BigInt.from(10000));
+    final afterFee =
+        amount - (amount * BigInt.from(_feeBps) ~/ BigInt.from(10000));
     // Minimum is 0.03 QTN (3 quantized units = 3 * 10^10 planck)
     final minAmount = BigInt.from(3) * BigInt.from(10).pow(10);
     if (afterFee < minAmount) {
@@ -315,7 +331,9 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
 
     try {
       final destination = _destinationController.text.trim();
-      final amount = _withdrawAll ? _withdrawableBalance : _parseAmount(_amountController.text);
+      final amount = _withdrawAll
+          ? _withdrawableBalance
+          : _parseAmount(_amountController.text);
 
       _log.i('Starting withdrawal of $amount planck to $destination');
 
@@ -342,7 +360,9 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
         return;
       }
 
-      _log.i('Using ${_trackedTransfers.length} tracked transfers with exact amounts');
+      _log.i(
+        'Using ${_trackedTransfers.length} tracked transfers with exact amounts',
+      );
 
       final result = await withdrawalService.withdraw(
         secretHex: widget.secretHex,
@@ -350,7 +370,9 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
         destinationAddress: destination,
         amount: _withdrawAll ? null : amount,
         circuitBinsDir: circuitBinsDir,
-        trackedTransfers: _trackedTransfers.isNotEmpty ? _trackedTransfers : null,
+        trackedTransfers: _trackedTransfers.isNotEmpty
+            ? _trackedTransfers
+            : null,
         addressManager: _addressManager,
         onProgress: (progress, message) {
           if (mounted) {
@@ -375,9 +397,12 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
           final message = result.changeAddress != null
               ? 'Withdrawal successful! Change sent to new address.'
               : 'Withdrawal successful!';
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('$message TX: ${result.txHash}'), backgroundColor: Colors.green));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$message TX: ${result.txHash}'),
+              backgroundColor: Colors.green,
+            ),
+          );
           context.pop();
         }
       } else {
@@ -419,11 +444,18 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                 children: [
                   Text(
                     'Circuit files ready',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.green.shade200),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.green.shade200,
+                    ),
                   ),
                   Text(
                     'Batch size: $batchSize proofs${_circuitStatus.totalSizeBytes != null ? ' • ${CircuitManager.formatBytes(_circuitStatus.totalSizeBytes!)}' : ''}',
-                    style: TextStyle(fontSize: 12, color: Colors.green.shade300),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.green.shade300,
+                    ),
                   ),
                 ],
               ),
@@ -451,7 +483,11 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
               children: [
                 Text(
                   'Circuit files will be extracted',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.blue.shade200),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.blue.shade200,
+                  ),
                 ),
                 Text(
                   'One-time setup (~163MB, takes a few seconds)',
@@ -476,17 +512,30 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
         ),
         child: const Row(
           children: [
-            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
             SizedBox(width: 12),
-            Text('Loading transfer data...', style: TextStyle(fontSize: 14, color: Colors.grey)),
+            Text(
+              'Loading transfer data...',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
           ],
         ),
       );
     }
 
     if (_trackedTransfers.isNotEmpty) {
-      final totalTracked = _trackedTransfers.fold<BigInt>(BigInt.zero, (sum, t) => sum + t.amount);
-      final formattedTotal = NumberFormattingService().formatBalance(totalTracked, addSymbol: true);
+      final totalTracked = _trackedTransfers.fold<BigInt>(
+        BigInt.zero,
+        (sum, t) => sum + t.amount,
+      );
+      final formattedTotal = NumberFormattingService().formatBalance(
+        totalTracked,
+        addSymbol: true,
+      );
 
       // Calculate dummy proofs needed
       final batchSize = _circuitStatus.numLeafProofs ?? 16;
@@ -511,12 +560,25 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                 children: [
                   Text(
                     '${_trackedTransfers.length} transfer(s) tracked',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.green.shade200),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.green.shade200,
+                    ),
                   ),
-                  Text('Total: $formattedTotal', style: TextStyle(fontSize: 12, color: Colors.green.shade300)),
+                  Text(
+                    'Total: $formattedTotal',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.green.shade300,
+                    ),
+                  ),
                   Text(
                     '$realProofs real + $effectiveDummies dummy = $batchSize proofs per batch',
-                    style: TextStyle(fontSize: 11, color: Colors.green.shade400),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.green.shade400,
+                    ),
                   ),
                 ],
               ),
@@ -544,7 +606,11 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
               children: [
                 Text(
                   'No tracked transfers',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.orange.shade200),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.orange.shade200,
+                  ),
                 ),
                 Text(
                   'Mining rewards are only tracked while the app is open. Withdrawal may fail.',
@@ -564,19 +630,28 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
       // Fall back to on-chain balance if no tracked transfers
       return widget.availableBalance;
     }
-    return _trackedTransfers.fold<BigInt>(BigInt.zero, (sum, t) => sum + t.amount);
+    return _trackedTransfers.fold<BigInt>(
+      BigInt.zero,
+      (sum, t) => sum + t.amount,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final formattedBalance = NumberFormattingService().formatBalance(_withdrawableBalance, addSymbol: true);
+    final formattedBalance = NumberFormattingService().formatBalance(
+      _withdrawableBalance,
+      addSymbol: true,
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         title: const Text('Withdraw Rewards'),
-        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: _isWithdrawing ? null : () => context.pop()),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: _isWithdrawing ? null : () => context.pop(),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -597,19 +672,28 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                       ],
                     ),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Available Balance',
-                        style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.7)),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white.withValues(alpha: 0.7),
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         formattedBalance,
-                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF10B981),
+                        ),
                       ),
                     ],
                   ),
@@ -645,20 +729,27 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                     fillColor: Colors.white.withValues(alpha: 0.05),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                      borderSide: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                      borderSide: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
                     ),
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.paste),
                       onPressed: _isWithdrawing
                           ? null
                           : () async {
-                              final data = await Clipboard.getData(Clipboard.kTextPlain);
+                              final data = await Clipboard.getData(
+                                Clipboard.kTextPlain,
+                              );
                               if (data?.text != null) {
-                                _destinationController.text = data!.text!.trim();
+                                _destinationController.text = data!.text!
+                                    .trim();
                               }
                             },
                     ),
@@ -695,7 +786,10 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                         ),
                         Text(
                           'Withdraw all',
-                          style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.7)),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white.withValues(alpha: 0.7),
+                          ),
                         ),
                       ],
                     ),
@@ -706,7 +800,9 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                   controller: _amountController,
                   enabled: !_isWithdrawing && !_withdrawAll,
                   validator: _validateAmount,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   style: const TextStyle(fontSize: 18),
                   decoration: InputDecoration(
                     hintText: '0.00',
@@ -714,15 +810,21 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                     fillColor: Colors.white.withValues(alpha: 0.05),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                      borderSide: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                      borderSide: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
                     ),
                     disabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
+                      borderSide: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.05),
+                      ),
                     ),
                     suffixText: 'QTN',
                   ),
@@ -738,12 +840,19 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline, size: 16, color: Colors.blue.shade300),
+                      Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: Colors.blue.shade300,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Network fee: 0.1% of withdrawal amount',
-                          style: TextStyle(fontSize: 12, color: Colors.blue.shade200),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.blue.shade200,
+                          ),
                         ),
                       ),
                     ],
@@ -758,14 +867,26 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                     decoration: BoxDecoration(
                       color: Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: Colors.red.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.error_outline, size: 16, color: Colors.red),
+                        const Icon(
+                          Icons.error_outline,
+                          size: 16,
+                          color: Colors.red,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Text(_error!, style: const TextStyle(fontSize: 12, color: Colors.red)),
+                          child: Text(
+                            _error!,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.red,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -785,13 +906,18 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                       children: [
                         Text(
                           _statusMessage,
-                          style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.9)),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white.withValues(alpha: 0.9),
+                          ),
                         ),
                         const SizedBox(height: 12),
                         LinearProgressIndicator(
                           value: _progress,
                           backgroundColor: Colors.white.withValues(alpha: 0.1),
-                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            Color(0xFF10B981),
+                          ),
                         ),
                       ],
                     ),
@@ -807,16 +933,29 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF10B981),
                       foregroundColor: Colors.white,
-                      disabledBackgroundColor: const Color(0xFF10B981).withValues(alpha: 0.5),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      disabledBackgroundColor: const Color(
+                        0xFF10B981,
+                      ).withValues(alpha: 0.5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     child: _isWithdrawing
                         ? const SizedBox(
                             height: 24,
                             width: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
-                        : const Text('Withdraw', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                        : const Text(
+                            'Withdraw',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                   ),
                 ),
               ],

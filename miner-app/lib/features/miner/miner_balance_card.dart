@@ -17,12 +17,18 @@ class MinerBalanceCard extends StatefulWidget {
   final int currentBlock;
 
   /// Callback when withdraw button is pressed
-  final void Function(BigInt balance, String address, String secretHex)? onWithdraw;
+  final void Function(BigInt balance, String address, String secretHex)?
+  onWithdraw;
 
   /// Increment this to force a balance refresh (e.g., after withdrawal)
   final int refreshKey;
 
-  const MinerBalanceCard({super.key, this.currentBlock = 0, this.onWithdraw, this.refreshKey = 0});
+  const MinerBalanceCard({
+    super.key,
+    this.currentBlock = 0,
+    this.onWithdraw,
+    this.refreshKey = 0,
+  });
 
   @override
   State<MinerBalanceCard> createState() => _MinerBalanceCardState();
@@ -146,9 +152,15 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
       // Initialize transfer tracking with all known addresses
       final allAddresses = _addressManager.allAddressStrings;
       if (allAddresses.isEmpty) {
-        _transferTrackingService.initialize(rpcUrl: chainConfig.rpcUrl, wormholeAddresses: {address});
+        _transferTrackingService.initialize(
+          rpcUrl: chainConfig.rpcUrl,
+          wormholeAddresses: {address},
+        );
       } else {
-        _transferTrackingService.initialize(rpcUrl: chainConfig.rpcUrl, wormholeAddresses: allAddresses);
+        _transferTrackingService.initialize(
+          rpcUrl: chainConfig.rpcUrl,
+          wormholeAddresses: allAddresses,
+        );
       }
       await _transferTrackingService.loadFromDisk();
 
@@ -170,11 +182,14 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
         totalBalance += transfer.amount;
         totalUnspentCount++;
       }
-      _log.i('Primary address: ${primaryUnspent.length} unspent, ${_formatBalance(totalBalance)}');
+      _log.i(
+        'Primary address: ${primaryUnspent.length} unspent, ${_formatBalance(totalBalance)}',
+      );
 
       // Check other tracked addresses (change addresses)
       for (final tracked in _addressManager.allAddresses) {
-        if (tracked.address == address) continue; // Skip primary, already counted
+        if (tracked.address == address)
+          continue; // Skip primary, already counted
 
         final unspent = await _transferTrackingService.getUnspentTransfers(
           wormholeAddress: tracked.address,
@@ -185,16 +200,26 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
           totalUnspentCount++;
         }
         if (unspent.isNotEmpty) {
-          final addrBalance = unspent.fold<BigInt>(BigInt.zero, (sum, t) => sum + t.amount);
-          _log.i('Change address ${tracked.address}: ${unspent.length} unspent, ${_formatBalance(addrBalance)}');
+          final addrBalance = unspent.fold<BigInt>(
+            BigInt.zero,
+            (sum, t) => sum + t.amount,
+          );
+          _log.i(
+            'Change address ${tracked.address}: ${unspent.length} unspent, ${_formatBalance(addrBalance)}',
+          );
         }
       }
 
-      _log.i('Total withdrawable: $totalUnspentCount UTXOs, ${_formatBalance(totalBalance)}');
+      _log.i(
+        'Total withdrawable: $totalUnspentCount UTXOs, ${_formatBalance(totalBalance)}',
+      );
 
       if (mounted) {
         setState(() {
-          _rewardsBalance = NumberFormattingService().formatBalance(totalBalance, addSymbol: true);
+          _rewardsBalance = NumberFormattingService().formatBalance(
+            totalBalance,
+            addSymbol: true,
+          );
           _wormholeAddress = address;
           _secretHex = secretHex;
           _balancePlanck = totalBalance;
@@ -235,10 +260,16 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.white.withValues(alpha: 0.1), Colors.white.withValues(alpha: 0.05)],
+          colors: [
+            Colors.white.withValues(alpha: 0.1),
+            Colors.white.withValues(alpha: 0.05),
+          ],
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.1),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.2),
@@ -258,10 +289,16 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF10B981), Color(0xFF059669)],
+                    ),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.savings, color: Colors.white, size: 20),
+                  child: const Icon(
+                    Icons.savings,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Text(
@@ -276,7 +313,11 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
             ),
             const SizedBox(height: 20),
             if (_isLoading)
-              const SizedBox(height: 32, width: 32, child: CircularProgressIndicator(strokeWidth: 2))
+              const SizedBox(
+                height: 32,
+                width: 32,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
             else
               Text(
                 _rewardsBalance,
@@ -294,11 +335,18 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    width: 1,
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.link, color: Colors.white.withValues(alpha: 0.5), size: 16),
+                    Icon(
+                      Icons.link,
+                      color: Colors.white.withValues(alpha: 0.5),
+                      size: 16,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -313,7 +361,11 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.copy, color: Colors.white.withValues(alpha: 0.5), size: 16),
+                      icon: Icon(
+                        Icons.copy,
+                        color: Colors.white.withValues(alpha: 0.5),
+                        size: 16,
+                      ),
                       onPressed: () {
                         if (_wormholeAddress != null) {
                           context.copyTextWithSnackbar(_wormholeAddress!);
@@ -333,16 +385,26 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
                 decoration: BoxDecoration(
                   color: Colors.amber.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.amber.withValues(alpha: 0.2), width: 1),
+                  border: Border.all(
+                    color: Colors.amber.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline, color: Colors.amber.shade300, size: 16),
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.amber.shade300,
+                      size: 16,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Import your full wallet to track balance and withdraw rewards.',
-                        style: TextStyle(fontSize: 12, color: Colors.amber.shade200),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.amber.shade200,
+                        ),
                       ),
                     ),
                   ],
@@ -350,14 +412,22 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
               ),
             ],
             // Withdraw button
-            if (_canWithdraw && _balancePlanck > BigInt.zero && !_isLoading) ...[
+            if (_canWithdraw &&
+                _balancePlanck > BigInt.zero &&
+                !_isLoading) ...[
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    if (widget.onWithdraw != null && _wormholeAddress != null && _secretHex != null) {
-                      widget.onWithdraw!(_balancePlanck, _wormholeAddress!, _secretHex!);
+                    if (widget.onWithdraw != null &&
+                        _wormholeAddress != null &&
+                        _secretHex != null) {
+                      widget.onWithdraw!(
+                        _balancePlanck,
+                        _wormholeAddress!,
+                        _secretHex!,
+                      );
                     }
                   },
                   icon: const Icon(Icons.output, size: 18),
@@ -366,7 +436,9 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
                     backgroundColor: const Color(0xFF10B981),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),

@@ -96,7 +96,8 @@ class ChainRpcClient {
       bool isSyncing = false;
       int? targetBlock;
       if (syncStateResult != null) {
-        if (syncStateResult['currentBlock'] != null && syncStateResult['highestBlock'] != null) {
+        if (syncStateResult['currentBlock'] != null &&
+            syncStateResult['highestBlock'] != null) {
           final current = syncStateResult['currentBlock'] as int;
           final highest = syncStateResult['highestBlock'] as int;
 
@@ -167,7 +168,9 @@ class ChainRpcClient {
   /// Get block hash by block number.
   Future<String?> getBlockHash(int blockNumber) async {
     try {
-      final result = await _rpcCall('chain_getBlockHash', ['0x${blockNumber.toRadixString(16)}']);
+      final result = await _rpcCall('chain_getBlockHash', [
+        '0x${blockNumber.toRadixString(16)}',
+      ]);
       return result as String?;
     } catch (e) {
       return null;
@@ -179,10 +182,16 @@ class ChainRpcClient {
   /// [address] should be an SS58-encoded address.
   /// [accountIdHex] can be provided if already known (32 bytes as hex without 0x prefix).
   /// Returns the free balance in planck (smallest unit), or null if the query fails.
-  Future<BigInt?> getAccountBalance(String address, {String? accountIdHex}) async {
+  Future<BigInt?> getAccountBalance(
+    String address, {
+    String? accountIdHex,
+  }) async {
     try {
       // Build the storage key for System::Account(address)
-      final storageKey = _buildAccountStorageKey(address, accountIdHex: accountIdHex);
+      final storageKey = _buildAccountStorageKey(
+        address,
+        accountIdHex: accountIdHex,
+      );
       if (storageKey == null) {
         _log.w('Failed to build storage key for address: $address');
         return null;
@@ -212,7 +221,9 @@ class ChainRpcClient {
       List<int> accountIdBytes;
       if (accountIdHex != null) {
         // Use provided hex (remove 0x prefix if present)
-        final hex = accountIdHex.startsWith('0x') ? accountIdHex.substring(2) : accountIdHex;
+        final hex = accountIdHex.startsWith('0x')
+            ? accountIdHex.substring(2)
+            : accountIdHex;
         accountIdBytes = _hexToBytes(hex);
       } else {
         // Decode SS58 address to get the raw account ID (32 bytes)
@@ -243,7 +254,8 @@ class ChainRpcClient {
   List<int>? _decodeSs58Address(String ss58Address) {
     try {
       // SS58 is base58 encoded: [prefix(1-2 bytes)][account_id(32 bytes)][checksum(2 bytes)]
-      const base58Chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+      const base58Chars =
+          '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 
       // Decode base58
       BigInt value = BigInt.zero;
@@ -390,7 +402,9 @@ class ChainRpcClient {
   Future<bool?> isSyncing() async {
     try {
       final syncState = await _rpcCall('system_syncState');
-      if (syncState != null && syncState['currentBlock'] != null && syncState['highestBlock'] != null) {
+      if (syncState != null &&
+          syncState['currentBlock'] != null &&
+          syncState['highestBlock'] != null) {
         final current = syncState['currentBlock'] as int;
         final highest = syncState['highestBlock'] as int;
         return (highest - current) > 5;
@@ -414,13 +428,22 @@ class ChainRpcClient {
 
   /// Execute a JSON-RPC call
   Future<dynamic> _rpcCall(String method, [List<dynamic>? params]) async {
-    final request = {'jsonrpc': '2.0', 'id': _requestId++, 'method': method, if (params != null) 'params': params};
+    final request = {
+      'jsonrpc': '2.0',
+      'id': _requestId++,
+      'method': method,
+      if (params != null) 'params': params,
+    };
 
     // Only print RPC calls when debugging connection issues
     // print('DEBUG: Making RPC call: $method with request: ${json.encode(request)}');
 
     final response = await _httpClient
-        .post(Uri.parse(rpcUrl), headers: {'Content-Type': 'application/json'}, body: json.encode(request))
+        .post(
+          Uri.parse(rpcUrl),
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode(request),
+        )
         .timeout(timeout);
 
     if (response.statusCode == 200) {
@@ -434,7 +457,9 @@ class ChainRpcClient {
     } else {
       // Don't log connection errors during startup - they're expected
       if (response.statusCode != 0) {
-        _log.w('RPC HTTP error for $method: ${response.statusCode} ${response.reasonPhrase}');
+        _log.w(
+          'RPC HTTP error for $method: ${response.statusCode} ${response.reasonPhrase}',
+        );
       }
       throw Exception('HTTP ${response.statusCode}: ${response.reasonPhrase}');
     }
