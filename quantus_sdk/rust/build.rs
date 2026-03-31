@@ -1,23 +1,11 @@
 //! Build script for quantus_sdk Rust library.
 //!
 //! Generates circuit binaries at build time to the assets/circuits/ directory.
-//! This ensures the binaries are always consistent with the circuit crate version
-//! and eliminates the need for manual circuit generation.
+//! This ensures the binaries are always consistent with the circuit crate version.
 
 use std::env;
 use std::path::Path;
 use std::time::Instant;
-
-/// Files that must exist for the circuit binaries to be considered complete.
-const REQUIRED_FILES: &[&str] = &[
-    "prover.bin",
-    "common.bin",
-    "verifier.bin",
-    "dummy_proof.bin",
-    "aggregated_common.bin",
-    "aggregated_verifier.bin",
-    "config.json",
-];
 
 fn main() {
     let manifest_dir = env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR not set");
@@ -30,22 +18,8 @@ fn main() {
         .parse()
         .expect("QP_NUM_LEAF_PROOFS must be a valid usize");
 
-    // Rerun if the circuit builder crate changes or build.rs changes
+    // Always rerun to ensure circuits are up to date
     println!("cargo:rerun-if-changed=build.rs");
-    // Also rerun if the output directory changes (files deleted, etc.)
-    for file in REQUIRED_FILES {
-        println!("cargo:rerun-if-changed={}", output_dir.join(file).display());
-    }
-
-    // Check if all required binaries already exist
-    let all_exist = REQUIRED_FILES
-        .iter()
-        .all(|file| output_dir.join(file).exists());
-
-    if all_exist {
-        println!("cargo:warning=[quantus_sdk] Circuit binaries already exist, skipping generation");
-        return;
-    }
 
     println!(
         "cargo:warning=[quantus_sdk] Generating ZK circuit binaries (num_leaf_proofs={})...",

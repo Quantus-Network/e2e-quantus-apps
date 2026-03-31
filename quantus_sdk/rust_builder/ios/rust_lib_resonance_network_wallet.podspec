@@ -31,7 +31,7 @@ A new Flutter FFI plugin project.
     # First argument is relative path to the `rust` folder, second is name of rust library
     :script => 'sh "$PODS_TARGET_SRCROOT/../cargokit/build_pod.sh" ../../rust rust_lib_resonance_network_wallet',
     :execution_position => :before_compile,
-    :input_files => ['${BUILT_PRODUCTS_DIR}/cargokit_phony'],
+    :always_out_of_date => '1',
     # Let XCode know that the static library referenced in -force_load below is
     # created by this build step.
     :output_files => ["${BUILT_PRODUCTS_DIR}/librust_lib_resonance_network_wallet.a"],

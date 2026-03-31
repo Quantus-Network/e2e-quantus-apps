@@ -5,19 +5,27 @@ import 'package:http/http.dart' as http;
 import 'package:polkadart/polkadart.dart' show Hasher;
 import 'package:polkadart/scale_codec.dart' as scale;
 import 'package:quantus_sdk/generated/planck/types/frame_system/event_record.dart';
-import 'package:quantus_sdk/generated/planck/types/pallet_wormhole/pallet/call.dart' as wormhole_call;
-import 'package:quantus_sdk/generated/planck/types/pallet_wormhole/pallet/event.dart' as wormhole_event;
+import 'package:quantus_sdk/generated/planck/types/pallet_wormhole/pallet/call.dart'
+    as wormhole_call;
+import 'package:quantus_sdk/generated/planck/types/pallet_wormhole/pallet/event.dart'
+    as wormhole_event;
 import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart';
-import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_event.dart' as runtime_event;
-import 'package:quantus_sdk/generated/planck/types/sp_runtime/dispatch_error.dart' as dispatch_error;
-import 'package:quantus_sdk/generated/planck/types/frame_system/pallet/event.dart' as system_event;
+import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_event.dart'
+    as runtime_event;
+import 'package:quantus_sdk/generated/planck/types/sp_runtime/dispatch_error.dart'
+    as dispatch_error;
+import 'package:quantus_sdk/generated/planck/types/frame_system/pallet/event.dart'
+    as system_event;
+import 'package:quantus_sdk/generated/planck/types/frame_system/phase.dart'
+    as system_phase;
 import 'package:quantus_sdk/src/services/substrate_service.dart';
 import 'package:quantus_sdk/src/services/wormhole_address_manager.dart';
 import 'package:quantus_sdk/src/services/wormhole_service.dart';
 import 'package:ss58/ss58.dart' as ss58;
 
 /// Progress callback for withdrawal operations.
-typedef WithdrawalProgressCallback = void Function(double progress, String message);
+typedef WithdrawalProgressCallback =
+    void Function(double progress, String message);
 
 /// Result of a withdrawal operation.
 class WithdrawalResult {
@@ -49,6 +57,7 @@ class WormholeTransferInfo {
   final BigInt amount;
   final String wormholeAddress;
   final String fundingAccount;
+  final String? fundingAccountHex;
 
   const WormholeTransferInfo({
     required this.blockHash,
@@ -56,10 +65,12 @@ class WormholeTransferInfo {
     required this.amount,
     required this.wormholeAddress,
     required this.fundingAccount,
+    this.fundingAccountHex,
   });
 
   @override
-  String toString() => 'WormholeTransferInfo(blockHash: $blockHash, transferCount: $transferCount, amount: $amount)';
+  String toString() =>
+      'WormholeTransferInfo(blockHash: $blockHash, transferCount: $transferCount, amount: $amount)';
 }
 
 /// Service for handling wormhole withdrawals.
@@ -90,11 +101,16 @@ class WormholeTransferInfo {
 /// }
 /// ```
 class WormholeWithdrawalService {
+  WormholeWithdrawalService({this.enableDebugLogs = true});
+
+  final bool enableDebugLogs;
+
   // Fee in basis points (10 = 0.1%)
   static const int feeBps = 10;
 
   // Minimum output after quantization (3 units = 0.03 QTN)
-  static final BigInt minOutputPlanck = BigInt.from(3) * BigInt.from(10).pow(10);
+  static final BigInt minOutputPlanck =
+      BigInt.from(3) * BigInt.from(10).pow(10);
 
   // Native asset ID (0 for native token)
   static const int nativeAssetId = 0;
@@ -125,21 +141,31 @@ class WormholeWithdrawalService {
     WithdrawalProgressCallback? onProgress,
   }) async {
     try {
+      _debug(
+        'start withdraw rpc=$rpcUrl source=$wormholeAddress destination=$destinationAddress amount=${amount ?? 'ALL'} transfers=${transfers.length}',
+      );
       onProgress?.call(0.05, 'Preparing withdrawal...');
 
       if (transfers.isEmpty) {
-        return const WithdrawalResult(success: false, error: 'No transfers provided for withdrawal');
+        return const WithdrawalResult(
+          success: false,
+          error: 'No transfers provided for withdrawal',
+        );
       }
 
       // Calculate total available
-      final totalAvailable = transfers.fold<BigInt>(BigInt.zero, (sum, t) => sum + t.amount);
+      final totalAvailable = transfers.fold<BigInt>(
+        BigInt.zero,
+        (sum, t) => sum + t.amount,
+      );
 
       // Determine amount to withdraw
       final withdrawAmount = amount ?? totalAvailable;
       if (withdrawAmount > totalAvailable) {
         return WithdrawalResult(
           success: false,
-          error: 'Insufficient balance. Available: $totalAvailable, requested: $withdrawAmount',
+          error:
+              'Insufficient balance. Available: $totalAvailable, requested: $withdrawAmount',
         );
       }
 
@@ -147,36 +173,61 @@ class WormholeWithdrawalService {
 
       // Select transfers
       final selectedTransfers = _selectTransfers(transfers, withdrawAmount);
-      final selectedTotal = selectedTransfers.fold<BigInt>(BigInt.zero, (sum, t) => sum + t.amount);
+      final selectedTotal = selectedTransfers.fold<BigInt>(
+        BigInt.zero,
+        (sum, t) => sum + t.amount,
+      );
+      _debug(
+        'selected transfers=${selectedTransfers.length} selectedTotal=$selectedTotal withdrawAmount=$withdrawAmount',
+      );
 
       // Calculate output amounts after fee
-      final totalAfterFee = selectedTotal - (selectedTotal * BigInt.from(feeBps) ~/ BigInt.from(10000));
+      final totalAfterFee =
+          selectedTotal -
+          (selectedTotal * BigInt.from(feeBps) ~/ BigInt.from(10000));
 
       if (totalAfterFee < minOutputPlanck) {
-        return const WithdrawalResult(success: false, error: 'Amount too small after fee (minimum ~0.03 QTN)');
+        return const WithdrawalResult(
+          success: false,
+          error: 'Amount too small after fee (minimum ~0.03 QTN)',
+        );
       }
 
       onProgress?.call(0.15, 'Loading circuit data...');
 
       // Create proof generator
       final wormholeService = WormholeService();
-      final generator = await wormholeService.createProofGenerator(circuitBinsDir);
-      final aggregator = await wormholeService.createProofAggregator(circuitBinsDir);
+      final generator = await wormholeService.createProofGenerator(
+        circuitBinsDir,
+      );
+      var batchAggregator = await wormholeService.createProofAggregator(
+        circuitBinsDir,
+      );
 
       onProgress?.call(0.18, 'Fetching current block...');
 
-      // Get the current best block hash
-      final proofBlockHash = await _fetchBestBlockHash(rpcUrl);
+      // Choose a common proof block for all selected transfers.
+      // Prefer the earliest block that contains all selected transfers.
+      final proofBlockHash = await _selectCommonProofBlockHash(
+        rpcUrl: rpcUrl,
+        selectedTransfers: selectedTransfers,
+      );
+      _debug('proof block hash=$proofBlockHash');
 
       // Calculate if we need change
-      final requestedAmountQuantized = wormholeService.quantizeAmount(withdrawAmount);
+      final requestedAmountQuantized = wormholeService.quantizeAmount(
+        withdrawAmount,
+      );
 
       // Calculate max possible outputs for each transfer
       final maxOutputsQuantized = selectedTransfers.map((t) {
         final inputQuantized = wormholeService.quantizeAmount(t.amount);
         return wormholeService.computeOutputAmount(inputQuantized, feeBps);
       }).toList();
-      final totalMaxOutputQuantized = maxOutputsQuantized.fold<int>(0, (a, b) => a + b);
+      final totalMaxOutputQuantized = maxOutputsQuantized.fold<int>(
+        0,
+        (a, b) => a + b,
+      );
 
       // Determine if change is needed
       final needsChange = requestedAmountQuantized < totalMaxOutputQuantized;
@@ -187,7 +238,8 @@ class WormholeWithdrawalService {
         if (addressManager == null) {
           return const WithdrawalResult(
             success: false,
-            error: 'Partial withdrawal requires address manager for change address',
+            error:
+                'Partial withdrawal requires address manager for change address',
           );
         }
 
@@ -208,7 +260,10 @@ class WormholeWithdrawalService {
         final isLastTransfer = i == selectedTransfers.length - 1;
 
         final progress = 0.2 + (0.5 * (i / selectedTransfers.length));
-        onProgress?.call(progress, 'Generating proof ${i + 1}/${selectedTransfers.length}...');
+        onProgress?.call(
+          progress,
+          'Generating proof ${i + 1}/${selectedTransfers.length}...',
+        );
 
         // Determine output and change amounts for this proof
         int outputAmount;
@@ -219,7 +274,9 @@ class WormholeWithdrawalService {
           proofChangeAmount = maxOutput - outputAmount;
           if (proofChangeAmount < 0) proofChangeAmount = 0;
         } else if (needsChange) {
-          outputAmount = remainingToSend < maxOutput ? remainingToSend : maxOutput;
+          outputAmount = remainingToSend < maxOutput
+              ? remainingToSend
+              : maxOutput;
         } else {
           outputAmount = maxOutput;
         }
@@ -227,11 +284,19 @@ class WormholeWithdrawalService {
         remainingToSend -= outputAmount;
 
         try {
+          final transferSecretHex = _resolveTransferSecret(
+            transfer: transfer,
+            primarySecretHex: secretHex,
+            primaryWormholeAddress: wormholeAddress,
+            addressManager: addressManager,
+            wormholeService: wormholeService,
+          );
+
           final proof = await _generateProofForTransfer(
             generator: generator,
             wormholeService: wormholeService,
             transfer: transfer,
-            secretHex: secretHex,
+            secretHex: transferSecretHex,
             destinationAddress: destinationAddress,
             rpcUrl: rpcUrl,
             proofBlockHash: proofBlockHash,
@@ -241,19 +306,34 @@ class WormholeWithdrawalService {
           );
           proofs.add(proof);
         } catch (e) {
-          return WithdrawalResult(success: false, error: 'Failed to generate proof: $e');
+          _debug(
+            'proof generation failed at index=$i transferCount=${transfer.transferCount} to=${transfer.wormholeAddress} from=${transfer.fundingAccount} amount=${transfer.amount} error=$e',
+          );
+          return WithdrawalResult(
+            success: false,
+            error: 'Failed to generate proof: $e',
+          );
         }
       }
 
       // Get the batch size from the aggregator
-      final batchSize = await aggregator.batchSize;
+      final batchSize = await batchAggregator.batchSize;
 
       // Split proofs into batches if needed
       final numBatches = (proofs.length + batchSize - 1) ~/ batchSize;
+      _debug(
+        'aggregating proofs=${proofs.length} batchSize=$batchSize batches=$numBatches',
+      );
 
       final txHashes = <String>[];
 
       for (int batchIdx = 0; batchIdx < numBatches; batchIdx++) {
+        if (batchIdx > 0) {
+          batchAggregator = await wormholeService.createProofAggregator(
+            circuitBinsDir,
+          );
+        }
+
         final batchStart = batchIdx * batchSize;
         final batchEnd = (batchStart + batchSize).clamp(0, proofs.length);
         final batchProofs = proofs.sublist(batchStart, batchEnd);
@@ -264,19 +344,24 @@ class WormholeWithdrawalService {
           'Aggregating batch ${batchIdx + 1}/$numBatches (${batchProofs.length} proofs)...',
         );
 
-        // Clear aggregator and add proofs for this batch
-        await aggregator.clear();
+        // IMPORTANT: SDK clear() is a no-op; use a fresh aggregator per batch.
         for (final proof in batchProofs) {
-          await aggregator.addGeneratedProof(proof);
+          await batchAggregator.addGeneratedProof(proof);
         }
-        final aggregatedProof = await aggregator.aggregate();
+        final aggregatedProof = await batchAggregator.aggregate();
 
         final submitProgress = 0.8 + (0.15 * (batchIdx / numBatches));
-        onProgress?.call(submitProgress, 'Submitting batch ${batchIdx + 1}/$numBatches...');
+        onProgress?.call(
+          submitProgress,
+          'Submitting batch ${batchIdx + 1}/$numBatches...',
+        );
 
         // Submit this batch
         final txHash = await _submitProof(proofHex: aggregatedProof.proofHex);
         txHashes.add(txHash);
+        _debug(
+          'submitted batch ${batchIdx + 1}/$numBatches txHash=$txHash proofsInBatch=${batchProofs.length}',
+        );
       }
 
       onProgress?.call(0.95, 'Waiting for confirmations...');
@@ -291,10 +376,12 @@ class WormholeWithdrawalService {
       );
 
       if (!confirmed) {
+        _debug('confirmation failed txHashes=${txHashes.join(', ')}');
         return WithdrawalResult(
           success: false,
           txHash: txHashes.join(', '),
-          error: 'Transactions submitted but could not confirm success. Check txs: ${txHashes.join(', ')}',
+          error:
+              'Transactions submitted but could not confirm success. Check txs: ${txHashes.join(', ')}',
         );
       }
 
@@ -303,7 +390,8 @@ class WormholeWithdrawalService {
       // Calculate change amount in planck if change was used
       BigInt? changeAmountPlanck;
       if (needsChange && changeAddress != null) {
-        final changeQuantized = totalMaxOutputQuantized - requestedAmountQuantized;
+        final changeQuantized =
+            totalMaxOutputQuantized - requestedAmountQuantized;
         changeAmountPlanck = wormholeService.dequantizeAmount(changeQuantized);
       }
 
@@ -315,14 +403,59 @@ class WormholeWithdrawalService {
         changeAmount: changeAmountPlanck,
       );
     } catch (e) {
+      _debug('withdraw exception: $e');
       return WithdrawalResult(success: false, error: e.toString());
     }
   }
 
+  String _resolveTransferSecret({
+    required WormholeTransferInfo transfer,
+    required String primarySecretHex,
+    required String primaryWormholeAddress,
+    required WormholeAddressManager? addressManager,
+    required WormholeService wormholeService,
+  }) {
+    final transferAddress = transfer.wormholeAddress;
+
+    if (transferAddress == primaryWormholeAddress) {
+      _debug(
+        'secret resolved via primary address for transfer=$transferAddress',
+      );
+      return primarySecretHex;
+    }
+
+    final tracked = addressManager?.getAddress(transferAddress);
+    if (tracked != null) {
+      _debug(
+        'secret resolved via addressManager for transfer=$transferAddress purpose=${tracked.purpose} index=${tracked.index}',
+      );
+      return tracked.secretHex;
+    }
+
+    final derivedPrimary = wormholeService.deriveAddressFromSecret(
+      primarySecretHex,
+    );
+    if (derivedPrimary == transferAddress) {
+      _debug(
+        'secret resolved via derived primary match for transfer=$transferAddress',
+      );
+      return primarySecretHex;
+    }
+
+    throw StateError(
+      'Missing secret for transfer address $transferAddress. '
+      'Initialize address manager with all tracked wormhole addresses before withdrawal.',
+    );
+  }
+
   /// Select transfers to cover the target amount.
-  List<WormholeTransferInfo> _selectTransfers(List<WormholeTransferInfo> available, BigInt targetAmount) {
+  List<WormholeTransferInfo> _selectTransfers(
+    List<WormholeTransferInfo> available,
+    BigInt targetAmount,
+  ) {
     // Sort by amount descending (largest first)
-    final sorted = List<WormholeTransferInfo>.from(available)..sort((a, b) => b.amount.compareTo(a.amount));
+    final sorted = List<WormholeTransferInfo>.from(available)
+      ..sort((a, b) => b.amount.compareTo(a.amount));
 
     final selected = <WormholeTransferInfo>[];
     var total = BigInt.zero;
@@ -349,7 +482,18 @@ class WormholeWithdrawalService {
     int changeAmount = 0,
     String? changeAddress,
   }) async {
-    final blockHash = proofBlockHash.startsWith('0x') ? proofBlockHash : '0x$proofBlockHash';
+    final blockHash = proofBlockHash.startsWith('0x')
+        ? proofBlockHash
+        : '0x$proofBlockHash';
+    final secretAddress = wormholeService.deriveAddressFromSecret(secretHex);
+    _debug(
+      'proof input transferCount=${transfer.transferCount} amount=${transfer.amount} to=${transfer.wormholeAddress} from=${transfer.fundingAccount} blockHash=$blockHash secret=${_maskHex(secretHex)} secretAddress=$secretAddress',
+    );
+    if (secretAddress != transfer.wormholeAddress) {
+      _debug(
+        'WARNING secret/address mismatch transferAddress=${transfer.wormholeAddress} derivedFromSecret=$secretAddress',
+      );
+    }
 
     // Get block header for the proof block
     final blockHeader = await _fetchBlockHeader(rpcUrl, blockHash);
@@ -362,12 +506,20 @@ class WormholeWithdrawalService {
       secretHex: secretHex,
       wormholeService: wormholeService,
     );
+    _debug(
+      'proof dependencies blockNumber=${blockHeader.blockNumber} stateRoot=${_shortHex(blockHeader.stateRootHex)} nodes=${storageProof.proofNodesHex.length}',
+    );
 
     // Quantize the amount for the circuit
-    final quantizedInputAmount = wormholeService.quantizeAmount(transfer.amount);
+    final quantizedInputAmount = wormholeService.quantizeAmount(
+      transfer.amount,
+    );
 
     // Compute the max output amount after fee deduction
-    final maxOutputAmount = wormholeService.computeOutputAmount(quantizedInputAmount, feeBps);
+    final maxOutputAmount = wormholeService.computeOutputAmount(
+      quantizedInputAmount,
+      feeBps,
+    );
 
     // Use provided output amount or default to max
     final quantizedOutputAmount = outputAmount ?? maxOutputAmount;
@@ -381,12 +533,17 @@ class WormholeWithdrawalService {
 
     // Create the UTXO
     final fundingAccountHex = _ss58ToHex(transfer.fundingAccount);
+    final resolvedFundingAccountHex =
+        transfer.fundingAccountHex ?? fundingAccountHex;
     final utxo = WormholeUtxo(
       secretHex: secretHex,
       amount: transfer.amount,
       transferCount: transfer.transferCount,
-      fundingAccountHex: fundingAccountHex,
+      fundingAccountHex: resolvedFundingAccountHex,
       blockHashHex: blockHash,
+    );
+    _debug(
+      'utxo transferCount=${utxo.transferCount} input=${utxo.amount} fundingHex=${_shortHex(resolvedFundingAccountHex)} out=$quantizedOutputAmount change=$changeAmount',
     );
 
     // Create output assignment
@@ -399,17 +556,27 @@ class WormholeWithdrawalService {
         changeAccount: changeAddress,
       );
     } else {
-      output = ProofOutput.single(amount: quantizedOutputAmount, exitAccount: destinationAddress);
+      output = ProofOutput.single(
+        amount: quantizedOutputAmount,
+        exitAccount: destinationAddress,
+      );
     }
 
     // Generate the proof
-    return await generator.generateProof(
-      utxo: utxo,
-      output: output,
-      feeBps: feeBps,
-      blockHeader: blockHeader,
-      storageProof: storageProof,
-    );
+    try {
+      return await generator.generateProof(
+        utxo: utxo,
+        output: output,
+        feeBps: feeBps,
+        blockHeader: blockHeader,
+        storageProof: storageProof,
+      );
+    } catch (e) {
+      _debug(
+        'generator.generateProof failed transferCount=${transfer.transferCount} blockNumber=${blockHeader.blockNumber} output=$quantizedOutputAmount change=$changeAmount error=$e',
+      );
+      rethrow;
+    }
   }
 
   /// Fetch the current best block hash from the chain.
@@ -417,11 +584,18 @@ class WormholeWithdrawalService {
     final response = await http.post(
       Uri.parse(rpcUrl),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'jsonrpc': '2.0', 'id': 1, 'method': 'chain_getBlockHash', 'params': []}),
+      body: jsonEncode({
+        'jsonrpc': '2.0',
+        'id': 1,
+        'method': 'chain_getBlockHash',
+        'params': [],
+      }),
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Failed to fetch best block hash: ${response.statusCode}');
+      throw Exception(
+        'Failed to fetch best block hash: ${response.statusCode}',
+      );
     }
 
     final result = jsonDecode(response.body);
@@ -434,7 +608,91 @@ class WormholeWithdrawalService {
       throw Exception('No best block hash returned from chain');
     }
 
+    _debug('best block hash=$blockHash');
     return blockHash;
+  }
+
+  Future<String> _selectCommonProofBlockHash({
+    required String rpcUrl,
+    required List<WormholeTransferInfo> selectedTransfers,
+  }) async {
+    var maxTransferBlock = 0;
+    for (final transfer in selectedTransfers) {
+      final number = await _getBlockNumberByHash(rpcUrl, transfer.blockHash);
+      if (number != null && number > maxTransferBlock) {
+        maxTransferBlock = number;
+      }
+    }
+
+    if (maxTransferBlock <= 0) {
+      final best = await _fetchBestBlockHash(rpcUrl);
+      _debug('proof block fallback to best (missing block numbers): $best');
+      return best;
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse(rpcUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 1,
+          'method': 'chain_getBlockHash',
+          'params': [maxTransferBlock],
+        }),
+      );
+
+      final result = jsonDecode(response.body);
+      if (result['error'] != null) {
+        throw Exception(result['error']);
+      }
+
+      final blockHash = result['result'] as String?;
+      if (blockHash == null || blockHash.isEmpty) {
+        throw Exception('No hash found for block $maxTransferBlock');
+      }
+
+      _debug(
+        'proof block selected from transfer max block=$maxTransferBlock hash=${_shortHex(blockHash)}',
+      );
+      return blockHash;
+    } catch (e) {
+      final best = await _fetchBestBlockHash(rpcUrl);
+      _debug(
+        'proof block lookup failed for block=$maxTransferBlock error=$e; fallback best=$best',
+      );
+      return best;
+    }
+  }
+
+  Future<int?> _getBlockNumberByHash(String rpcUrl, String blockHash) async {
+    try {
+      final response = await http.post(
+        Uri.parse(rpcUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 1,
+          'method': 'chain_getHeader',
+          'params': [blockHash],
+        }),
+      );
+
+      final result = jsonDecode(response.body);
+      if (result['error'] != null) {
+        return null;
+      }
+
+      final header = result['result'] as Map<String, dynamic>?;
+      final numberHex = header?['number'] as String?;
+      if (numberHex == null) {
+        return null;
+      }
+
+      return int.parse(numberHex.substring(2), radix: 16);
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Fetch block header from RPC.
@@ -456,24 +714,52 @@ class WormholeWithdrawalService {
 
     final result = jsonDecode(response.body);
     if (result['error'] != null) {
-      throw Exception('RPC error fetching header for $blockHash: ${result['error']}');
+      throw Exception(
+        'RPC error fetching header for $blockHash: ${result['error']}',
+      );
     }
 
     final header = result['result'];
     if (header == null) {
-      throw Exception('Block not found: $blockHash - the block may have been pruned or the chain was reset');
+      throw Exception(
+        'Block not found: $blockHash - the block may have been pruned or the chain was reset',
+      );
     }
 
     // Use SDK to properly encode digest from RPC logs
-    final digestLogs = (header['digest']['logs'] as List<dynamic>? ?? []).cast<String>().toList();
+    final digestLogs = (header['digest']['logs'] as List<dynamic>? ?? [])
+        .cast<String>()
+        .toList();
     final wormholeService = WormholeService();
-    final digestHex = wormholeService.encodeDigestFromRpcLogs(logsHex: digestLogs);
+    final digestHex = wormholeService.encodeDigestFromRpcLogs(
+      logsHex: digestLogs,
+    );
+
+    final blockNumber = int.parse(
+      (header['number'] as String).substring(2),
+      radix: 16,
+    );
+    final recomputedHash = wormholeService.computeBlockHash(
+      parentHashHex: header['parentHash'] as String,
+      stateRootHex: header['stateRoot'] as String,
+      extrinsicsRootHex: header['extrinsicsRoot'] as String,
+      blockNumber: blockNumber,
+      digestHex: digestHex,
+    );
+    final expectedHash = blockHash.toLowerCase();
+    final actualHash = recomputedHash.toLowerCase();
+    _debug(
+      'header block=$blockNumber expectedHash=${_shortHex(expectedHash)} recomputedHash=${_shortHex(actualHash)} digestLogs=${digestLogs.length}',
+    );
+    if (actualHash != expectedHash) {
+      _debug('WARNING block hash mismatch for header at $blockHash');
+    }
 
     return BlockHeader(
       parentHashHex: header['parentHash'] as String,
       stateRootHex: header['stateRoot'] as String,
       extrinsicsRootHex: header['extrinsicsRoot'] as String,
-      blockNumber: int.parse((header['number'] as String).substring(2), radix: 16),
+      blockNumber: blockNumber,
       digestHex: digestHex,
     );
   }
@@ -492,6 +778,9 @@ class WormholeWithdrawalService {
       transferCount: transfer.transferCount,
       fundingAccount: transfer.fundingAccount,
       amount: transfer.amount,
+    );
+    _debug(
+      'storage key transferCount=${transfer.transferCount} to=${transfer.wormholeAddress} from=${transfer.fundingAccount} key=${_shortHex(storageKey)} block=${_shortHex(blockHash)}',
     );
 
     // Fetch the read proof from chain
@@ -519,11 +808,44 @@ class WormholeWithdrawalService {
     }
 
     final proof = result['result'];
-    final proofNodes = (proof['proof'] as List).map((p) => p as String).toList();
+    final proofNodes = (proof['proof'] as List)
+        .map((p) => p as String)
+        .toList();
 
     if (proofNodes.isEmpty) {
-      throw Exception('Empty storage proof - transfer may not exist at this block');
+      throw Exception(
+        'Empty storage proof - transfer may not exist at this block',
+      );
     }
+
+    final storageValueResponse = await http.post(
+      Uri.parse(rpcUrl),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'jsonrpc': '2.0',
+        'id': 1,
+        'method': 'state_getStorage',
+        'params': [storageKey, blockHash],
+      }),
+    );
+
+    final storageValueResult = jsonDecode(storageValueResponse.body);
+    if (storageValueResult['error'] != null) {
+      throw Exception(
+        'Failed to query storage value for proof key: ${storageValueResult['error']}',
+      );
+    }
+
+    final storageValue = storageValueResult['result'] as String?;
+    if (storageValue == null || storageValue == '0x' || storageValue.isEmpty) {
+      throw Exception(
+        'Storage key not found at proof block (transfer may be stale or metadata mismatch). '
+        'key=${_shortHex(storageKey)} block=${_shortHex(blockHash)}',
+      );
+    }
+    _debug(
+      'storage value at key=${_shortHex(storageKey)} value=${_shortHex(storageValue)}',
+    );
 
     // Get state root from block header
     final headerResponse = await http.post(
@@ -543,18 +865,26 @@ class WormholeWithdrawalService {
     }
 
     final stateRoot = headerResult['result']['stateRoot'] as String;
+    _debug(
+      'storage proof fetched nodes=${proofNodes.length} stateRoot=${_shortHex(stateRoot)} firstNode=${proofNodes.isNotEmpty ? _shortHex(proofNodes.first) : 'none'}',
+    );
 
     return StorageProof(proofNodesHex: proofNodes, stateRootHex: stateRoot);
   }
 
   /// Submit aggregated proof to chain as an unsigned extrinsic.
   Future<String> _submitProof({required String proofHex}) async {
-    final proofBytes = _hexToBytes(proofHex.startsWith('0x') ? proofHex.substring(2) : proofHex);
+    final proofBytes = _hexToBytes(
+      proofHex.startsWith('0x') ? proofHex.substring(2) : proofHex,
+    );
 
-    final call = RuntimeCall.values.wormhole(wormhole_call.VerifyAggregatedProof(proofBytes: proofBytes));
+    final call = RuntimeCall.values.wormhole(
+      wormhole_call.VerifyAggregatedProof(proofBytes: proofBytes),
+    );
 
     final txHash = await SubstrateService().submitUnsignedExtrinsic(call);
     final txHashHex = '0x${_bytesToHex(txHash)}';
+    _debug('submit aggregated proof bytes=${proofBytes.length} tx=$txHashHex');
     return txHashHex;
   }
 
@@ -567,6 +897,7 @@ class WormholeWithdrawalService {
     int maxAttempts = 30,
     Duration pollInterval = const Duration(seconds: 2),
   }) async {
+    final targetTxHash = txHash.toLowerCase();
     String? lastBlockHash;
 
     for (var attempt = 0; attempt < maxAttempts; attempt++) {
@@ -577,7 +908,12 @@ class WormholeWithdrawalService {
         final hashResponse = await http.post(
           Uri.parse(rpcUrl),
           headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'jsonrpc': '2.0', 'id': 1, 'method': 'chain_getBlockHash', 'params': []}),
+          body: jsonEncode({
+            'jsonrpc': '2.0',
+            'id': 1,
+            'method': 'chain_getBlockHash',
+            'params': [],
+          }),
         );
         final hashResult = jsonDecode(hashResponse.body);
         final currentBlockHash = hashResult['result'] as String?;
@@ -587,6 +923,22 @@ class WormholeWithdrawalService {
         }
 
         lastBlockHash = currentBlockHash;
+
+        final txIndex = await _findExtrinsicIndexInBlock(
+          rpcUrl: rpcUrl,
+          blockHash: currentBlockHash,
+          txHash: targetTxHash,
+        );
+
+        if (txIndex == null) {
+          _debug(
+            'confirm attempt=${attempt + 1}/$maxAttempts no tx in block=$currentBlockHash',
+          );
+          continue;
+        }
+        _debug(
+          'confirm found tx in block=$currentBlockHash extrinsicIndex=$txIndex',
+        );
 
         // Check events in this block for wormhole activity
         final eventsKey = '0x${_twox128('System')}${_twox128('Events')}';
@@ -608,17 +960,72 @@ class WormholeWithdrawalService {
         }
 
         // Look for wormhole events in this block
-        final wormholeResult = _checkForWormholeEvents(eventsHex);
+        final wormholeResult = _checkForWormholeEvents(eventsHex, txIndex);
 
         if (wormholeResult != null) {
+          _debug(
+            'confirm outcome success=${wormholeResult['success']} error=${wormholeResult['error']}',
+          );
           return wormholeResult['success'] == true;
         }
+
+        _debug('confirm no wormhole outcome for tx in block=$currentBlockHash');
+        return false;
       } catch (e) {
+        _debug('confirm attempt=${attempt + 1}/$maxAttempts error=$e');
         // Continue trying
       }
     }
 
     return false;
+  }
+
+  Future<int?> _findExtrinsicIndexInBlock({
+    required String rpcUrl,
+    required String blockHash,
+    required String txHash,
+  }) async {
+    final response = await http.post(
+      Uri.parse(rpcUrl),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'jsonrpc': '2.0',
+        'id': 1,
+        'method': 'chain_getBlock',
+        'params': [blockHash],
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      return null;
+    }
+
+    final result = jsonDecode(response.body);
+    if (result['error'] != null) {
+      return null;
+    }
+
+    final block = result['result']?['block'];
+    if (block == null) {
+      return null;
+    }
+
+    final extrinsics = (block['extrinsics'] as List<dynamic>? ?? [])
+        .cast<String>();
+    for (var i = 0; i < extrinsics.length; i++) {
+      final extHex = extrinsics[i];
+      final extBytes = _hexToBytes(
+        extHex.startsWith('0x') ? extHex.substring(2) : extHex,
+      );
+      final extHash =
+          '0x${_bytesToHex(Hasher.blake2b256.hash(Uint8List.fromList(extBytes)))}'
+              .toLowerCase();
+      if (extHash == txHash) {
+        return i;
+      }
+    }
+
+    return null;
   }
 
   /// Wormhole error names (order from pallet Error enum)
@@ -642,18 +1049,32 @@ class WormholeWithdrawalService {
   ];
 
   /// Check events hex for wormhole withdrawal verification activity.
-  Map<String, dynamic>? _checkForWormholeEvents(String eventsHex) {
-    final bytes = _hexToBytes(eventsHex.startsWith('0x') ? eventsHex.substring(2) : eventsHex);
+  Map<String, dynamic>? _checkForWormholeEvents(
+    String eventsHex,
+    int extrinsicIndex,
+  ) {
+    final bytes = _hexToBytes(
+      eventsHex.startsWith('0x') ? eventsHex.substring(2) : eventsHex,
+    );
     final input = scale.ByteInput(Uint8List.fromList(bytes));
     bool? success;
     String? error;
 
     try {
       final numEvents = scale.CompactCodec.codec.decode(input);
+      _debug(
+        'decode events for extrinsic=$extrinsicIndex totalEvents=$numEvents',
+      );
 
       for (var i = 0; i < numEvents; i++) {
         try {
           final eventRecord = EventRecord.decode(input);
+          final phase = eventRecord.phase;
+          if (phase is! system_phase.ApplyExtrinsic ||
+              phase.value0 != extrinsicIndex) {
+            continue;
+          }
+
           final event = eventRecord.event;
 
           // Check for Wormhole.ProofVerified
@@ -661,6 +1082,9 @@ class WormholeWithdrawalService {
             final wormholeEvent = event.value0;
             if (wormholeEvent is wormhole_event.ProofVerified) {
               success = true;
+              _debug(
+                'event Wormhole.ProofVerified for extrinsic=$extrinsicIndex',
+              );
             }
           }
 
@@ -668,18 +1092,20 @@ class WormholeWithdrawalService {
           if (event is runtime_event.System) {
             final systemEvent = event.value0;
             if (systemEvent is system_event.ExtrinsicFailed) {
-              if (i > 0) {
-                success = false;
-                error = _formatDispatchError(systemEvent.dispatchError);
-              }
+              success = false;
+              error = _formatDispatchError(systemEvent.dispatchError);
+              _debug(
+                'event System.ExtrinsicFailed for extrinsic=$extrinsicIndex error=$error',
+              );
             }
           }
         } catch (e) {
+          _debug('event decode failed at index=$i: $e');
           break;
         }
       }
     } catch (e) {
-      // Ignore decode errors
+      _debug('event blob decode failed: $e');
     }
 
     if (success == null) return null;
@@ -692,7 +1118,9 @@ class WormholeWithdrawalService {
     if (err is dispatch_error.Module) {
       final moduleError = err.value0;
       final palletIndex = moduleError.index;
-      final errorIndex = moduleError.error.isNotEmpty ? moduleError.error[0] : 0;
+      final errorIndex = moduleError.error.isNotEmpty
+          ? moduleError.error[0]
+          : 0;
 
       if (palletIndex == 20 && errorIndex < _wormholeErrors.length) {
         return 'Wormhole.${_wormholeErrors[errorIndex]}';
@@ -726,5 +1154,28 @@ class WormholeWithdrawalService {
 
   String _bytesToHex(List<int> bytes) {
     return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  }
+
+  void _debug(String message) {
+    if (!enableDebugLogs) {
+      return;
+    }
+    print('[WormholeWithdrawalService] $message');
+  }
+
+  String _shortHex(String value) {
+    final normalized = value.startsWith('0x') ? value : '0x$value';
+    if (normalized.length <= 20) {
+      return normalized;
+    }
+    return '${normalized.substring(0, 10)}...${normalized.substring(normalized.length - 8)}';
+  }
+
+  String _maskHex(String value) {
+    final normalized = value.startsWith('0x') ? value : '0x$value';
+    if (normalized.length <= 14) {
+      return normalized;
+    }
+    return '${normalized.substring(0, 8)}...${normalized.substring(normalized.length - 4)}';
   }
 }

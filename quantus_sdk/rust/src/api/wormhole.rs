@@ -27,6 +27,9 @@ use plonky2::field::types::PrimeField64;
 use qp_rusty_crystals_hdwallet::{
     derive_wormhole_from_mnemonic, WormholePair, QUANTUS_WORMHOLE_CHAIN_ID,
 };
+use qp_zk_circuits_common::storage_proof::{
+    hash_node_with_poseidon_padded, prepare_proof_for_circuit,
+};
 use sp_core::crypto::{AccountId32, Ss58Codec};
 
 /// Result of wormhole pair derivation
@@ -342,8 +345,8 @@ pub fn derive_address_from_secret(secret_hex: String) -> Result<String, Wormhole
 
     let unspendable =
         qp_wormhole_circuit::unspendable_account::UnspendableAccount::from_secret(secret);
-    // account_id is 8 felts (4 bytes/felt), use felts_to_digest
-    let address_bytes = qp_zk_circuits_common::utils::felts_to_digest(unspendable.account_id);
+    // account_id is 4 felts (8 bytes/felt), convert to bytes
+    let address_bytes = qp_zk_circuits_common::utils::digest_to_bytes(unspendable.account_id);
 
     let account = AccountId32::from(
         <[u8; 32]>::try_from(address_bytes.as_ref()).expect("BytesDigest is always 32 bytes"),
@@ -475,13 +478,13 @@ pub fn encode_digest_from_rpc_logs(logs_hex: Vec<String>) -> Result<String, Worm
 /// This key can be used with `state_getReadProof` RPC to fetch the Merkle proof
 /// needed for ZK proof generation.
 ///
-/// The storage key is: module_prefix ++ storage_prefix ++ poseidon_hash(key)
+/// The storage key is: module_prefix ++ storage_prefix ++ Blake2_256(to, transfer_count)
 ///
 /// # Arguments
 /// * `secret_hex` - The wormhole secret (32 bytes, hex with 0x prefix)
 /// * `transfer_count` - The transfer count from NativeTransferred event
-/// * `funding_account` - The account that sent the funds (SS58 format)
-/// * `amount` - The exact transfer amount in planck
+/// * `funding_account` - The account that sent the funds (SS58 format, validated for diagnostics)
+/// * `amount` - The exact transfer amount in planck (included in diagnostics)
 ///
 /// # Returns
 /// The full storage key as hex string with 0x prefix.
@@ -492,54 +495,28 @@ pub fn compute_transfer_proof_storage_key(
     funding_account: String,
     amount: u64,
 ) -> Result<String, WormholeError> {
-    // Compute wormhole address from secret
-    let secret_bytes = parse_hex_32(&secret_hex)?;
-    let secret_digest: qp_zk_circuits_common::utils::BytesDigest =
-        secret_bytes.try_into().map_err(|e| WormholeError {
-            message: format!("Invalid secret: {:?}", e),
-        })?;
-
-    let unspendable =
-        qp_wormhole_circuit::unspendable_account::UnspendableAccount::from_secret(secret_digest);
-    // account_id is 8 felts (4 bytes/felt), use felts_to_digest
-    let unspendable_bytes = qp_zk_circuits_common::utils::felts_to_digest(unspendable.account_id);
-    let wormhole_address: [u8; 32] = unspendable_bytes
-        .as_ref()
-        .try_into()
-        .expect("BytesDigest is always 32 bytes");
-
-    // Parse funding account
+    // Validate/parse ancillary fields so callers get fast feedback on malformed
+    // inputs and we avoid carrying intentionally-unused compatibility parameters.
     let funding_account_bytes = ss58_to_bytes(&funding_account)?;
 
-    // Compute the Poseidon hash of the storage key
-    let leaf_hash = compute_transfer_proof_leaf_hash(
-        0, // asset_id = 0 for native token
+    // Compute wormhole address from secret using quantus-cli library
+    let secret_bytes = parse_hex_32(&secret_hex)?;
+    let wormhole_address =
+        quantus_cli::compute_wormhole_address(&secret_bytes).map_err(|e| WormholeError {
+            message: format!("Failed to compute wormhole address: {}", e),
+        })?;
+
+    // Use quantus-cli library for storage key computation
+    let storage_key = quantus_cli::compute_storage_key(&wormhole_address, transfer_count);
+
+    log::debug!(
+        "[SDK] compute_transfer_proof_storage_key transfer_count={} amount={} funding_account_prefix={}",
         transfer_count,
-        &funding_account_bytes,
-        &wormhole_address,
-        amount as u128,
-    )?;
+        amount,
+        short_hex_bytes(&funding_account_bytes)
+    );
 
-    // Build the full storage key:
-    // twox128("Wormhole") ++ twox128("TransferProof") ++ poseidon_hash
-    //
-    // Pre-computed twox128 hashes:
-    // twox128("Wormhole") = 0x1cbfc5e0de51116eb98c56a3b9fd8c8b
-    // twox128("TransferProof") = 0x4a4ee9c5fb3e0a4c6f3b6daa9b1c7b28
-    //
-    // Note: These hashes are computed using xxhash and are deterministic.
-    // Using the standard Substrate storage prefix computation.
-    use sp_core::twox_128;
-
-    let module_prefix = twox_128(b"Wormhole");
-    let storage_prefix = twox_128(b"TransferProof");
-
-    let mut full_key = Vec::with_capacity(32 + 32);
-    full_key.extend_from_slice(&module_prefix);
-    full_key.extend_from_slice(&storage_prefix);
-    full_key.extend_from_slice(&leaf_hash);
-
-    Ok(format!("0x{}", hex::encode(full_key)))
+    Ok(format!("0x{}", hex::encode(storage_key)))
 }
 
 // ============================================================================
@@ -586,6 +563,9 @@ impl WormholeProofGenerator {
 
     /// Generate a proof for a wormhole withdrawal.
     ///
+    /// This function delegates to quantus-cli's wormhole_lib to ensure
+    /// the proof generation logic is identical to the CLI.
+    ///
     /// # Arguments
     /// * `utxo` - The UTXO to spend
     /// * `output` - Where to send the funds
@@ -606,14 +586,21 @@ impl WormholeProofGenerator {
         // Parse all hex inputs
         let secret = parse_hex_32(&utxo.secret_hex)?;
         let funding_account = parse_hex_32(&utxo.funding_account_hex)?;
-        // Use the actual block hash from the chain (from the UTXO), not a computed one.
-        // The circuit will verify this matches the hash of the header components.
         let block_hash = parse_hex_32(&utxo.block_hash_hex)?;
-
         let parent_hash = parse_hex_32(&block_header.parent_hash_hex)?;
         let state_root = parse_hex_32(&block_header.state_root_hex)?;
         let extrinsics_root = parse_hex_32(&block_header.extrinsics_root_hex)?;
         let digest = parse_hex(&block_header.digest_hex)?;
+        let digest_len = digest.len();
+
+        let recomputed_block_hash = compute_block_hash_internal(
+            &parent_hash,
+            &state_root,
+            &extrinsics_root,
+            block_header.block_number,
+            &digest,
+        )
+        .ok();
 
         let exit_account_1 = ss58_to_bytes(&output.exit_account_1)?;
         let exit_account_2 = if output.exit_account_2.is_empty() {
@@ -622,154 +609,169 @@ impl WormholeProofGenerator {
             ss58_to_bytes(&output.exit_account_2)?
         };
 
-        // Compute nullifier
-        let secret_digest: qp_zk_circuits_common::utils::BytesDigest =
-            secret.try_into().map_err(|e| WormholeError {
-                message: format!("Invalid secret: {:?}", e),
-            })?;
-        let nullifier = qp_wormhole_circuit::nullifier::Nullifier::from_preimage(
-            secret_digest,
-            utxo.transfer_count,
-        );
-        // nullifier.hash is 4 felts (8 bytes/felt), use digest_to_bytes
-        let nullifier_bytes = qp_zk_circuits_common::utils::digest_to_bytes(nullifier.hash);
-
-        // Compute unspendable account
-        let unspendable = qp_wormhole_circuit::unspendable_account::UnspendableAccount::from_secret(
-            secret_digest,
-        );
-        // account_id is 8 felts (4 bytes/felt), use felts_to_digest
-        let unspendable_bytes =
-            qp_zk_circuits_common::utils::felts_to_digest(unspendable.account_id);
-
-        // Process storage proof
+        // Parse storage proof nodes
         let proof_nodes: Vec<Vec<u8>> = storage_proof
             .proof_nodes_hex
             .iter()
             .map(|h| parse_hex(h))
             .collect::<Result<_, _>>()?;
-        let storage_state_root = parse_hex_32(&storage_proof.state_root_hex)?;
 
-        let wormhole_address: [u8; 32] = unspendable_bytes
-            .as_ref()
-            .try_into()
-            .expect("BytesDigest is always 32 bytes");
+        // Compute wormhole address using quantus-cli library
+        let wormhole_address =
+            quantus_cli::compute_wormhole_address(&secret).map_err(|e| WormholeError {
+                message: format!("Failed to compute wormhole address: {}", e),
+            })?;
 
-        let processed_proof = qp_zk_circuits_common::storage_proof::prepare_proof_for_circuit(
+        // Build proof generation input using quantus-cli types
+        let input = quantus_cli::ProofGenerationInput {
+            secret,
+            transfer_count: utxo.transfer_count,
+            funding_account,
+            wormhole_address,
+            funding_amount: utxo.amount as u128,
+            block_hash,
+            block_number: block_header.block_number,
+            parent_hash,
+            state_root,
+            extrinsics_root,
+            digest,
             proof_nodes,
-            hex::encode(storage_state_root),
-            compute_transfer_proof_leaf_hash(
-                0, // asset_id = 0 for native token
-                utxo.transfer_count,
-                &funding_account,
-                &wormhole_address,
-                utxo.amount as u128,
-            )?,
+            exit_account_1,
+            exit_account_2,
+            output_amount_1: output.output_amount_1,
+            output_amount_2: output.output_amount_2,
+            volume_fee_bps: fee_bps,
+            asset_id: quantus_cli::NATIVE_ASSET_ID,
+        };
+
+        let computed_leaf_hash = quantus_cli::compute_leaf_hash(
+            input.asset_id,
+            input.transfer_count,
+            &input.funding_account,
+            &input.wormhole_address,
+            input.funding_amount,
+        );
+
+        let processed_proof = prepare_proof_for_circuit(
+            input.proof_nodes.clone(),
+            format!("0x{}", hex::encode(input.state_root)),
+            computed_leaf_hash,
         )
         .map_err(|e| WormholeError {
-            message: format!("Storage proof preparation failed: {}", e),
+            message: format!(
+                "Storage proof preflight failed: {} (transfer_count={}, block_number={})",
+                e, input.transfer_count, block_header.block_number
+            ),
         })?;
 
-        // Quantize input amount
-        let input_amount_quantized = quantize_amount(utxo.amount)?;
+        if let Some(root_node) = processed_proof.proof.first() {
+            let computed_root = hash_node_with_poseidon_padded(root_node);
+            if computed_root != input.state_root {
+                return Err(WormholeError {
+                    message: format!(
+                        "Storage proof root mismatch in preflight: expected_state_root={}, computed_root={} (transfer_count={}, block_number={})",
+                        short_hex_bytes(&input.state_root),
+                        short_hex_bytes(&computed_root),
+                        input.transfer_count,
+                        block_header.block_number,
+                    ),
+                });
+            }
+        }
 
-        // Prepare digest (padded to 110 bytes)
-        const DIGEST_LOGS_SIZE: usize = 110;
-        let mut digest_padded = [0u8; DIGEST_LOGS_SIZE];
-        let copy_len = digest.len().min(DIGEST_LOGS_SIZE);
-        digest_padded[..copy_len].copy_from_slice(&digest[..copy_len]);
+        if let Some(value_node) = processed_proof.proof.last() {
+            if value_node.as_slice() != computed_leaf_hash {
+                return Err(WormholeError {
+                    message: format!(
+                        "Storage value node mismatch in preflight: expected_leaf_hash={}, value_node={} (transfer_count={}, block_number={})",
+                        short_hex_bytes(&computed_leaf_hash),
+                        short_hex_bytes(value_node),
+                        input.transfer_count,
+                        block_header.block_number,
+                    ),
+                });
+            }
+        }
 
-        // NOTE: We use the actual block_hash from the UTXO (parsed above), not a computed one.
-        // The circuit will verify that hash(header_components) == block_hash.
-
-        // Build circuit inputs
-        let private =
-            qp_wormhole_circuit::inputs::PrivateCircuitInputs {
-                secret: secret_digest,
-                transfer_count: utxo.transfer_count,
-                funding_account: funding_account.as_slice().try_into().map_err(|e| {
-                    WormholeError {
-                        message: format!("Invalid funding account: {:?}", e),
-                    }
-                })?,
-                storage_proof: processed_proof,
-                unspendable_account: unspendable_bytes,
-                parent_hash: parent_hash
-                    .as_slice()
-                    .try_into()
-                    .map_err(|e| WormholeError {
-                        message: format!("Invalid parent hash: {:?}", e),
-                    })?,
-                state_root: state_root
-                    .as_slice()
-                    .try_into()
-                    .map_err(|e| WormholeError {
-                        message: format!("Invalid state root: {:?}", e),
-                    })?,
-                extrinsics_root: extrinsics_root.as_slice().try_into().map_err(|e| {
-                    WormholeError {
-                        message: format!("Invalid extrinsics root: {:?}", e),
-                    }
-                })?,
-                digest: digest_padded,
-                input_amount: input_amount_quantized,
-            };
-
-        let public =
-            qp_wormhole_inputs::PublicCircuitInputs {
-                asset_id: 0, // Native token
-                output_amount_1: output.output_amount_1,
-                output_amount_2: output.output_amount_2,
-                volume_fee_bps: fee_bps,
-                nullifier: nullifier_bytes,
-                exit_account_1: exit_account_1.as_slice().try_into().map_err(|e| {
-                    WormholeError {
-                        message: format!("Invalid exit account 1: {:?}", e),
-                    }
-                })?,
-                exit_account_2: exit_account_2.as_slice().try_into().map_err(|e| {
-                    WormholeError {
-                        message: format!("Invalid exit account 2: {:?}", e),
-                    }
-                })?,
-                block_hash: block_hash
-                    .as_slice()
-                    .try_into()
-                    .map_err(|e| WormholeError {
-                        message: format!("Invalid block hash: {:?}", e),
-                    })?,
-                block_number: block_header.block_number,
-            };
-
-        let circuit_inputs = qp_wormhole_circuit::inputs::CircuitInputs { public, private };
-
-        // Clone prover and generate proof
-        let prover = self.clone_prover()?;
-        let prover_with_inputs = prover.commit(&circuit_inputs).map_err(|e| WormholeError {
-            message: format!("Failed to commit inputs: {}", e),
-        })?;
-        let proof = prover_with_inputs.prove().map_err(|e| WormholeError {
-            message: format!("Proof generation failed: {}", e),
-        })?;
-
-        Ok(GeneratedProof {
-            proof_hex: format!("0x{}", hex::encode(proof.to_bytes())),
-            nullifier_hex: format!("0x{}", hex::encode(nullifier_bytes.as_ref())),
-        })
-    }
-
-    /// Clone the internal prover by reloading from files.
-    fn clone_prover(&self) -> Result<qp_wormhole_prover::WormholeProver, WormholeError> {
+        // Generate proof using quantus-cli library
         let bins_path = std::path::Path::new(&self.bins_dir);
         let prover_path = bins_path.join("prover.bin");
         let common_path = bins_path.join("common.bin");
 
-        qp_wormhole_prover::WormholeProver::new_from_files(&prover_path, &common_path).map_err(
-            |e| WormholeError {
-                message: format!("Failed to reload prover: {}", e),
-            },
-        )
+        let result = quantus_cli::generate_wormhole_proof(&input, &prover_path, &common_path)
+            .map_err(|e| {
+                let block_hash_match = recomputed_block_hash
+                    .as_ref()
+                    .map(|h| h == &block_hash)
+                    .unwrap_or(false);
+
+                let diag = format!(
+                    "proof_input_diag {{ transfer_count: {}, amount: {}, fee_bps: {}, \
+                     secret_prefix: {}, wormhole_address_hex: {}, funding_account_hex: {}, \
+                     block_hash_hex: {}, recomputed_block_hash_hex: {}, block_hash_match: {}, \
+                     block_number: {}, state_root_hex: {}, extrinsics_root_hex: {}, digest_len: {}, \
+                     proof_nodes: {}, first_proof_node_len: {}, output_amount_1: {}, output_amount_2: {}, \
+                     exit_account_1_hex: {}, exit_account_2_hex: {}, computed_leaf_hash_hex: {}, \
+                     processed_nodes: {}, processed_indices: {} }}",
+                    utxo.transfer_count,
+                    utxo.amount,
+                    fee_bps,
+                    short_hex(&utxo.secret_hex),
+                    short_hex_bytes(&wormhole_address),
+                    short_hex_bytes(&funding_account),
+                    short_hex_bytes(&block_hash),
+                    recomputed_block_hash
+                        .as_ref()
+                        .map(|h| short_hex_bytes(h))
+                        .unwrap_or_else(|| "<recompute_failed>".to_string()),
+                    block_hash_match,
+                    block_header.block_number,
+                    short_hex_bytes(&state_root),
+                    short_hex_bytes(&extrinsics_root),
+                    digest_len,
+                    input.proof_nodes.len(),
+                    input.proof_nodes.first().map(|n| n.len()).unwrap_or(0),
+                    input.output_amount_1,
+                    input.output_amount_2,
+                    short_hex_bytes(&exit_account_1),
+                    short_hex_bytes(&exit_account_2),
+                    short_hex_bytes(&computed_leaf_hash),
+                    processed_proof.proof.len(),
+                    processed_proof.indices.len(),
+                );
+
+                WormholeError {
+                    message: format!("Proof generation failed: {} | {}", e, diag),
+                }
+            })?;
+
+        Ok(GeneratedProof {
+            proof_hex: format!("0x{}", hex::encode(result.proof_bytes)),
+            nullifier_hex: format!("0x{}", hex::encode(result.nullifier)),
+        })
     }
+
+    // Note: clone_prover is no longer needed - quantus_cli::generate_wormhole_proof handles prover loading
+}
+
+fn short_hex(value: &str) -> String {
+    let prefixed = if value.starts_with("0x") {
+        value.to_string()
+    } else {
+        format!("0x{}", value)
+    };
+    if prefixed.len() <= 20 {
+        return prefixed;
+    }
+    format!(
+        "{}...{}",
+        &prefixed[..10],
+        &prefixed[prefixed.len().saturating_sub(8)..]
+    )
+}
+
+fn short_hex_bytes(bytes: &[u8]) -> String {
+    short_hex(&hex::encode(bytes))
 }
 
 // ============================================================================
@@ -970,39 +972,8 @@ fn ss58_to_bytes(ss58: &str) -> Result<[u8; 32], WormholeError> {
     Ok(account.into())
 }
 
-/// Compute the transfer proof leaf hash for storage proof verification.
-///
-/// Uses `hash_storage` to match the chain's PoseidonStorageHasher behavior,
-/// which decodes the SCALE-encoded key and converts to felts via `ToFelts`.
-fn compute_transfer_proof_leaf_hash(
-    asset_id: u32,
-    transfer_count: u64,
-    funding_account: &[u8; 32],
-    wormhole_address: &[u8; 32],
-    amount: u128,
-) -> Result<[u8; 32], WormholeError> {
-    use codec::Encode;
-
-    // TransferProofKey type on chain: (AssetId, TransferCount, AccountId, AccountId, Balance)
-    // AccountId is [u8; 32] internally, and ToFelts is implemented for [u8; 32]
-    type TransferProofKey = (u32, u64, [u8; 32], [u8; 32], u128);
-
-    // SCALE encode the key tuple
-    let key: TransferProofKey = (
-        asset_id,
-        transfer_count,
-        *funding_account,
-        *wormhole_address,
-        amount,
-    );
-    let encoded = key.encode();
-
-    // Use hash_storage which decodes and converts to felts via ToFelts trait
-    // This matches how the chain's PoseidonStorageHasher works
-    let hash = qp_poseidon::PoseidonHasher::hash_storage::<TransferProofKey>(&encoded);
-
-    Ok(hash)
-}
+// Note: compute_transfer_proof_leaf_hash has been replaced by quantus_cli::compute_leaf_hash
+// which is called directly from quantus_cli::generate_wormhole_proof
 
 /// Compute block hash from header components.
 ///
@@ -1282,7 +1253,7 @@ mod tests {
     fn test_p2_p3_address_derivation_consistency() {
         use qp_rusty_crystals_hdwallet::wormhole::WormholePair;
         use qp_wormhole_circuit::unspendable_account::UnspendableAccount;
-        use qp_zk_circuits_common::utils::felts_to_digest;
+        use qp_zk_circuits_common::utils::digest_to_bytes;
 
         // Test with fixed secret
         let secret = [0x42u8; 32];
@@ -1294,8 +1265,8 @@ mod tests {
         // Generate address via circuit (uses Plonky2 Poseidon2)
         let secret_bytes: qp_wormhole_inputs::BytesDigest = secret.try_into().unwrap();
         let unspendable = UnspendableAccount::from_secret(secret_bytes);
-        // account_id is 8 felts (4 bytes/felt), use felts_to_digest
-        let address_p2 = felts_to_digest(unspendable.account_id);
+        // account_id is 4 felts (8 bytes/felt), convert to bytes
+        let address_p2 = digest_to_bytes(unspendable.account_id);
 
         assert_eq!(
             pair.address, *address_p2,

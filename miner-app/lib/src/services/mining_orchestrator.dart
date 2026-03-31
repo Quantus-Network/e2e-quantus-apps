@@ -7,7 +7,6 @@ import 'package:quantus_miner/src/services/chain_rpc_client.dart';
 import 'package:quantus_miner/src/services/external_miner_api_client.dart';
 import 'package:quantus_miner/src/services/log_stream_processor.dart';
 import 'package:quantus_miner/src/services/miner_process_manager.dart';
-import 'package:quantus_miner/src/services/miner_settings_service.dart';
 import 'package:quantus_miner/src/services/mining_stats_service.dart';
 import 'package:quantus_miner/src/services/node_process_manager.dart';
 import 'package:quantus_miner/src/services/process_cleanup_service.dart';
@@ -273,17 +272,8 @@ class MiningOrchestrator {
           wormholeAddresses: {config.wormholeAddress!},
         );
 
-        // For local dev chains, clear old transfers since the chain resets
-        final settingsService = MinerSettingsService();
-        final chainConfig = await settingsService.getChainConfig();
-        final isDevChain = chainConfig.isLocalNode;
-
-        await _transferTrackingService.loadFromDisk(
-          clearForDevChain: isDevChain,
-        );
-        _log.i(
-          'Transfer tracking initialized for ${config.wormholeAddress} (devChain=$isDevChain)',
-        );
+        await _transferTrackingService.loadFromDisk();
+        _log.i('Transfer tracking initialized for ${config.wormholeAddress}');
       }
 
       _setState(MiningState.nodeRunning);
