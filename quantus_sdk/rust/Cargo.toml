@@ -18,12 +18,12 @@ qp-rusty-crystals-dilithium = { version = "2.4", default-features = false }
 qp-rusty-crystals-hdwallet = { version = "2.3" }
 
 # ZK proof generation for wormhole withdrawals (from crates.io)
-qp-wormhole-circuit = { version = "1.2.1", default-features = false, features = ["std"] }
-qp-wormhole-prover = { version = "1.2.1", default-features = false, features = ["std"] }
-qp-wormhole-aggregator = { version = "1.2.1", default-features = false, features = ["rayon", "std"] }
-qp-wormhole-inputs = { version = "1.2.1", default-features = false, features = ["std"] }
-qp-zk-circuits-common = { version = "1.2.1", default-features = false, features = ["std"] }
-qp-wormhole-circuit-builder = { version = "1.2.1", default-features = false }
+qp-wormhole-circuit = { version = "1.3.0", default-features = false, features = ["std"] }
+qp-wormhole-prover = { version = "1.3.0", default-features = false, features = ["std"] }
+qp-wormhole-aggregator = { version = "1.3.0", default-features = false, features = ["rayon", "std"] }
+qp-wormhole-inputs = { version = "1.3.0", default-features = false, features = ["std"] }
+qp-zk-circuits-common = { version = "1.3.0", default-features = false, features = ["std"] }
+qp-wormhole-circuit-builder = { version = "1.3.0", default-features = false }
 plonky2 = { package = "qp-plonky2", version = "1.1.6", default-features = false, features = ["std"] }
 
 # Serialization for proof config
@@ -45,17 +45,7 @@ codec = { package = "parity-scale-codec", version = "3.7", features = ["derive"]
 sp-externalities = { version = "0.31", features = ["std"] }
 
 [build-dependencies]
-qp-wormhole-circuit-builder = { version = "1.2.1", default-features = false }
-
-[patch.crates-io]
-# Patch circuits to use back-to-compact branch (must match quantus-cli)
-# Note: qp-poseidon no longer needs patching - 1.4.0 has compact storage hasher
-qp-zk-circuits-common = { git = "https://github.com/Quantus-Network/qp-zk-circuits", branch = "illuzen/back-to-compact" }
-qp-wormhole-circuit = { git = "https://github.com/Quantus-Network/qp-zk-circuits", branch = "illuzen/back-to-compact" }
-qp-wormhole-circuit-builder = { git = "https://github.com/Quantus-Network/qp-zk-circuits", branch = "illuzen/back-to-compact" }
-qp-wormhole-prover = { git = "https://github.com/Quantus-Network/qp-zk-circuits", branch = "illuzen/back-to-compact" }
-qp-wormhole-aggregator = { git = "https://github.com/Quantus-Network/qp-zk-circuits", branch = "illuzen/back-to-compact" }
-qp-wormhole-inputs = { git = "https://github.com/Quantus-Network/qp-zk-circuits", branch = "illuzen/back-to-compact" }
+qp-wormhole-circuit-builder = { version = "1.3.0", default-features = false }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
