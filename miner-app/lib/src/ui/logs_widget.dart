@@ -44,11 +44,6 @@ class _LogsWidgetState extends State<LogsWidget> {
     if (widget.orchestrator != null) {
       _logsSubscription = widget.orchestrator!.logsStream.listen((logEntry) {
         if (mounted) {
-          // Store scroll position before adding log
-          final wasAtBottom =
-              _scrollController.hasClients &&
-              _scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 50;
-
           setState(() {
             _logs.add(logEntry);
             // Keep only the last maxLines entries

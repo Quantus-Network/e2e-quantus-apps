@@ -424,10 +424,7 @@ class SubstrateService {
     });
     final int versionByte = registry.extrinsicVersion & 127;
 
-    final callData = call.encode(); // Uint8List
-    // 4. Encode as unsigned/bare extrinsic
-    // final encoder = ExtrinsicEncoder(chainInfo);
-    // final unsignedExtrinsic = encoder.encodeUnsigned(callData); // adds version byte (0x04 for V4, 0x05 for V5)
+    // Encode as unsigned/bare extrinsic (adds version byte)
     final output = ByteOutput()
       ..pushByte(versionByte)
       ..write(call.encode());

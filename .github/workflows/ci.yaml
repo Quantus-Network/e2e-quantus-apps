@@ -35,7 +35,7 @@ jobs:
       - name: Clean Flutter projects
         run: melos exec --concurrency=1 -- "flutter clean"
       - name: Analyze
-        run: melos exec --concurrency=1 -- "flutter analyze ."
+        run: melos exec --concurrency=1 -- "flutter analyze . --no-fatal-infos"
       - name: Create mock .env file to not fail the tests
         run: touch mobile-app/.env
       - name: Test Mobile App

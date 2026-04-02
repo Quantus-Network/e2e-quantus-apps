@@ -27,6 +27,7 @@ dependencies:
   convert: # Version managed by melos.yaml
   
   # Storage, networking, and utilities
+  path: # Version managed by melos.yaml
   path_provider: # Version managed by melos.yaml
   shared_preferences: # Version managed by melos.yaml
   flutter_secure_storage: # Version managed by melos.yaml

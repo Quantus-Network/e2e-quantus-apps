@@ -865,55 +865,6 @@ class WormholeWithdrawalService {
     return result['result']?['block']?['header']?['parentHash'] as String?;
   }
 
-  /// Check a single block for the transaction and return confirmation result.
-  /// Returns true if confirmed, false if failed, null if tx not in this block.
-  Future<bool?> _checkBlockForTx({required String rpcUrl, required String blockHash, required String txHash}) async {
-    final txIndex = await _findExtrinsicIndexInBlock(rpcUrl: rpcUrl, blockHash: blockHash, txHash: txHash);
-
-    if (txIndex == null) {
-      return null; // tx not in this block
-    }
-
-    _debug('confirm: found tx in block=$blockHash extrinsicIndex=$txIndex');
-
-    // Check events in this block for wormhole activity
-    final eventsKey = '0x${_twox128('System')}${_twox128('Events')}';
-    final eventsResponse = await http.post(
-      Uri.parse(rpcUrl),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'jsonrpc': '2.0',
-        'id': 1,
-        'method': 'state_getStorage',
-        'params': [eventsKey, blockHash],
-      }),
-    );
-    final eventsResult = jsonDecode(eventsResponse.body);
-    final eventsHex = eventsResult['result'] as String?;
-
-    if (eventsHex == null) {
-      return null;
-    }
-
-    // Look for wormhole events in this block
-    final wormholeResult = _checkForWormholeEvents(eventsHex, txIndex);
-
-    if (wormholeResult != null) {
-      _debug('confirm: outcome success=${wormholeResult['success']} error=${wormholeResult['error']}');
-      return wormholeResult['success'] == true;
-    }
-
-    // Transaction found but no clear success/failure event - check for ExtrinsicSuccess
-    final hasExtrinsicSuccess = _checkForExtrinsicSuccess(eventsHex, txIndex);
-    if (hasExtrinsicSuccess) {
-      _debug('confirm: ExtrinsicSuccess found for tx in block=$blockHash');
-      return true;
-    }
-
-    _debug('confirm: tx found but no clear outcome in block=$blockHash');
-    return null;
-  }
-
   /// Check a single block for ProofVerified events (without requiring tx hash match).
   /// Returns true if ProofVerified found, false if error found, null if no wormhole events.
   Future<bool?> _checkBlockForProofVerified({required String rpcUrl, required String blockHash}) async {
@@ -942,63 +893,6 @@ class WormholeWithdrawalService {
     if (wormholeResult != null) {
       _debug('confirm: found ProofVerified in block=$blockHash success=${wormholeResult['success']}');
       return wormholeResult['success'] == true;
-    }
-
-    return null;
-  }
-
-  Future<int?> _findExtrinsicIndexInBlock({
-    required String rpcUrl,
-    required String blockHash,
-    required String txHash,
-  }) async {
-    final response = await http.post(
-      Uri.parse(rpcUrl),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'jsonrpc': '2.0',
-        'id': 1,
-        'method': 'chain_getBlock',
-        'params': [blockHash],
-      }),
-    );
-
-    if (response.statusCode != 200) {
-      return null;
-    }
-
-    final result = jsonDecode(response.body);
-    if (result['error'] != null) {
-      return null;
-    }
-
-    final block = result['result']?['block'];
-    if (block == null) {
-      return null;
-    }
-
-    final extrinsics = (block['extrinsics'] as List<dynamic>? ?? []).cast<String>();
-
-    // Log block info for debugging
-    final blockNumber = block['header']?['number'];
-    _debug('findTx: block=$blockNumber has ${extrinsics.length} extrinsics, looking for $txHash');
-
-    // Log all extrinsic hashes for debugging
-    final extHashes = <String>[];
-    for (var i = 0; i < extrinsics.length; i++) {
-      final extHex = extrinsics[i];
-      final extBytes = _hexToBytes(extHex.startsWith('0x') ? extHex.substring(2) : extHex);
-      final extHash = '0x${_bytesToHex(Hasher.blake2b256.hash(Uint8List.fromList(extBytes)))}'.toLowerCase();
-      extHashes.add(extHash.substring(0, 18));
-      if (extHash == txHash) {
-        return i;
-      }
-    }
-
-    // Log what we found vs what we're looking for
-    if (extrinsics.length > 1) {
-      _debug('findTx: extrinsic hashes in block: ${extHashes.join(", ")}');
-      _debug('findTx: looking for: ${txHash.substring(0, 18)}...');
     }
 
     return null;
@@ -1079,44 +973,6 @@ class WormholeWithdrawalService {
     if (success == null) return null;
 
     return {'success': success, 'error': error};
-  }
-
-  /// Check if ExtrinsicSuccess event exists for the given extrinsic index.
-  /// This is a fallback check when no specific Wormhole event is found.
-  bool _checkForExtrinsicSuccess(String eventsHex, int extrinsicIndex) {
-    final bytes = _hexToBytes(eventsHex.startsWith('0x') ? eventsHex.substring(2) : eventsHex);
-    final input = scale.ByteInput(Uint8List.fromList(bytes));
-
-    try {
-      final numEvents = scale.CompactCodec.codec.decode(input);
-
-      for (var i = 0; i < numEvents; i++) {
-        try {
-          final eventRecord = EventRecord.decode(input);
-          final phase = eventRecord.phase;
-          if (phase is! system_phase.ApplyExtrinsic || phase.value0 != extrinsicIndex) {
-            continue;
-          }
-
-          final event = eventRecord.event;
-
-          // Check for System.ExtrinsicSuccess
-          if (event is runtime_event.System) {
-            final systemEvent = event.value0;
-            if (systemEvent is system_event.ExtrinsicSuccess) {
-              _debug('event System.ExtrinsicSuccess for extrinsic=$extrinsicIndex');
-              return true;
-            }
-          }
-        } catch (e) {
-          break;
-        }
-      }
-    } catch (e) {
-      _debug('_checkForExtrinsicSuccess decode failed: $e');
-    }
-
-    return false;
   }
 
   /// Format a DispatchError into a human-readable string.
