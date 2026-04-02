@@ -98,7 +98,7 @@ class _MinerAppBarState extends State<MinerAppBar> {
                 children: [
                   Row(
                     children: [
-                      SvgPicture.asset('assets/logo/logo.svg'),
+                      SvgPicture.asset('assets/logo/logo.svg', height: 28),
                       const SizedBox(width: 12),
                       const Text(
                         'Quantus Miner',

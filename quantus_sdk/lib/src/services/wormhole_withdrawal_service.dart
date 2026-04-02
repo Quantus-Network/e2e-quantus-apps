@@ -889,6 +889,9 @@ class WormholeWithdrawalService {
   }
 
   /// Wait for a transaction to be confirmed.
+  ///
+  /// Searches backwards through recent blocks to find where the tx was included,
+  /// since on dev chains transactions may be included instantly before polling starts.
   Future<bool> _waitForTransactionConfirmation({
     required String txHash,
     required String rpcUrl,
@@ -898,86 +901,157 @@ class WormholeWithdrawalService {
     Duration pollInterval = const Duration(seconds: 2),
   }) async {
     final targetTxHash = txHash.toLowerCase();
-    String? lastBlockHash;
+    final checkedBlocks = <String>{};
+
+    _debug('confirm: waiting for tx=$targetTxHash');
 
     for (var attempt = 0; attempt < maxAttempts; attempt++) {
-      await Future.delayed(pollInterval);
+      if (attempt > 0) {
+        await Future.delayed(pollInterval);
+      }
 
       try {
-        // Get block hash
-        final hashResponse = await http.post(
-          Uri.parse(rpcUrl),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'jsonrpc': '2.0',
-            'id': 1,
-            'method': 'chain_getBlockHash',
-            'params': [],
-          }),
-        );
-        final hashResult = jsonDecode(hashResponse.body);
-        final currentBlockHash = hashResult['result'] as String?;
-
-        if (currentBlockHash == null || currentBlockHash == lastBlockHash) {
+        // Get latest block hash and search backwards
+        final latestBlockHash = await _getLatestBlockHash(rpcUrl);
+        if (latestBlockHash == null) {
+          _debug('confirm: failed to get latest block hash');
           continue;
         }
 
-        lastBlockHash = currentBlockHash;
+        // Search backwards through recent blocks (up to 10 blocks back)
+        String? currentBlockHash = latestBlockHash;
+        for (
+          var blockDepth = 0;
+          blockDepth < 10 && currentBlockHash != null;
+          blockDepth++
+        ) {
+          if (checkedBlocks.contains(currentBlockHash)) {
+            // Already checked this block, get parent and continue
+            currentBlockHash = await _getParentBlockHash(
+              rpcUrl,
+              currentBlockHash,
+            );
+            continue;
+          }
+          checkedBlocks.add(currentBlockHash);
 
-        final txIndex = await _findExtrinsicIndexInBlock(
-          rpcUrl: rpcUrl,
-          blockHash: currentBlockHash,
-          txHash: targetTxHash,
-        );
-
-        if (txIndex == null) {
-          _debug(
-            'confirm attempt=${attempt + 1}/$maxAttempts no tx in block=$currentBlockHash',
+          final result = await _checkBlockForTx(
+            rpcUrl: rpcUrl,
+            blockHash: currentBlockHash,
+            txHash: targetTxHash,
           );
-          continue;
+
+          if (result != null) {
+            return result;
+          }
+
+          // Get parent block hash
+          currentBlockHash = await _getParentBlockHash(
+            rpcUrl,
+            currentBlockHash,
+          );
         }
+
         _debug(
-          'confirm found tx in block=$currentBlockHash extrinsicIndex=$txIndex',
+          'confirm attempt=${attempt + 1}/$maxAttempts: checked ${checkedBlocks.length} blocks, tx not found yet',
         );
-
-        // Check events in this block for wormhole activity
-        final eventsKey = '0x${_twox128('System')}${_twox128('Events')}';
-        final eventsResponse = await http.post(
-          Uri.parse(rpcUrl),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'jsonrpc': '2.0',
-            'id': 1,
-            'method': 'state_getStorage',
-            'params': [eventsKey, currentBlockHash],
-          }),
-        );
-        final eventsResult = jsonDecode(eventsResponse.body);
-        final eventsHex = eventsResult['result'] as String?;
-
-        if (eventsHex == null) {
-          continue;
-        }
-
-        // Look for wormhole events in this block
-        final wormholeResult = _checkForWormholeEvents(eventsHex, txIndex);
-
-        if (wormholeResult != null) {
-          _debug(
-            'confirm outcome success=${wormholeResult['success']} error=${wormholeResult['error']}',
-          );
-          return wormholeResult['success'] == true;
-        }
-
-        _debug('confirm no wormhole outcome for tx in block=$currentBlockHash');
-        return false;
       } catch (e) {
         _debug('confirm attempt=${attempt + 1}/$maxAttempts error=$e');
-        // Continue trying
       }
     }
 
     return false;
+  }
+
+  /// Get the latest block hash.
+  Future<String?> _getLatestBlockHash(String rpcUrl) async {
+    final response = await http.post(
+      Uri.parse(rpcUrl),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'jsonrpc': '2.0',
+        'id': 1,
+        'method': 'chain_getBlockHash',
+        'params': [],
+      }),
+    );
+    final result = jsonDecode(response.body);
+    return result['result'] as String?;
+  }
+
+  /// Get parent block hash from a block.
+  Future<String?> _getParentBlockHash(String rpcUrl, String blockHash) async {
+    final response = await http.post(
+      Uri.parse(rpcUrl),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'jsonrpc': '2.0',
+        'id': 1,
+        'method': 'chain_getBlock',
+        'params': [blockHash],
+      }),
+    );
+    final result = jsonDecode(response.body);
+    return result['result']?['block']?['header']?['parentHash'] as String?;
+  }
+
+  /// Check a single block for the transaction and return confirmation result.
+  /// Returns true if confirmed, false if failed, null if tx not in this block.
+  Future<bool?> _checkBlockForTx({
+    required String rpcUrl,
+    required String blockHash,
+    required String txHash,
+  }) async {
+    final txIndex = await _findExtrinsicIndexInBlock(
+      rpcUrl: rpcUrl,
+      blockHash: blockHash,
+      txHash: txHash,
+    );
+
+    if (txIndex == null) {
+      return null; // tx not in this block
+    }
+
+    _debug('confirm: found tx in block=$blockHash extrinsicIndex=$txIndex');
+
+    // Check events in this block for wormhole activity
+    final eventsKey = '0x${_twox128('System')}${_twox128('Events')}';
+    final eventsResponse = await http.post(
+      Uri.parse(rpcUrl),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'jsonrpc': '2.0',
+        'id': 1,
+        'method': 'state_getStorage',
+        'params': [eventsKey, blockHash],
+      }),
+    );
+    final eventsResult = jsonDecode(eventsResponse.body);
+    final eventsHex = eventsResult['result'] as String?;
+
+    if (eventsHex == null) {
+      return null;
+    }
+
+    // Look for wormhole events in this block
+    final wormholeResult = _checkForWormholeEvents(eventsHex, txIndex);
+
+    if (wormholeResult != null) {
+      _debug(
+        'confirm: outcome success=${wormholeResult['success']} error=${wormholeResult['error']}',
+      );
+      return wormholeResult['success'] == true;
+    }
+
+    // Transaction found but no clear success/failure event - check for ExtrinsicSuccess
+    final hasExtrinsicSuccess = _checkForExtrinsicSuccess(eventsHex, txIndex);
+    if (hasExtrinsicSuccess) {
+      _debug('confirm: ExtrinsicSuccess found for tx in block=$blockHash');
+      return true;
+    }
+
+    _debug('confirm: tx found but no clear outcome in block=$blockHash');
+    return null;
   }
 
   Future<int?> _findExtrinsicIndexInBlock({
@@ -1012,6 +1086,13 @@ class WormholeWithdrawalService {
 
     final extrinsics = (block['extrinsics'] as List<dynamic>? ?? [])
         .cast<String>();
+
+    // Log block info for debugging
+    final blockNumber = block['header']?['number'];
+    _debug(
+      'findTx: block=$blockNumber has ${extrinsics.length} extrinsics, looking for $txHash',
+    );
+
     for (var i = 0; i < extrinsics.length; i++) {
       final extHex = extrinsics[i];
       final extBytes = _hexToBytes(
@@ -1113,6 +1194,49 @@ class WormholeWithdrawalService {
     return {'success': success, 'error': error};
   }
 
+  /// Check if ExtrinsicSuccess event exists for the given extrinsic index.
+  /// This is a fallback check when no specific Wormhole event is found.
+  bool _checkForExtrinsicSuccess(String eventsHex, int extrinsicIndex) {
+    final bytes = _hexToBytes(
+      eventsHex.startsWith('0x') ? eventsHex.substring(2) : eventsHex,
+    );
+    final input = scale.ByteInput(Uint8List.fromList(bytes));
+
+    try {
+      final numEvents = scale.CompactCodec.codec.decode(input);
+
+      for (var i = 0; i < numEvents; i++) {
+        try {
+          final eventRecord = EventRecord.decode(input);
+          final phase = eventRecord.phase;
+          if (phase is! system_phase.ApplyExtrinsic ||
+              phase.value0 != extrinsicIndex) {
+            continue;
+          }
+
+          final event = eventRecord.event;
+
+          // Check for System.ExtrinsicSuccess
+          if (event is runtime_event.System) {
+            final systemEvent = event.value0;
+            if (systemEvent is system_event.ExtrinsicSuccess) {
+              _debug(
+                'event System.ExtrinsicSuccess for extrinsic=$extrinsicIndex',
+              );
+              return true;
+            }
+          }
+        } catch (e) {
+          break;
+        }
+      }
+    } catch (e) {
+      _debug('_checkForExtrinsicSuccess decode failed: $e');
+    }
+
+    return false;
+  }
+
   /// Format a DispatchError into a human-readable string.
   String _formatDispatchError(dispatch_error.DispatchError err) {
     if (err is dispatch_error.Module) {
@@ -1160,7 +1284,11 @@ class WormholeWithdrawalService {
     if (!enableDebugLogs) {
       return;
     }
-    print('[WormholeWithdrawalService] $message');
+    final now = DateTime.now();
+    final timestamp =
+        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
+    // ignore: avoid_print
+    print('flutter: [$timestamp] [I] [Withdrawal] $message');
   }
 
   String _shortHex(String value) {

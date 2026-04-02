@@ -106,8 +106,13 @@ class TrackedTransfer {
 /// - Using an indexer like Subsquid
 /// - Manual entry of transfer details
 class TransferTrackingService {
+  // Singleton instance
+  static final TransferTrackingService _instance =
+      TransferTrackingService._internal();
+  factory TransferTrackingService() => _instance;
+  TransferTrackingService._internal();
+
   static const String _storageFileName = 'mining_transfers.json';
-  static bool _devChainCacheClearedThisSession = false;
 
   String? _rpcUrl;
 
@@ -119,13 +124,22 @@ class TransferTrackingService {
   final Map<String, List<TrackedTransfer>> _transfersByAddress = {};
 
   /// Initialize the service with RPC URL and wormhole addresses to track.
-  void initialize({
+  ///
+  /// On dev chains, this clears any stale transfers from previous chain states.
+  Future<void> initialize({
     required String rpcUrl,
     required Set<String> wormholeAddresses,
-  }) {
+  }) async {
     _rpcUrl = rpcUrl;
     _trackedAddresses.clear();
     _trackedAddresses.addAll(wormholeAddresses);
+
+    // On dev chains, clear stale transfers since the chain resets on restart
+    if (await _isDevChain()) {
+      _log.i('Development chain detected; clearing stale tracked transfers');
+      await clearAllTransfers();
+    }
+
     _log.i(
       'Initialized transfer tracking for ${wormholeAddresses.length} addresses',
     );
@@ -141,17 +155,7 @@ class TransferTrackingService {
   Set<String> get trackedAddresses => Set.unmodifiable(_trackedAddresses);
 
   /// Load previously tracked transfers from disk.
-  ///
   Future<void> loadFromDisk() async {
-    if (!_devChainCacheClearedThisSession && await _isDevChain()) {
-      _log.i(
-        'Development chain detected via system_chain; clearing tracked transfers',
-      );
-      await clearAllTransfers();
-      _devChainCacheClearedThisSession = true;
-      return;
-    }
-
     try {
       final file = await _getStorageFile();
       if (await file.exists()) {
@@ -249,8 +253,8 @@ class TransferTrackingService {
 
     try {
       final transfers = await _getTransfersFromBlock(blockHash);
-      _log.i(
-        'Block $blockNumber has ${transfers.length} total wormhole transfers',
+      _log.d(
+        'Block $blockNumber has ${transfers.length} NativeTransferred events',
       );
 
       // Filter for transfers to any of our tracked wormhole addresses
@@ -258,13 +262,9 @@ class TransferTrackingService {
           .where((t) => _trackedAddresses.contains(t.wormholeAddress))
           .toList();
 
-      _log.i(
-        'Block $blockNumber: ${relevantTransfers.length} transfers match tracked addresses',
-      );
-
       if (relevantTransfers.isNotEmpty) {
         _log.i(
-          'Found ${relevantTransfers.length} transfer(s) to tracked addresses in block $blockNumber',
+          'Block $blockNumber: found ${relevantTransfers.length} transfer(s) to our tracked addresses',
         );
 
         // Add to in-memory cache, grouped by address
@@ -277,7 +277,7 @@ class TransferTrackingService {
 
         // Persist to disk
         await saveToDisk();
-        _log.i('Saved ${relevantTransfers.length} transfers to disk');
+        _log.d('Saved ${relevantTransfers.length} transfers to disk');
       }
 
       _lastProcessedBlock = blockNumber;
@@ -346,9 +346,6 @@ class TransferTrackingService {
 
       final storageKey = '0x$modulePrefix$storagePrefix$keyHash';
 
-      _log.d('Checking nullifier: $nullifierBytes');
-      _log.d('Storage key: $storageKey');
-
       final response = await http.post(
         Uri.parse(_rpcUrl!),
         headers: {'Content-Type': 'application/json'},
@@ -370,10 +367,9 @@ class TransferTrackingService {
       final value = result['result'] as String?;
       final isConsumed = value != null && value != '0x' && value.isNotEmpty;
 
+      // Only log consumed nullifiers (interesting case)
       if (isConsumed) {
-        _log.i('Nullifier is CONSUMED: $nullifierHex');
-      } else {
-        _log.d('Nullifier is unspent: $nullifierHex');
+        _log.i('Nullifier consumed: ${nullifierHex.substring(0, 18)}...');
       }
 
       return isConsumed;
@@ -418,7 +414,7 @@ class TransferTrackingService {
         return [];
       }
 
-      _log.d('Got events data: ${eventsHex.length} chars');
+      // Events data received (${eventsHex.length} chars)
 
       // Decode events and extract NativeTransferred
       return _decodeNativeTransferredEvents(eventsHex, blockHash);
@@ -471,32 +467,28 @@ class TransferTrackingService {
 
       // Decode Vec<EventRecord>
       final numEvents = scale.CompactCodec.codec.decode(input);
-      _log.d('Block has $numEvents events');
 
       for (var i = 0; i < numEvents; i++) {
         try {
           // Use the generated EventRecord codec to decode each event
           final eventRecord = EventRecord.decode(input);
 
-          // Check if this is a Wormhole event
+          // Check if this is a Wormhole pallet event
+          // Note: The Wormhole pallet emits NativeTransferred for ALL transfers
+          // into wormhole-compatible addresses (which are indistinguishable from
+          // normal addresses on-chain). We filter by our tracked addresses later.
           final event = eventRecord.event;
-          _log.d('Event $i: ${event.runtimeType}');
 
           if (event is runtime_event.Wormhole) {
             final wormholeEvent = event.value0;
-            _log.i('Found Wormhole event: ${wormholeEvent.runtimeType}');
 
-            // Check if it's a NativeTransferred event
+            // Check if it's a NativeTransferred event (emitted for deposits into any address)
             if (wormholeEvent is wormhole_event.NativeTransferred) {
               final toSs58 = _accountIdToSs58(
                 Uint8List.fromList(wormholeEvent.to),
               );
               final fromSs58 = _accountIdToSs58(
                 Uint8List.fromList(wormholeEvent.from),
-              );
-
-              _log.i(
-                'Found NativeTransferred: to=$toSs58, amount=${wormholeEvent.amount}, count=${wormholeEvent.transferCount}',
               );
 
               transfers.add(

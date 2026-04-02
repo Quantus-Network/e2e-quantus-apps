@@ -102,21 +102,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
         await _addressManager.initialize();
       }
 
-      // Initialize the tracking service with current chain config
-      final settingsService = MinerSettingsService();
-      final chainConfig = await settingsService.getChainConfig();
-
-      // Get all known addresses (primary + change addresses)
-      final allAddresses = _addressManager.allAddressStrings;
-      final addressesToTrack = allAddresses.isNotEmpty
-          ? allAddresses
-          : {widget.wormholeAddress};
-
-      _transferTrackingService.initialize(
-        rpcUrl: chainConfig.rpcUrl,
-        wormholeAddresses: addressesToTrack,
-      );
-
+      // Load tracked transfers from disk (service already initialized by mining orchestrator)
       await _transferTrackingService.loadFromDisk();
 
       // Get unspent transfers for ALL tracked addresses

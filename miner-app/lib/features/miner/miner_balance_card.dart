@@ -142,26 +142,10 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
 
   Future<void> _fetchBalanceWithSecret(String address, String secretHex) async {
     try {
-      // Initialize address manager and transfer tracking
+      // Initialize address manager (transfer tracking is initialized by MiningOrchestrator)
       await _addressManager.initialize();
 
-      // Get chain config for RPC URL
-      final settingsService = MinerSettingsService();
-      final chainConfig = await settingsService.getChainConfig();
-
-      // Initialize transfer tracking with all known addresses
-      final allAddresses = _addressManager.allAddressStrings;
-      if (allAddresses.isEmpty) {
-        _transferTrackingService.initialize(
-          rpcUrl: chainConfig.rpcUrl,
-          wormholeAddresses: {address},
-        );
-      } else {
-        _transferTrackingService.initialize(
-          rpcUrl: chainConfig.rpcUrl,
-          wormholeAddresses: allAddresses,
-        );
-      }
+      // Ensure we have latest data from disk (safe to call multiple times)
       await _transferTrackingService.loadFromDisk();
 
       _log.i('=== BALANCE QUERY DEBUG ===');

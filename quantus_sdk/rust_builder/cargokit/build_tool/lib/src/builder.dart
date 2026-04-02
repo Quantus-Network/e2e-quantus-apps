@@ -15,19 +15,15 @@ import 'util.dart';
 
 final _log = Logger('builder');
 
-enum BuildConfiguration {
-  debug,
-  release,
-  profile,
-}
+enum BuildConfiguration { debug, release, profile }
 
 extension on BuildConfiguration {
   bool get isDebug => this == BuildConfiguration.debug;
   String get rustName => switch (this) {
-        BuildConfiguration.debug => 'debug',
-        BuildConfiguration.release => 'release',
-        BuildConfiguration.profile => 'release',
-      };
+    BuildConfiguration.debug => 'debug',
+    BuildConfiguration.release => 'release',
+    BuildConfiguration.profile => 'release',
+  };
 }
 
 class BuildException implements Exception {
@@ -68,26 +64,17 @@ class BuildEnvironment {
   });
 
   static BuildConfiguration parseBuildConfiguration(String value) {
-    // XCode configuration adds the flavor to configuration name.
-    final firstSegment = value.split('-').first;
-    final buildConfiguration = BuildConfiguration.values.firstWhereOrNull(
-      (e) => e.name == firstSegment,
-    );
-    if (buildConfiguration == null) {
-      _log.warning('Unknown build configuraiton $value, will assume release');
-      return BuildConfiguration.release;
-    }
-    return buildConfiguration;
+    // Always use release mode for Rust builds - ZK proof generation is too slow in debug mode
+    _log.info('Forcing release mode for Rust build (requested: $value)');
+    return BuildConfiguration.release;
   }
 
-  static BuildEnvironment fromEnvironment({
-    required bool isAndroid,
-  }) {
-    final buildConfiguration = parseBuildConfiguration(Environment.configuration);
-    final manifestDir = Environment.manifestDir;
-    final crateOptions = CargokitCrateOptions.load(
-      manifestDir: manifestDir,
+  static BuildEnvironment fromEnvironment({required bool isAndroid}) {
+    final buildConfiguration = parseBuildConfiguration(
+      Environment.configuration,
     );
+    final manifestDir = Environment.manifestDir;
+    final crateOptions = CargokitCrateOptions.load(manifestDir: manifestDir);
     final crateInfo = CrateInfo.load(manifestDir);
     return BuildEnvironment(
       configuration: buildConfiguration,
@@ -98,7 +85,9 @@ class BuildEnvironment {
       isAndroid: isAndroid,
       androidSdkPath: isAndroid ? Environment.sdkPath : null,
       androidNdkVersion: isAndroid ? Environment.ndkVersion : null,
-      androidMinSdkVersion: isAndroid ? int.parse(Environment.minSdkVersion) : null,
+      androidMinSdkVersion: isAndroid
+          ? int.parse(Environment.minSdkVersion)
+          : null,
       javaHome: isAndroid ? Environment.javaHome : null,
     );
   }
@@ -108,14 +97,9 @@ class RustBuilder {
   final Target target;
   final BuildEnvironment environment;
 
-  RustBuilder({
-    required this.target,
-    required this.environment,
-  });
+  RustBuilder({required this.target, required this.environment});
 
-  void prepare(
-    Rustup rustup,
-  ) {
+  void prepare(Rustup rustup) {
     final toolchain = _toolchain;
     if (rustup.installedTargets(toolchain) == null) {
       rustup.installToolchain(toolchain);
@@ -128,7 +112,8 @@ class RustBuilder {
     }
   }
 
-  CargoBuildOptions? get _buildOptions => environment.crateOptions.cargo[environment.configuration];
+  CargoBuildOptions? get _buildOptions =>
+      environment.crateOptions.cargo[environment.configuration];
 
   String get _toolchain => _buildOptions?.toolchain.name ?? 'stable';
 
@@ -136,26 +121,22 @@ class RustBuilder {
   Future<String> build() async {
     final extraArgs = _buildOptions?.flags ?? [];
     final manifestPath = path.join(environment.manifestDir, 'Cargo.toml');
-    runCommand(
-      'rustup',
-      [
-        'run',
-        _toolchain,
-        'cargo',
-        'build',
-        ...extraArgs,
-        '--manifest-path',
-        manifestPath,
-        '-p',
-        environment.crateInfo.packageName,
-        if (!environment.configuration.isDebug) '--release',
-        '--target',
-        target.rust,
-        '--target-dir',
-        environment.targetTempDir,
-      ],
-      environment: await _buildEnvironment(),
-    );
+    runCommand('rustup', [
+      'run',
+      _toolchain,
+      'cargo',
+      'build',
+      ...extraArgs,
+      '--manifest-path',
+      manifestPath,
+      '-p',
+      environment.crateInfo.packageName,
+      if (!environment.configuration.isDebug) '--release',
+      '--target',
+      target.rust,
+      '--target-dir',
+      environment.targetTempDir,
+    ], environment: await _buildEnvironment());
     return path.join(
       environment.targetTempDir,
       target.rust,

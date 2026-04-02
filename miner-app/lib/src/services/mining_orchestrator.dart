@@ -267,7 +267,7 @@ class MiningOrchestrator {
 
       // Initialize transfer tracking for withdrawal proof generation
       if (config.wormholeAddress != null) {
-        _transferTrackingService.initialize(
+        await _transferTrackingService.initialize(
           rpcUrl: MinerConfig.nodeRpcUrl(MinerConfig.defaultNodeRpcPort),
           wormholeAddresses: {config.wormholeAddress!},
         );
