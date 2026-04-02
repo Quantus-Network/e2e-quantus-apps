@@ -99,49 +99,28 @@ class GenKeyCommand extends Command {
 class PrecompileBinariesCommand extends Command {
   PrecompileBinariesCommand() {
     argParser
-      ..addOption(
-        'repository',
-        mandatory: true,
-        help: 'Github repository slug in format owner/name',
+      ..addOption('repository', mandatory: true, help: 'Github repository slug in format owner/name')
+      ..addOption('manifest-dir', mandatory: true, help: 'Directory containing Cargo.toml')
+      ..addMultiOption(
+        'target',
+        help:
+            'Rust target triple of artifact to build.\n'
+            'Can be specified multiple times or omitted in which case\n'
+            'all targets for current platform will be built.',
       )
-      ..addOption(
-        'manifest-dir',
-        mandatory: true,
-        help: 'Directory containing Cargo.toml',
-      )
-      ..addMultiOption('target',
-          help: 'Rust target triple of artifact to build.\n'
-              'Can be specified multiple times or omitted in which case\n'
-              'all targets for current platform will be built.')
-      ..addOption(
-        'android-sdk-location',
-        help: 'Location of Android SDK (if available)',
-      )
-      ..addOption(
-        'android-ndk-version',
-        help: 'Android NDK version (if available)',
-      )
-      ..addOption(
-        'android-min-sdk-version',
-        help: 'Android minimum rquired version (if available)',
-      )
-      ..addOption(
-        'temp-dir',
-        help: 'Directory to store temporary build artifacts',
-      )
-      ..addFlag(
-        "verbose",
-        abbr: "v",
-        defaultsTo: false,
-        help: "Enable verbose logging",
-      );
+      ..addOption('android-sdk-location', help: 'Location of Android SDK (if available)')
+      ..addOption('android-ndk-version', help: 'Android NDK version (if available)')
+      ..addOption('android-min-sdk-version', help: 'Android minimum rquired version (if available)')
+      ..addOption('temp-dir', help: 'Directory to store temporary build artifacts')
+      ..addFlag("verbose", abbr: "v", defaultsTo: false, help: "Enable verbose logging");
   }
 
   @override
   final name = 'precompile-binaries';
 
   @override
-  final description = 'Prebuild and upload binaries\n'
+  final description =
+      'Prebuild and upload binaries\n'
       'Private key must be passed through PRIVATE_KEY environment variable. '
       'Use gen_key through generate priave key.\n'
       'Github token must be passed as GITHUB_TOKEN environment variable.\n';
@@ -178,13 +157,15 @@ class PrecompileBinariesCommand extends Command {
       }
     }
     final targetStrigns = argResults!['target'] as List<String>;
-    final targets = targetStrigns.map((target) {
-      final res = Target.forRustTriple(target);
-      if (res == null) {
-        throw ArgumentError('Invalid target: $target');
-      }
-      return res;
-    }).toList(growable: false);
+    final targets = targetStrigns
+        .map((target) {
+          final res = Target.forRustTriple(target);
+          if (res == null) {
+            throw ArgumentError('Invalid target: $target');
+          }
+          return res;
+        })
+        .toList(growable: false);
     final precompileBinaries = PrecompileBinaries(
       privateKey: PrivateKey(privateKey),
       githubToken: githubToken,
@@ -203,27 +184,22 @@ class PrecompileBinariesCommand extends Command {
 
 class VerifyBinariesCommand extends Command {
   VerifyBinariesCommand() {
-    argParser.addOption(
-      'manifest-dir',
-      mandatory: true,
-      help: 'Directory containing Cargo.toml',
-    );
+    argParser.addOption('manifest-dir', mandatory: true, help: 'Directory containing Cargo.toml');
   }
 
   @override
   final name = "verify-binaries";
 
   @override
-  final description = 'Verifies published binaries\n'
+  final description =
+      'Verifies published binaries\n'
       'Checks whether there is a binary published for each targets\n'
       'and checks the signature.';
 
   @override
   Future<void> run() async {
     final manifestDir = argResults!['manifest-dir'] as String;
-    final verifyBinaries = VerifyBinaries(
-      manifestDir: manifestDir,
-    );
+    final verifyBinaries = VerifyBinaries(manifestDir: manifestDir);
     await verifyBinaries.run();
   }
 }

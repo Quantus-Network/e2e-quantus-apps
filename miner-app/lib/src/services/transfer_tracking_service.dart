@@ -9,10 +9,8 @@ import 'package:polkadart/scale_codec.dart' as scale;
 import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/generated/planck/types/frame_system/event_record.dart';
-import 'package:quantus_sdk/generated/planck/types/pallet_wormhole/pallet/event.dart'
-    as wormhole_event;
-import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_event.dart'
-    as runtime_event;
+import 'package:quantus_sdk/generated/planck/types/pallet_wormhole/pallet/event.dart' as wormhole_event;
+import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_event.dart' as runtime_event;
 import 'package:ss58/ss58.dart' as ss58;
 
 final _log = log.withTag('TransferTracking');
@@ -89,8 +87,7 @@ class TrackedTransfer {
   }
 
   @override
-  String toString() =>
-      'TrackedTransfer(block: $blockNumber, count: $transferCount, amount: $amount)';
+  String toString() => 'TrackedTransfer(block: $blockNumber, count: $transferCount, amount: $amount)';
 }
 
 /// Service for tracking mining reward transfers.
@@ -107,8 +104,7 @@ class TrackedTransfer {
 /// - Manual entry of transfer details
 class TransferTrackingService {
   // Singleton instance
-  static final TransferTrackingService _instance =
-      TransferTrackingService._internal();
+  static final TransferTrackingService _instance = TransferTrackingService._internal();
   factory TransferTrackingService() => _instance;
   TransferTrackingService._internal();
 
@@ -130,10 +126,7 @@ class TransferTrackingService {
   /// Initialize the service with RPC URL and wormhole addresses to track.
   ///
   /// On dev chains, this clears any stale transfers from previous chain states.
-  Future<void> initialize({
-    required String rpcUrl,
-    required Set<String> wormholeAddresses,
-  }) async {
+  Future<void> initialize({required String rpcUrl, required Set<String> wormholeAddresses}) async {
     _rpcUrl = rpcUrl;
     _trackedAddresses.clear();
     _trackedAddresses.addAll(wormholeAddresses);
@@ -145,9 +138,7 @@ class TransferTrackingService {
     }
 
     _initialized = true;
-    _log.i(
-      'Initialized transfer tracking for ${wormholeAddresses.length} addresses',
-    );
+    _log.i('Initialized transfer tracking for ${wormholeAddresses.length} addresses');
   }
 
   /// Add a new address to track.
@@ -180,9 +171,7 @@ class TransferTrackingService {
         }
 
         _lastProcessedBlock = data['lastProcessedBlock'] as int? ?? 0;
-        _log.i(
-          'Loaded ${_transfersByAddress.values.expand((t) => t).length} transfers from disk',
-        );
+        _log.i('Loaded ${_transfersByAddress.values.expand((t) => t).length} transfers from disk');
       }
     } catch (e) {
       _log.e('Failed to load transfers from disk', error: e);
@@ -212,8 +201,7 @@ class TransferTrackingService {
       final data = {
         'lastProcessedBlock': _lastProcessedBlock,
         'transfers': _transfersByAddress.map(
-          (address, transfers) =>
-              MapEntry(address, transfers.map((t) => t.toJson()).toList()),
+          (address, transfers) => MapEntry(address, transfers.map((t) => t.toJson()).toList()),
         ),
       };
       await file.writeAsString(jsonEncode(data));
@@ -247,38 +235,26 @@ class TransferTrackingService {
 
     // Skip if we've already processed this block
     if (blockNumber <= _lastProcessedBlock) {
-      _log.d(
-        'Skipping block $blockNumber (already processed up to $_lastProcessedBlock)',
-      );
+      _log.d('Skipping block $blockNumber (already processed up to $_lastProcessedBlock)');
       return;
     }
 
-    _log.i(
-      'Processing block $blockNumber for transfers to ${_trackedAddresses.length} tracked addresses',
-    );
+    _log.i('Processing block $blockNumber for transfers to ${_trackedAddresses.length} tracked addresses');
 
     try {
       final transfers = await _getTransfersFromBlock(blockHash);
-      _log.d(
-        'Block $blockNumber has ${transfers.length} NativeTransferred events',
-      );
+      _log.d('Block $blockNumber has ${transfers.length} NativeTransferred events');
 
       // Filter for transfers to any of our tracked wormhole addresses
-      final relevantTransfers = transfers
-          .where((t) => _trackedAddresses.contains(t.wormholeAddress))
-          .toList();
+      final relevantTransfers = transfers.where((t) => _trackedAddresses.contains(t.wormholeAddress)).toList();
 
       if (relevantTransfers.isNotEmpty) {
-        _log.i(
-          'Block $blockNumber: found ${relevantTransfers.length} transfer(s) to our tracked addresses',
-        );
+        _log.i('Block $blockNumber: found ${relevantTransfers.length} transfer(s) to our tracked addresses');
 
         // Add to in-memory cache, grouped by address
         for (final transfer in relevantTransfers) {
           final transferWithBlock = transfer.copyWith(blockNumber: blockNumber);
-          _transfersByAddress
-              .putIfAbsent(transfer.wormholeAddress, () => [])
-              .add(transferWithBlock);
+          _transfersByAddress.putIfAbsent(transfer.wormholeAddress, () => []).add(transferWithBlock);
         }
 
         // Persist to disk
@@ -325,10 +301,7 @@ class TransferTrackingService {
     final unspent = <TrackedTransfer>[];
 
     for (final transfer in transfers) {
-      final nullifier = wormholeService.computeNullifier(
-        secretHex: secretHex,
-        transferCount: transfer.transferCount,
-      );
+      final nullifier = wormholeService.computeNullifier(secretHex: secretHex, transferCount: transfer.transferCount);
 
       final isConsumed = await _isNullifierConsumed(nullifier);
       if (!isConsumed) {
@@ -346,9 +319,7 @@ class TransferTrackingService {
     try {
       // Query Wormhole::UsedNullifiers storage
       // Storage key: twox128("Wormhole") ++ twox128("UsedNullifiers") ++ blake2_128_concat(nullifier)
-      final nullifierBytes = nullifierHex.startsWith('0x')
-          ? nullifierHex.substring(2)
-          : nullifierHex;
+      final nullifierBytes = nullifierHex.startsWith('0x') ? nullifierHex.substring(2) : nullifierHex;
 
       final modulePrefix = _twox128('Wormhole');
       final storagePrefix = _twox128('UsedNullifiers');
@@ -438,8 +409,7 @@ class TransferTrackingService {
   Future<String?> _getBlockEvents(String blockHash) async {
     // Storage key for System::Events
     // twox128("System") ++ twox128("Events")
-    const storageKey =
-        '0x26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7';
+    const storageKey = '0x26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7';
 
     final response = await http.post(
       Uri.parse(_rpcUrl!),
@@ -465,10 +435,7 @@ class TransferTrackingService {
   ///
   /// The events are SCALE-encoded as `Vec<EventRecord<RuntimeEvent, H256>>`.
   /// We look for Wormhole::NativeTransferred events.
-  List<TrackedTransfer> _decodeNativeTransferredEvents(
-    String eventsHex,
-    String blockHash,
-  ) {
+  List<TrackedTransfer> _decodeNativeTransferredEvents(String eventsHex, String blockHash) {
     final transfers = <TrackedTransfer>[];
 
     try {
@@ -494,12 +461,8 @@ class TransferTrackingService {
 
             // Check if it's a NativeTransferred event (emitted for deposits into any address)
             if (wormholeEvent is wormhole_event.NativeTransferred) {
-              final toSs58 = _accountIdToSs58(
-                Uint8List.fromList(wormholeEvent.to),
-              );
-              final fromSs58 = _accountIdToSs58(
-                Uint8List.fromList(wormholeEvent.from),
-              );
+              final toSs58 = _accountIdToSs58(Uint8List.fromList(wormholeEvent.to));
+              final fromSs58 = _accountIdToSs58(Uint8List.fromList(wormholeEvent.from));
 
               transfers.add(
                 TrackedTransfer(
@@ -509,8 +472,7 @@ class TransferTrackingService {
                   amount: wormholeEvent.amount,
                   wormholeAddress: toSs58,
                   fundingAccount: fromSs58,
-                  fundingAccountHex:
-                      '0x${_bytesToHex(Uint8List.fromList(wormholeEvent.from))}',
+                  fundingAccountHex: '0x${_bytesToHex(Uint8List.fromList(wormholeEvent.from))}',
                   timestamp: DateTime.now(),
                 ),
               );
@@ -554,12 +516,7 @@ class TransferTrackingService {
     final response = await http.post(
       Uri.parse(_rpcUrl!),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'jsonrpc': '2.0',
-        'id': 1,
-        'method': 'system_chain',
-        'params': [],
-      }),
+      body: jsonEncode({'jsonrpc': '2.0', 'id': 1, 'method': 'system_chain', 'params': []}),
     );
 
     final result = jsonDecode(response.body);

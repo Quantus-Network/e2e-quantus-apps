@@ -101,14 +101,9 @@ class MinerStateService {
     if (_wormholeAddress != null) {
       // Collect all addresses to track (primary + any derived change addresses)
       final allAddresses = _addressManager.allAddressStrings;
-      final addressesToTrack = allAddresses.isNotEmpty
-          ? allAddresses
-          : {_wormholeAddress!};
+      final addressesToTrack = allAddresses.isNotEmpty ? allAddresses : {_wormholeAddress!};
 
-      await _transferTrackingService.initialize(
-        rpcUrl: rpcUrl,
-        wormholeAddresses: addressesToTrack,
-      );
+      await _transferTrackingService.initialize(rpcUrl: rpcUrl, wormholeAddresses: addressesToTrack);
       await _transferTrackingService.loadFromDisk();
     }
 
@@ -139,9 +134,7 @@ class MinerStateService {
     // Emit updates
     _sessionController.add(false);
     _blockController.add(0);
-    _balanceController.add(
-      BalanceState(balance: BigInt.zero, unspentCount: 0, canWithdraw: false),
-    );
+    _balanceController.add(BalanceState(balance: BigInt.zero, unspentCount: 0, canWithdraw: false));
 
     _log.i('Mining session stopped');
   }
@@ -162,21 +155,14 @@ class MinerStateService {
     // Re-initialize if we have RPC URL
     if (_rpcUrl != null && _wormholeAddress != null) {
       final allAddresses = _addressManager.allAddressStrings;
-      final addressesToTrack = allAddresses.isNotEmpty
-          ? allAddresses
-          : {_wormholeAddress!};
+      final addressesToTrack = allAddresses.isNotEmpty ? allAddresses : {_wormholeAddress!};
 
-      await _transferTrackingService.initialize(
-        rpcUrl: _rpcUrl!,
-        wormholeAddresses: addressesToTrack,
-      );
+      await _transferTrackingService.initialize(rpcUrl: _rpcUrl!, wormholeAddresses: addressesToTrack);
     }
 
     // Emit updates
     _blockController.add(0);
-    _balanceController.add(
-      BalanceState(balance: BigInt.zero, unspentCount: 0, canWithdraw: false),
-    );
+    _balanceController.add(BalanceState(balance: BigInt.zero, unspentCount: 0, canWithdraw: false));
   }
 
   // === Called by MiningOrchestrator ===
@@ -243,11 +229,10 @@ class MinerStateService {
     final changeAddresses = _addressManager.allAddresses;
     for (final trackedAddr in changeAddresses) {
       if (trackedAddr.address != _wormholeAddress) {
-        final changeUnspent = await _transferTrackingService
-            .getUnspentTransfers(
-              wormholeAddress: trackedAddr.address,
-              secretHex: trackedAddr.secretHex,
-            );
+        final changeUnspent = await _transferTrackingService.getUnspentTransfers(
+          wormholeAddress: trackedAddr.address,
+          secretHex: trackedAddr.secretHex,
+        );
         allUnspent.addAll(changeUnspent);
       }
     }
@@ -286,9 +271,7 @@ class MinerStateService {
     if (_wormholeAddress == null || _secretHex == null) {
       _balance = BigInt.zero;
       _unspentCount = 0;
-      _balanceController.add(
-        BalanceState(balance: BigInt.zero, unspentCount: 0, canWithdraw: false),
-      );
+      _balanceController.add(BalanceState(balance: BigInt.zero, unspentCount: 0, canWithdraw: false));
       return;
     }
 
@@ -310,11 +293,10 @@ class MinerStateService {
     final changeAddresses = _addressManager.allAddresses;
     for (final trackedAddr in changeAddresses) {
       if (trackedAddr.address != _wormholeAddress) {
-        final changeUnspent = await _transferTrackingService
-            .getUnspentTransfers(
-              wormholeAddress: trackedAddr.address,
-              secretHex: trackedAddr.secretHex,
-            );
+        final changeUnspent = await _transferTrackingService.getUnspentTransfers(
+          wormholeAddress: trackedAddr.address,
+          secretHex: trackedAddr.secretHex,
+        );
         for (final transfer in changeUnspent) {
           totalBalance += transfer.amount;
           totalCount++;
@@ -350,13 +332,8 @@ class BalanceState {
   final int unspentCount;
   final bool canWithdraw;
 
-  const BalanceState({
-    required this.balance,
-    required this.unspentCount,
-    required this.canWithdraw,
-  });
+  const BalanceState({required this.balance, required this.unspentCount, required this.canWithdraw});
 
   @override
-  String toString() =>
-      'BalanceState(balance: $balance, unspent: $unspentCount, canWithdraw: $canWithdraw)';
+  String toString() => 'BalanceState(balance: $balance, unspent: $unspentCount, canWithdraw: $canWithdraw)';
 }

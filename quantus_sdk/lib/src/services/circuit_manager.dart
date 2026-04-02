@@ -6,8 +6,7 @@ import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
 /// Progress callback for circuit extraction operations.
-typedef CircuitProgressCallback =
-    void Function(double progress, String message);
+typedef CircuitProgressCallback = void Function(double progress, String message);
 
 /// Information about circuit binary status.
 class CircuitStatus {
@@ -112,9 +111,7 @@ class CircuitManager {
   ///
   /// This is a fast operation (~10 seconds) since we're just copying files,
   /// not generating circuits.
-  Future<bool> extractCircuitsFromAssets({
-    CircuitProgressCallback? onProgress,
-  }) async {
+  Future<bool> extractCircuitsFromAssets({CircuitProgressCallback? onProgress}) async {
     try {
       final circuitDir = await getCircuitDirectory();
       final dir = Directory(circuitDir);
@@ -139,10 +136,7 @@ class CircuitManager {
           // Write to filesystem
           final targetFile = File(path.join(circuitDir, fileName));
           await targetFile.writeAsBytes(
-            byteData.buffer.asUint8List(
-              byteData.offsetInBytes,
-              byteData.lengthInBytes,
-            ),
+            byteData.buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes),
             flush: true,
           );
         } catch (e) {

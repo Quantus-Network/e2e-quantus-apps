@@ -17,11 +17,7 @@ class CommandFailedException implements Exception {
   final List<String> arguments;
   final ProcessResult result;
 
-  CommandFailedException({
-    required this.executable,
-    required this.arguments,
-    required this.result,
-  });
+  CommandFailedException({required this.executable, required this.arguments, required this.result});
 
   @override
   String toString() {
@@ -63,12 +59,7 @@ class TestRunCommandArgs {
 }
 
 class TestRunCommandResult {
-  TestRunCommandResult({
-    this.pid = 1,
-    this.exitCode = 0,
-    this.stdout = '',
-    this.stderr = '',
-  });
+  TestRunCommandResult({this.pid = 1, this.exitCode = 0, this.stdout = '', this.stderr = ''});
 
   final int pid;
   final int exitCode;
@@ -89,22 +80,19 @@ ProcessResult runCommand(
   Encoding? stderrEncoding = systemEncoding,
 }) {
   if (testRunCommandOverride != null) {
-    final result = testRunCommandOverride!(TestRunCommandArgs(
-      executable: executable,
-      arguments: arguments,
-      workingDirectory: workingDirectory,
-      environment: environment,
-      includeParentEnvironment: includeParentEnvironment,
-      runInShell: runInShell,
-      stdoutEncoding: stdoutEncoding,
-      stderrEncoding: stderrEncoding,
-    ));
-    return ProcessResult(
-      result.pid,
-      result.exitCode,
-      result.stdout,
-      result.stderr,
+    final result = testRunCommandOverride!(
+      TestRunCommandArgs(
+        executable: executable,
+        arguments: arguments,
+        workingDirectory: workingDirectory,
+        environment: environment,
+        includeParentEnvironment: includeParentEnvironment,
+        runInShell: runInShell,
+        stdoutEncoding: stdoutEncoding,
+        stderrEncoding: stderrEncoding,
+      ),
     );
+    return ProcessResult(result.pid, result.exitCode, result.stdout, result.stderr);
   }
   log.finer('Running command $executable ${arguments.join(' ')}');
   final res = Process.runSync(
@@ -118,11 +106,7 @@ ProcessResult runCommand(
     stdoutEncoding: stdoutEncoding,
   );
   if (res.exitCode != 0) {
-    throw CommandFailedException(
-      executable: executable,
-      arguments: arguments,
-      result: res,
-    );
+    throw CommandFailedException(executable: executable, arguments: arguments, result: res);
   } else {
     return res;
   }
@@ -138,9 +122,7 @@ class RustupNotFoundException implements Exception {
       'Maybe you need to install Rust? It only takes a minute:',
       ' ',
       if (Platform.isWindows) 'https://www.rust-lang.org/tools/install',
-      if (hasHomebrewRustInPath()) ...[
-        '\$ brew unlink rust # Unlink homebrew Rust from PATH',
-      ],
+      if (hasHomebrewRustInPath()) ...['\$ brew unlink rust # Unlink homebrew Rust from PATH'],
       if (!Platform.isWindows) "\$ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh",
       ' ',
     ].join('\n');

@@ -12,8 +12,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 /// - Withdrawals complete
 class MinerBalanceCard extends StatefulWidget {
   /// Callback when withdraw button is pressed
-  final void Function(BigInt balance, String address, String secretHex)?
-  onWithdraw;
+  final void Function(BigInt balance, String address, String secretHex)? onWithdraw;
 
   const MinerBalanceCard({super.key, this.onWithdraw});
 
@@ -35,13 +34,7 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
         canWithdraw: _stateService.canWithdraw,
       ),
       builder: (context, snapshot) {
-        final balanceState =
-            snapshot.data ??
-            BalanceState(
-              balance: BigInt.zero,
-              unspentCount: 0,
-              canWithdraw: false,
-            );
+        final balanceState = snapshot.data ?? BalanceState(balance: BigInt.zero, unspentCount: 0, canWithdraw: false);
 
         return _buildCard(
           balance: balanceState.balance,
@@ -52,17 +45,10 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
     );
   }
 
-  Widget _buildCard({
-    required BigInt balance,
-    required bool canWithdraw,
-    required bool isSessionActive,
-  }) {
+  Widget _buildCard({required BigInt balance, required bool canWithdraw, required bool isSessionActive}) {
     final address = _stateService.wormholeAddress;
     final secretHex = _stateService.secretHex;
-    final formattedBalance = NumberFormattingService().formatBalance(
-      balance,
-      addSymbol: true,
-    );
+    final formattedBalance = NumberFormattingService().formatBalance(balance, addSymbol: true);
 
     // Determine display state
     String displayBalance;
@@ -85,16 +71,10 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withValues(alpha: 0.1),
-            Colors.white.withValues(alpha: 0.05),
-          ],
+          colors: [Colors.white.withValues(alpha: 0.1), Colors.white.withValues(alpha: 0.05)],
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.1),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.2),
@@ -115,16 +95,10 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF10B981), Color(0xFF059669)],
-                    ),
+                    gradient: const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    Icons.savings,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+                  child: const Icon(Icons.savings, color: Colors.white, size: 20),
                 ),
                 const SizedBox(width: 12),
                 Text(
@@ -158,18 +132,11 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    width: 1,
-                  ),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.link,
-                      color: Colors.white.withValues(alpha: 0.5),
-                      size: 16,
-                    ),
+                    Icon(Icons.link, color: Colors.white.withValues(alpha: 0.5), size: 16),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -184,11 +151,7 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
                       ),
                     ),
                     IconButton(
-                      icon: Icon(
-                        Icons.copy,
-                        color: Colors.white.withValues(alpha: 0.5),
-                        size: 16,
-                      ),
+                      icon: Icon(Icons.copy, color: Colors.white.withValues(alpha: 0.5), size: 16),
                       onPressed: () => context.copyTextWithSnackbar(address),
                       constraints: const BoxConstraints(),
                       padding: EdgeInsets.zero,
@@ -206,26 +169,16 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
                 decoration: BoxDecoration(
                   color: Colors.amber.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.amber.withValues(alpha: 0.2),
-                    width: 1,
-                  ),
+                  border: Border.all(color: Colors.amber.withValues(alpha: 0.2), width: 1),
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: Colors.amber.shade300,
-                      size: 16,
-                    ),
+                    Icon(Icons.info_outline, color: Colors.amber.shade300, size: 16),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Import your full wallet to track balance and withdraw rewards.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.amber.shade200,
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.amber.shade200),
                       ),
                     ),
                   ],
@@ -248,9 +201,7 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
                     backgroundColor: const Color(0xFF10B981),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ),

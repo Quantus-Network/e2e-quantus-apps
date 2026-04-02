@@ -36,19 +36,13 @@ class Artifact {
     }
   }
 
-  Artifact({
-    required this.path,
-    required this.finalFileName,
-  });
+  Artifact({required this.path, required this.finalFileName});
 }
 
 final _log = Logger('artifacts_provider');
 
 class ArtifactProvider {
-  ArtifactProvider({
-    required this.environment,
-    required this.userOptions,
-  });
+  ArtifactProvider({required this.environment, required this.userOptions});
 
   final BuildEnvironment environment;
   final CargokitUserOptions userOptions;
@@ -82,13 +76,10 @@ class ArtifactProvider {
           libraryName: environment.crateInfo.packageName,
           aritifactType: AritifactType.staticlib,
           remote: false,
-        )
+        ),
       };
       final artifacts = artifactNames
-          .map((artifactName) => Artifact(
-                path: path.join(targetDir, artifactName),
-                finalFileName: artifactName,
-              ))
+          .map((artifactName) => Artifact(path: path.join(targetDir, artifactName), finalFileName: artifactName))
           .where((element) => File(element.path).existsSync())
           .toList();
       result[target] = artifacts;
@@ -136,10 +127,7 @@ class ArtifactProvider {
           );
         }
         if (File(downloadedPath).existsSync()) {
-          artifactsForTarget.add(Artifact(
-            path: downloadedPath,
-            finalFileName: artifact,
-          ));
+          artifactsForTarget.add(Artifact(path: downloadedPath, finalFileName: artifact));
         } else {
           break;
         }
@@ -208,10 +196,7 @@ class ArtifactProvider {
   }
 }
 
-enum AritifactType {
-  staticlib,
-  dylib,
-}
+enum AritifactType { staticlib, dylib }
 
 AritifactType artifactTypeForTarget(Target target) {
   if (target.darwinPlatform != null) {

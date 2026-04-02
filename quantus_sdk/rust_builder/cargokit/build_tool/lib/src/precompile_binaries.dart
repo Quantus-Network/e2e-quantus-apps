@@ -54,10 +54,7 @@ class PrecompileBinaries {
 
     final targets = List.of(this.targets);
     if (targets.isEmpty) {
-      targets.addAll([
-        ...Target.buildableTargets(),
-        if (androidSdkLocation != null) ...Target.androidTargets(),
-      ]);
+      targets.addAll([...Target.buildableTargets(), if (androidSdkLocation != null) ...Target.androidTargets()]);
     }
 
     _log.info('Precompiling binaries for $targets');
@@ -76,14 +73,13 @@ class PrecompileBinaries {
       hash: hash,
     );
 
-    final tempDir =
-        this.tempDir != null ? Directory(this.tempDir!) : Directory.systemTemp.createTempSync('precompiled_');
+    final tempDir = this.tempDir != null
+        ? Directory(this.tempDir!)
+        : Directory.systemTemp.createTempSync('precompiled_');
 
     tempDir.createSync(recursive: true);
 
-    final crateOptions = CargokitCrateOptions.load(
-      manifestDir: manifestDir,
-    );
+    final crateOptions = CargokitCrateOptions.load(manifestDir: manifestDir);
 
     final buildEnvironment = BuildEnvironment(
       configuration: BuildConfiguration.release,
@@ -100,11 +96,7 @@ class PrecompileBinaries {
     final rustup = Rustup();
 
     for (final target in targets) {
-      final artifactNames = getArtifactNames(
-        target: target,
-        libraryName: crateInfo.packageName,
-        remote: true,
-      );
+      final artifactNames = getArtifactNames(target: target, libraryName: crateInfo.packageName, remote: true);
 
       if (artifactNames.every((name) {
         final fileName = PrecompileBinaries.fileName(target, name);
@@ -183,16 +175,18 @@ class PrecompileBinaries {
     } on ReleaseNotFound {
       _log.info('Release not found - creating release $tagName');
       release = await repo.createRelease(
-          repositorySlug,
-          CreateRelease.from(
-            tagName: tagName,
-            name: 'Precompiled binaries ${hash.substring(0, 8)}',
-            targetCommitish: null,
-            isDraft: false,
-            isPrerelease: false,
-            body: 'Precompiled binaries for crate $packageName, '
-                'crate hash $hash.',
-          ));
+        repositorySlug,
+        CreateRelease.from(
+          tagName: tagName,
+          name: 'Precompiled binaries ${hash.substring(0, 8)}',
+          targetCommitish: null,
+          isDraft: false,
+          isPrerelease: false,
+          body:
+              'Precompiled binaries for crate $packageName, '
+              'crate hash $hash.',
+        ),
+      );
     }
     return release;
   }

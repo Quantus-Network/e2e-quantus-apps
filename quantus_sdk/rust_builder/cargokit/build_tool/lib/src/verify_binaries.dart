@@ -14,9 +14,7 @@ import 'precompile_binaries.dart';
 import 'target.dart';
 
 class VerifyBinaries {
-  VerifyBinaries({
-    required this.manifestDir,
-  });
+  VerifyBinaries({required this.manifestDir});
 
   final String manifestDir;
 
@@ -36,11 +34,7 @@ class VerifyBinaries {
         stdout.write(message.padRight(40));
         stdout.flush();
 
-        final artifacts = getArtifactNames(
-          target: target,
-          libraryName: crateInfo.packageName,
-          remote: true,
-        );
+        final artifacts = getArtifactNames(target: target, libraryName: crateInfo.packageName, remote: true);
 
         final prefix = precompiledBinaries.uriPrefix;
 

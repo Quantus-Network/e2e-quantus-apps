@@ -10,12 +10,9 @@ class WithdrawalService {
   final MinerSettingsService _settingsService;
   final sdk.WormholeWithdrawalService _sdkWithdrawalService;
 
-  WithdrawalService({
-    MinerSettingsService? settingsService,
-    sdk.WormholeWithdrawalService? sdkWithdrawalService,
-  }) : _settingsService = settingsService ?? MinerSettingsService(),
-       _sdkWithdrawalService =
-           sdkWithdrawalService ?? sdk.WormholeWithdrawalService();
+  WithdrawalService({MinerSettingsService? settingsService, sdk.WormholeWithdrawalService? sdkWithdrawalService})
+    : _settingsService = settingsService ?? MinerSettingsService(),
+      _sdkWithdrawalService = sdkWithdrawalService ?? sdk.WormholeWithdrawalService();
 
   Future<WithdrawalResult> withdraw({
     required String secretHex,

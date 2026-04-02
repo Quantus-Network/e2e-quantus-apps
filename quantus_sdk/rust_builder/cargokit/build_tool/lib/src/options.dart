@@ -47,20 +47,13 @@ class SourceSpanException implements Exception {
   }
 }
 
-enum Toolchain {
-  stable,
-  beta,
-  nightly,
-}
+enum Toolchain { stable, beta, nightly }
 
 class CargoBuildOptions {
   final Toolchain toolchain;
   final List<String> flags;
 
-  CargoBuildOptions({
-    required this.toolchain,
-    required this.flags,
-  });
+  CargoBuildOptions({required this.toolchain, required this.flags});
 
   static Toolchain _toolchainFromNode(YamlNode node) {
     if (node case YamlScalar(value: String name)) {
@@ -111,10 +104,7 @@ class PrecompiledBinaries {
   final String uriPrefix;
   final PublicKey publicKey;
 
-  PrecompiledBinaries({
-    required this.uriPrefix,
-    required this.publicKey,
-  });
+  PrecompiledBinaries({required this.uriPrefix, required this.publicKey});
 
   static PublicKey _publicKeyFromHex(String key, SourceSpan? span) {
     final bytes = HEX.decode(key);
@@ -126,11 +116,7 @@ class PrecompiledBinaries {
 
   static PrecompiledBinaries parse(YamlNode node) {
     if (node case YamlMap(valueMap: Map<dynamic, YamlNode> map)) {
-      if (map
-          case {
-            'url_prefix': YamlNode urlPrefixNode,
-            'public_key': YamlNode publicKeyNode,
-          }) {
+      if (map case {'url_prefix': YamlNode urlPrefixNode, 'public_key': YamlNode publicKeyNode}) {
         final urlPrefix = switch (urlPrefixNode) {
           YamlScalar(value: String urlPrefix) => urlPrefix,
           _ => throw SourceSpanException('Invalid URL prefix value.', urlPrefixNode.span),
@@ -139,25 +125,20 @@ class PrecompiledBinaries {
           YamlScalar(value: String publicKey) => _publicKeyFromHex(publicKey, publicKeyNode.span),
           _ => throw SourceSpanException('Invalid public key value.', publicKeyNode.span),
         };
-        return PrecompiledBinaries(
-          uriPrefix: urlPrefix,
-          publicKey: publicKey,
-        );
+        return PrecompiledBinaries(uriPrefix: urlPrefix, publicKey: publicKey);
       }
     }
     throw SourceSpanException(
-        'Invalid precompiled binaries value. '
-        'Expected Map with "url_prefix" and "public_key".',
-        node.span);
+      'Invalid precompiled binaries value. '
+      'Expected Map with "url_prefix" and "public_key".',
+      node.span,
+    );
   }
 }
 
 /// Cargokit options specified for Rust crate.
 class CargokitCrateOptions {
-  CargokitCrateOptions({
-    this.cargo = const {},
-    this.precompiledBinaries,
-  });
+  CargokitCrateOptions({this.cargo = const {}, this.precompiledBinaries});
 
   final Map<BuildConfiguration, CargoBuildOptions> cargo;
   final PrecompiledBinaries? precompiledBinaries;
@@ -170,11 +151,7 @@ class CargokitCrateOptions {
     PrecompiledBinaries? precompiledBinaries;
 
     for (final entry in node.nodes.entries) {
-      if (entry
-          case MapEntry(
-            key: YamlScalar(value: 'cargo'),
-            value: YamlNode node,
-          )) {
+      if (entry case MapEntry(key: YamlScalar(value: 'cargo'), value: YamlNode node)) {
         if (node is! YamlMap) {
           throw SourceSpanException('Cargo options must be a map', node.span);
         }
@@ -187,24 +164,23 @@ class CargokitCrateOptions {
             }
           }
           throw SourceSpanException(
-              'Unknown build configuration. Must be one of ${BuildConfiguration.values.map((e) => e.name)}.', key.span);
+            'Unknown build configuration. Must be one of ${BuildConfiguration.values.map((e) => e.name)}.',
+            key.span,
+          );
         }
       } else if (entry.key case YamlScalar(value: 'precompiled_binaries')) {
         precompiledBinaries = PrecompiledBinaries.parse(entry.value);
       } else {
         throw SourceSpanException(
-            'Unknown cargokit option type. Must be "cargo" or "precompiled_binaries".', entry.key.span);
+          'Unknown cargokit option type. Must be "cargo" or "precompiled_binaries".',
+          entry.key.span,
+        );
       }
     }
-    return CargokitCrateOptions(
-      cargo: options,
-      precompiledBinaries: precompiledBinaries,
-    );
+    return CargokitCrateOptions(cargo: options, precompiledBinaries: precompiledBinaries);
   }
 
-  static CargokitCrateOptions load({
-    required String manifestDir,
-  }) {
+  static CargokitCrateOptions load({required String manifestDir}) {
     final uri = Uri.file(path.join(manifestDir, "cargokit.yaml"));
     final file = File.fromUri(uri);
     if (file.existsSync()) {
@@ -223,14 +199,9 @@ class CargokitUserOptions {
     return Rustup.executablePath() == null;
   }
 
-  CargokitUserOptions({
-    required this.usePrecompiledBinaries,
-    required this.verboseLogging,
-  });
+  CargokitUserOptions({required this.usePrecompiledBinaries, required this.verboseLogging});
 
-  CargokitUserOptions._()
-      : usePrecompiledBinaries = defaultUsePrecompiledBinaries(),
-        verboseLogging = false;
+  CargokitUserOptions._() : usePrecompiledBinaries = defaultUsePrecompiledBinaries(), verboseLogging = false;
 
   static CargokitUserOptions parse(YamlNode node) {
     if (node is! YamlMap) {
@@ -254,13 +225,12 @@ class CargokitUserOptions {
         throw SourceSpanException('Invalid value for "verbose_logging". Must be a boolean.', entry.value.span);
       } else {
         throw SourceSpanException(
-            'Unknown cargokit option type. Must be "use_precompiled_binaries" or "verbose_logging".', entry.key.span);
+          'Unknown cargokit option type. Must be "use_precompiled_binaries" or "verbose_logging".',
+          entry.key.span,
+        );
       }
     }
-    return CargokitUserOptions(
-      usePrecompiledBinaries: usePrecompiledBinaries,
-      verboseLogging: verboseLogging,
-    );
+    return CargokitUserOptions(usePrecompiledBinaries: usePrecompiledBinaries, verboseLogging: verboseLogging);
   }
 
   static CargokitUserOptions load() {
@@ -270,10 +240,7 @@ class CargokitUserOptions {
     while (userProjectDir.parent.path != userProjectDir.path) {
       final configFile = File(path.join(userProjectDir.path, fileName));
       if (configFile.existsSync()) {
-        final contents = loadYamlNode(
-          configFile.readAsStringSync(),
-          sourceUrl: configFile.uri,
-        );
+        final contents = loadYamlNode(configFile.readAsStringSync(), sourceUrl: configFile.uri);
         final res = parse(contents);
         if (res.verboseLogging) {
           _log.info('Found user options file at ${configFile.path}');

@@ -13,10 +13,8 @@ export 'package:quantus_sdk/src/services/wormhole_address_manager.dart'
 /// Use `WormholeAddressManager()` to get the instance.
 class WormholeAddressManager extends sdk.WormholeAddressManager {
   // Singleton
-  static final WormholeAddressManager _instance =
-      WormholeAddressManager._internal();
+  static final WormholeAddressManager _instance = WormholeAddressManager._internal();
   factory WormholeAddressManager() => _instance;
 
-  WormholeAddressManager._internal()
-    : super(mnemonicProvider: MinerMnemonicProvider());
+  WormholeAddressManager._internal() : super(mnemonicProvider: MinerMnemonicProvider());
 }

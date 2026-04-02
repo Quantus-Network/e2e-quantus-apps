@@ -70,9 +70,7 @@ class BuildEnvironment {
   }
 
   static BuildEnvironment fromEnvironment({required bool isAndroid}) {
-    final buildConfiguration = parseBuildConfiguration(
-      Environment.configuration,
-    );
+    final buildConfiguration = parseBuildConfiguration(Environment.configuration);
     final manifestDir = Environment.manifestDir;
     final crateOptions = CargokitCrateOptions.load(manifestDir: manifestDir);
     final crateInfo = CrateInfo.load(manifestDir);
@@ -85,9 +83,7 @@ class BuildEnvironment {
       isAndroid: isAndroid,
       androidSdkPath: isAndroid ? Environment.sdkPath : null,
       androidNdkVersion: isAndroid ? Environment.ndkVersion : null,
-      androidMinSdkVersion: isAndroid
-          ? int.parse(Environment.minSdkVersion)
-          : null,
+      androidMinSdkVersion: isAndroid ? int.parse(Environment.minSdkVersion) : null,
       javaHome: isAndroid ? Environment.javaHome : null,
     );
   }
@@ -112,8 +108,7 @@ class RustBuilder {
     }
   }
 
-  CargoBuildOptions? get _buildOptions =>
-      environment.crateOptions.cargo[environment.configuration];
+  CargoBuildOptions? get _buildOptions => environment.crateOptions.cargo[environment.configuration];
 
   String get _toolchain => _buildOptions?.toolchain.name ?? 'stable';
 
@@ -137,11 +132,7 @@ class RustBuilder {
       '--target-dir',
       environment.targetTempDir,
     ], environment: await _buildEnvironment());
-    return path.join(
-      environment.targetTempDir,
-      target.rust,
-      environment.configuration.rustName,
-    );
+    return path.join(environment.targetTempDir, target.rust, environment.configuration.rustName);
   }
 
   Future<Map<String, String>> _buildEnvironment() async {

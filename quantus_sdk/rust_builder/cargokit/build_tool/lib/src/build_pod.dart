@@ -31,12 +31,7 @@ class BuildPod {
     final artifacts = await provider.getArtifacts(targets);
 
     void performLipo(String targetFile, Iterable<String> sourceFiles) {
-      runCommand("lipo", [
-        '-create',
-        ...sourceFiles,
-        '-output',
-        targetFile,
-      ]);
+      runCommand("lipo", ['-create', ...sourceFiles, '-output', targetFile]);
     }
 
     final outputDir = Environment.outputDir;
@@ -47,8 +42,10 @@ class BuildPod {
         .expand((element) => element)
         .where((element) => element.type == AritifactType.staticlib)
         .toList();
-    final dynamicLibs =
-        artifacts.values.expand((element) => element).where((element) => element.type == AritifactType.dylib).toList();
+    final dynamicLibs = artifacts.values
+        .expand((element) => element)
+        .where((element) => element.type == AritifactType.dylib)
+        .toList();
 
     final libName = environment.crateInfo.packageName;
 
@@ -58,10 +55,7 @@ class BuildPod {
       performLipo(finalTargetFile, staticLibs.map((e) => e.path));
     } else {
       // Otherwise try to replace bundle dylib with our dylib
-      final bundlePaths = [
-        '$libName.framework/Versions/A/$libName',
-        '$libName.framework/$libName',
-      ];
+      final bundlePaths = ['$libName.framework/Versions/A/$libName', '$libName.framework/$libName'];
 
       for (final bundlePath in bundlePaths) {
         final targetFile = path.join(outputDir, bundlePath);
@@ -70,11 +64,7 @@ class BuildPod {
 
           // Replace absolute id with @rpath one so that it works properly
           // when moved to Frameworks.
-          runCommand("install_name_tool", [
-            '-id',
-            '@rpath/$bundlePath',
-            targetFile,
-          ]);
+          runCommand("install_name_tool", ['-id', '@rpath/$bundlePath', targetFile]);
           return;
         }
       }

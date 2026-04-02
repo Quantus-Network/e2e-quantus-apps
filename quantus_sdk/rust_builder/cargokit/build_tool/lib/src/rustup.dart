@@ -9,10 +9,7 @@ import 'package:path/path.dart' as path;
 import 'util.dart';
 
 class _Toolchain {
-  _Toolchain(
-    this.name,
-    this.targets,
-  );
+  _Toolchain(this.name, this.targets);
 
   final String name;
   final List<String> targets;
@@ -30,18 +27,9 @@ class Rustup {
     _installedToolchains.add(_Toolchain(toolchain, _getInstalledTargets(toolchain)));
   }
 
-  void installTarget(
-    String target, {
-    required String toolchain,
-  }) {
+  void installTarget(String target, {required String toolchain}) {
     log.info("Installing Rust target: $target");
-    runCommand("rustup", [
-      'target',
-      'add',
-      '--toolchain',
-      toolchain,
-      target,
-    ]);
+    runCommand("rustup", ['target', 'add', '--toolchain', toolchain, target]);
     _installedTargets(toolchain)?.add(target);
   }
 
@@ -71,24 +59,11 @@ class Rustup {
         .map(extractToolchainName)
         .toList(growable: true);
 
-    return lines
-        .map(
-          (name) => _Toolchain(
-            name,
-            _getInstalledTargets(name),
-          ),
-        )
-        .toList(growable: true);
+    return lines.map((name) => _Toolchain(name, _getInstalledTargets(name))).toList(growable: true);
   }
 
   static List<String> _getInstalledTargets(String toolchain) {
-    final res = runCommand("rustup", [
-      'target',
-      'list',
-      '--toolchain',
-      toolchain,
-      '--installed',
-    ]);
+    final res = runCommand("rustup", ['target', 'list', '--toolchain', toolchain, '--installed']);
     final lines = res.stdout.toString().split('\n').where((e) => e.isNotEmpty).toList(growable: true);
     return lines;
   }
@@ -100,10 +75,7 @@ class Rustup {
       return;
     }
     // Useful for -Z build-std
-    runCommand(
-      "rustup",
-      ['component', 'add', 'rust-src', '--toolchain', 'nightly'],
-    );
+    runCommand("rustup", ['component', 'add', 'rust-src', '--toolchain', 'nightly']);
     _didInstallRustSrcForNightly = true;
   }
 

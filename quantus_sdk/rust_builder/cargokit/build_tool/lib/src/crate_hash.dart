@@ -18,16 +18,10 @@ class CrateHash {
   /// If [tempStorage] is provided, computed hash is stored in a file in that directory
   /// and reused on subsequent calls if the crate content hasn't changed.
   static String compute(String manifestDir, {String? tempStorage}) {
-    return CrateHash._(
-      manifestDir: manifestDir,
-      tempStorage: tempStorage,
-    )._compute();
+    return CrateHash._(manifestDir: manifestDir, tempStorage: tempStorage)._compute();
   }
 
-  CrateHash._({
-    required this.manifestDir,
-    required this.tempStorage,
-  });
+  CrateHash._({required this.manifestDir, required this.tempStorage});
 
   String _compute() {
     final files = getFiles();
