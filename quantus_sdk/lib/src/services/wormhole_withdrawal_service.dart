@@ -884,13 +884,13 @@ class WormholeWithdrawalService {
 
     final txHash = await SubstrateService().submitUnsignedExtrinsic(call);
     final txHashHex = '0x${_bytesToHex(txHash)}';
-    _debug('submit aggregated proof bytes=${proofBytes.length} tx=$txHashHex');
+    _debug('submit: RPC returned hash=$txHashHex (${txHash.length} bytes)');
     return txHashHex;
   }
 
   /// Wait for a transaction to be confirmed.
   ///
-  /// Searches backwards through recent blocks to find where the tx was included,
+  /// Searches backwards through recent blocks for ProofVerified events,
   /// since on dev chains transactions may be included instantly before polling starts.
   Future<bool> _waitForTransactionConfirmation({
     required String txHash,
@@ -900,10 +900,9 @@ class WormholeWithdrawalService {
     int maxAttempts = 30,
     Duration pollInterval = const Duration(seconds: 2),
   }) async {
-    final targetTxHash = txHash.toLowerCase();
     final checkedBlocks = <String>{};
 
-    _debug('confirm: waiting for tx=$targetTxHash');
+    _debug('confirm: waiting for withdrawal confirmation (tx=$txHash)');
 
     for (var attempt = 0; attempt < maxAttempts; attempt++) {
       if (attempt > 0) {
@@ -935,10 +934,10 @@ class WormholeWithdrawalService {
           }
           checkedBlocks.add(currentBlockHash);
 
-          final result = await _checkBlockForTx(
+          // Check for ProofVerified events in this block (don't require tx hash match)
+          final result = await _checkBlockForProofVerified(
             rpcUrl: rpcUrl,
             blockHash: currentBlockHash,
-            txHash: targetTxHash,
           );
 
           if (result != null) {
@@ -953,7 +952,7 @@ class WormholeWithdrawalService {
         }
 
         _debug(
-          'confirm attempt=${attempt + 1}/$maxAttempts: checked ${checkedBlocks.length} blocks, tx not found yet',
+          'confirm attempt=${attempt + 1}/$maxAttempts: checked ${checkedBlocks.length} blocks, no ProofVerified yet',
         );
       } catch (e) {
         _debug('confirm attempt=${attempt + 1}/$maxAttempts error=$e');
@@ -1054,6 +1053,44 @@ class WormholeWithdrawalService {
     return null;
   }
 
+  /// Check a single block for ProofVerified events (without requiring tx hash match).
+  /// Returns true if ProofVerified found, false if error found, null if no wormhole events.
+  Future<bool?> _checkBlockForProofVerified({
+    required String rpcUrl,
+    required String blockHash,
+  }) async {
+    // Check events in this block for wormhole activity
+    final eventsKey = '0x${_twox128('System')}${_twox128('Events')}';
+    final eventsResponse = await http.post(
+      Uri.parse(rpcUrl),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'jsonrpc': '2.0',
+        'id': 1,
+        'method': 'state_getStorage',
+        'params': [eventsKey, blockHash],
+      }),
+    );
+    final eventsResult = jsonDecode(eventsResponse.body);
+    final eventsHex = eventsResult['result'] as String?;
+
+    if (eventsHex == null) {
+      return null;
+    }
+
+    // Look for any ProofVerified event in this block (extrinsic index -1 means any)
+    final wormholeResult = _checkForWormholeEvents(eventsHex, -1);
+
+    if (wormholeResult != null) {
+      _debug(
+        'confirm: found ProofVerified in block=$blockHash success=${wormholeResult['success']}',
+      );
+      return wormholeResult['success'] == true;
+    }
+
+    return null;
+  }
+
   Future<int?> _findExtrinsicIndexInBlock({
     required String rpcUrl,
     required String blockHash,
@@ -1093,6 +1130,8 @@ class WormholeWithdrawalService {
       'findTx: block=$blockNumber has ${extrinsics.length} extrinsics, looking for $txHash',
     );
 
+    // Log all extrinsic hashes for debugging
+    final extHashes = <String>[];
     for (var i = 0; i < extrinsics.length; i++) {
       final extHex = extrinsics[i];
       final extBytes = _hexToBytes(
@@ -1101,9 +1140,16 @@ class WormholeWithdrawalService {
       final extHash =
           '0x${_bytesToHex(Hasher.blake2b256.hash(Uint8List.fromList(extBytes)))}'
               .toLowerCase();
+      extHashes.add(extHash.substring(0, 18));
       if (extHash == txHash) {
         return i;
       }
+    }
+
+    // Log what we found vs what we're looking for
+    if (extrinsics.length > 1) {
+      _debug('findTx: extrinsic hashes in block: ${extHashes.join(", ")}');
+      _debug('findTx: looking for: ${txHash.substring(0, 18)}...');
     }
 
     return null;
@@ -1143,16 +1189,17 @@ class WormholeWithdrawalService {
 
     try {
       final numEvents = scale.CompactCodec.codec.decode(input);
-      _debug(
-        'decode events for extrinsic=$extrinsicIndex totalEvents=$numEvents',
-      );
 
       for (var i = 0; i < numEvents; i++) {
         try {
           final eventRecord = EventRecord.decode(input);
           final phase = eventRecord.phase;
-          if (phase is! system_phase.ApplyExtrinsic ||
-              phase.value0 != extrinsicIndex) {
+          // Skip if not ApplyExtrinsic phase
+          if (phase is! system_phase.ApplyExtrinsic) {
+            continue;
+          }
+          // If extrinsicIndex >= 0, filter by specific extrinsic; if -1, accept any
+          if (extrinsicIndex >= 0 && phase.value0 != extrinsicIndex) {
             continue;
           }
 
@@ -1163,9 +1210,7 @@ class WormholeWithdrawalService {
             final wormholeEvent = event.value0;
             if (wormholeEvent is wormhole_event.ProofVerified) {
               success = true;
-              _debug(
-                'event Wormhole.ProofVerified for extrinsic=$extrinsicIndex',
-              );
+              _debug('event Wormhole.ProofVerified found');
             }
           }
 
@@ -1175,9 +1220,7 @@ class WormholeWithdrawalService {
             if (systemEvent is system_event.ExtrinsicFailed) {
               success = false;
               error = _formatDispatchError(systemEvent.dispatchError);
-              _debug(
-                'event System.ExtrinsicFailed for extrinsic=$extrinsicIndex error=$error',
-              );
+              _debug('event System.ExtrinsicFailed error=$error');
             }
           }
         } catch (e) {

@@ -560,6 +560,9 @@ class MiningOrchestrator {
 
     // Then stop node
     await _nodeManager.stop();
+
+    // Reset transfer tracking state for next session
+    _lastTrackedBlock = 0;
   }
 
   void _handleCrash() {
@@ -650,6 +653,14 @@ class MiningOrchestrator {
     _emitStats();
 
     // Track transfers when new blocks are detected (for withdrawal proofs)
+    // Detect chain reset (dev chain restart) - current block is less than last tracked
+    if (info.currentBlock < _lastTrackedBlock && _lastTrackedBlock > 0) {
+      _log.i(
+        'Chain reset detected (block ${info.currentBlock} < $_lastTrackedBlock), resetting transfer tracking',
+      );
+      _lastTrackedBlock = 0;
+    }
+
     // Initialize _lastTrackedBlock on first chain info to avoid processing old blocks
     if (_lastTrackedBlock == 0 && info.currentBlock > 0) {
       _lastTrackedBlock = info.currentBlock;
