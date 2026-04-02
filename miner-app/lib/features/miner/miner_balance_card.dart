@@ -1,243 +1,84 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:quantus_miner/src/services/miner_settings_service.dart';
-import 'package:quantus_miner/src/services/miner_wallet_service.dart';
-import 'package:quantus_miner/src/services/transfer_tracking_service.dart';
-import 'package:quantus_miner/src/services/wormhole_address_manager.dart';
+import 'package:quantus_miner/src/services/miner_state_service.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
-import 'package:quantus_miner/src/utils/app_logger.dart';
-import 'package:quantus_sdk/quantus_sdk.dart'
-    hide WormholeAddressManager, TrackedWormholeAddress, WormholeAddressPurpose;
+import 'package:quantus_sdk/quantus_sdk.dart';
 
-final _log = log.withTag('BalanceCard');
-
+/// Card widget displaying mining rewards balance.
+///
+/// Uses [MinerStateService] streams for reactive updates - no local state duplication.
+/// Balance updates automatically when:
+/// - New blocks are mined (transfers tracked)
+/// - Session starts/stops
+/// - Withdrawals complete
 class MinerBalanceCard extends StatefulWidget {
-  /// Current block number - when this changes, balance is refreshed
-  final int currentBlock;
-
   /// Callback when withdraw button is pressed
   final void Function(BigInt balance, String address, String secretHex)?
   onWithdraw;
 
-  /// Increment this to force a balance refresh (e.g., after withdrawal)
-  final int refreshKey;
-
-  const MinerBalanceCard({
-    super.key,
-    this.currentBlock = 0,
-    this.onWithdraw,
-    this.refreshKey = 0,
-  });
+  const MinerBalanceCard({super.key, this.onWithdraw});
 
   @override
   State<MinerBalanceCard> createState() => _MinerBalanceCardState();
 }
 
 class _MinerBalanceCardState extends State<MinerBalanceCard> {
-  final _walletService = MinerWalletService();
-  final _addressManager = WormholeAddressManager();
-  final _transferTrackingService = TransferTrackingService();
-
-  String _rewardsBalance = 'Loading...';
-  String? _wormholeAddress;
-  String? _secretHex;
-  BigInt _balancePlanck = BigInt.zero;
-  int _unspentTransferCount = 0;
-  bool _canTrackBalance = false;
-  bool _canWithdraw = false;
-  bool _isLoading = true;
-  Timer? _balanceTimer;
-  int _lastRefreshedBlock = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadWalletAndBalance();
-    // Poll every 30 seconds for balance updates
-    _balanceTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      _fetchBalance();
-    });
-  }
-
-  @override
-  void didUpdateWidget(MinerBalanceCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Refresh balance when block number increases (new block found)
-    if (widget.currentBlock > _lastRefreshedBlock && widget.currentBlock > 0) {
-      _lastRefreshedBlock = widget.currentBlock;
-      _fetchBalance();
-    }
-    // Refresh balance when refreshKey changes (e.g., after withdrawal)
-    if (widget.refreshKey != oldWidget.refreshKey) {
-      _fetchBalance();
-    }
-  }
-
-  @override
-  void dispose() {
-    _balanceTimer?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _loadWalletAndBalance() async {
-    setState(() => _isLoading = true);
-
-    try {
-      // Ensure RPC endpoint is configured for the current chain
-      final settingsService = MinerSettingsService();
-      final chainId = await settingsService.getChainId();
-      _log.i('Loading balance with chain: $chainId');
-
-      // Check if we have a mnemonic (can derive secret for balance tracking)
-      final canWithdraw = await _walletService.canWithdraw();
-      _canTrackBalance = canWithdraw;
-
-      if (canWithdraw) {
-        // We have the mnemonic - get the full key pair
-        final keyPair = await _walletService.getWormholeKeyPair();
-        if (keyPair != null) {
-          _wormholeAddress = keyPair.address;
-          _secretHex = keyPair.secretHex;
-          _canWithdraw = true;
-          await _fetchBalanceWithSecret(keyPair.address, keyPair.secretHex);
-        } else {
-          _handleNotSetup();
-        }
-      } else {
-        // Only preimage - we can show the address but not track balance
-        final preimage = await _walletService.readRewardsPreimageFile();
-        if (preimage != null) {
-          // We have a preimage but can't derive the address without the secret
-          setState(() {
-            _wormholeAddress = null;
-            _rewardsBalance = 'Import wallet to track';
-            _isLoading = false;
-          });
-        } else {
-          _handleNotSetup();
-        }
-      }
-    } catch (e) {
-      _log.e('Error loading wallet', error: e);
-      setState(() {
-        _rewardsBalance = 'Error';
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _fetchBalance() async {
-    if (!_canTrackBalance) return;
-
-    try {
-      final keyPair = await _walletService.getWormholeKeyPair();
-      if (keyPair != null) {
-        await _fetchBalanceWithSecret(keyPair.address, keyPair.secretHex);
-      }
-    } catch (e) {
-      _log.w('Error fetching balance', error: e);
-    }
-  }
-
-  Future<void> _fetchBalanceWithSecret(String address, String secretHex) async {
-    try {
-      // Initialize address manager (transfer tracking is initialized by MiningOrchestrator)
-      await _addressManager.initialize();
-
-      // Ensure we have latest data from disk (safe to call multiple times)
-      await _transferTrackingService.loadFromDisk();
-
-      _log.i('=== BALANCE QUERY DEBUG ===');
-      _log.i('Primary address (SS58): $address');
-      _log.i('Total tracked addresses: ${_addressManager.allAddresses.length}');
-      _log.i('===========================');
-
-      // Get unspent transfers for all tracked addresses
-      var totalBalance = BigInt.zero;
-      var totalUnspentCount = 0;
-
-      // Check primary address
-      final primaryUnspent = await _transferTrackingService.getUnspentTransfers(
-        wormholeAddress: address,
-        secretHex: secretHex,
-      );
-      for (final transfer in primaryUnspent) {
-        totalBalance += transfer.amount;
-        totalUnspentCount++;
-      }
-      _log.i(
-        'Primary address: ${primaryUnspent.length} unspent, ${_formatBalance(totalBalance)}',
-      );
-
-      // Check other tracked addresses (change addresses)
-      for (final tracked in _addressManager.allAddresses) {
-        if (tracked.address == address)
-          continue; // Skip primary, already counted
-
-        final unspent = await _transferTrackingService.getUnspentTransfers(
-          wormholeAddress: tracked.address,
-          secretHex: tracked.secretHex,
-        );
-        for (final transfer in unspent) {
-          totalBalance += transfer.amount;
-          totalUnspentCount++;
-        }
-        if (unspent.isNotEmpty) {
-          final addrBalance = unspent.fold<BigInt>(
-            BigInt.zero,
-            (sum, t) => sum + t.amount,
-          );
-          _log.i(
-            'Change address ${tracked.address}: ${unspent.length} unspent, ${_formatBalance(addrBalance)}',
-          );
-        }
-      }
-
-      _log.i(
-        'Total withdrawable: $totalUnspentCount UTXOs, ${_formatBalance(totalBalance)}',
-      );
-
-      if (mounted) {
-        setState(() {
-          _rewardsBalance = NumberFormattingService().formatBalance(
-            totalBalance,
-            addSymbol: true,
-          );
-          _wormholeAddress = address;
-          _secretHex = secretHex;
-          _balancePlanck = totalBalance;
-          _unspentTransferCount = totalUnspentCount;
-          _isLoading = false;
-        });
-      }
-    } catch (e, st) {
-      _log.e('Error fetching balance', error: e, stackTrace: st);
-      if (mounted) {
-        setState(() {
-          _rewardsBalance = 'Unable to connect';
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  String _formatBalance(BigInt planck) {
-    return NumberFormattingService().formatBalance(planck, addSymbol: true);
-  }
-
-  void _handleNotSetup() {
-    if (mounted) {
-      setState(() {
-        _rewardsBalance = 'Not configured';
-        _wormholeAddress = null;
-        _isLoading = false;
-      });
-    }
-  }
+  final _stateService = MinerStateService();
 
   @override
   Widget build(BuildContext context) {
+    // Use StreamBuilder to reactively update when balance changes
+    return StreamBuilder<BalanceState>(
+      stream: _stateService.balanceStream,
+      initialData: BalanceState(
+        balance: _stateService.balance,
+        unspentCount: _stateService.unspentCount,
+        canWithdraw: _stateService.canWithdraw,
+      ),
+      builder: (context, snapshot) {
+        final balanceState =
+            snapshot.data ??
+            BalanceState(
+              balance: BigInt.zero,
+              unspentCount: 0,
+              canWithdraw: false,
+            );
+
+        return _buildCard(
+          balance: balanceState.balance,
+          canWithdraw: balanceState.canWithdraw,
+          isSessionActive: _stateService.isSessionActive,
+        );
+      },
+    );
+  }
+
+  Widget _buildCard({
+    required BigInt balance,
+    required bool canWithdraw,
+    required bool isSessionActive,
+  }) {
+    final address = _stateService.wormholeAddress;
+    final secretHex = _stateService.secretHex;
+    final formattedBalance = NumberFormattingService().formatBalance(
+      balance,
+      addSymbol: true,
+    );
+
+    // Determine display state
+    String displayBalance;
+    bool showWithdrawButton = false;
+    bool showNotConfigured = false;
+
+    if (address == null) {
+      displayBalance = 'Not configured';
+      showNotConfigured = true;
+    } else if (!isSessionActive) {
+      displayBalance = '0 QTN';
+    } else {
+      displayBalance = formattedBalance;
+      showWithdrawButton = canWithdraw;
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
@@ -268,6 +109,7 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header
             Row(
               children: [
                 Container(
@@ -296,23 +138,20 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
               ],
             ),
             const SizedBox(height: 20),
-            if (_isLoading)
-              const SizedBox(
-                height: 32,
-                width: 32,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            else
-              Text(
-                _rewardsBalance,
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF10B981),
-                  letterSpacing: -1,
-                ),
+
+            // Balance display
+            Text(
+              displayBalance,
+              style: const TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF10B981),
+                letterSpacing: -1,
               ),
-            if (_wormholeAddress != null) ...[
+            ),
+
+            // Address display
+            if (address != null) ...[
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -334,7 +173,7 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        _wormholeAddress!,
+                        address,
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.white.withValues(alpha: 0.6),
@@ -350,11 +189,7 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
                         color: Colors.white.withValues(alpha: 0.5),
                         size: 16,
                       ),
-                      onPressed: () {
-                        if (_wormholeAddress != null) {
-                          context.copyTextWithSnackbar(_wormholeAddress!);
-                        }
-                      },
+                      onPressed: () => context.copyTextWithSnackbar(address),
                       constraints: const BoxConstraints(),
                       padding: EdgeInsets.zero,
                     ),
@@ -362,7 +197,9 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
                 ),
               ),
             ],
-            if (!_canTrackBalance && !_isLoading) ...[
+
+            // Not configured warning
+            if (showNotConfigured) ...[
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -395,24 +232,15 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
                 ),
               ),
             ],
+
             // Withdraw button
-            if (_canWithdraw &&
-                _balancePlanck > BigInt.zero &&
-                !_isLoading) ...[
+            if (showWithdrawButton && address != null && secretHex != null) ...[
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    if (widget.onWithdraw != null &&
-                        _wormholeAddress != null &&
-                        _secretHex != null) {
-                      widget.onWithdraw!(
-                        _balancePlanck,
-                        _wormholeAddress!,
-                        _secretHex!,
-                      );
-                    }
+                    widget.onWithdraw?.call(balance, address, secretHex);
                   },
                   icon: const Icon(Icons.output, size: 18),
                   label: const Text('Withdraw Rewards'),

@@ -7,11 +7,11 @@ import 'package:quantus_miner/src/services/chain_rpc_client.dart';
 import 'package:quantus_miner/src/services/external_miner_api_client.dart';
 import 'package:quantus_miner/src/services/log_stream_processor.dart';
 import 'package:quantus_miner/src/services/miner_process_manager.dart';
+import 'package:quantus_miner/src/services/miner_state_service.dart';
 import 'package:quantus_miner/src/services/mining_stats_service.dart';
 import 'package:quantus_miner/src/services/node_process_manager.dart';
 import 'package:quantus_miner/src/services/process_cleanup_service.dart';
 import 'package:quantus_miner/src/services/prometheus_service.dart';
-import 'package:quantus_miner/src/services/transfer_tracking_service.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
 
 final _log = log.withTag('Orchestrator');
@@ -126,10 +126,10 @@ class MiningOrchestrator {
   double _lastValidHashrate = 0.0;
   int _consecutiveMetricsFailures = 0;
 
-  // Transfer tracking for withdrawal proofs
-  final TransferTrackingService _transferTrackingService =
-      TransferTrackingService();
+  // Centralized state service for balance/transfer tracking
+  final MinerStateService _stateService = MinerStateService();
   int _lastTrackedBlock = 0;
+  bool _isTrackingTransfers = false;
 
   // Stream controllers
   final _logsController = StreamController<LogEntry>.broadcast();
@@ -265,16 +265,11 @@ class MiningOrchestrator {
         (_) => _fetchPrometheusMetrics(),
       );
 
-      // Initialize transfer tracking for withdrawal proof generation
-      if (config.wormholeAddress != null) {
-        await _transferTrackingService.initialize(
-          rpcUrl: MinerConfig.nodeRpcUrl(MinerConfig.defaultNodeRpcPort),
-          wormholeAddresses: {config.wormholeAddress!},
-        );
-
-        await _transferTrackingService.loadFromDisk();
-        _log.i('Transfer tracking initialized for ${config.wormholeAddress}');
-      }
+      // Initialize centralized state service (handles transfer tracking, balance, etc.)
+      await _stateService.startSession(
+        rpcUrl: MinerConfig.nodeRpcUrl(MinerConfig.defaultNodeRpcPort),
+      );
+      _log.i('Miner state service session started');
 
       _setState(MiningState.nodeRunning);
       _log.i('Node started successfully');
@@ -561,8 +556,12 @@ class MiningOrchestrator {
     // Then stop node
     await _nodeManager.stop();
 
-    // Reset transfer tracking state for next session
+    // Stop state service session (clears transfers, resets balance)
+    await _stateService.stopSession();
+
+    // Reset local tracking state
     _lastTrackedBlock = 0;
+    _isTrackingTransfers = false;
   }
 
   void _handleCrash() {
@@ -656,9 +655,10 @@ class MiningOrchestrator {
     // Detect chain reset (dev chain restart) - current block is less than last tracked
     if (info.currentBlock < _lastTrackedBlock && _lastTrackedBlock > 0) {
       _log.i(
-        'Chain reset detected (block ${info.currentBlock} < $_lastTrackedBlock), resetting transfer tracking',
+        'Chain reset detected (block ${info.currentBlock} < $_lastTrackedBlock), resetting state',
       );
       _lastTrackedBlock = 0;
+      _stateService.onChainReset();
     }
 
     // Initialize _lastTrackedBlock on first chain info to avoid processing old blocks
@@ -666,27 +666,40 @@ class MiningOrchestrator {
       _lastTrackedBlock = info.currentBlock;
       _log.i('Initialized transfer tracking at block $_lastTrackedBlock');
     } else if (info.currentBlock > _lastTrackedBlock &&
-        _state == MiningState.mining) {
+        _state == MiningState.mining &&
+        !_isTrackingTransfers) {
       _trackNewBlockTransfers(info.currentBlock);
     }
+
+    // Always update block number in state service (for UI updates)
+    _stateService.updateBlockNumber(info.currentBlock);
   }
 
   /// Track transfers in newly detected blocks for withdrawal proof generation.
-  void _trackNewBlockTransfers(int currentBlock) {
-    // Process all blocks since last tracked (in case we missed some)
-    for (int block = _lastTrackedBlock + 1; block <= currentBlock; block++) {
-      _getBlockHashAndTrack(block);
+  ///
+  /// Processes blocks sequentially to avoid race conditions in MinerStateService.
+  Future<void> _trackNewBlockTransfers(int currentBlock) async {
+    if (_isTrackingTransfers) return; // Prevent overlapping calls
+    _isTrackingTransfers = true;
+
+    try {
+      // Process all blocks since last tracked (in case we missed some)
+      for (int block = _lastTrackedBlock + 1; block <= currentBlock; block++) {
+        await _getBlockHashAndTrack(block);
+      }
+      _lastTrackedBlock = currentBlock;
+    } finally {
+      _isTrackingTransfers = false;
     }
-    _lastTrackedBlock = currentBlock;
   }
 
-  /// Get block hash and process for transfer tracking.
+  /// Get block hash and process for transfer tracking via MinerStateService.
   Future<void> _getBlockHashAndTrack(int blockNumber) async {
     try {
       // Get block hash from block number
       final blockHash = await _chainRpcClient.getBlockHash(blockNumber);
       if (blockHash != null) {
-        await _transferTrackingService.processBlock(blockNumber, blockHash);
+        await _stateService.onBlockMined(blockNumber, blockHash);
       }
     } catch (e) {
       _log.w('Failed to track transfers for block $blockNumber: $e');

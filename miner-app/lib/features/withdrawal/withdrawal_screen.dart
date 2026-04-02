@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:quantus_miner/src/services/miner_settings_service.dart';
+import 'package:quantus_miner/src/services/miner_state_service.dart';
 import 'package:quantus_miner/src/services/transfer_tracking_service.dart';
 import 'package:quantus_miner/src/services/withdrawal_service.dart';
-import 'package:quantus_miner/src/services/wormhole_address_manager.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
-import 'package:quantus_sdk/quantus_sdk.dart'
-    hide WormholeAddressManager, TrackedWormholeAddress, WormholeAddressPurpose;
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 final _log = log.withTag('Withdrawal');
 
@@ -48,14 +46,10 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
   final _circuitManager = CircuitManager();
   CircuitStatus _circuitStatus = CircuitStatus.unavailable;
 
-  // Transfer tracking
-  final _transferTrackingService = TransferTrackingService();
+  // Centralized state service
+  final _stateService = MinerStateService();
   List<TrackedTransfer> _trackedTransfers = [];
   bool _hasLoadedTransfers = false;
-
-  // Address manager for change addresses
-  final _addressManager = WormholeAddressManager();
-  bool _addressManagerReady = false;
 
   // Fee is 10 basis points (0.1%)
   static const int _feeBps = 10;
@@ -67,73 +61,14 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
     _updateAmountToMax();
     // Check circuit availability
     _checkCircuits();
-    // Load tracked transfers
+    // Load tracked transfers from MinerStateService
     _loadTrackedTransfers();
-    // Initialize address manager for change addresses
-    _initAddressManager();
-  }
-
-  Future<void> _initAddressManager() async {
-    try {
-      await _addressManager.initialize();
-      if (mounted) {
-        setState(() {
-          _addressManagerReady = true;
-        });
-      }
-      _log.i(
-        'Address manager initialized with ${_addressManager.allAddresses.length} addresses',
-      );
-    } catch (e) {
-      _log.e('Failed to initialize address manager', error: e);
-      // Still mark as ready so full withdrawals can proceed
-      if (mounted) {
-        setState(() {
-          _addressManagerReady = true;
-        });
-      }
-    }
   }
 
   Future<void> _loadTrackedTransfers() async {
     try {
-      // Wait for address manager to be ready
-      if (!_addressManagerReady) {
-        await _addressManager.initialize();
-      }
-
-      // Load tracked transfers from disk (service already initialized by mining orchestrator)
-      await _transferTrackingService.loadFromDisk();
-
-      // Get unspent transfers for ALL tracked addresses
-      final allTransfers = <TrackedTransfer>[];
-
-      // Check primary address
-      final primaryTransfers = await _transferTrackingService
-          .getUnspentTransfers(
-            wormholeAddress: widget.wormholeAddress,
-            secretHex: widget.secretHex,
-          );
-      allTransfers.addAll(primaryTransfers);
-      _log.i(
-        'Primary address ${widget.wormholeAddress}: ${primaryTransfers.length} unspent',
-      );
-
-      // Check change addresses from address manager
-      for (final tracked in _addressManager.allAddresses) {
-        if (tracked.address == widget.wormholeAddress) continue; // Skip primary
-
-        final transfers = await _transferTrackingService.getUnspentTransfers(
-          wormholeAddress: tracked.address,
-          secretHex: tracked.secretHex,
-        );
-        if (transfers.isNotEmpty) {
-          allTransfers.addAll(transfers);
-          _log.i(
-            'Change address ${tracked.address}: ${transfers.length} unspent',
-          );
-        }
-      }
+      // Get unspent transfers from the centralized state service
+      final allTransfers = await _stateService.getUnspentTransfers();
 
       if (mounted) {
         setState(() {
@@ -300,10 +235,10 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
   Future<void> _startWithdrawal() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Check if address manager is ready (needed for partial withdrawals with change)
-    if (!_addressManagerReady) {
+    // Check if state service is ready
+    if (!_stateService.isSessionActive) {
       setState(() {
-        _error = 'Please wait, initializing...';
+        _error = 'Mining session not active. Please start the node first.';
       });
       return;
     }
@@ -359,7 +294,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
         trackedTransfers: _trackedTransfers.isNotEmpty
             ? _trackedTransfers
             : null,
-        addressManager: _addressManager,
+        addressManager: _stateService.addressManager,
         onProgress: (progress, message) {
           if (mounted) {
             setState(() {
@@ -372,12 +307,8 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
       );
 
       if (result.success) {
-        // If change was generated, add the change address to transfer tracking
-        if (result.changeAddress != null) {
-          _transferTrackingService.addTrackedAddress(result.changeAddress!);
-          _log.i('Added change address to tracking: ${result.changeAddress}');
-          _log.i('Change amount: ${result.changeAmount} planck');
-        }
+        // Notify state service that withdrawal completed (triggers balance refresh)
+        await _stateService.onWithdrawalComplete();
 
         if (mounted) {
           final message = result.changeAddress != null

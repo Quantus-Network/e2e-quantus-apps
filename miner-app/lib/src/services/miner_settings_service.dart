@@ -9,7 +9,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 final _log = log.withTag('Settings');
 
+/// Service for managing miner app settings.
+///
+/// This is a singleton - use `MinerSettingsService()` to get the instance.
 class MinerSettingsService {
+  // Singleton
+  static final MinerSettingsService _instance =
+      MinerSettingsService._internal();
+  factory MinerSettingsService() => _instance;
+  MinerSettingsService._internal();
+
   static const String _keyCpuWorkers = 'cpu_workers';
   static const String _keyGpuDevices = 'gpu_devices';
   static const String _keyChainId = 'chain_id';

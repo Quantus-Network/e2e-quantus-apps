@@ -37,9 +37,6 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
 
   MiningStats _miningStats = MiningStats.empty();
 
-  // Key to force balance card refresh (incremented after withdrawal)
-  int _balanceRefreshKey = 0;
-
   // The orchestrator manages all mining operations
   MiningOrchestrator? _orchestrator;
 
@@ -412,23 +409,12 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
   }
 
   void _onWithdraw(BigInt balance, String address, String secretHex) {
-    context
-        .push(
-          '/withdraw',
-          extra: {
-            'balance': balance,
-            'address': address,
-            'secretHex': secretHex,
-          },
-        )
-        .then((_) {
-          // Refresh balance when returning from withdrawal screen
-          if (mounted) {
-            setState(() {
-              _balanceRefreshKey++;
-            });
-          }
-        });
+    // Navigate to withdrawal screen
+    // Balance refresh happens automatically via MinerStateService streams
+    context.push(
+      '/withdraw',
+      extra: {'balance': balance, 'address': address, 'secretHex': secretHex},
+    );
   }
 
   Widget _buildResponsiveCards() {
@@ -437,13 +423,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
         if (constraints.maxWidth > 800) {
           return Row(
             children: [
-              Expanded(
-                child: MinerBalanceCard(
-                  currentBlock: _miningStats.currentBlock,
-                  onWithdraw: _onWithdraw,
-                  refreshKey: _balanceRefreshKey,
-                ),
-              ),
+              Expanded(child: MinerBalanceCard(onWithdraw: _onWithdraw)),
               const SizedBox(width: 16),
               Expanded(child: MinerStatsCard(miningStats: _miningStats)),
             ],
@@ -451,11 +431,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
         } else {
           return Column(
             children: [
-              MinerBalanceCard(
-                currentBlock: _miningStats.currentBlock,
-                onWithdraw: _onWithdraw,
-                refreshKey: _balanceRefreshKey,
-              ),
+              MinerBalanceCard(onWithdraw: _onWithdraw),
               MinerStatsCard(miningStats: _miningStats),
             ],
           );

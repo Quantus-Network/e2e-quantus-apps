@@ -115,6 +115,10 @@ class TransferTrackingService {
   static const String _storageFileName = 'mining_transfers.json';
 
   String? _rpcUrl;
+  bool _initialized = false;
+
+  /// Whether the service has been initialized for the current session.
+  bool get isInitialized => _initialized;
 
   /// Set of wormhole addresses to track transfers for.
   final Set<String> _trackedAddresses = {};
@@ -140,6 +144,7 @@ class TransferTrackingService {
       await clearAllTransfers();
     }
 
+    _initialized = true;
     _log.i(
       'Initialized transfer tracking for ${wormholeAddresses.length} addresses',
     );
@@ -188,6 +193,7 @@ class TransferTrackingService {
   Future<void> clearAllTransfers() async {
     _transfersByAddress.clear();
     _lastProcessedBlock = 0;
+    _initialized = false;
     try {
       final file = await _getStorageFile();
       if (await file.exists()) {
@@ -287,13 +293,17 @@ class TransferTrackingService {
   }
 
   /// Get all tracked transfers for a wormhole address.
+  ///
+  /// Returns a copy of the list to avoid concurrent modification issues.
   List<TrackedTransfer> getTransfers(String wormholeAddress) {
-    return _transfersByAddress[wormholeAddress] ?? [];
+    return List.of(_transfersByAddress[wormholeAddress] ?? []);
   }
 
   /// Get all tracked transfers across all addresses.
+  ///
+  /// Returns a new list to avoid concurrent modification issues.
   List<TrackedTransfer> getAllTransfers() {
-    return _transfersByAddress.values.expand((t) => t).toList();
+    return _transfersByAddress.values.expand((t) => List.of(t)).toList();
   }
 
   /// Get total tracked balance across all addresses.

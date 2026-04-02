@@ -7,9 +7,16 @@ export 'package:quantus_sdk/src/services/wormhole_address_manager.dart'
 
 /// Miner-app specific [WormholeAddressManager] that uses [MinerMnemonicProvider].
 ///
-/// This is a convenience wrapper that creates an SDK [WormholeAddressManager]
+/// This is a singleton convenience wrapper that creates an SDK [WormholeAddressManager]
 /// pre-configured with the miner's mnemonic provider.
+///
+/// Use `WormholeAddressManager()` to get the instance.
 class WormholeAddressManager extends sdk.WormholeAddressManager {
-  /// Creates a new WormholeAddressManager using the miner's mnemonic.
-  WormholeAddressManager() : super(mnemonicProvider: MinerMnemonicProvider());
+  // Singleton
+  static final WormholeAddressManager _instance =
+      WormholeAddressManager._internal();
+  factory WormholeAddressManager() => _instance;
+
+  WormholeAddressManager._internal()
+    : super(mnemonicProvider: MinerMnemonicProvider());
 }

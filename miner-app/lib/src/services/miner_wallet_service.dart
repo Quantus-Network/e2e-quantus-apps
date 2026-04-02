@@ -16,7 +16,13 @@ final _log = log.withTag('MinerWallet');
 ///
 /// The mnemonic is stored securely using flutter_secure_storage, while the
 /// rewards preimage (needed by the node) is stored in a file.
+///
+/// This is a singleton - use `MinerWalletService()` to get the instance.
 class MinerWalletService {
+  // Singleton
+  static final MinerWalletService _instance = MinerWalletService._internal();
+  factory MinerWalletService() => _instance;
+
   static const String _mnemonicKey = 'miner_mnemonic';
   static const String _rewardsPreimageFileName = 'rewards-preimage.txt';
   // Legacy file for backward compatibility
@@ -24,16 +30,12 @@ class MinerWalletService {
 
   final FlutterSecureStorage _secureStorage;
 
-  MinerWalletService({FlutterSecureStorage? secureStorage})
-    : _secureStorage =
-          secureStorage ??
-          const FlutterSecureStorage(
-            aOptions: AndroidOptions(encryptedSharedPreferences: true),
-            iOptions: IOSOptions(
-              accessibility: KeychainAccessibility.first_unlock,
-            ),
-            mOptions: MacOsOptions(usesDataProtectionKeychain: false),
-          );
+  MinerWalletService._internal()
+    : _secureStorage = const FlutterSecureStorage(
+        aOptions: AndroidOptions(encryptedSharedPreferences: true),
+        iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+        mOptions: MacOsOptions(usesDataProtectionKeychain: false),
+      );
 
   /// Generate a new 24-word mnemonic.
   String generateMnemonic() {
