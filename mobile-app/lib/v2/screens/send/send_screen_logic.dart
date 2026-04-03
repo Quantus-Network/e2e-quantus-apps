@@ -28,12 +28,11 @@ class SendScreenLogic {
     required AmountStatus amountStatus,
     required String recipientText,
     required String activeAccountId,
-    required bool isFetchingFee,
   }) {
     final isSelfTransfer = _isSelfTransfer(recipientText, activeAccountId);
     final amountIsValid = amountStatus == AmountStatus.valid;
 
-    return hasAddressError || !amountIsValid || recipientText.isEmpty || isFetchingFee || isSelfTransfer;
+    return hasAddressError || !amountIsValid || recipientText.isEmpty || isSelfTransfer;
   }
 
   static String getButtonText({
