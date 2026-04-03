@@ -434,7 +434,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
           SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 1.5, color: colors.textSecondary))
         else
           Text(
-            '${_fmt.formatBalance(_networkFee)} ${AppConstants.tokenSymbol}',
+            '${_fmt.formatBalance(_networkFee, maxDecimals: 4)} ${AppConstants.tokenSymbol}',
             style: text.detail?.copyWith(color: colors.textSecondary),
           ),
       ],
