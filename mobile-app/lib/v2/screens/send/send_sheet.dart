@@ -55,6 +55,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     if (widget.initialAmount != null) {
       _amountController.text = widget.initialAmount!;
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fetchEstimatedFee());
   }
 
   @override
@@ -97,6 +98,27 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     final parsed = _fmt.parseAmount(_amountController.text);
     setState(() => _amount = parsed ?? BigInt.zero);
     if (!_hasAddressError && _amount > BigInt.zero) _fetchFee();
+  }
+
+  Future<void> _fetchEstimatedFee() async {
+    final displayAccount = ref.read(activeAccountProvider).value;
+    if (displayAccount is! RegularAccount) return;
+    final account = displayAccount.account;
+    try {
+      final balancesService = ref.read(balancesServiceProvider);
+      final feeData = await balancesService.getBalanceTransferFee(
+        account,
+        account.accountId,
+        _fmt.parseAmount('1000') ?? BigInt.zero,
+      );
+      if (!mounted) return;
+      setState(() {
+        _networkFee = feeData.fee;
+        _blockHeight = feeData.blockNumber;
+      });
+    } catch (e) {
+      debugPrint('Estimated fee fetch error: $e');
+    }
   }
 
   Future<void> _fetchFee() async {
@@ -216,7 +238,6 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       amountStatus: amountStatus,
       recipientText: recipient,
       activeAccountId: activeId,
-      isFetchingFee: _isFetchingFee,
     );
     final btnText = SendScreenLogic.getButtonText(
       hasAddressError: _hasAddressError,
@@ -377,10 +398,13 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text('Network Fee:', style: text.detail?.copyWith(color: colors.textSecondary)),
-        Text(
-          _isFetchingFee ? '...' : '${_fmt.formatBalance(_networkFee)} ${AppConstants.tokenSymbol}',
-          style: text.detail?.copyWith(color: colors.textSecondary),
-        ),
+        if (_isFetchingFee)
+          SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 1.5, color: colors.textSecondary))
+        else
+          Text(
+            '${_fmt.formatBalance(_networkFee)} ${AppConstants.tokenSymbol}',
+            style: text.detail?.copyWith(color: colors.textSecondary),
+          ),
       ],
     );
   }
