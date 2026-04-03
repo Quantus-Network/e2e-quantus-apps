@@ -58,7 +58,6 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchEstimatedFee();
-      // if (widget.initialAddress == null) _recipientFocus.requestFocus();
     });
   }
 
@@ -217,26 +216,16 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     final colors = context.colors;
     final text = context.themeText;
     final balance = ref.watch(effectiveMaxBalanceProvider);
-    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
 
-    // return AnimatedPadding(
-    return Padding(
-      padding: EdgeInsets.only(bottom: keyboardHeight),
-      // duration: const Duration(milliseconds: 220),
-      // curve: Curves.easeOutQuad,
-      child: SingleChildScrollView(
-        physics: const ClampingScrollPhysics(),
-        child: BottomSheetContainer(
-          title: widget.isPayMode ? 'Pay' : 'Send',
-          onBack: _step == _Step.confirm ? _backToForm : null,
-          child: switch (_step) {
-            _Step.form => _buildForm(colors, text, balance),
-            _Step.confirm => _buildConfirm(colors, text),
-            _Step.sending => _buildSending(colors, text),
-            _Step.complete => _buildComplete(colors, text),
-          },
-        ),
-      ),
+    return BottomSheetContainer(
+      title: widget.isPayMode ? 'Pay' : 'Send',
+      onBack: _step == _Step.confirm ? _backToForm : null,
+      child: switch (_step) {
+        _Step.form => _buildForm(colors, text, balance),
+        _Step.confirm => _buildConfirm(colors, text),
+        _Step.sending => _buildSending(colors, text),
+        _Step.complete => _buildComplete(colors, text),
+      },
     );
   }
 
@@ -311,10 +300,10 @@ class _SendSheetState extends ConsumerState<SendSheet> {
                     focusNode: _recipientFocus,
                     keyboardType: TextInputType.text,
                     textInputAction: TextInputAction.next,
-                    // onSubmitted: (_) => _amountFocus.requestFocus(),
                     autocorrect: false,
                     enableSuggestions: false,
                     textCapitalization: TextCapitalization.none,
+                    scrollPadding: EdgeInsets.zero,
                     textAlignVertical: TextAlignVertical.center,
                     style: text.smallParagraph?.copyWith(color: colors.textPrimary),
                     decoration: InputDecoration(
@@ -388,6 +377,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
               controller: _amountController,
               focusNode: _amountFocus,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              scrollPadding: EdgeInsets.zero,
               inputFormatters: [DecimalInputFilter()],
               style: text.mediumTitle?.copyWith(color: colors.textPrimary, fontSize: 32),
               decoration: InputDecoration(
@@ -531,6 +521,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
 void showSendSheetV2(BuildContext context, {String? address, String? amount, bool isPayMode = false}) {
   BottomSheetContainer.show(
     context,
+    fixKeyboardInPlace: true,
     builder: (_) => SendSheet(initialAddress: address, initialAmount: amount, isPayMode: isPayMode),
   );
 }
