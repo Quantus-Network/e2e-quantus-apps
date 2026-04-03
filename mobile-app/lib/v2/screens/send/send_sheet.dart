@@ -31,6 +31,7 @@ class SendSheet extends ConsumerStatefulWidget {
 class _SendSheetState extends ConsumerState<SendSheet> {
   final _recipientController = TextEditingController();
   final _amountController = TextEditingController();
+  final _amountFocus = FocusNode();
   final _fmt = NumberFormattingService();
   final _checksumService = HumanReadableChecksumService();
 
@@ -60,6 +61,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   void dispose() {
     _recipientController.dispose();
     _amountController.dispose();
+    _amountFocus.dispose();
     super.dispose();
   }
 
@@ -75,16 +77,20 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     _lookupAddress(text);
   }
 
-  Future<void> _lookupAddress(String address) async {
+  void _lookupAddress(String address) {
     final substrate = ref.read(substrateServiceProvider);
     final isValid = substrate.isValidSS58Address(address);
-    final checksum = isValid ? await _checksumService.getHumanReadableName(address) : null;
-    if (!mounted) return;
     setState(() {
       _hasAddressError = !isValid;
-      _recipientChecksum = checksum;
+      _recipientChecksum = null;
     });
-    if (isValid && _amount > BigInt.zero) _fetchFee();
+    if (isValid) {
+      _amountFocus.requestFocus();
+      _checksumService.getHumanReadableName(address).then((checksum) {
+        if (mounted) setState(() => _recipientChecksum = checksum);
+      });
+      if (_amount > BigInt.zero) _fetchFee();
+    }
   }
 
   void _onAmountChanged() {
@@ -327,6 +333,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
             top: 20,
             child: TextField(
               controller: _amountController,
+              focusNode: _amountFocus,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [DecimalInputFilter()],
               style: text.mediumTitle?.copyWith(color: colors.textPrimary, fontSize: 32),
