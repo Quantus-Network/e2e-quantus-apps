@@ -39,7 +39,6 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   _Step _step = _Step.form;
   String? _recipientChecksum;
   bool _hasAddressError = true;
-  double _maxKeyboardHeight = 0;
   BigInt _amount = BigInt.zero;
   BigInt _networkFee = BigInt.zero;
   int _blockHeight = 0;
@@ -59,7 +58,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchEstimatedFee();
-      if (widget.initialAddress == null) _recipientFocus.requestFocus();
+      // if (widget.initialAddress == null) _recipientFocus.requestFocus();
     });
   }
 
@@ -92,7 +91,6 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       _recipientChecksum = null;
     });
     if (isValid) {
-      _amountFocus.requestFocus();
       _checksumService.getHumanReadableName(address).then((checksum) {
         if (mounted) setState(() => _recipientChecksum = checksum);
       });
@@ -220,16 +218,17 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     final text = context.themeText;
     final balance = ref.watch(effectiveMaxBalanceProvider);
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-    if (keyboardHeight > _maxKeyboardHeight) _maxKeyboardHeight = keyboardHeight;
-    final bottomPadding = keyboardHeight > 0 ? _maxKeyboardHeight : 0.0;
 
+    // return AnimatedPadding(
     return Padding(
-      padding: EdgeInsets.only(bottom: bottomPadding),
-      child: BottomSheetContainer(
-        title: widget.isPayMode ? 'Pay' : 'Send',
-        onBack: _step == _Step.confirm ? _backToForm : null,
-        child: AnimatedSize(
-          duration: const Duration(milliseconds: 200),
+      padding: EdgeInsets.only(bottom: keyboardHeight),
+      // duration: const Duration(milliseconds: 220),
+      // curve: Curves.easeOutQuad,
+      child: SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
+        child: BottomSheetContainer(
+          title: widget.isPayMode ? 'Pay' : 'Send',
+          onBack: _step == _Step.confirm ? _backToForm : null,
           child: switch (_step) {
             _Step.form => _buildForm(colors, text, balance),
             _Step.confirm => _buildConfirm(colors, text),
@@ -310,7 +309,9 @@ class _SendSheetState extends ConsumerState<SendSheet> {
                   child: TextField(
                     controller: _recipientController,
                     focusNode: _recipientFocus,
-                    keyboardType: TextInputType.visiblePassword,
+                    keyboardType: TextInputType.text,
+                    textInputAction: TextInputAction.next,
+                    // onSubmitted: (_) => _amountFocus.requestFocus(),
                     autocorrect: false,
                     enableSuggestions: false,
                     textCapitalization: TextCapitalization.none,
