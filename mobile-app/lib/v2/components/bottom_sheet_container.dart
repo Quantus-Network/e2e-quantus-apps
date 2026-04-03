@@ -63,7 +63,7 @@ class BottomSheetContainer extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 32),
-            if (height != null) Expanded(child: child) else child,
+            if (height != null) Expanded(child: child) else Flexible(child: SingleChildScrollView(child: child)),
           ],
         ),
       ),

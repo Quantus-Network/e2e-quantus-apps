@@ -31,6 +31,7 @@ class SendSheet extends ConsumerStatefulWidget {
 class _SendSheetState extends ConsumerState<SendSheet> {
   final _recipientController = TextEditingController();
   final _amountController = TextEditingController();
+  final _recipientFocus = FocusNode();
   final _amountFocus = FocusNode();
   final _fmt = NumberFormattingService();
   final _checksumService = HumanReadableChecksumService();
@@ -38,6 +39,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   _Step _step = _Step.form;
   String? _recipientChecksum;
   bool _hasAddressError = true;
+  double _maxKeyboardHeight = 0;
   BigInt _amount = BigInt.zero;
   BigInt _networkFee = BigInt.zero;
   int _blockHeight = 0;
@@ -55,13 +57,17 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     if (widget.initialAmount != null) {
       _amountController.text = widget.initialAmount!;
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) => _fetchEstimatedFee());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchEstimatedFee();
+      if (widget.initialAddress == null) _recipientFocus.requestFocus();
+    });
   }
 
   @override
   void dispose() {
     _recipientController.dispose();
     _amountController.dispose();
+    _recipientFocus.dispose();
     _amountFocus.dispose();
     super.dispose();
   }
@@ -213,18 +219,24 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     final colors = context.colors;
     final text = context.themeText;
     final balance = ref.watch(effectiveMaxBalanceProvider);
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    if (keyboardHeight > _maxKeyboardHeight) _maxKeyboardHeight = keyboardHeight;
+    final bottomPadding = keyboardHeight > 0 ? _maxKeyboardHeight : 0.0;
 
-    return BottomSheetContainer(
-      title: widget.isPayMode ? 'Pay' : 'Send',
-      onBack: _step == _Step.confirm ? _backToForm : null,
-      child: AnimatedSize(
-        duration: const Duration(milliseconds: 200),
-        child: switch (_step) {
-          _Step.form => _buildForm(colors, text, balance),
-          _Step.confirm => _buildConfirm(colors, text),
-          _Step.sending => _buildSending(colors, text),
-          _Step.complete => _buildComplete(colors, text),
-        },
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomPadding),
+      child: BottomSheetContainer(
+        title: widget.isPayMode ? 'Pay' : 'Send',
+        onBack: _step == _Step.confirm ? _backToForm : null,
+        child: AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          child: switch (_step) {
+            _Step.form => _buildForm(colors, text, balance),
+            _Step.confirm => _buildConfirm(colors, text),
+            _Step.sending => _buildSending(colors, text),
+            _Step.complete => _buildComplete(colors, text),
+          },
+        ),
       ),
     );
   }
@@ -281,59 +293,78 @@ class _SendSheetState extends ConsumerState<SendSheet> {
 
   Widget _addressInput(AppColorsV2 colors, AppTextTheme text) {
     final hasRecipient = _recipientController.text.trim().isNotEmpty && !_hasAddressError;
-    if (hasRecipient) {
-      return GestureDetector(
-        onTap: () => _recipientController.clear(),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(12, 14, 8, 14),
-          decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(8)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                AddressFormattingService.formatAddress(
-                  _recipientController.text.trim(),
-                  prefix: 15,
-                  ellipses: '.......',
-                  postFix: 14,
-                ),
-                style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (_recipientChecksum != null) ...[
-                const SizedBox(height: 4),
-                Text(_recipientChecksum!, style: text.smallParagraph?.copyWith(color: colors.accentPink)),
-              ],
-            ],
-          ),
-        ),
-      );
-    }
     return SizedBox(
       width: double.infinity,
       height: 56,
-      child: Container(
-        alignment: Alignment.center,
-        padding: const EdgeInsets.only(left: 12, right: 8),
-        decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(8)),
-        child: TextField(
-          controller: _recipientController,
-          textAlignVertical: TextAlignVertical.center,
-          style: text.smallParagraph?.copyWith(color: colors.textPrimary),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.transparent,
-            isDense: true,
-            contentPadding: EdgeInsets.zero,
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            hintText: 'Quan Address',
-            hintStyle: text.smallParagraph?.copyWith(color: colors.textTertiary),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: IgnorePointer(
+              ignoring: hasRecipient,
+              child: Opacity(
+                opacity: hasRecipient ? 0 : 1,
+                child: Container(
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.only(left: 12, right: 8),
+                  decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(8)),
+                  child: TextField(
+                    controller: _recipientController,
+                    focusNode: _recipientFocus,
+                    keyboardType: TextInputType.visiblePassword,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    textCapitalization: TextCapitalization.none,
+                    textAlignVertical: TextAlignVertical.center,
+                    style: text.smallParagraph?.copyWith(color: colors.textPrimary),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.transparent,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      hintText: 'Quan Address',
+                      hintStyle: text.smallParagraph?.copyWith(color: colors.textTertiary),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
+          if (hasRecipient)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () {
+                  _recipientController.clear();
+                  _recipientFocus.requestFocus();
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(8)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        AddressFormattingService.formatAddress(
+                          _recipientController.text.trim(),
+                          prefix: 15,
+                          ellipses: '.......',
+                          postFix: 14,
+                        ),
+                        style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (_recipientChecksum != null)
+                        Text(_recipientChecksum!, style: text.detail?.copyWith(color: colors.accentPink)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -499,9 +530,6 @@ class _SendSheetState extends ConsumerState<SendSheet> {
 void showSendSheetV2(BuildContext context, {String? address, String? amount, bool isPayMode = false}) {
   BottomSheetContainer.show(
     context,
-    builder: (_) => Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: SendSheet(initialAddress: address, initialAmount: amount, isPayMode: isPayMode),
-    ),
+    builder: (_) => SendSheet(initialAddress: address, initialAmount: amount, isPayMode: isPayMode),
   );
 }
