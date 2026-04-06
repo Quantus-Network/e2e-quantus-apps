@@ -45,14 +45,11 @@ Keypair crystalCharlie() => RustLib.instance.api.crateApiCryptoCrystalCharlie();
 Uint8List deriveHdPath({required List<int> seed, required String path}) =>
     RustLib.instance.api.crateApiCryptoDeriveHdPath(seed: seed, path: path);
 
-int get publicKeySize =>
-    RustLib.instance.api.crateApiCryptoPublicKeyBytes().toInt(); // these are ussize and anyway small
+BigInt publicKeyBytes() => RustLib.instance.api.crateApiCryptoPublicKeyBytes();
 
-int get secretKeySize =>
-    RustLib.instance.api.crateApiCryptoSecretKeyBytes().toInt(); // these are ussize and anyway small
+BigInt secretKeyBytes() => RustLib.instance.api.crateApiCryptoSecretKeyBytes();
 
-int get signatureSize =>
-    RustLib.instance.api.crateApiCryptoSignatureBytes().toInt(); // these are ussize and anyway small
+BigInt signatureBytes() => RustLib.instance.api.crateApiCryptoSignatureBytes();
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<HDLatticeError>>
 abstract class HdLatticeError implements RustOpaqueInterface {}
