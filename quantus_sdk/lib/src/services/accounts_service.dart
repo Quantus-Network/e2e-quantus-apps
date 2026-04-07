@@ -18,11 +18,17 @@ class AccountsService {
   final SettingsService _settingsService = SettingsService();
   void Function()? onAccountsChanged;
 
-  Future<Account> createNewAccount({required int walletIndex}) async {
+  Future<String> _getMnemonic(int walletIndex) async {
     final mnemonic = await _settingsService.getMnemonic(walletIndex);
     if (mnemonic == null) {
       throw Exception('Mnemonic not found. Cannot create new account.');
     }
+
+    return mnemonic;
+  }
+
+  Future<Account> createNewAccount({required int walletIndex}) async {
+    final mnemonic = await _getMnemonic(walletIndex);
     final nextIndex = await _settingsService.getNextFreeAccountIndex(walletIndex);
     final keypair = HdWalletService().keyPairAtIndex(mnemonic, nextIndex);
     final newAccount = Account(
@@ -30,6 +36,20 @@ class AccountsService {
       index: nextIndex,
       name: 'Account ${nextIndex + 1}', // Default name
       accountId: keypair.ss58Address,
+    );
+    return newAccount;
+  }
+
+  Future<Account> createNewWormholeAccount({required int walletIndex}) async {
+    final mnemonic = await _getMnemonic(walletIndex);
+    final nextIndex = await _settingsService.getNextFreeAccountIndex(walletIndex);
+    final keypair = WormholeService().deriveMinerRewardsKeyPair(mnemonic: mnemonic, index: nextIndex);
+    final newAccount = Account(
+      walletIndex: walletIndex,
+      index: nextIndex,
+      name: 'Account ${nextIndex + 1}', // Default name
+      accountId: keypair.address,
+      accountType: AccountType.wormhole,
     );
     return newAccount;
   }

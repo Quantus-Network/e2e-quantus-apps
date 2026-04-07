@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:quantus_sdk/src/models/base_account.dart';
 
-enum AccountType { local, keystone, external }
+enum AccountType { local, keystone, external, wormhole }
 
 @immutable
 class Account implements BaseAccount {
