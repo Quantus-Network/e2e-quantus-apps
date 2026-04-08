@@ -43,7 +43,9 @@ class AccountsService {
   Future<Account> createNewWormholeAccount({required int walletIndex}) async {
     final mnemonic = await _getMnemonic(walletIndex);
     final nextIndex = await _settingsService.getNextFreeWormholeAccountIndex(walletIndex);
-    final keypair = WormholeService().deriveMinerRewardsKeyPair(mnemonic: mnemonic, index: nextIndex);
+    final purpose = nextIndex == 0 ? WormholePurpose.minerRewards : WormholePurpose.mobileSends;
+
+    final keypair = WormholeService().deriveKeyPair(mnemonic: mnemonic, purpose: purpose, index: nextIndex);
     final newAccount = Account(
       walletIndex: walletIndex,
       index: nextIndex,
@@ -51,6 +53,7 @@ class AccountsService {
       accountId: keypair.address,
       accountType: AccountType.wormhole,
     );
+    
     return newAccount;
   }
 

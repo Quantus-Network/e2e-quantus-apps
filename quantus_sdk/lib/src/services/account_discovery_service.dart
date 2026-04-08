@@ -5,8 +5,9 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 class AccountDiscoveryService {
   final HdWalletService _hdWalletService;
   final SubstrateService _substrateService;
+  final WormholeService _wormholeService;
 
-  AccountDiscoveryService(this._hdWalletService, this._substrateService);
+  AccountDiscoveryService(this._hdWalletService, this._substrateService, this._wormholeService);
 
   static const String _accountsQuery = r'''
     query AccountsQuery($ids: [String!]) {
@@ -39,6 +40,17 @@ class AccountDiscoveryService {
         accountId: keyPair.ss58Address,
       );
       allPossibleAccounts.add(account);
+
+      final purpose = i == 0 ? WormholePurpose.minerRewards : WormholePurpose.mobileSends;
+      final wormholeKeyPair = _wormholeService.deriveKeyPair(mnemonic: mnemonic, purpose: purpose, index: i);
+      final wormholeAccount = Account(
+        walletIndex: walletIndex,
+        index: i,
+        name: 'Encrypted Account ${i + 1}',
+        accountId: wormholeKeyPair.address,
+        accountType: AccountType.wormhole,
+      );
+      allPossibleAccounts.add(wormholeAccount);
     }
 
     final accountIds = allPossibleAccounts.map((a) => a.accountId).toList();

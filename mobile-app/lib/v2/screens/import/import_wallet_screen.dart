@@ -24,7 +24,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
   final _controller = TextEditingController();
   final _settingsService = SettingsService();
   final _accountsService = AccountsService();
-  final _discoveryService = AccountDiscoveryService(HdWalletService(), SubstrateService());
+  final _discoveryService = AccountDiscoveryService(HdWalletService(), SubstrateService(), WormholeService());
   bool _isLoading = false;
   String? _error;
 
