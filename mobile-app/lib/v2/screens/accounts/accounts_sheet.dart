@@ -17,6 +17,8 @@ import 'package:resonance_network_wallet/v2/screens/accounts/edit_account_view.d
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
+enum _AccountTypeChoice { regular, encrypted }
+
 Future<T?> showAccountsSheet<T>(BuildContext context) async {
   return BottomSheetContainer.show<T>(context, builder: (_) => const AccountsSheet());
 }
@@ -73,17 +75,17 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     return sorted;
   }
 
-  Future<void> _createNewAccount() async {
+  Future<void> _showAddAccountPicker() async {
     if (_isCreatingAccount) return;
 
-    setState(() => _isCreatingAccount = true);
-    try {
-      final accounts = ref.read(accountsProvider).value ?? <Account>[];
-      final activeDisplayAccount = ref.read(activeAccountProvider).value;
-      final walletIndex = _walletIndexForActiveAccount(accounts, activeDisplayAccount);
-      final selectedWalletAccounts = accounts.where((a) => a.walletIndex == walletIndex).toList();
+    final accounts = ref.read(accountsProvider).value ?? <Account>[];
+    final activeDisplayAccount = ref.read(activeAccountProvider).value;
+    final walletIndex = _walletIndexForActiveAccount(accounts, activeDisplayAccount);
+    final selectedWalletAccounts = accounts.where((a) => a.walletIndex == walletIndex).toList();
 
-      if (_isHardwareWallet(selectedWalletAccounts)) {
+    if (_isHardwareWallet(selectedWalletAccounts)) {
+      setState(() => _isCreatingAccount = true);
+      try {
         final created = await Navigator.push<bool?>(
           context,
           MaterialPageRoute(builder: (context) => AddHardwareAccountScreen(walletIndex: walletIndex)),
@@ -92,27 +94,65 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
           ref.invalidate(accountsProvider);
           ref.invalidate(activeAccountProvider);
         }
+      } finally {
+        if (mounted) setState(() => _isCreatingAccount = false);
+      }
+      return;
+    }
+
+    if (!mounted) return;
+    final choice = await _showAccountTypePickerSheet();
+    if (choice == null || !mounted) return;
+
+    setState(() => _isCreatingAccount = true);
+    try {
+      if (choice == _AccountTypeChoice.regular) {
+        await _createHdAccount(walletIndex);
       } else {
-        final draft = await _accountsService.createNewAccount(walletIndex: walletIndex);
-        final checksum = await _checksumService.getHumanReadableName(draft.accountId);
-        if (!mounted) return;
-        _createNameController.text = draft.name;
-        setState(() {
-          _draftAccount = draft;
-          _draftChecksum = checksum;
-          _isCreateViewOpen = true;
-          _isEditingCreatedName = false;
-        });
+        await _createWormholeAccount(walletIndex);
       }
     } catch (_) {
       if (mounted) {
         context.showErrorToaster(message: 'Could not add account.');
       }
     } finally {
-      if (mounted) {
-        setState(() => _isCreatingAccount = false);
-      }
+      if (mounted) setState(() => _isCreatingAccount = false);
     }
+  }
+
+  Future<_AccountTypeChoice?> _showAccountTypePickerSheet() {
+    return BottomSheetContainer.show<_AccountTypeChoice>(
+      context,
+      builder: (sheetCtx) => _AccountTypePickerSheet(
+        onSelect: (choice) => Navigator.of(sheetCtx).pop(choice),
+      ),
+    );
+  }
+
+  Future<void> _createHdAccount(int walletIndex) async {
+    final draft = await _accountsService.createNewAccount(walletIndex: walletIndex);
+    final checksum = await _checksumService.getHumanReadableName(draft.accountId);
+    if (!mounted) return;
+    _createNameController.text = draft.name;
+    setState(() {
+      _draftAccount = draft;
+      _draftChecksum = checksum;
+      _isCreateViewOpen = true;
+      _isEditingCreatedName = false;
+    });
+  }
+
+  Future<void> _createWormholeAccount(int walletIndex) async {
+    final draft = await _accountsService.createNewWormholeAccount(walletIndex: walletIndex);
+    final checksum = await _checksumService.getHumanReadableName(draft.accountId);
+    if (!mounted) return;
+    _createNameController.text = draft.name;
+    setState(() {
+      _draftAccount = draft;
+      _draftChecksum = checksum;
+      _isCreateViewOpen = true;
+      _isEditingCreatedName = false;
+    });
   }
 
   Future<void> _switchAccount(Account account) async {
@@ -336,7 +376,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
                 ),
         ),
         const SizedBox(height: 24),
-        GlassButton.simple(label: 'Add Account', onTap: _createNewAccount, isLoading: _isCreatingAccount),
+        GlassButton.simple(label: 'Add Account', onTap: _showAddAccountPicker, isLoading: _isCreatingAccount),
       ],
     );
   }
@@ -349,35 +389,67 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       data: (balance) => '${_formattingService.formatBalance(balance)} ${AppConstants.tokenSymbol}',
     );
 
-    return GestureDetector(
-      onTap: () => _switchAccount(account),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: context.colors.borderSubtle, width: 0.9),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    account.name,
-                    style: context.themeText.paragraph!.copyWith(
-                      fontWeight: FontWeight.w500,
-                      color: isActive ? context.colors.accentPink : Colors.white,
+    final isEncrypted = account.accountType == AccountType.wormhole;
+
+    return Semantics(
+      label: '${account.name}${isEncrypted ? ', encrypted account' : ''}',
+      button: true,
+      onTapHint: 'Switch to this account',
+      child: GestureDetector(
+        onTap: () => _switchAccount(account),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: context.colors.borderSubtle, width: 0.9),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            account.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: context.themeText.paragraph!.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: isActive ? context.colors.accentPink : Colors.white,
+                            ),
+                          ),
+                        ),
+                        if (isEncrypted) ...[
+                          const SizedBox(width: 6),
+                          ExcludeSemantics(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: context.colors.accentPink.useOpacity(0.18),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: context.colors.accentPink.useOpacity(0.5)),
+                              ),
+                              child: Text(
+                                'Encrypted',
+                                style: context.themeText.tiny?.copyWith(color: context.colors.accentPink),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(balanceText, style: context.themeText.detail!.copyWith(color: context.colors.textSecondary)),
-                ],
+                    const SizedBox(height: 4),
+                    Text(balanceText, style: context.themeText.detail!.copyWith(color: context.colors.textSecondary)),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            AccountIconActionButton(icon: Icons.edit_outlined, onTap: () => _openEdit(account)),
-          ],
+              const SizedBox(width: 12),
+              AccountIconActionButton(icon: Icons.edit_outlined, onTap: () => _openEdit(account)),
+            ],
+          ),
         ),
       ),
     );
@@ -412,5 +484,97 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
         setState(() => _isSavingCreatedAccount = false);
       }
     }
+  }
+}
+
+class _AccountTypePickerSheet extends StatelessWidget {
+  final void Function(_AccountTypeChoice) onSelect;
+
+  const _AccountTypePickerSheet({required this.onSelect});
+
+  @override
+  Widget build(BuildContext context) {
+    return BottomSheetContainer(
+      title: 'Add Account',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _AccountTypeTile(
+            icon: Icons.account_circle_outlined,
+            title: 'Regular Account',
+            subtitle: 'Standard HD wallet account',
+            semanticLabel: 'Add regular account',
+            onTap: () => onSelect(_AccountTypeChoice.regular),
+          ),
+          Divider(height: 1, indent: 20, endIndent: 20, color: context.colors.borderSubtle),
+          _AccountTypeTile(
+            icon: Icons.lock_outlined,
+            title: 'Encrypted Account',
+            subtitle: 'Privacy-preserving wormhole account',
+            semanticLabel: 'Add encrypted account',
+            onTap: () => onSelect(_AccountTypeChoice.encrypted),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+}
+
+class _AccountTypeTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String semanticLabel;
+  final VoidCallback onTap;
+
+  const _AccountTypeTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.semanticLabel,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
+            children: [
+              Icon(icon, color: context.colors.accentPink, size: 24),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: context.themeText.paragraph?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: context.colors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: context.themeText.detail?.copyWith(color: context.colors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: context.colors.textSecondary, size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

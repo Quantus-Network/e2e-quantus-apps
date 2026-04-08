@@ -31,6 +31,7 @@ class AccountsService {
     final mnemonic = await _getMnemonic(walletIndex);
     final nextIndex = await _settingsService.getNextFreeAccountIndex(walletIndex);
     final keypair = HdWalletService().keyPairAtIndex(mnemonic, nextIndex);
+
     final newAccount = Account(
       walletIndex: walletIndex,
       index: nextIndex,
