@@ -198,13 +198,22 @@ class SettingsService {
     return ix != -1 ? accounts[ix] : null;
   }
 
-  Future<int> getNextFreeAccountIndex(int walletIndex) async {
+  Future<int> _getNextFreeIndex(int walletIndex, bool Function(Account) extraCondition) async {
     final accounts = await getAccounts();
-    final walletAccounts = accounts.where((a) => a.walletIndex == walletIndex && a.index >= 0).toList();
+    final walletAccounts = accounts
+        .where((a) => a.walletIndex == walletIndex && a.index >= 0 && extraCondition(a))
+        .toList();
+
     if (walletAccounts.isEmpty) return 0;
+
     final maxIndex = walletAccounts.map((a) => a.index).reduce((a, b) => a > b ? a : b);
     return maxIndex + 1;
   }
+
+  Future<int> getNextFreeAccountIndex(int walletIndex) => _getNextFreeIndex(walletIndex, (a) => true);
+
+  Future<int> getNextFreeWormholeAccountIndex(int walletIndex) =>
+      _getNextFreeIndex(walletIndex, (a) => a.accountType == AccountType.wormhole);
 
   // --- Address Book Methods ---
 
