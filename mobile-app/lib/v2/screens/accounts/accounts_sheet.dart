@@ -468,6 +468,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     try {
       final accountToSave = draft.copyWith(name: name);
       await _accountsService.addAccount(accountToSave);
+
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
       ref.read(firebaseMessagingServiceProvider).insertNewAddress(accountToSave.accountId);
@@ -475,9 +476,9 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       if (mounted) {
         _closeCreateView();
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        context.showErrorToaster(message: 'Failed to create account.');
+        context.showErrorToaster(message: 'Failed to create account: $e');
       }
     } finally {
       if (mounted) {

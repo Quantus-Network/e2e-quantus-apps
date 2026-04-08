@@ -18,18 +18,19 @@ class AccountsService {
   final SettingsService _settingsService = SettingsService();
   void Function()? onAccountsChanged;
 
-  Future<String> _getMnemonic(int walletIndex) async {
+  Future<(String, int)> _getMnemonicAndNextIndex(int walletIndex) async {
     final mnemonic = await _settingsService.getMnemonic(walletIndex);
     if (mnemonic == null) {
       throw Exception('Mnemonic not found. Cannot create new account.');
     }
 
-    return mnemonic;
+    final nextIndex = await _settingsService.getNextFreeAccountIndex(walletIndex);
+    
+    return (mnemonic, nextIndex);
   }
 
   Future<Account> createNewAccount({required int walletIndex}) async {
-    final mnemonic = await _getMnemonic(walletIndex);
-    final nextIndex = await _settingsService.getNextFreeAccountIndex(walletIndex);
+    final (mnemonic, nextIndex) = await _getMnemonicAndNextIndex(walletIndex);
     final keypair = HdWalletService().keyPairAtIndex(mnemonic, nextIndex);
 
     final newAccount = Account(
@@ -42,8 +43,7 @@ class AccountsService {
   }
 
   Future<Account> createNewWormholeAccount({required int walletIndex}) async {
-    final mnemonic = await _getMnemonic(walletIndex);
-    final nextIndex = await _settingsService.getNextFreeWormholeAccountIndex(walletIndex);
+    final (mnemonic, nextIndex) = await _getMnemonicAndNextIndex(walletIndex);
     final purpose = nextIndex == 0 ? WormholePurpose.minerRewards : WormholePurpose.mobileSends;
 
     final keypair = WormholeService().deriveKeyPair(mnemonic: mnemonic, purpose: purpose, index: nextIndex);
