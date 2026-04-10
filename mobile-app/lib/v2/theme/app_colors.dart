@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 class AppColorsV2 extends ThemeExtension<AppColorsV2> {
   // Backgrounds
   final Color background;
-  final Color backgroundAlt;
   final Color toasterBackground;
 
   // Surfaces
@@ -52,7 +51,6 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
 
   const AppColorsV2({
     required this.background,
-    required this.backgroundAlt,
     required this.toasterBackground,
     required this.toasterBorder,
     required this.sheetBackground,
@@ -87,8 +85,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
 
   const AppColorsV2.dark()
     : this(
-        background: const Color(0xFF141414),
-        backgroundAlt: const Color(0xFF1F1F1F),
+        background: const Color(0xFF0E0E0E),
         toasterBackground: const Color(0xFF191919),
         toasterBorder: const Color(0xFF3D3D3D),
         sheetBackground: const Color(0xFF1A1A1A),
@@ -124,7 +121,6 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
   @override
   AppColorsV2 copyWith({
     Color? background,
-    Color? backgroundAlt,
     Color? surface,
     Color? surfaceGlass,
     Color? surfaceCard,
@@ -158,7 +154,6 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
   }) {
     return AppColorsV2(
       background: background ?? this.background,
-      backgroundAlt: backgroundAlt ?? this.backgroundAlt,
       toasterBackground: toasterBackground ?? this.toasterBackground,
       toasterBorder: toasterBorder ?? this.toasterBorder,
       sheetBackground: sheetBackground ?? this.sheetBackground,
@@ -197,7 +192,6 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     if (other is! AppColorsV2) return this;
     return AppColorsV2(
       background: Color.lerp(background, other.background, t) ?? background,
-      backgroundAlt: Color.lerp(backgroundAlt, other.backgroundAlt, t) ?? backgroundAlt,
       toasterBackground: Color.lerp(toasterBackground, other.toasterBackground, t) ?? toasterBackground,
       toasterBorder: Color.lerp(toasterBorder, other.toasterBorder, t) ?? toasterBorder,
       sheetBackground: Color.lerp(sheetBackground, other.sheetBackground, t) ?? sheetBackground,
