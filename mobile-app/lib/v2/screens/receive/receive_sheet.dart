@@ -162,7 +162,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
               Flexible(
                 child: Text(
                   snapshot.data!,
-                  style: text.detail?.copyWith(color: colors.accentPink),
+                  style: text.detail?.copyWith(color: colors.checksum),
                   textAlign: TextAlign.center,
                 ),
               ),

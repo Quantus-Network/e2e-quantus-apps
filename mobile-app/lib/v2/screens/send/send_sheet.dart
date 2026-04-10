@@ -393,7 +393,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       if (_recipientChecksum != null)
-                        Text(_recipientChecksum!, style: text.detail?.copyWith(color: colors.accentPink)),
+                        Text(_recipientChecksum!, style: text.detail?.copyWith(color: colors.checksum)),
                     ],
                   ),
                 ),
@@ -503,7 +503,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         ),
         if (_recipientChecksum != null) ...[
           const SizedBox(height: 4),
-          Text(_recipientChecksum!, style: text.smallParagraph?.copyWith(color: colors.accentPink)),
+          Text(_recipientChecksum!, style: text.smallParagraph?.copyWith(color: colors.checksum)),
         ],
         if (_errorMessage != null) ...[
           const SizedBox(height: 16),

@@ -86,9 +86,9 @@ class EditAccountView extends StatelessWidget {
         readOnly: !isEditingName || isSavingName,
         style: context.themeText.smallParagraph!.copyWith(
           fontWeight: FontWeight.w500,
-          color: context.colors.accentPink,
+          color: context.colors.accentOrange,
         ),
-        cursorColor: context.colors.accentPink,
+        cursorColor: context.colors.accentOrange,
         decoration: accountFieldDecoration,
         onSubmitted: (_) {
           if (isEditingName && !isSavingName) {
@@ -121,7 +121,7 @@ class EditAccountView extends StatelessWidget {
           AccountCopyRow(
             value: checksum,
             onCopy: () => context.copyTextWithToaster(checksum, message: 'Checkphrase copied to clipboard'),
-            textStyle: context.themeText.smallParagraph!.copyWith(color: context.colors.accentPink),
+            textStyle: context.themeText.smallParagraph!.copyWith(color: context.colors.checksum),
           ),
         ],
       ),

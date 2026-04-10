@@ -19,8 +19,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
   final Color textError;
 
   // Accents
+  final Color accentOrange;
   final Color accentGreen;
-  final Color accentPink;
   final Color checksum;
 
   // Semantic
@@ -65,8 +65,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     required this.textSecondary,
     required this.textTertiary,
     required this.textError,
+    required this.accentOrange,
     required this.accentGreen,
-    required this.accentPink,
     required this.checksum,
     required this.error,
     required this.danger,
@@ -101,9 +101,9 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
         textSecondary: const Color(0x80FFFFFF),
         textTertiary: const Color(0x52FFFFFF),
         textError: const Color(0xFFFF5252),
+        accentOrange: const Color(0xFFFF6B35),
         accentGreen: const Color(0xFF34C759),
-        accentPink: const Color(0xFFED4CCE),
-        checksum: const Color(0xFF4CEDE7),
+        checksum: const Color(0xFF95A7FB),
         error: const Color(0xFFFF2D54),
         danger: const Color(0xFFFF1F45),
         success: const Color(0xFF1FFFA7),
@@ -132,8 +132,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     Color? textSecondary,
     Color? textTertiary,
     Color? textError,
+    Color? accentOrange,
     Color? accentGreen,
-    Color? accentPink,
     Color? checksum,
     Color? error,
     Color? danger,
@@ -170,8 +170,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       textSecondary: textSecondary ?? this.textSecondary,
       textTertiary: textTertiary ?? this.textTertiary,
       textError: textError ?? this.textError,
+      accentOrange: accentOrange ?? this.accentOrange,
       accentGreen: accentGreen ?? this.accentGreen,
-      accentPink: accentPink ?? this.accentPink,
       checksum: checksum ?? this.checksum,
       error: error ?? this.error,
       danger: danger ?? this.danger,
@@ -209,8 +209,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       textSecondary: Color.lerp(textSecondary, other.textSecondary, t) ?? textSecondary,
       textTertiary: Color.lerp(textTertiary, other.textTertiary, t) ?? textTertiary,
       textError: Color.lerp(textError, other.textError, t) ?? textError,
+      accentOrange: Color.lerp(accentOrange, other.accentOrange, t) ?? accentOrange,
       accentGreen: Color.lerp(accentGreen, other.accentGreen, t) ?? accentGreen,
-      accentPink: Color.lerp(accentPink, other.accentPink, t) ?? accentPink,
       checksum: Color.lerp(checksum, other.checksum, t) ?? checksum,
       error: Color.lerp(error, other.error, t) ?? error,
       danger: Color.lerp(danger, other.danger, t) ?? danger,

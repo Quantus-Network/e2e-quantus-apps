@@ -367,7 +367,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
                     account.name,
                     style: context.themeText.paragraph!.copyWith(
                       fontWeight: FontWeight.w500,
-                      color: isActive ? context.colors.accentPink : Colors.white,
+                      color: isActive ? context.colors.accentOrange : Colors.white,
                     ),
                   ),
                   const SizedBox(height: 4),

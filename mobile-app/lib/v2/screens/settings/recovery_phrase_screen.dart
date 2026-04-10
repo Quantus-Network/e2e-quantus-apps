@@ -98,9 +98,9 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.warning_amber_rounded, color: colors.accentPink, size: 24),
+            Icon(Icons.warning_amber_rounded, color: colors.accentOrange, size: 24),
             const SizedBox(width: 8),
-            Text('Important Warning', style: text.smallTitle?.copyWith(color: colors.accentPink)),
+            Text('Important Warning', style: text.smallTitle?.copyWith(color: colors.accentOrange)),
           ],
         ),
         const SizedBox(height: 8),

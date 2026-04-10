@@ -135,7 +135,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
           Row(
             children: [
               Expanded(
-                child: Text(_checkphrase!, style: text.smallParagraph?.copyWith(color: colors.accentPink)),
+                child: Text(_checkphrase!, style: text.smallParagraph?.copyWith(color: colors.checksum)),
               ),
               const SizedBox(width: 8),
               _copyButton(colors, value: _checkphrase!, message: 'Checkphrase copied to clipboard'),

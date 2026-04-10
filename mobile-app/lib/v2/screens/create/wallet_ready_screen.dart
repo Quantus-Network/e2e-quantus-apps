@@ -151,7 +151,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
                     label: 'Wallet Checkphrase',
                     value: _isLoading ? '...' : _checksum,
                     isLoading: _isLoading,
-                    valueColor: colors.accentPink,
+                    valueColor: colors.checksum,
                     actionIcon: Icons.copy,
                     onAction: () => context.copyTextWithToaster(_checksum, message: 'Checkphrase copied'),
                   ),

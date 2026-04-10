@@ -138,7 +138,7 @@ class _AddressPickerSheetState extends State<AddressPickerSheet> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (checksum != null) Text(checksum, style: text.smallParagraph?.copyWith(color: colors.accentPink)),
+                if (checksum != null) Text(checksum, style: text.smallParagraph?.copyWith(color: colors.checksum)),
                 const SizedBox(height: 4),
                 Text(
                   AddressFormattingService.formatAddress(address),

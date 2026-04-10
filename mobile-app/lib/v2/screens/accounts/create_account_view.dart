@@ -55,7 +55,7 @@ class CreateAccountView extends StatelessWidget {
                   context,
                   value: draftChecksum,
                   onCopy: () => context.copyTextWithToaster(draftChecksum),
-                  textStyle: context.themeText.smallParagraph!.copyWith(color: context.colors.accentPink),
+                  textStyle: context.themeText.smallParagraph!.copyWith(color: context.colors.checksum),
                 ),
               ],
             ),
