@@ -7,7 +7,7 @@ import 'package:resonance_network_wallet/services/firebase_messaging_service.dar
 import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/create/recovery_phrase_sheet.dart';
@@ -176,7 +176,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
             ),
           ),
           const SizedBox(height: 24),
-          GlassButton.simple(
+          QuantusButton.simple(
             label: 'Continue',
             onTap: _continue,
             isLoading: _isSubmitting,
@@ -213,7 +213,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
               ),
             ),
             const SizedBox(height: 24),
-            GlassButton.simple(
+            QuantusButton.simple(
               label: 'Save',
               onTap: () async {
                 final v = controller.text.trim();
@@ -275,7 +275,7 @@ class _Field extends StatelessWidget {
               SizedBox(
                 width: 40,
                 height: 40,
-                child: GlassButton(
+                child: QuantusButton(
                   width: 40,
                   padding: EdgeInsets.zero,
                   onTap: isLoading ? null : onAction,

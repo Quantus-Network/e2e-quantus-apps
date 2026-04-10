@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/v2/components/base_background.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/screens/create/wallet_ready_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/import/import_wallet_screen.dart';
@@ -37,7 +37,7 @@ class WelcomeScreenV2 extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 220),
-          GlassButton.simple(
+          QuantusButton.simple(
             label: 'Create New Wallet',
             onTap: () => Navigator.push(
               context,
@@ -48,7 +48,7 @@ class WelcomeScreenV2 extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 32),
-          GlassButton.simple(
+          QuantusButton.simple(
             label: 'Import Existing Wallet',
             onTap: () => Navigator.push(
               context,

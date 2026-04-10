@@ -4,7 +4,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/services/pos_service.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -58,9 +58,9 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         const SizedBox(height: 16),
         Text('Ref: ${request.refId}', style: text.detail?.copyWith(color: colors.textTertiary)),
         const Spacer(),
-        GlassButton.simple(label: 'New Charge', onTap: () => Navigator.pop(context), variant: ButtonVariant.secondary),
+        QuantusButton.simple(label: 'New Charge', onTap: () => Navigator.pop(context), variant: ButtonVariant.secondary),
         const SizedBox(height: 16),
-        GlassButton.simple(
+        QuantusButton.simple(
           label: 'Done',
           onTap: () => Navigator.of(context).popUntil((route) => route.isFirst),
           variant: ButtonVariant.primary,

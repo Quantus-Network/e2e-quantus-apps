@@ -3,11 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart' hide ButtonVariant;
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_sheet.dart';
@@ -124,10 +123,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildPosButton(AppColorsV2 colors, AppTextTheme text) {
-    return Button(
+    return QuantusButton.simple(
       label: 'New Charge',
-      variant: ButtonVariant.accent,
-      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosAmountScreen())),
+      variant: ButtonVariant.success,
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosAmountScreen())),
       textStyle: text.smallTitle?.copyWith(fontWeight: FontWeight.w700, fontSize: 20, decoration: TextDecoration.none),
     );
   }
@@ -245,9 +244,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(width: 104, child: receiveCard),
-          const SizedBox(width: 32),
-          SizedBox(width: 104, child: sendCard),
+          SizedBox(width: 151, child: receiveCard),
+          const SizedBox(width: 20),
+          SizedBox(width: 151, child: sendCard),
         ],
       );
     }
@@ -270,12 +269,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _actionCard({required String iconAsset, required String label, required VoidCallback onTap}) {
-    return GlassButton.simple(
+    return QuantusButton.simple(
       label: label,
       onTap: onTap,
       icon: SvgPicture.asset(iconAsset, width: 24, height: 24),
       iconPlacement: IconPlacement.top,
       padding: const EdgeInsets.all(14),
+      variant: ButtonVariant.secondary,
     );
   }
 }

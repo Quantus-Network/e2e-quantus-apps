@@ -3,7 +3,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -183,7 +183,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
     return Row(
       children: [
         Expanded(
-          child: GlassButton.simple(
+          child: QuantusButton.simple(
             padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
             label: 'Copy',
             onTap: _copyAddress,
@@ -194,7 +194,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
         ),
         const SizedBox(width: 32),
         Expanded(
-          child: GlassButton.simple(
+          child: QuantusButton.simple(
             padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
             label: 'Share',
             onTap: _share,

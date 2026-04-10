@@ -4,7 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -180,7 +180,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     final isPending = widget.tx is PendingTransactionEvent;
     final color = isPending ? colors.textPrimary.withValues(alpha: 0.3) : colors.textPrimary;
 
-    return GlassButton.simple(
+    return QuantusButton.simple(
       label: 'View in Explorer',
       onTap: _openExplorer,
       isDisabled: isPending,

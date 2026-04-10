@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -45,7 +45,7 @@ class _ResetConfirmationSheetState extends State<ResetConfirmationSheet> {
             title: Text('I have backed up my recovery phrase', style: context.themeText.smallParagraph),
           ),
           const SizedBox(height: 64),
-          GlassButton.simple(
+          QuantusButton.simple(
             label: 'Confirm',
             onTap: () {
               setState(() => _isResetting = true);
@@ -56,7 +56,7 @@ class _ResetConfirmationSheetState extends State<ResetConfirmationSheet> {
             isLoading: _isResetting,
           ),
           const SizedBox(height: 16),
-          GlassButton.simple(
+          QuantusButton.simple(
             padding: const EdgeInsets.all(0),
             label: 'Cancel',
             onTap: () => Navigator.pop(context),
