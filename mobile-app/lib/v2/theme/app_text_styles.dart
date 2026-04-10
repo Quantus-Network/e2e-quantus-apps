@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-const _fontFamily = 'Inter';
+const _fontFamily = 'Geist';
+const _fontFamilySecondary = 'Geist Mono';
 
 @immutable
 class AppTextTheme extends ThemeExtension<AppTextTheme> {
