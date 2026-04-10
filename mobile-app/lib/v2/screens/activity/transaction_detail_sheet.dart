@@ -5,7 +5,7 @@ import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/components/glass_button.dart';
-import 'package:resonance_network_wallet/v2/components/glass_icon_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -148,7 +148,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
   }
 
   Widget _copyButton(AppColorsV2 colors, {required String value, String message = 'Address copied to clipboard'}) {
-    return GlassIconButton.rounded(
+    return QuantusIconButton.rounded(
       icon: Icons.copy,
       onTap: () => context.copyTextWithToaster(value, message: message),
       size: IconButtonSize.small,

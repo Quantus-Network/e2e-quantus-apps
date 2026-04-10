@@ -8,7 +8,7 @@ import 'package:resonance_network_wallet/features/components/shared_address_acti
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/v2/components/glass_button.dart' hide ButtonVariant;
-import 'package:resonance_network_wallet/v2/components/glass_icon_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_sheet.dart';
@@ -161,13 +161,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         Row(
           children: [
-            _glassCircleButton(
+            _circleIconButton(
               icon: isBalanceHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
               colors: colors,
               onTap: () => toggleBalanceHidden(isBalanceHidden),
+              isActive: isBalanceHidden,
             ),
             const SizedBox(width: 12),
-            _glassCircleButton(
+            _circleIconButton(
               icon: Icons.settings_outlined,
               colors: colors,
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreenV2())),
@@ -178,8 +179,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _glassCircleButton({required IconData icon, required AppColorsV2 colors, required VoidCallback onTap}) {
-    return GlassIconButton.circular(icon: icon, onTap: onTap);
+  Widget _circleIconButton({required IconData icon, required AppColorsV2 colors, required VoidCallback onTap, bool isActive = false}) {
+    return QuantusIconButton.circular(icon: icon, onTap: onTap, isActive: isActive);
   }
 
   Widget _buildBalance(AsyncValue<BigInt> balanceAsync, bool isBalanceHidden, AppColorsV2 colors, AppTextTheme text) {

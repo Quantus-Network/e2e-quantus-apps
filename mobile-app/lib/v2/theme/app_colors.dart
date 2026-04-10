@@ -41,6 +41,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
   final Color skeletonHighlight;
   final Color toasterBorder;
   final Color sheetBackground;
+  final Color borderButton;
   final Color borderSubtle;
   final Color borderDanger;
 
@@ -56,6 +57,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     required this.sheetBackground,
     required this.borderSubtle,
     required this.borderDanger,
+    required this.borderButton,
     required this.surface,
     required this.surfaceGlass,
     required this.surfaceCard,
@@ -89,8 +91,10 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
         toasterBackground: const Color(0xFF191919),
         toasterBorder: const Color(0xFF3D3D3D),
         sheetBackground: const Color(0xFF1A1A1A),
+        border: const Color(0x33FFFFFF),
         borderSubtle: const Color(0x70FFFFFF),
         borderDanger: const Color(0x70FF0000),
+        borderButton: const Color(0xFF272727),
         surface: const Color(0xFF292929),
         surfaceGlass: const Color(0x1AFFFFFF),
         surfaceCard: const Color(0x0FFFFFFF),
@@ -108,7 +112,6 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
         buttonPrimaryGradient: const [Color(0xFF0000FF), Color(0xFFED4CCE)],
         separator: const Color(0x1AFFFFFF),
         txItemSeparator: const Color(0x05FFFFFF),
-        border: const Color(0x33FFFFFF),
         buttonDisabled: const Color(0xFF3D3C44),
         buttonDanger: const Color(0x1AFF0000),
         skeletonBase: const Color(0xFF3D3C44),
@@ -139,6 +142,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     Color? separator,
     Color? txItemSeparator,
     Color? border,
+    Color? borderButton,
     Color? toasterBackground,
     Color? toasterBorder,
     Color? sheetBackground,
@@ -158,6 +162,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       toasterBorder: toasterBorder ?? this.toasterBorder,
       sheetBackground: sheetBackground ?? this.sheetBackground,
       borderSubtle: borderSubtle ?? this.borderSubtle,
+      borderButton: borderButton ?? this.borderButton,
       surface: surface ?? this.surface,
       surfaceGlass: surfaceGlass ?? this.surfaceGlass,
       surfaceCard: surfaceCard ?? this.surfaceCard,
@@ -196,6 +201,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       toasterBorder: Color.lerp(toasterBorder, other.toasterBorder, t) ?? toasterBorder,
       sheetBackground: Color.lerp(sheetBackground, other.sheetBackground, t) ?? sheetBackground,
       borderSubtle: Color.lerp(borderSubtle, other.borderSubtle, t) ?? borderSubtle,
+      borderButton: Color.lerp(borderButton, other.borderButton, t) ?? borderButton,
       surface: Color.lerp(surface, other.surface, t) ?? surface,
       surfaceGlass: Color.lerp(surfaceGlass, other.surfaceGlass, t) ?? surfaceGlass,
       surfaceCard: Color.lerp(surfaceCard, other.surfaceCard, t) ?? surfaceCard,
