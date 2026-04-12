@@ -61,7 +61,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
           children: [
             const SizedBox(height: 40),
             _header(colors, text, context),
-            const SizedBox(height: 24),
+            const SizedBox(height: 28),
 
             ...recentTransactions.mapIndexed((index, tx) {
               final data = TxItemData.from(tx, widget.activeAccount.accountId);
@@ -151,10 +151,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Get Started',
-                style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-              ),
+              Text('Get Started', style: text.smallTitle),
               Icon(
                 _getStartedExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                 color: colors.textSecondary,
@@ -209,20 +206,16 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          'Activity',
-          style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-        ),
+        Text('Activity', style: text.smallTitle),
         GestureDetector(
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivityScreen())),
           child: Text(
             'View All',
-            style: text.paragraph?.copyWith(
-              color: Colors.transparent,
-              shadows: [Shadow(color: colors.textSecondary, offset: const Offset(0, -2))],
+            style: text.smallTitle?.copyWith(
+              color: const Color(0xFF888888),
               decoration: TextDecoration.underline,
-              decorationColor: colors.textSecondary,
-              decorationStyle: TextDecorationStyle.solid,
+              decorationColor: const Color(0xFF888888),
+              decorationStyle: TextDecorationStyle.dotted,
               decorationThickness: 1.0,
             ),
           ),
