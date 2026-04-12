@@ -135,7 +135,8 @@ class QuantusButton extends StatelessWidget {
     if (child != null) return child!;
 
     final effectiveTextStyle =
-        _textStyle ?? context.themeText.smallTitle!.copyWith(fontSize: buttonFontSize, color: textColor);
+        _textStyle ??
+        context.themeText.paragraph!.copyWith(fontSize: buttonFontSize, color: textColor, fontWeight: FontWeight.w500);
 
     Widget content;
     if (_iconPlacement == IconPlacement.top) {

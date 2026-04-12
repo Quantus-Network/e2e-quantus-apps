@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/dotted_border.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
@@ -139,13 +140,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     AppTextTheme text,
   ) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
         _buildTopBar(active, isBalanceHidden, colors),
-        const SizedBox(height: 64),
+        const SizedBox(height: 40),
         _buildBalance(balanceAsync, isBalanceHidden, colors, text),
-        const SizedBox(height: 64),
-        if (active is RegularAccount) _buildActionButtons(),
+        const SizedBox(height: 40),
+        if (active is RegularAccount) ...[_buildActionButtons(), const SizedBox(height: 40)],
+        DottedBorder(
+          dashLength: 10,
+          gapLength: 6,
+          color: colors.borderButton.useOpacity(0.5),
+          child: const SizedBox(width: double.infinity, height: 1),
+        ),
       ],
     );
   }
@@ -178,35 +186,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _circleIconButton({required IconData icon, required AppColorsV2 colors, required VoidCallback onTap, bool isActive = false}) {
+  Widget _circleIconButton({
+    required IconData icon,
+    required AppColorsV2 colors,
+    required VoidCallback onTap,
+    bool isActive = false,
+  }) {
     return QuantusIconButton.circular(icon: icon, onTap: onTap, isActive: isActive);
   }
 
   Widget _buildBalance(AsyncValue<BigInt> balanceAsync, bool isBalanceHidden, AppColorsV2 colors, AppTextTheme text) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         balanceAsync.when(
           data: (balance) {
-            final formatted = isBalanceHidden ? '-----' : _fmt.formatBalance(balance);
-            final usdFormatted = isBalanceHidden ? '-----' : '\$${_fmt.formatBalance(balance)}';
+            final formatted = isBalanceHidden ? '- - - - -' : _fmt.formatBalance(balance, addSymbol: true);
+            final usdFormatted = isBalanceHidden ? '- - - - -' : '\$${_fmt.formatBalance(balance)}';
+
             return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    ImageFiltered(
-                      imageFilter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-                      child: Text(
-                        '$formatted ${AppConstants.tokenSymbol}',
-                        style: text.extraLargeTitle?.copyWith(color: colors.textSecondary),
-                      ),
-                    ),
-                    Text(
-                      '$formatted ${AppConstants.tokenSymbol}',
-                      style: text.extraLargeTitle?.copyWith(color: colors.textPrimary),
-                    ),
-                  ],
-                ),
+                Text(formatted, style: text.extraLargeTitle?.copyWith(color: colors.textPrimary)),
                 const SizedBox(height: 6),
                 Text('≈ $usdFormatted', style: text.paragraph?.copyWith(color: colors.textSecondary)),
               ],
@@ -276,6 +277,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       iconPlacement: IconPlacement.top,
       padding: const EdgeInsets.all(14),
       variant: ButtonVariant.secondary,
+      textStyle: context.themeText.paragraph?.copyWith(color: context.colors.textPrimary.useOpacity(0.8)),
     );
   }
 }

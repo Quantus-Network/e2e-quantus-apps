@@ -65,7 +65,7 @@ class NumberFormattingService {
     }
 
     if (addSymbol) {
-      resultString = '$resultString ${AppConstants.tokenSymbol}';
+      resultString = '${AppConstants.tokenSymbol.substring(0,1)} $resultString';
     }
     return resultString;
   }
