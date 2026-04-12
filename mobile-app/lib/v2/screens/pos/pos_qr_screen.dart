@@ -58,7 +58,11 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         const SizedBox(height: 16),
         Text('Ref: ${request.refId}', style: text.detail?.copyWith(color: colors.textTertiary)),
         const Spacer(),
-        QuantusButton.simple(label: 'New Charge', onTap: () => Navigator.pop(context), variant: ButtonVariant.secondary),
+        QuantusButton.simple(
+          label: 'New Charge',
+          onTap: () => Navigator.pop(context),
+          variant: ButtonVariant.secondary,
+        ),
         const SizedBox(height: 16),
         QuantusButton.simple(
           label: 'Done',
