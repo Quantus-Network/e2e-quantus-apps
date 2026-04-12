@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 const _fontFamily = 'Geist';
+// ignore: unused_element
 const _fontFamilySecondary = 'Geist Mono';
 
 @immutable
