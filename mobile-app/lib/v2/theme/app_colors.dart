@@ -16,6 +16,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
   final Color textSecondary;
   final Color textTertiary;
   final Color textError;
+  final Color textLabel;
 
   // Accents
   final Color accentOrange;
@@ -65,6 +66,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     required this.textSecondary,
     required this.textTertiary,
     required this.textError,
+    required this.textLabel,
     required this.accentOrange,
     required this.accentGreen,
     required this.checksum,
@@ -102,6 +104,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
         textSecondary: const Color(0x80FFFFFF),
         textTertiary: const Color(0xFF3D3D3D),
         textError: const Color(0xFFFF5252),
+        textLabel: const Color(0xFF787878),
         accentOrange: const Color(0xFFFF6B35),
         accentGreen: const Color(0xFF34C759),
         checksum: const Color(0xFF95A7FB),
@@ -131,6 +134,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     Color? textSecondary,
     Color? textTertiary,
     Color? textError,
+    Color? textLabel,
     Color? accentOrange,
     Color? accentGreen,
     Color? checksum,
@@ -170,6 +174,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       textSecondary: textSecondary ?? this.textSecondary,
       textTertiary: textTertiary ?? this.textTertiary,
       textError: textError ?? this.textError,
+      textLabel: textLabel ?? this.textLabel,
       accentOrange: accentOrange ?? this.accentOrange,
       accentGreen: accentGreen ?? this.accentGreen,
       checksum: checksum ?? this.checksum,
@@ -209,6 +214,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       textSecondary: Color.lerp(textSecondary, other.textSecondary, t) ?? textSecondary,
       textTertiary: Color.lerp(textTertiary, other.textTertiary, t) ?? textTertiary,
       textError: Color.lerp(textError, other.textError, t) ?? textError,
+      textLabel: Color.lerp(textLabel, other.textLabel, t) ?? textLabel,
       accentOrange: Color.lerp(accentOrange, other.accentOrange, t) ?? accentOrange,
       accentGreen: Color.lerp(accentGreen, other.accentGreen, t) ?? accentGreen,
       checksum: Color.lerp(checksum, other.checksum, t) ?? checksum,

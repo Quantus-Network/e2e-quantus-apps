@@ -9,7 +9,7 @@ import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_sheet.dart';
-import 'package:resonance_network_wallet/v2/screens/receive/receive_sheet.dart';
+import 'package:resonance_network_wallet/v2/screens/receive/receive_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
@@ -231,7 +231,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final receiveCard = _actionCard(
       iconAsset: 'assets/v2/action_receive.svg',
       label: 'Receive',
-      onTap: () => showReceiveSheetV2(context),
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReceiveScreen())),
     );
 
     final sendCard = _actionCard(

@@ -1,0 +1,351 @@
+import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
+import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
+import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/components/segmented_controls.dart';
+import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
+
+enum ReceiveTab { qrCode, address }
+
+class ReceiveScreen extends StatefulWidget {
+  const ReceiveScreen({super.key});
+
+  @override
+  State<ReceiveScreen> createState() => _ReceiveScreenState();
+}
+
+class _ReceiveScreenState extends State<ReceiveScreen> {
+  ReceiveTab _selectedTab = ReceiveTab.qrCode;
+  String? _accountId;
+  String? _checksum;
+  Future<String>? _checksumFuture;
+
+  final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
+  final SettingsService _settingsService = SettingsService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAccountData();
+  }
+
+  Future<void> _loadAccountData() async {
+    try {
+      final account = (await _settingsService.getActiveAccount())!;
+      setState(() {
+        _accountId = account.account.accountId;
+        _checksumFuture = _checksumService.getHumanReadableName(account.account.accountId);
+      });
+    } catch (e) {
+      debugPrint('Error loading account data: $e');
+    }
+  }
+
+  void _setChecksum(String checksum) {
+    setState(() {
+      _checksum = checksum;
+    });
+  }
+
+  void _share() {
+    if (_accountId != null) {
+      shareAccountDetails(context, _accountId!, checksum: _checksum ?? '');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tabs = [
+      const SegmentedControlItem(label: 'QR Code', value: ReceiveTab.qrCode),
+      const SegmentedControlItem(label: 'Address', value: ReceiveTab.address),
+    ];
+
+    return ScaffoldBase(
+      appBar: const V2AppBar(title: 'Receive'),
+      child: Column(
+        children: [
+          SegmentedControls<ReceiveTab>(
+            items: tabs,
+            selectedValue: _selectedTab,
+            onChanged: (value) {
+              setState(() {
+                _selectedTab = value;
+              });
+            },
+          ),
+          const SizedBox(height: 32),
+          if (_selectedTab == ReceiveTab.qrCode)
+            QrCodeTab(
+              accountId: _accountId!,
+              onShare: _share,
+              checksumFuture: _checksumFuture!,
+              setChecksum: _setChecksum,
+            ),
+          if (_selectedTab == ReceiveTab.address)
+            AddressTab(
+              accountId: _accountId!,
+              onShare: _share,
+              checksumFuture: _checksumFuture!,
+              setChecksum: _setChecksum,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class QrCodeTab extends StatelessWidget {
+  const QrCodeTab({
+    super.key,
+    required this.accountId,
+    required this.onShare,
+    required this.checksumFuture,
+    required this.setChecksum,
+  });
+
+  final String accountId;
+  final VoidCallback onShare;
+  final Future<String> checksumFuture;
+  final Function(String) setChecksum;
+
+  void _copyAccountDetails(BuildContext context) {
+    checksumFuture.then((checksum) {
+      if (context.mounted) {
+        context.copyTextWithToaster(
+          'Account Id:\n$accountId\n\nCheckphrase:\n$checksum',
+          message: 'Account details copied to clipboard',
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: context.colors.toasterBorder, width: 1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            width: 267,
+            height: 267,
+            child: QrImageView(
+              data: accountId,
+              errorCorrectionLevel: QrErrorCorrectLevel.M,
+              embeddedImage: const AssetImage('assets/v2/uppercase_q.png'),
+              embeddedImageStyle: const QrEmbeddedImageStyle(size: Size(64, 64)),
+              version: QrVersions.auto,
+              size: 267,
+              padding: const EdgeInsets.all(16),
+              eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: Colors.white),
+              dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: Colors.white),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+          _buildChecksum(),
+
+          const SizedBox(height: 9),
+          Text(
+            accountId,
+            style: context.themeText.smallParagraph?.copyWith(
+              color: context.colors.textPrimary,
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          const Spacer(),
+
+          Row(
+            children: [
+              Expanded(
+                child: QuantusButton.simple(
+                  padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                  label: 'Copy',
+                  onTap: () => _copyAccountDetails(context),
+                  icon: Icon(Icons.copy, size: 20, color: context.colors.textPrimary),
+                  iconPlacement: IconPlacement.leading,
+                  variant: ButtonVariant.secondary,
+                ),
+              ),
+              const SizedBox(width: 32),
+              Expanded(
+                child: QuantusButton.simple(
+                  padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                  label: 'Share',
+                  onTap: onShare,
+                  icon: Icon(Icons.shortcut_rounded, size: 20, color: context.colors.background),
+                  iconPlacement: IconPlacement.leading,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChecksum() {
+    return FutureBuilder<String>(
+      future: checksumFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return SizedBox(
+            height: 16,
+            width: 16,
+            child: CircularProgressIndicator(strokeWidth: 2, color: context.colors.textSecondary),
+          );
+        }
+        if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) return const SizedBox.shrink();
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) setChecksum(snapshot.data!);
+        });
+
+        return Text(
+          snapshot.data!,
+          style: context.themeText.paragraph?.copyWith(color: context.colors.checksum),
+          textAlign: TextAlign.center,
+        );
+      },
+    );
+  }
+}
+
+class AddressTab extends StatelessWidget {
+  const AddressTab({
+    super.key,
+    required this.accountId,
+    required this.onShare,
+    required this.checksumFuture,
+    required this.setChecksum,
+  });
+
+  final String accountId;
+  final VoidCallback onShare;
+  final Future<String> checksumFuture;
+  final Function(String) setChecksum;
+
+  void _copyAddress(BuildContext context) {
+    context.copyTextWithToaster(accountId);
+  }
+
+  void _copyChecksum(BuildContext context) {
+    checksumFuture.then((checksum) {
+      if (context.mounted) {
+        context.copyTextWithToaster(checksum, message: 'Checkphrase copied');
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0A0A0A),
+              border: Border.all(color: context.colors.borderButton, width: 1),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Column(
+              children: [
+                _buildAddress(context),
+                const SizedBox(height: 23),
+                Divider(color: context.colors.txItemSeparator, thickness: 1),
+                const SizedBox(height: 32),
+                _buildChecksum(),
+              ],
+            ),
+          ),
+
+          const Spacer(),
+
+          QuantusButton.simple(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            label: 'Share',
+            onTap: onShare,
+            icon: Icon(Icons.shortcut_rounded, size: 20, color: context.colors.background),
+            iconPlacement: IconPlacement.leading,
+          ),
+
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChecksum() {
+    return FutureBuilder<String>(
+      future: checksumFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return SizedBox(
+            height: 16,
+            width: 16,
+            child: CircularProgressIndicator(strokeWidth: 2, color: context.colors.textSecondary),
+          );
+        }
+        if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) return const SizedBox.shrink();
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) setChecksum(snapshot.data!);
+        });
+
+        return InkWell(
+          onTap: () => _copyChecksum(context),
+          child: _buildItem(context, 'CHECKPHRASE', snapshot.data!, isCheckphrase: true),
+        );
+      },
+    );
+  }
+
+  Widget _buildAddress(BuildContext context) {
+    return InkWell(onTap: () => _copyAddress(context), child: _buildItem(context, 'ADDRESS', accountId));
+  }
+
+  Widget _buildItem(BuildContext context, String label, String value, {isCheckphrase = false}) {
+    final valueTextStyle = isCheckphrase
+        ? context.themeText.smallParagraph?.copyWith(color: context.colors.checksum)
+        : context.themeText.smallParagraph?.copyWith(fontFamily: AppTextTheme.fontFamilySecondary);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        SizedBox(
+          width: 186,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: context.themeText.receiveLabel?.copyWith(color: context.colors.textLabel)),
+              const SizedBox(height: 16),
+              Text(value, style: valueTextStyle),
+            ],
+          ),
+        ),
+
+        const Spacer(),
+
+        _copyButton(),
+      ],
+    );
+  }
+
+  Widget _copyButton() {
+    return const QuantusIconButton.circular(icon: Icons.copy, size: IconButtonSize.medium);
+  }
+}
