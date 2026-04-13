@@ -3,6 +3,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
+import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_shared_components.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -64,11 +65,7 @@ class EditAccountView extends StatelessWidget {
               width: 40,
               height: 40,
               child: Center(
-                child: SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                ),
+                child: Loader(),
               ),
             )
           : AccountIconActionButton(

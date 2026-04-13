@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
@@ -80,14 +81,18 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
             },
           ),
           const SizedBox(height: 32),
-          if (_selectedTab == ReceiveTab.qrCode)
+          if (_accountId == null || _checksumFuture == null)
+            const Expanded(
+              child: Center(child: Loader()),
+            )
+          else if (_selectedTab == ReceiveTab.qrCode)
             QrCodeTab(
               accountId: _accountId!,
               onShare: _share,
               checksumFuture: _checksumFuture!,
               setChecksum: _setChecksum,
-            ),
-          if (_selectedTab == ReceiveTab.address)
+            )
+          else if (_selectedTab == ReceiveTab.address)
             AddressTab(
               accountId: _accountId!,
               onShare: _share,
@@ -177,7 +182,7 @@ class QrCodeTab extends StatelessWidget {
                   variant: ButtonVariant.secondary,
                 ),
               ),
-              const SizedBox(width: 32),
+              const SizedBox(width: 22),
               Expanded(
                 child: QuantusButton.simple(
                   padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
@@ -201,11 +206,7 @@ class QrCodeTab extends StatelessWidget {
       future: checksumFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return SizedBox(
-            height: 16,
-            width: 16,
-            child: CircularProgressIndicator(strokeWidth: 2, color: context.colors.textSecondary),
-          );
+          return const Loader();
         }
         if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) return const SizedBox.shrink();
 
@@ -293,11 +294,7 @@ class AddressTab extends StatelessWidget {
       future: checksumFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return SizedBox(
-            height: 16,
-            width: 16,
-            child: CircularProgressIndicator(strokeWidth: 2, color: context.colors.textSecondary),
-          );
+          return const Loader();
         }
         if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) return const SizedBox.shrink();
 

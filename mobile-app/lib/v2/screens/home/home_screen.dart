@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/features/components/dotted_border.dart'
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
+import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_sheet.dart';
@@ -84,8 +85,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final text = context.themeText;
 
     Widget screen = accountAsync.when(
-      loading: () => ScaffoldBase(
-        child: Center(child: CircularProgressIndicator(color: colors.textPrimary)),
+      loading: () => const ScaffoldBase(
+        child: Center(child: Loader()),
       ),
       error: (e, _) => ScaffoldBase(
         child: Center(

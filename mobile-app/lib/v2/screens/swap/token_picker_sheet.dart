@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
+import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -86,7 +87,7 @@ class _TokenPickerContentState extends State<_TokenPickerContent> {
 
   Widget _content(AppColorsV2 colors, AppTextTheme text) {
     if (_loading && _tokens.isEmpty) {
-      return Center(child: CircularProgressIndicator(color: colors.textPrimary, strokeWidth: 2));
+      return const Center(child: Loader());
     }
     if (_error != null && _tokens.isEmpty) {
       return Center(

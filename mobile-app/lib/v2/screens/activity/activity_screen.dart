@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
+import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -27,14 +28,14 @@ class ActivityScreen extends ConsumerWidget {
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Activity'),
       child: accountAsync.when(
-        loading: () => Center(child: CircularProgressIndicator(color: colors.textPrimary)),
+        loading: () => const Center(child: Loader()),
         error: (e, _) => Center(
           child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError)),
         ),
         data: (active) {
           if (active == null) return const Center(child: Text('No account'));
           return txAsync.when(
-            loading: () => Center(child: CircularProgressIndicator(color: colors.textPrimary)),
+            loading: () => const Center(child: Loader()),
             error: (e, _) => Center(
               child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError)),
             ),

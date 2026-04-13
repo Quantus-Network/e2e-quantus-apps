@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
+import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/add_hardware_account_screen.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
@@ -262,7 +263,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     required Account? editingAccount,
   }) {
     if (accountsAsync.isLoading || activeDisplayAccountAsync.isLoading) {
-      return const Center(child: CircularProgressIndicator(color: Colors.white));
+      return const Center(child: Loader());
     }
 
     if (accountsAsync.hasError) {
