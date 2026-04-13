@@ -26,7 +26,7 @@ class SegmentedControls<T> extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.background,
         borderRadius: BorderRadius.circular(_outerRadius),
-        border: Border.all(color: colors.toasterBackground, width: 1.5),
+        border: Border.all(color: const Color(0xFF191919), width: 1.5),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {

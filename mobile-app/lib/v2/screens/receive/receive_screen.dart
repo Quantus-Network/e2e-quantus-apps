@@ -6,7 +6,6 @@ import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
-import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/segmented_controls.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
@@ -49,6 +48,7 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
   }
 
   void _setChecksum(String checksum) {
+    if (_checksum == checksum) return;
     setState(() {
       _checksum = checksum;
     });
@@ -82,9 +82,7 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
           ),
           const SizedBox(height: 32),
           if (_accountId == null || _checksumFuture == null)
-            const Expanded(
-              child: Center(child: Loader()),
-            )
+            const Expanded(child: Center(child: Loader()))
           else if (_selectedTab == ReceiveTab.qrCode)
             QrCodeTab(
               accountId: _accountId!,
@@ -137,7 +135,7 @@ class QrCodeTab extends StatelessWidget {
         children: [
           Container(
             decoration: BoxDecoration(
-              border: Border.all(color: context.colors.toasterBorder, width: 1),
+              border: Border.all(color: const Color(0xFF3D3D3D), width: 1),
               borderRadius: BorderRadius.circular(16),
             ),
             width: 267,
@@ -224,7 +222,7 @@ class QrCodeTab extends StatelessWidget {
   }
 }
 
-class AddressTab extends StatelessWidget {
+class AddressTab extends StatefulWidget {
   const AddressTab({
     super.key,
     required this.accountId,
@@ -238,14 +236,45 @@ class AddressTab extends StatelessWidget {
   final Future<String> checksumFuture;
   final Function(String) setChecksum;
 
+  @override
+  State<AddressTab> createState() => _AddressTabState();
+}
+
+class _AddressTabState extends State<AddressTab> {
+  bool _addressCopied = false;
+  bool _checksumCopied = false;
+
   void _copyAddress(BuildContext context) {
-    context.copyTextWithToaster(accountId);
+    context.copyTextWithToaster(widget.accountId);
+    _triggerCopied(isAddress: true);
   }
 
   void _copyChecksum(BuildContext context) {
-    checksumFuture.then((checksum) {
+    widget.checksumFuture.then((checksum) {
       if (context.mounted) {
         context.copyTextWithToaster(checksum, message: 'Checkphrase copied');
+        _triggerCopied(isAddress: false);
+      }
+    });
+  }
+
+  void _triggerCopied({required bool isAddress}) {
+    setState(() {
+      if (isAddress) {
+        _addressCopied = true;
+      } else {
+        _checksumCopied = true;
+      }
+    });
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          if (isAddress) {
+            _addressCopied = false;
+          } else {
+            _checksumCopied = false;
+          }
+        });
       }
     });
   }
@@ -278,7 +307,7 @@ class AddressTab extends StatelessWidget {
           QuantusButton.simple(
             padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
             label: 'Share',
-            onTap: onShare,
+            onTap: widget.onShare,
             icon: Icon(Icons.shortcut_rounded, size: 20, color: context.colors.background),
             iconPlacement: IconPlacement.leading,
           ),
@@ -291,7 +320,7 @@ class AddressTab extends StatelessWidget {
 
   Widget _buildChecksum() {
     return FutureBuilder<String>(
-      future: checksumFuture,
+      future: widget.checksumFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Loader();
@@ -299,22 +328,25 @@ class AddressTab extends StatelessWidget {
         if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) return const SizedBox.shrink();
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (context.mounted) setChecksum(snapshot.data!);
+          if (context.mounted) widget.setChecksum(snapshot.data!);
         });
 
         return InkWell(
           onTap: () => _copyChecksum(context),
-          child: _buildItem(context, 'CHECKPHRASE', snapshot.data!, isCheckphrase: true),
+          child: _buildItem(context, 'CHECKPHRASE', snapshot.data!, isCheckphrase: true, isCopied: _checksumCopied),
         );
       },
     );
   }
 
   Widget _buildAddress(BuildContext context) {
-    return InkWell(onTap: () => _copyAddress(context), child: _buildItem(context, 'ADDRESS', accountId));
+    return InkWell(
+      onTap: () => _copyAddress(context),
+      child: _buildItem(context, 'ADDRESS', widget.accountId, isCopied: _addressCopied),
+    );
   }
 
-  Widget _buildItem(BuildContext context, String label, String value, {isCheckphrase = false}) {
+  Widget _buildItem(BuildContext context, String label, String value, {isCheckphrase = false, required bool isCopied}) {
     final valueTextStyle = isCheckphrase
         ? context.themeText.smallParagraph?.copyWith(color: context.colors.checksum)
         : context.themeText.smallParagraph?.copyWith(fontFamily: AppTextTheme.fontFamilySecondary);
@@ -337,12 +369,28 @@ class AddressTab extends StatelessWidget {
 
         const Spacer(),
 
-        _copyButton(),
+        _copyButton(isCopied: isCopied),
       ],
     );
   }
 
-  Widget _copyButton() {
-    return const QuantusIconButton.circular(icon: Icons.copy, size: IconButtonSize.medium);
+  Widget _copyButton({required bool isCopied}) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: isCopied ? const Color(0xFF0C1C14) : Colors.transparent,
+        border: Border.all(color: isCopied ? const Color(0xFF1A3226) : context.colors.borderButton, width: 1),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Center(
+        child: Icon(
+          isCopied ? Icons.check : Icons.copy,
+          size: 16,
+          color: isCopied ? context.colors.success : context.colors.textPrimary,
+        ),
+      ),
+    );
   }
 }

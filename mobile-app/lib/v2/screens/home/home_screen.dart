@@ -170,14 +170,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           children: [
             _circleIconButton(
               icon: isBalanceHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-              colors: colors,
               onTap: () => toggleBalanceHidden(isBalanceHidden),
               isActive: isBalanceHidden,
             ),
             const SizedBox(width: 12),
             _circleIconButton(
               icon: Icons.settings_outlined,
-              colors: colors,
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreenV2())),
             ),
           ],
@@ -188,7 +186,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _circleIconButton({
     required IconData icon,
-    required AppColorsV2 colors,
     required VoidCallback onTap,
     bool isActive = false,
   }) {

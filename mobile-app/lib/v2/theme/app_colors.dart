@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 class AppColorsV2 extends ThemeExtension<AppColorsV2> {
   // Backgrounds
   final Color background;
-  final Color toasterBackground;
 
   // Surfaces
   final Color surface;
@@ -41,6 +40,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
   final Color skeletonBase;
   final Color skeletonHighlight;
   final Color toasterBorder;
+  final Color toasterBackground;
   final Color sheetBackground;
   final Color borderButton;
   final Color borderSubtle;
@@ -90,8 +90,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
   const AppColorsV2.dark()
     : this(
         background: const Color(0xFF0E0E0E),
-        toasterBackground: const Color(0xFF191919),
-        toasterBorder: const Color(0xFF3D3D3D),
+        toasterBackground: const Color(0xFF181818),
+        toasterBorder: const Color(0xFF272727),
         sheetBackground: const Color(0xFF1A1A1A),
         border: const Color(0x33FFFFFF),
         borderSubtle: const Color(0x70FFFFFF),
