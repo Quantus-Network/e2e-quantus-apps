@@ -210,11 +210,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             );
           },
-          loading: () => Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          loading: () => const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Skeleton(width: 200, height: 36),
-              Text(' ${AppConstants.tokenSymbol}', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+              SizedBox(height: 12),
+              Skeleton(width: 200, height: 36),
+              SizedBox(height: 16),
+              Skeleton(width: 100, height: 18),
             ],
           ),
           error: (_, _) => Text('Error loading balance', style: text.detail?.copyWith(color: colors.textError)),
