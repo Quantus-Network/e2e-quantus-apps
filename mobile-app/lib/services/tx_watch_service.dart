@@ -53,24 +53,21 @@ class TxWatchService {
       }),
     );
 
-    _subscription = _ws!.listen(
-      (event) {
-        final data = jsonDecode(event as String) as Map<String, dynamic>;
-        if (data.containsKey('result') && _subscriptionId == null) {
-          _subscriptionId = data['result'].toString();
-          return;
-        }
-        if (data['method'] == 'txWatch_transfer' && data['params']?['subscription'].toString() == _subscriptionId) {
-          onTransfer(TxWatchTransfer.fromJson(data['params']['result'] as Map<String, dynamic>));
-        }
-        if (data.containsKey('error')) {
-          final msg = (data['error'] as Map<String, dynamic>)['message'];
-          print('[TxWatch] RPC error: $msg');
-          onError(Exception(msg));
-        }
-      },
-      onError: (e) => onError(e as Object),
-    );
+    _subscription = _ws!.listen((event) {
+      final data = jsonDecode(event as String) as Map<String, dynamic>;
+      if (data.containsKey('result') && _subscriptionId == null) {
+        _subscriptionId = data['result'].toString();
+        return;
+      }
+      if (data['method'] == 'txWatch_transfer' && data['params']?['subscription'].toString() == _subscriptionId) {
+        onTransfer(TxWatchTransfer.fromJson(data['params']['result'] as Map<String, dynamic>));
+      }
+      if (data.containsKey('error')) {
+        final msg = (data['error'] as Map<String, dynamic>)['message'];
+        print('[TxWatch] RPC error: $msg');
+        onError(Exception(msg));
+      }
+    }, onError: (e) => onError(e as Object));
   }
 
   void dispose() {

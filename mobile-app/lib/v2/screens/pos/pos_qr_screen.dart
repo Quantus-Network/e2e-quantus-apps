@@ -66,9 +66,9 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         _timeoutTimer?.cancel();
         if (mounted) {
           setState(() {
-          _watching = false;
-          _watchError = 'Connection lost. Tap to retry.';
-        });
+            _watching = false;
+            _watchError = 'Connection lost. Tap to retry.';
+          });
         }
       },
     );
@@ -77,9 +77,9 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
       _txWatch.dispose();
       if (mounted) {
         setState(() {
-        _watching = false;
-        _watchError = 'Timed out. Tap to retry.';
-      });
+          _watching = false;
+          _watchError = 'Timed out. Tap to retry.';
+        });
       }
     });
   }
