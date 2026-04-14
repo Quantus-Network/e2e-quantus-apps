@@ -197,7 +197,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
     }
 
     if (_needsMigration) {
-      return const ScaffoldBase(child: SizedBox.shrink());
+      return Scaffold(backgroundColor: Theme.of(context).scaffoldBackgroundColor, body: const SizedBox.shrink());
     }
 
     if (_walletExists) {
