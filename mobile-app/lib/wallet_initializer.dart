@@ -21,6 +21,9 @@ class WalletInitializer extends ConsumerStatefulWidget {
 }
 
 class WalletInitializerState extends ConsumerState<WalletInitializer> {
+  static const _debugSimulateMigration = false;
+  static const _debugSimulateMigrationFailure = false;
+
   bool _loading = true;
   bool _walletExists = false;
   bool _needsMigration = false;
@@ -47,11 +50,17 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
       }
     }
 
-    final needsMigration = _migrationService.needsMigration();
+    final needsMigration = _migrationService.needsMigration() || (_debugSimulateMigration && hasWallet);
 
     if (needsMigration) {
       try {
-        final migrationData = await _migrationService.getMigrationData();
+        var migrationData = await _migrationService.getMigrationData();
+        if (migrationData.isEmpty && _debugSimulateMigration) {
+          final accounts = await _settingsService.getAccounts();
+          migrationData = accounts
+              .map((a) => MigrationAccountData(oldAccount: a, publicKeyHex: 'debug', newAccountId: a.accountId))
+              .toList();
+        }
 
         for (final data in migrationData) {
           print(
@@ -115,7 +124,8 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
     if (_migrationData == null) return;
 
     try {
-      // First, upload migration data to Supabase
+      if (_debugSimulateMigrationFailure) throw Exception('Simulated migration failure');
+
       await _uploadMigrationDataToSupabase(_migrationData!);
 
       // Then perform the actual migration
