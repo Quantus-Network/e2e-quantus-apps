@@ -86,7 +86,7 @@ void main() {
       expect(accountId1, knownAccountHdIndex0);
       expect(accountId2, knownAccountHdIndex1);
     });
-    test('test for known values2', () {
+    test('test for keystone hardware wallet', () {
       const mnemonic1 = 'human snow truck virus now jaguar wall brisk shoe craft gravity diesel';
 
       const knownAccountId = 'qznQKhufTDfU3szAzfgCny7wMhxUN3qjEqneiRUNgC7MjSDyG';
