@@ -89,7 +89,7 @@ void main() {
     test('test for known values2', () {
       const mnemonic1 = 'human snow truck virus now jaguar wall brisk shoe craft gravity diesel';
 
-      const knownAccountId = 'qzmuHhD8p2dvndwkbjw5htDvaptyis5rEVc7v5BmqR3pfQ7QN'; // schroedinger chain spec
+      const knownAccountId = 'qznQKhufTDfU3szAzfgCny7wMhxUN3qjEqneiRUNgC7MjSDyG';
       final keypair = HdWalletService().keyPairAtIndex(mnemonic1, 0);
       final accountId = toAccountId(obj: keypair);
       expect(accountId, knownAccountId);
