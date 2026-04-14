@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/components/glass_button.dart';
@@ -23,11 +21,10 @@ class MigrationDialog extends StatefulWidget {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
       constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
-      builder: (ctx) => BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-        child: MigrationDialog(migrationData: migrationData, onMigrate: onMigrate, onTryLater: onTryLater),
-      ),
+      builder: (ctx) => MigrationDialog(migrationData: migrationData, onMigrate: onMigrate, onTryLater: onTryLater),
     );
   }
 
@@ -56,16 +53,7 @@ class _MigrationDialogState extends State<MigrationDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Migrate your accounts', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Icon(Icons.close, color: colors.textPrimary, size: 20),
-              ),
-            ],
-          ),
+          Text('Migrate your accounts', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
           const SizedBox(height: 24),
           Text(
             'We\'ll record your old\u2011chain mining rewards and actions to determine '
