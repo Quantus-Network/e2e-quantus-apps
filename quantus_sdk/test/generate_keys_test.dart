@@ -86,6 +86,19 @@ void main() {
       expect(accountId1, knownAccountHdIndex0);
       expect(accountId2, knownAccountHdIndex1);
     });
+    test('wormhole derivation known values', () {
+      const mnemonic =
+          'orchard answer curve patient visual flower maze noise retreat penalty cage small earth domain scan pitch bottom crunch theme club client swap slice raven';
+      const expectedPreimage = 'e4be02a913727c01c1a155fd6e807b7c1a4a13abf37a352b7c9ed4412d127fc3';
+
+      final result = HdWalletService().deriveWormhole(mnemonic);
+      expect(hex.encode(result.firstHash), expectedPreimage);
+
+      final addressBytes = ss58ToAccountId(s: result.address);
+      final expectedAddressBytes = ss58ToAccountId(s: '5H8AGzwKPtKMfKKuKYCoAFApCoy4EVewCqc9k6GrSgqHoaXm');
+      expect(addressBytes, expectedAddressBytes);
+    });
+
     test('test for keystone hardware wallet', () {
       const mnemonic1 = 'human snow truck virus now jaguar wall brisk shoe craft gravity diesel';
 

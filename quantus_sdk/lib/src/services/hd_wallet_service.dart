@@ -21,4 +21,9 @@ class HdWalletService {
     if (index == -1) return crypto.generateKeypair(mnemonicStr: mnemonic);
     return _deriveHDWallet(mnemonic: mnemonic, account: index);
   }
+
+  WormholeResult deriveWormhole(String mnemonic, {int account = 0, int change = 0, int addressIndex = 0}) {
+    final path = "m/44'/189189189'/$account'/$change'/$addressIndex'";
+    return crypto.deriveWormhole(mnemonicStr: mnemonic, path: path);
+  }
 }

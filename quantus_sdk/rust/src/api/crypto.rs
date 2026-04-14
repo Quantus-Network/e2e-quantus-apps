@@ -1,7 +1,7 @@
 use nam_tiny_hderive::bip32::ExtendedPrivKey;
 use qp_poseidon_core::hash_bytes;
 use qp_rusty_crystals_dilithium::ml_dsa_87;
-use qp_rusty_crystals_hdwallet::{derive_key_from_mnemonic, mnemonic_to_seed, SensitiveBytes32, SensitiveBytes64};
+use qp_rusty_crystals_hdwallet::{derive_key_from_mnemonic, derive_wormhole_from_mnemonic, mnemonic_to_seed, SensitiveBytes32, SensitiveBytes64};
 pub use qp_rusty_crystals_hdwallet::HDLatticeError;
 use sp_core::crypto::{AccountId32, Ss58Codec};
 use std::convert::AsRef;
@@ -65,6 +65,22 @@ pub fn generate_keypair(mnemonic_str: String) -> Keypair {
 #[flutter_rust_bridge::frb(sync)]
 pub fn generate_derived_keypair(mnemonic_str: String, path: &str) -> Result<Keypair, HDLatticeError> {
     derive_key_from_mnemonic(&mnemonic_str, None, path).map(Keypair::from_ml_dsa)
+}
+
+#[flutter_rust_bridge::frb(sync)]
+pub struct WormholeResult {
+    pub address: String,
+    pub first_hash: Vec<u8>,
+}
+
+#[flutter_rust_bridge::frb(sync)]
+pub fn derive_wormhole(mnemonic_str: String, path: &str) -> Result<WormholeResult, HDLatticeError> {
+    let pair = derive_wormhole_from_mnemonic(&mnemonic_str, None, path)?;
+    let account = AccountId32::new(pair.address);
+    Ok(WormholeResult {
+        address: account.to_ss58check(),
+        first_hash: pair.first_hash.to_vec(),
+    })
 }
 
 #[flutter_rust_bridge::frb(sync)]
