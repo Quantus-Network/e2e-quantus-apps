@@ -268,9 +268,9 @@ class _SwapScreenState extends State<SwapScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              _smallGlassIconButton(colors: colors, iconAsset: _qrIconAsset, onTap: _scanQr),
+              _smallIconButton(colors: colors, iconAsset: _qrIconAsset, onTap: _scanQr),
               const SizedBox(width: 8),
-              _smallGlassIconButton(
+              _smallIconButton(
                 colors: colors,
                 iconAsset: _historyIconAsset,
                 onTap: () async {
@@ -295,14 +295,14 @@ class _SwapScreenState extends State<SwapScreen> {
         SizedBox(
           width: 40,
           height: 40,
-          child: _smallGlassIconButton(colors: colors, iconAsset: _swapDirectionIconAsset, onTap: () {}),
+          child: _smallIconButton(colors: colors, iconAsset: _swapDirectionIconAsset, onTap: () {}),
         ),
         Expanded(child: Divider(color: colors.separator)),
       ],
     );
   }
 
-  Widget _smallGlassIconButton({required AppColorsV2 colors, required String iconAsset, VoidCallback? onTap}) {
+  Widget _smallIconButton({required AppColorsV2 colors, required String iconAsset, VoidCallback? onTap}) {
     return SizedBox(
       width: 40,
       height: 40,

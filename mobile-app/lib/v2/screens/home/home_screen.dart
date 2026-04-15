@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
-import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
+import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
@@ -20,6 +20,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
+import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -34,8 +35,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  final NumberFormattingService _fmt = NumberFormattingService();
-
   Future<void> _refresh() async {
     final active = ref.read(activeAccountProvider).value;
     ref.invalidate(balanceProviderFamily);
@@ -67,19 +66,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  Future<void> toggleBalanceHidden(bool isBalanceHidden) async {
-    final isBalanceHiddenNotifier = ref.read(isBalanceHiddenProvider.notifier);
-    await isBalanceHiddenNotifier.setIsBalanceHidden(!isBalanceHidden);
+  Future<void> _toggleBalanceHidden() async {
+    final notifier = ref.read(isBalanceHiddenProvider.notifier);
+    await notifier.setIsBalanceHidden(!ref.read(isBalanceHiddenProvider));
+  }
+
+  Future<void> _toggleFlip() async {
+    await ref.read(isCurrencyFlippedProvider.notifier).toggle();
   }
 
   @override
   Widget build(BuildContext context) {
     _processIntentIfAvailable();
 
-    final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
     final isPosMode = ref.watch(posModeProvider);
     final accountAsync = ref.watch(activeAccountProvider);
-    final balanceAsync = ref.watch(balanceProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider);
     final colors = context.colors;
     final text = context.themeText;
@@ -100,7 +101,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return ScaffoldBase.refreshable(
           onRefresh: _refresh,
           slivers: [
-            _buildContent(active, balanceAsync, isBalanceHidden, colors, text),
+            _buildContent(active, colors, text),
             ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
             SizedBox(height: isPosMode ? 120 : 58),
           ],
@@ -132,20 +133,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildContent(
-    DisplayAccount active,
-    AsyncValue<BigInt> balanceAsync,
-    bool isBalanceHidden,
-    AppColorsV2 colors,
-    AppTextTheme text,
-  ) {
+  Widget _buildContent(DisplayAccount active, AppColorsV2 colors, AppTextTheme text) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
-        _buildTopBar(active, isBalanceHidden, colors),
+        _buildTopBar(active, colors),
         const SizedBox(height: 40),
-        _buildBalance(balanceAsync, isBalanceHidden, colors, text),
+        _buildBalance(colors, text),
         const SizedBox(height: 40),
         if (active is RegularAccount) ...[_buildActionButtons(), const SizedBox(height: 40)],
         DottedBorder(
@@ -158,7 +153,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildTopBar(DisplayAccount active, bool isBalanceHidden, AppColorsV2 colors) {
+  Widget _buildTopBar(DisplayAccount active, AppColorsV2 colors) {
+    final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -170,7 +167,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           children: [
             _circleIconButton(
               icon: isBalanceHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-              onTap: () => toggleBalanceHidden(isBalanceHidden),
+              onTap: _toggleBalanceHidden,
               isActive: isBalanceHidden,
             ),
             const SizedBox(width: 12),
@@ -192,21 +189,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return QuantusIconButton.circular(icon: icon, onTap: onTap, isActive: isActive);
   }
 
-  Widget _buildBalance(AsyncValue<BigInt> balanceAsync, bool isBalanceHidden, AppColorsV2 colors, AppTextTheme text) {
+  Widget _buildBalance(AppColorsV2 colors, AppTextTheme text) {
+    final currencyAsync = ref.watch(currencyDisplayProvider);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        balanceAsync.when(
-          data: (balance) {
-            final formatted = isBalanceHidden ? '- - - - -' : _fmt.formatBalance(balance, addSymbol: true);
-            final usdFormatted = isBalanceHidden ? '- - - - -' : '\$${_fmt.formatBalance(balance)}';
-
+        currencyAsync.when(
+          data: (display) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(formatted, style: text.extraLargeTitle?.copyWith(color: colors.textPrimary)),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: display.primaryAmount,
+                        style: text.extraLargeTitle?.copyWith(fontFamily: AppTextTheme.fontFamily),
+                      ),
+                      if (!display.isFlipped) ...[
+                        const TextSpan(text: '     '),
+                        TextSpan(
+                          text: AppConstants.tokenSymbol,
+                          style: text.mediumTitle?.copyWith(fontFamily: AppTextTheme.fontFamilySecondary),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 6),
-                Text('≈ $usdFormatted', style: text.paragraph?.copyWith(color: colors.textSecondary)),
+                Row(
+                  children: [
+                    Text(
+                      '≈ ${display.secondaryAmount}',
+                      style: text.paragraph?.copyWith(
+                        color: colors.textSecondary,
+                        fontFamily: AppTextTheme.fontFamilySecondary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    QuantusIconButton.circular(
+                      icon: Icons.swap_vert,
+                      onTap: _toggleFlip,
+                      isActive: display.isFlipped,
+                      size: IconButtonSize.small,
+                    ),
+                  ],
+                ),
               ],
             );
           },

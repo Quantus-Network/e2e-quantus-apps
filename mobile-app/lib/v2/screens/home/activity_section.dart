@@ -5,13 +5,15 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/models/combined_transactions_list.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/activity_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/testnet_rewards_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
+import 'package:resonance_network_wallet/utils/url_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ActivitySection extends ConsumerStatefulWidget {
@@ -30,7 +32,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
 
   @override
   Widget build(BuildContext context) {
-    final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
+    final formatTxAmount = ref.watch(txAmountFormatterProvider);
     final colors = context.colors;
     final text = context.themeText;
 
@@ -64,7 +66,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
             const SizedBox(height: 28),
 
             ...recentTransactions.mapIndexed((index, tx) {
-              final data = TxItemData.from(tx, widget.activeAccount.accountId);
+              final data = TxItemData.from(tx, widget.activeAccount.accountId, colors);
               final isLastItem = index == recentTransactions.length - 1;
 
               return buildTxItem(
@@ -72,7 +74,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
                 data,
                 colors,
                 text,
-                isBalanceHidden: isBalanceHidden,
+                formattedAmount: formatTxAmount(data.amount, isSend: data.isSend),
                 isLastItem: isLastItem,
                 onTap: () {
                   showTransactionDetailSheet(context, tx, widget.activeAccount.accountId);
@@ -138,9 +140,9 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
 
   Widget _getStartedSection(AppTextTheme text, AppColorsV2 colors) {
     const links = [
-      ('Get Testnet Tokens', AppConstants.faucetBotUrl),
+      ('Get Testnet Tokens', AppConstants.faucetUrl),
       ('Community', AppConstants.communityUrl),
-      ('Tech Support', AppConstants.techSupportUrl),
+      // ('Tech Support', AppConstants.techSupportUrl),
     ];
 
     return Column(
@@ -175,7 +177,9 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
                   for (var i = 0; i < links.length; i++) ...[
                     GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () => launchUrl(Uri.parse(links[i].$2)),
+                      onTap: () => links[i].$2 == AppConstants.faucetUrl
+                          ? launchXPost(links[i].$2)
+                          : launchUrl(Uri.parse(links[i].$2)),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -184,12 +188,23 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
                         ],
                       ),
                     ),
-                    if (i < links.length - 1)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        child: Divider(color: colors.separator, height: 0),
-                      ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Divider(color: colors.separator, height: 0),
+                    ),
                   ],
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () =>
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const TestnetRewardsScreen())),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Mining Rewards', style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+                        Icon(Icons.chevron_right, color: colors.textPrimary, size: 20),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -212,9 +227,9 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
           child: Text(
             'View All',
             style: text.smallTitle?.copyWith(
-              color: const Color(0xFF888888),
+              color: colors.textMuted,
               decoration: TextDecoration.underline,
-              decorationColor: const Color(0xFF888888),
+              decorationColor: colors.textMuted,
               decorationStyle: TextDecorationStyle.dotted,
               decorationThickness: 1.0,
             ),
