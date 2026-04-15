@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-
-
 @immutable
 class AppTextTheme extends ThemeExtension<AppTextTheme> {
   static const fontFamily = 'Geist';

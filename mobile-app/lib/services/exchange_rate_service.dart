@@ -25,6 +25,5 @@ class ExchangeRateService {
 
   /// Converts a [quanAmount] (human-readable double, already decimal-shifted)
   /// to the given [fiat] currency using the current rate.
-  double convert(double quanAmount, FiatCurrency fiat) =>
-      quanAmount * getRate(fiat);
+  double convert(double quanAmount, FiatCurrency fiat) => quanAmount * getRate(fiat);
 }
