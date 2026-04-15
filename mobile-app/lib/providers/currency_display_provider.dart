@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/models/supported_currency.dart';
+import 'package:resonance_network_wallet/models/fiat_currency.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/exchange_rate_service.dart';
 
@@ -13,63 +13,115 @@ final exchangeRateServiceProvider = Provider<ExchangeRateService>((ref) {
 });
 
 // ---------------------------------------------------------------------------
-// Value object consumed by widgets
+// Selected fiat currency provider
 // ---------------------------------------------------------------------------
 
-/// The fully-resolved display state for the active account's balance.
+/// Persists and exposes the user's chosen fiat currency for conversions.
+/// Defaults to [FiatCurrency.usd] when no preference has been saved.
 ///
-/// Widgets should watch [currencyDisplayProvider] and render [primaryAmount]
-/// and [secondaryAmount] directly — no conversion math belongs in widgets.
-class CurrencyDisplayState {
-  /// The main, large balance string shown prominently.
-  /// e.g. "1,250 QUAN" or "$1,250.00"
-  final String primaryAmount;
+/// To change the active fiat currency (e.g. from a settings screen):
+///   ref.read(selectedFiatCurrencyProvider.notifier).select(FiatCurrency.idr);
+final selectedFiatCurrencyProvider = StateNotifierProvider<SelectedFiatCurrencyNotifier, FiatCurrency>((ref) {
+  final settings = ref.watch(settingsServiceProvider);
+  return SelectedFiatCurrencyNotifier(settings);
+});
 
-  /// The secondary "approximately" label shown below the primary.
-  /// e.g. "≈ $1,250.00" or "≈ 1,250 QUAN"
-  final String secondaryAmount;
+class SelectedFiatCurrencyNotifier extends StateNotifier<FiatCurrency> {
+  final SettingsService _settings;
 
-  /// Which currency is currently shown as the primary. Exposed so widgets
-  /// can render the inline token symbol (QUAN only, not for fiat).
-  final SupportedCurrency primaryCurrency;
+  SelectedFiatCurrencyNotifier(this._settings) : super(_load(_settings));
 
-  /// Current flip preference, exposed so widgets can wire the toggle button.
-  final bool isCurrencyFlipped;
+  /// Persists and applies [currency] as the active fiat currency.
+  Future<void> select(FiatCurrency currency) async {
+    await _settings.setSelectedFiatCurrency(currency.code);
+    state = currency;
+  }
 
-  const CurrencyDisplayState({
-    required this.primaryAmount,
-    required this.secondaryAmount,
-    required this.primaryCurrency,
-    required this.isCurrencyFlipped,
-  });
-
-  static const hidden = CurrencyDisplayState(
-    primaryAmount: '- - - - -',
-    secondaryAmount: '- - - - -',
-    primaryCurrency: SupportedCurrency.quan,
-    isCurrencyFlipped: false,
-  );
-
-  CurrencyDisplayState copyWith({bool? isCurrencyFlipped}) {
-    return CurrencyDisplayState(
-      primaryAmount: primaryAmount,
-      secondaryAmount: secondaryAmount,
-      primaryCurrency: primaryCurrency,
-      isCurrencyFlipped: isCurrencyFlipped ?? this.isCurrencyFlipped,
-    );
+  static FiatCurrency _load(SettingsService settings) {
+    final code = settings.getSelectedFiatCurrency();
+    if (code == null) return FiatCurrency.usd;
+    return FiatCurrency.fromCode(code);
   }
 }
 
 // ---------------------------------------------------------------------------
-// Provider
+// Currency flip provider
 // ---------------------------------------------------------------------------
 
-/// Combines balance, hidden state, flip preference, and exchange rate into
-/// [CurrencyDisplayState] ready for widgets to render.
+/// Whether fiat is shown as the primary (large) display and QUAN secondary.
+///
+/// false → primary = QUAN,  secondary = fiat  (default)
+/// true  → primary = fiat,  secondary = QUAN
+///
+/// To toggle from the swap button:
+///   ref.read(isCurrencyFlippedProvider.notifier).toggle();
+final isCurrencyFlippedProvider = StateNotifierProvider<IsCurrencyFlippedNotifier, bool>((ref) {
+  final settings = ref.watch(settingsServiceProvider);
+  return IsCurrencyFlippedNotifier(settings);
+});
+
+class IsCurrencyFlippedNotifier extends StateNotifier<bool> {
+  final SettingsService _settings;
+
+  IsCurrencyFlippedNotifier(this._settings) : super(_settings.isCurrencyFlipped());
+
+  Future<void> toggle() async {
+    final next = !state;
+    await _settings.setCurrencyFlipped(next);
+    state = next;
+  }
+
+  Future<void> setFlipped(bool value) async {
+    await _settings.setCurrencyFlipped(value);
+    state = value;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Display state
+// ---------------------------------------------------------------------------
+
+/// The fully-resolved display state for the active account's balance.
+///
+/// Widgets render [primaryAmount] and [secondaryAmount] directly.
+/// No conversion math belongs in widgets.
+class CurrencyDisplayState {
+  final String primaryAmount;
+  final String secondaryAmount;
+  final bool isFlipped;
+  final FiatCurrency selectedFiat;
+
+  const CurrencyDisplayState({
+    required this.primaryAmount,
+    required this.secondaryAmount,
+    required this.isFlipped,
+    required this.selectedFiat,
+  });
+
+  CurrencyDisplayState copyWith({
+    String? primaryAmount,
+    String? secondaryAmount,
+    bool? isFlipped,
+    FiatCurrency? selectedFiat,
+  }) => CurrencyDisplayState(
+    primaryAmount: primaryAmount ?? this.primaryAmount,
+    secondaryAmount: secondaryAmount ?? this.secondaryAmount,
+    isFlipped: isFlipped ?? this.isFlipped,
+    selectedFiat: selectedFiat ?? this.selectedFiat,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Balance display provider
+// ---------------------------------------------------------------------------
+
+/// Combines balance, hidden state, flip state, selected fiat, and exchange
+/// rate into [CurrencyDisplayState] ready for widgets to render.
 final currencyDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref) {
   final balanceAsync = ref.watch(balanceProvider);
   final isHidden = ref.watch(isBalanceHiddenProvider);
   final isFlipped = ref.watch(isCurrencyFlippedProvider);
+  final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
   final fmt = ref.watch(numberFormattingServiceProvider);
   final xRate = ref.watch(exchangeRateServiceProvider);
 
@@ -77,23 +129,21 @@ final currencyDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref)
     loading: () => const AsyncValue.loading(),
     error: (err, stack) => AsyncValue.error(err, stack),
     data: (balance) {
+      final quanFormatted = fmt.formatBalance(balance, addSymbol: isFlipped);
+      final fiatFormatted = selectedFiat.format(_toFiatNumeric(balance, selectedFiat, xRate));
+
+      CurrencyDisplayState data = CurrencyDisplayState(
+        primaryAmount: isFlipped ? fiatFormatted : quanFormatted,
+        secondaryAmount: isFlipped ? quanFormatted : fiatFormatted,
+        isFlipped: isFlipped,
+        selectedFiat: selectedFiat,
+      );
+
       if (isHidden) {
-        return AsyncValue.data(CurrencyDisplayState.hidden.copyWith(isCurrencyFlipped: isFlipped));
+        data = data.copyWith(primaryAmount: '- - - - -', secondaryAmount: '- - - - -');
       }
 
-      final quanNumeric = fmt.formatBalance(balance);
-      final usdNumeric = _toUsdNumeric(balance, xRate);
-
-      final primaryCurrency = isFlipped ? SupportedCurrency.usd : SupportedCurrency.quan;
-
-      return AsyncValue.data(
-        CurrencyDisplayState(
-          primaryAmount: isFlipped ? usdNumeric : quanNumeric,
-          secondaryAmount: isFlipped ? quanNumeric : usdNumeric,
-          primaryCurrency: primaryCurrency,
-          isCurrencyFlipped: isFlipped,
-        ),
-      );
+      return AsyncValue.data(data);
     },
   );
 });
@@ -103,23 +153,27 @@ final currencyDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref)
 // ---------------------------------------------------------------------------
 
 /// Formats a single transaction [amount] (raw BigInt) as a signed string
-/// respecting the current hidden and flip preferences.
+/// respecting the current hidden state, flip state, and selected fiat.
 ///
 /// Usage:
 ///   final formatted = ref.watch(txAmountFormatterProvider)(amount, isSend: true);
 final txAmountFormatterProvider = Provider<String Function(BigInt, {required bool isSend})>((ref) {
   final isHidden = ref.watch(isBalanceHiddenProvider);
   final isFlipped = ref.watch(isCurrencyFlippedProvider);
+  final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
   final fmt = ref.watch(numberFormattingServiceProvider);
   final xRate = ref.watch(exchangeRateServiceProvider);
 
   return (BigInt amount, {required bool isSend}) {
     if (isHidden) return '- - - - -';
 
+    if (isFlipped) {
+      final numeric = _toFiatNumeric(amount, selectedFiat, xRate);
+      return selectedFiat.formatSigned(numeric, isSend: isSend);
+    }
+
     final sign = isSend ? '-' : '+';
-    final currency = isFlipped ? SupportedCurrency.usd : SupportedCurrency.quan;
-    final numeric = isFlipped ? _toUsdNumeric(amount, xRate) : fmt.formatBalance(amount);
-    return '$sign${currency.format(numeric)}';
+    return '$sign${fmt.formatBalance(amount)} ${AppConstants.tokenSymbol}';
   };
 });
 
@@ -127,8 +181,8 @@ final txAmountFormatterProvider = Provider<String Function(BigInt, {required boo
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-String _toUsdNumeric(BigInt rawBalance, ExchangeRateService xRate) {
+String _toFiatNumeric(BigInt rawBalance, FiatCurrency fiat, ExchangeRateService xRate) {
   final scaleFactorDouble = BigInt.from(10).pow(AppConstants.decimals).toDouble();
   final quanDouble = rawBalance.toDouble() / scaleFactorDouble;
-  return xRate.convertToUsd(quanDouble).toStringAsFixed(2);
+  return xRate.convert(quanDouble, fiat).toStringAsFixed(2);
 }

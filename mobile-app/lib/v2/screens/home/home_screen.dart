@@ -19,7 +19,6 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
-import 'package:resonance_network_wallet/models/supported_currency.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -71,9 +70,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     await notifier.setIsBalanceHidden(!ref.read(isBalanceHiddenProvider));
   }
 
-  Future<void> _toggleCurrencyFlipped() async {
-    final notifier = ref.read(isCurrencyFlippedProvider.notifier);
-    await notifier.setIsCurrencyFlipped(!ref.read(isCurrencyFlippedProvider));
+  Future<void> _toggleFlip() async {
+    await ref.read(isCurrencyFlippedProvider.notifier).toggle();
   }
 
   @override
@@ -211,10 +209,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         text: display.primaryAmount,
                         style: text.extraLargeTitle?.copyWith(fontFamily: AppTextTheme.fontFamily),
                       ),
-                      if (display.primaryCurrency == SupportedCurrency.quan) ...[
+                      if (!display.isFlipped) ...[
                         const TextSpan(text: '     '),
                         TextSpan(
-                          text: SupportedCurrency.quan.symbol,
+                          text: AppConstants.tokenSymbol,
                           style: text.mediumTitle?.copyWith(fontFamily: AppTextTheme.fontFamilySecondary),
                         ),
                       ],
@@ -234,8 +232,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(width: 8),
                     QuantusIconButton.circular(
                       icon: Icons.swap_vert,
-                      onTap: _toggleCurrencyFlipped,
-                      isActive: display.isCurrencyFlipped,
+                      onTap: _toggleFlip,
+                      isActive: display.isFlipped,
                       size: IconButtonSize.small,
                     ),
                   ],
