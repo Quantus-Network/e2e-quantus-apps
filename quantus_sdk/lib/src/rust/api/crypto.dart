@@ -24,6 +24,9 @@ Keypair generateKeypair({required String mnemonicStr}) =>
 Keypair generateDerivedKeypair({required String mnemonicStr, required String path}) =>
     RustLib.instance.api.crateApiCryptoGenerateDerivedKeypair(mnemonicStr: mnemonicStr, path: path);
 
+WormholeResult deriveWormhole({required String mnemonicStr, required String path}) =>
+    RustLib.instance.api.crateApiCryptoDeriveWormhole(mnemonicStr: mnemonicStr, path: path);
+
 Keypair generateKeypairFromSeed({required List<int> seed}) =>
     RustLib.instance.api.crateApiCryptoGenerateKeypairFromSeed(seed: seed);
 
@@ -45,14 +48,11 @@ Keypair crystalCharlie() => RustLib.instance.api.crateApiCryptoCrystalCharlie();
 Uint8List deriveHdPath({required List<int> seed, required String path}) =>
     RustLib.instance.api.crateApiCryptoDeriveHdPath(seed: seed, path: path);
 
-int get publicKeySize =>
-    RustLib.instance.api.crateApiCryptoPublicKeyBytes().toInt(); // these are ussize and anyway small
+BigInt publicKeyBytes() => RustLib.instance.api.crateApiCryptoPublicKeyBytes();
 
-int get secretKeySize =>
-    RustLib.instance.api.crateApiCryptoSecretKeyBytes().toInt(); // these are ussize and anyway small
+BigInt secretKeyBytes() => RustLib.instance.api.crateApiCryptoSecretKeyBytes();
 
-int get signatureSize =>
-    RustLib.instance.api.crateApiCryptoSignatureBytes().toInt(); // these are ussize and anyway small
+BigInt signatureBytes() => RustLib.instance.api.crateApiCryptoSignatureBytes();
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<HDLatticeError>>
 abstract class HdLatticeError implements RustOpaqueInterface {}
@@ -85,4 +85,22 @@ class U8Array32 extends NonGrowableListView<int> {
   U8Array32(this._inner) : assert(_inner.length == arraySize), super(_inner);
 
   U8Array32.init() : this(Uint8List(arraySize));
+}
+
+class WormholeResult {
+  final String address;
+  final Uint8List firstHash;
+
+  const WormholeResult({required this.address, required this.firstHash});
+
+  @override
+  int get hashCode => address.hashCode ^ firstHash.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WormholeResult &&
+          runtimeType == other.runtimeType &&
+          address == other.address &&
+          firstHash == other.firstHash;
 }
