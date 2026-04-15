@@ -8,7 +8,9 @@ import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_scr
 import 'package:resonance_network_wallet/v2/screens/settings/reset_confirmation_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/select_wallet_screen.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart';
 import 'package:resonance_network_wallet/providers/notification_config_provider.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/testnet_rewards_screen.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -93,6 +95,8 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
         children: [
           _section('Wallet', colors, text, [
             _chevronItem('Recovery Phase', 'View Backup', colors, text, onTap: _navigateToRecoveryPhrase),
+            _divider(colors),
+            _miningRewardsItem(colors, text),
           ]),
           const SizedBox(height: 40),
           _section('Reversible Transactions', colors, text, [
@@ -166,6 +170,43 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
             ),
           ),
           const SizedBox(height: 48),
+        ],
+      ),
+    );
+  }
+
+  Widget _miningRewardsItem(AppColorsV2 colors, AppTextTheme text) {
+    final miningAsync = ref.watch(miningRewardsProvider);
+    final subtitle = miningAsync.when(
+      skipLoadingOnRefresh: false,
+      data: (data) =>
+          Text('Total: ${data.totalBlocks} blocks', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+      loading: () =>
+          const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+      error: (_, _) => Text('Tap to retry', style: text.smallParagraph?.copyWith(color: colors.textError)),
+    );
+    return GestureDetector(
+      onTap: () {
+        if (miningAsync.hasError) {
+          ref.invalidate(miningRewardsProvider);
+        } else {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const TestnetRewardsScreen()));
+        }
+      },
+      behavior: HitTestBehavior.opaque,
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Mining Rewards', style: text.paragraph?.copyWith(color: colors.textPrimary)),
+                const SizedBox(height: 4),
+                subtitle,
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right, color: colors.textSecondary, size: 20),
         ],
       ),
     );
