@@ -40,7 +40,7 @@ class QuantusIconButton extends StatelessWidget {
     final bool disabled = onTap == null || isLoading || isDisabled;
 
     final double buttonSize = size == IconButtonSize.small ? 24 : 40;
-    final double iconSize = size == IconButtonSize.small ? 12 : 20;
+    final double iconSize = size == IconButtonSize.small ? 16 : 20;
     final double radius = size == IconButtonSize.small ? 6 : 14;
 
     final buttonContent = Center(

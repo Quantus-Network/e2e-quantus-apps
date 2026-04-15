@@ -26,6 +26,7 @@ class SettingsService {
   static const String _activeAccountIdKey = 'active_account_id';
   static const String _activeDisplayAccountKey = 'active_display_account';
   static const String _balanceHiddenKey = 'balance_hidden';
+  static const String _currencyFlippedKey = 'currency_flipped';
 
   static const String _lastPausedTimeKey = 'last_paused_time';
 
@@ -286,6 +287,15 @@ class SettingsService {
 
   bool isBalanceHidden() {
     return _prefs.getBool(_balanceHiddenKey) ?? false;
+  }
+
+  // Currency Flipped Settings
+  Future<void> setCurrencyFlipped(bool flipped) async {
+    await _prefs.setBool(_currencyFlippedKey, flipped);
+  }
+
+  bool isCurrencyFlipped() {
+    return _prefs.getBool(_currencyFlippedKey) ?? false;
   }
 
   // POS Mode Settings

@@ -11,7 +11,7 @@ class TxItemData {
   final Color iconColor;
   final Color borderColor;
   final bool isSend;
-  final String amount;
+  final BigInt amount;
   final String counterpartyAddr;
 
   const TxItemData({
@@ -30,7 +30,6 @@ class TxItemData {
     final isPending = tx is PendingTransactionEvent;
     final isScheduled = tx.isReversibleScheduled;
     final isHighlighted = isPending || isScheduled;
-    final fmt = NumberFormattingService();
 
     String getLabel() {
       if (isPending) {
@@ -96,7 +95,7 @@ class TxItemData {
       iconColor: getIconColor(),
       borderColor: getBorderColor(),
       isSend: isSend,
-      amount: '${fmt.formatBalance(tx.amount)} ${AppConstants.tokenSymbol}',
+      amount: tx.amount,
       counterpartyAddr: _shortenAddress(isSend ? tx.to : tx.from),
     );
   }
@@ -107,11 +106,10 @@ Widget buildTxItem(
   TxItemData data,
   AppColorsV2 colors,
   AppTextTheme text, {
-  required bool isBalanceHidden,
+  required String formattedAmount,
   required bool isLastItem,
   VoidCallback? onTap,
 }) {
-  final amount = isBalanceHidden ? '- - - - -' : data.amount;
   final amountColor = data.isSend ? colors.textPrimary : colors.success;
 
   return GestureDetector(
@@ -151,7 +149,10 @@ Widget buildTxItem(
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(amount, style: text.paragraph?.copyWith(color: amountColor)),
+                  Text(
+                    formattedAmount,
+                    style: text.paragraph?.copyWith(color: amountColor, fontFamily: AppTextTheme.fontFamilySecondary),
+                  ),
                   const SizedBox(height: 2),
                   Text(
                     '${data.isSend ? "To" : "From"}: ${data.counterpartyAddr}',

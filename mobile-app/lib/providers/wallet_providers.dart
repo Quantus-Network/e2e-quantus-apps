@@ -153,6 +153,22 @@ class IsBalanceHiddenNotifier extends StateNotifier<bool> {
   }
 }
 
+final isCurrencyFlippedProvider = StateNotifierProvider<IsCurrencyFlippedNotifier, bool>((ref) {
+  final settingsService = ref.watch(settingsServiceProvider);
+  return IsCurrencyFlippedNotifier(settingsService);
+});
+
+class IsCurrencyFlippedNotifier extends StateNotifier<bool> {
+  final SettingsService _settingsService;
+
+  IsCurrencyFlippedNotifier(this._settingsService) : super(_settingsService.isCurrencyFlipped());
+
+  Future<void> setIsCurrencyFlipped(bool value) async {
+    await _settingsService.setCurrencyFlipped(value);
+    state = value;
+  }
+}
+
 final posModeProvider = StateNotifierProvider<PosModeNotifier, bool>((ref) {
   final settingsService = ref.watch(settingsServiceProvider);
   return PosModeNotifier(settingsService);
