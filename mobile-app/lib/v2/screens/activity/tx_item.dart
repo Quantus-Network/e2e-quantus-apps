@@ -25,7 +25,7 @@ class TxItemData {
     required this.counterpartyAddr,
   });
 
-  factory TxItemData.from(TransactionEvent tx, String accountId) {
+  factory TxItemData.from(TransactionEvent tx, String accountId, AppColorsV2 colors) {
     final isSend = tx.from == accountId;
     final isPending = tx is PendingTransactionEvent;
     final isScheduled = tx.isReversibleScheduled;
@@ -61,32 +61,32 @@ class TxItemData {
 
     Color getIconBg() {
       if (isHighlighted && !isSend) {
-        return const Color(0x14408C6B);
+        return colors.txItemIncomingHighlightBg;
       }
       if (isHighlighted && isSend) {
-        return const Color(0x29FFBC42);
+        return colors.txItemOutgoingHighlightBg;
       }
       return Colors.transparent;
     }
 
     Color getIconColor() {
       if (isHighlighted && !isSend) {
-        return const Color(0xFF22A27F);
+        return colors.success;
       }
       if (isHighlighted && isSend) {
-        return const Color(0xFFFFBC42);
+        return colors.txItemOutgoingHighlight;
       }
-      return const Color(0xFF363636);
+      return colors.txItemIconDefault;
     }
 
     Color getBorderColor() {
       if (isHighlighted && !isSend) {
-        return const Color(0x26408C6B);
+        return colors.txItemIncomingHighlightBorder;
       }
       if (isHighlighted && isSend) {
-        return const Color(0xFFFFBC42);
+        return colors.txItemOutgoingHighlight;
       }
-      return const Color(0xFF191919);
+      return colors.txItemBorderDefault;
     }
 
     return TxItemData(

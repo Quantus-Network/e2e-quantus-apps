@@ -112,13 +112,13 @@ class QuantusButton extends StatelessWidget {
     );
   }
 
-  Widget _buildContent(BuildContext context, {variant = ButtonVariant.primary}) {
+  Widget _buildContent(BuildContext context, {ButtonVariant variant = ButtonVariant.primary}) {
     final textColor = switch (variant) {
       ButtonVariant.primary => context.colors.background,
       ButtonVariant.secondary => context.colors.textPrimary,
       ButtonVariant.danger => context.colors.textPrimary,
       ButtonVariant.transparent => context.colors.textPrimary,
-      _ => context.colors.textPrimary,
+      ButtonVariant.success => context.colors.textPrimary,
     };
 
     if (isLoading) {

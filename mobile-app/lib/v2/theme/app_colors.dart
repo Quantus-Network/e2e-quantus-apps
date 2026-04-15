@@ -15,6 +15,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
   final Color textPrimary;
   final Color textSecondary;
   final Color textTertiary;
+  final Color textMuted;
   final Color textError;
 
   // Accents
@@ -34,6 +35,12 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
   // UI elements
   final Color separator;
   final Color txItemSeparator;
+  final Color txItemIncomingHighlightBg;
+  final Color txItemOutgoingHighlightBg;
+  final Color txItemOutgoingHighlight;
+  final Color txItemIconDefault;
+  final Color txItemIncomingHighlightBorder;
+  final Color txItemBorderDefault;
   final Color border;
   final Color buttonDisabled;
   final Color buttonDanger;
@@ -64,6 +71,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     required this.textPrimary,
     required this.textSecondary,
     required this.textTertiary,
+    required this.textMuted,
     required this.textError,
     required this.accentOrange,
     required this.accentGreen,
@@ -75,6 +83,12 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     required this.buttonPrimaryGradient,
     required this.separator,
     required this.txItemSeparator,
+    required this.txItemIncomingHighlightBg,
+    required this.txItemOutgoingHighlightBg,
+    required this.txItemOutgoingHighlight,
+    required this.txItemIconDefault,
+    required this.txItemIncomingHighlightBorder,
+    required this.txItemBorderDefault,
     required this.border,
     required this.buttonDisabled,
     required this.buttonDanger,
@@ -101,6 +115,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
         textPrimary: const Color(0xFFFFFFFF),
         textSecondary: const Color(0x80FFFFFF),
         textTertiary: const Color(0xFF3D3D3D),
+        textMuted: const Color(0xFF888888),
         textError: const Color(0xFFFF5252),
         accentOrange: const Color(0xFFFF6B35),
         accentGreen: const Color(0xFF34C759),
@@ -112,6 +127,12 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
         buttonPrimaryGradient: const [Color(0xFF0000FF), Color(0xFFED4CCE)],
         separator: const Color(0x1AFFFFFF),
         txItemSeparator: const Color(0x7F272727),
+        txItemIncomingHighlightBg: const Color(0x14408C6B),
+        txItemOutgoingHighlightBg: const Color(0x29FFBC42),
+        txItemOutgoingHighlight: const Color(0xFFFFBC42),
+        txItemIconDefault: const Color(0xFF363636),
+        txItemIncomingHighlightBorder: const Color(0x26408C6B),
+        txItemBorderDefault: const Color(0xFF191919),
         buttonDisabled: const Color(0xFF3D3C44),
         buttonDanger: const Color(0x1AFF0000),
         skeletonBase: const Color(0xFF3D3C44),
@@ -130,6 +151,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     Color? textPrimary,
     Color? textSecondary,
     Color? textTertiary,
+    Color? textMuted,
     Color? textError,
     Color? accentOrange,
     Color? accentGreen,
@@ -141,6 +163,12 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     List<Color>? buttonPrimaryGradient,
     Color? separator,
     Color? txItemSeparator,
+    Color? txItemIncomingHighlightBg,
+    Color? txItemOutgoingHighlightBg,
+    Color? txItemOutgoingHighlight,
+    Color? txItemIconDefault,
+    Color? txItemIncomingHighlightBorder,
+    Color? txItemBorderDefault,
     Color? border,
     Color? borderButton,
     Color? toasterBackground,
@@ -169,6 +197,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       textPrimary: textPrimary ?? this.textPrimary,
       textSecondary: textSecondary ?? this.textSecondary,
       textTertiary: textTertiary ?? this.textTertiary,
+      textMuted: textMuted ?? this.textMuted,
       textError: textError ?? this.textError,
       accentOrange: accentOrange ?? this.accentOrange,
       accentGreen: accentGreen ?? this.accentGreen,
@@ -180,6 +209,12 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       buttonPrimaryGradient: buttonPrimaryGradient ?? this.buttonPrimaryGradient,
       separator: separator ?? this.separator,
       txItemSeparator: txItemSeparator ?? this.txItemSeparator,
+      txItemIncomingHighlightBg: txItemIncomingHighlightBg ?? this.txItemIncomingHighlightBg,
+      txItemOutgoingHighlightBg: txItemOutgoingHighlightBg ?? this.txItemOutgoingHighlightBg,
+      txItemOutgoingHighlight: txItemOutgoingHighlight ?? this.txItemOutgoingHighlight,
+      txItemIconDefault: txItemIconDefault ?? this.txItemIconDefault,
+      txItemIncomingHighlightBorder: txItemIncomingHighlightBorder ?? this.txItemIncomingHighlightBorder,
+      txItemBorderDefault: txItemBorderDefault ?? this.txItemBorderDefault,
       border: border ?? this.border,
       buttonDisabled: buttonDisabled ?? this.buttonDisabled,
       buttonDanger: buttonDanger ?? this.buttonDanger,
@@ -208,6 +243,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       textPrimary: Color.lerp(textPrimary, other.textPrimary, t) ?? textPrimary,
       textSecondary: Color.lerp(textSecondary, other.textSecondary, t) ?? textSecondary,
       textTertiary: Color.lerp(textTertiary, other.textTertiary, t) ?? textTertiary,
+      textMuted: Color.lerp(textMuted, other.textMuted, t) ?? textMuted,
       textError: Color.lerp(textError, other.textError, t) ?? textError,
       accentOrange: Color.lerp(accentOrange, other.accentOrange, t) ?? accentOrange,
       accentGreen: Color.lerp(accentGreen, other.accentGreen, t) ?? accentGreen,
@@ -219,6 +255,19 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       buttonPrimaryGradient: other.buttonPrimaryGradient,
       separator: Color.lerp(separator, other.separator, t) ?? separator,
       txItemSeparator: Color.lerp(txItemSeparator, other.txItemSeparator, t) ?? txItemSeparator,
+      txItemIncomingHighlightBg:
+          Color.lerp(txItemIncomingHighlightBg, other.txItemIncomingHighlightBg, t) ??
+          txItemIncomingHighlightBg,
+      txItemOutgoingHighlightBg:
+          Color.lerp(txItemOutgoingHighlightBg, other.txItemOutgoingHighlightBg, t) ??
+          txItemOutgoingHighlightBg,
+      txItemOutgoingHighlight:
+          Color.lerp(txItemOutgoingHighlight, other.txItemOutgoingHighlight, t) ?? txItemOutgoingHighlight,
+      txItemIconDefault: Color.lerp(txItemIconDefault, other.txItemIconDefault, t) ?? txItemIconDefault,
+      txItemIncomingHighlightBorder:
+          Color.lerp(txItemIncomingHighlightBorder, other.txItemIncomingHighlightBorder, t) ??
+          txItemIncomingHighlightBorder,
+      txItemBorderDefault: Color.lerp(txItemBorderDefault, other.txItemBorderDefault, t) ?? txItemBorderDefault,
       border: Color.lerp(border, other.border, t) ?? border,
       buttonDisabled: Color.lerp(buttonDisabled, other.buttonDisabled, t) ?? buttonDisabled,
       buttonDanger: Color.lerp(buttonDanger, other.buttonDanger, t) ?? buttonDanger,

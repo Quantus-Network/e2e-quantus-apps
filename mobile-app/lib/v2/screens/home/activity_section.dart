@@ -66,7 +66,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
             const SizedBox(height: 28),
 
             ...recentTransactions.mapIndexed((index, tx) {
-              final data = TxItemData.from(tx, widget.activeAccount.accountId);
+              final data = TxItemData.from(tx, widget.activeAccount.accountId, colors);
               final isLastItem = index == recentTransactions.length - 1;
 
               return buildTxItem(
@@ -227,9 +227,9 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
           child: Text(
             'View All',
             style: text.smallTitle?.copyWith(
-              color: const Color(0xFF888888),
+              color: colors.textMuted,
               decoration: TextDecoration.underline,
-              decorationColor: const Color(0xFF888888),
+              decorationColor: colors.textMuted,
               decorationStyle: TextDecorationStyle.dotted,
               decorationThickness: 1.0,
             ),
