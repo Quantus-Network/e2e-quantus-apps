@@ -19,7 +19,7 @@ class NumberFormattingService {
     bool addSymbol = false,
   }) {
     String resultString = '0';
-    
+
     if (balance == BigInt.zero) {
       return addSymbol ? '$resultString ${AppConstants.tokenSymbol}' : resultString;
     }

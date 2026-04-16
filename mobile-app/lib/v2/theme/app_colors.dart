@@ -262,11 +262,9 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       separator: Color.lerp(separator, other.separator, t) ?? separator,
       txItemSeparator: Color.lerp(txItemSeparator, other.txItemSeparator, t) ?? txItemSeparator,
       txItemIncomingHighlightBg:
-          Color.lerp(txItemIncomingHighlightBg, other.txItemIncomingHighlightBg, t) ??
-          txItemIncomingHighlightBg,
+          Color.lerp(txItemIncomingHighlightBg, other.txItemIncomingHighlightBg, t) ?? txItemIncomingHighlightBg,
       txItemOutgoingHighlightBg:
-          Color.lerp(txItemOutgoingHighlightBg, other.txItemOutgoingHighlightBg, t) ??
-          txItemOutgoingHighlightBg,
+          Color.lerp(txItemOutgoingHighlightBg, other.txItemOutgoingHighlightBg, t) ?? txItemOutgoingHighlightBg,
       txItemOutgoingHighlight:
           Color.lerp(txItemOutgoingHighlight, other.txItemOutgoingHighlight, t) ?? txItemOutgoingHighlight,
       txItemIconDefault: Color.lerp(txItemIconDefault, other.txItemIconDefault, t) ?? txItemIconDefault,
