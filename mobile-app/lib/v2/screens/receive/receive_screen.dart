@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
@@ -24,7 +25,6 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
   ReceiveTab _selectedTab = ReceiveTab.qrCode;
   String? _accountId;
   String? _checksum;
-  Future<String>? _checksumFuture;
 
   final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
   final SettingsService _settingsService = SettingsService();
@@ -38,20 +38,18 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
   Future<void> _loadAccountData() async {
     try {
       final account = (await _settingsService.getActiveAccount())!;
+      final checksum = await _checksumService.getHumanReadableName(account.account.accountId);
       setState(() {
         _accountId = account.account.accountId;
-        _checksumFuture = _checksumService.getHumanReadableName(account.account.accountId);
+        _checksum = checksum;
       });
     } catch (e) {
       debugPrint('Error loading account data: $e');
-    }
-  }
 
-  void _setChecksum(String checksum) {
-    if (_checksum == checksum) return;
-    setState(() {
-      _checksum = checksum;
-    });
+      if (mounted) {
+        context.showErrorToaster(message: 'Error loading account data: $e');
+      }
+    }
   }
 
   void _share() {
@@ -81,22 +79,12 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
             },
           ),
           const SizedBox(height: 32),
-          if (_accountId == null || _checksumFuture == null)
+          if (_accountId == null || _checksum == null)
             const Expanded(child: Center(child: Loader()))
           else if (_selectedTab == ReceiveTab.qrCode)
-            QrCodeTab(
-              accountId: _accountId!,
-              onShare: _share,
-              checksumFuture: _checksumFuture!,
-              setChecksum: _setChecksum,
-            )
+            QrCodeTab(accountId: _accountId!, onShare: _share, checksum: _checksum!)
           else if (_selectedTab == ReceiveTab.address)
-            AddressTab(
-              accountId: _accountId!,
-              onShare: _share,
-              checksumFuture: _checksumFuture!,
-              setChecksum: _setChecksum,
-            ),
+            AddressTab(accountId: _accountId!, onShare: _share, checksum: _checksum!),
         ],
       ),
     );
@@ -104,28 +92,17 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
 }
 
 class QrCodeTab extends StatelessWidget {
-  const QrCodeTab({
-    super.key,
-    required this.accountId,
-    required this.onShare,
-    required this.checksumFuture,
-    required this.setChecksum,
-  });
+  const QrCodeTab({super.key, required this.accountId, required this.onShare, required this.checksum});
 
   final String accountId;
   final VoidCallback onShare;
-  final Future<String> checksumFuture;
-  final Function(String) setChecksum;
+  final String checksum;
 
   void _copyAccountDetails(BuildContext context) {
-    checksumFuture.then((checksum) {
-      if (context.mounted) {
-        context.copyTextWithToaster(
-          'Account Id:\n$accountId\n\nCheckphrase:\n$checksum',
-          message: 'Account details copied to clipboard',
-        );
-      }
-    });
+    context.copyTextWithToaster(
+      'Account Id:\n$accountId\n\nCheckphrase:\n$checksum',
+      message: 'Account details copied to clipboard',
+    );
   }
 
   @override
@@ -135,7 +112,7 @@ class QrCodeTab extends StatelessWidget {
         children: [
           Container(
             decoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFF3D3D3D), width: 1),
+              border: Border.all(color: context.colors.textTertiary, width: 1),
               borderRadius: BorderRadius.circular(16),
             ),
             width: 267,
@@ -154,7 +131,11 @@ class QrCodeTab extends StatelessWidget {
           ),
 
           const SizedBox(height: 20),
-          _buildChecksum(),
+          Text(
+            checksum,
+            style: context.themeText.paragraph?.copyWith(color: context.colors.checksum),
+            textAlign: TextAlign.center,
+          ),
 
           const SizedBox(height: 9),
           Text(
@@ -198,43 +179,14 @@ class QrCodeTab extends StatelessWidget {
       ),
     );
   }
-
-  Widget _buildChecksum() {
-    return FutureBuilder<String>(
-      future: checksumFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Loader();
-        }
-        if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) return const SizedBox.shrink();
-
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (context.mounted) setChecksum(snapshot.data!);
-        });
-
-        return Text(
-          snapshot.data!,
-          style: context.themeText.paragraph?.copyWith(color: context.colors.checksum),
-          textAlign: TextAlign.center,
-        );
-      },
-    );
-  }
 }
 
 class AddressTab extends StatefulWidget {
-  const AddressTab({
-    super.key,
-    required this.accountId,
-    required this.onShare,
-    required this.checksumFuture,
-    required this.setChecksum,
-  });
+  const AddressTab({super.key, required this.accountId, required this.onShare, required this.checksum});
 
   final String accountId;
   final VoidCallback onShare;
-  final Future<String> checksumFuture;
-  final Function(String) setChecksum;
+  final String checksum;
 
   @override
   State<AddressTab> createState() => _AddressTabState();
@@ -250,12 +202,8 @@ class _AddressTabState extends State<AddressTab> {
   }
 
   void _copyChecksum(BuildContext context) {
-    widget.checksumFuture.then((checksum) {
-      if (context.mounted) {
-        context.copyTextWithToaster(checksum, message: 'Checkphrase copied');
-        _triggerCopied(isAddress: false);
-      }
-    });
+    context.copyTextWithToaster(widget.checksum, message: 'Checkphrase copied');
+    _triggerCopied(isAddress: false);
   }
 
   void _triggerCopied({required bool isAddress}) {
@@ -287,17 +235,29 @@ class _AddressTabState extends State<AddressTab> {
           Container(
             padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
             decoration: BoxDecoration(
-              color: const Color(0xFF0A0A0A),
+              color: context.colors.surfaceDeep,
               border: Border.all(color: context.colors.borderButton, width: 1),
               borderRadius: BorderRadius.circular(24),
             ),
             child: Column(
               children: [
-                _buildAddress(context),
+                InkWell(
+                  onTap: () => _copyAddress(context),
+                  child: _buildItem(context, 'ADDRESS', widget.accountId, isCopied: _addressCopied),
+                ),
                 const SizedBox(height: 23),
                 Divider(color: context.colors.txItemSeparator, thickness: 1),
                 const SizedBox(height: 32),
-                _buildChecksum(),
+                InkWell(
+                  onTap: () => _copyChecksum(context),
+                  child: _buildItem(
+                    context,
+                    'CHECKPHRASE',
+                    widget.checksum,
+                    isCheckphrase: true,
+                    isCopied: _checksumCopied,
+                  ),
+                ),
               ],
             ),
           ),
@@ -315,34 +275,6 @@ class _AddressTabState extends State<AddressTab> {
           const SizedBox(height: 24),
         ],
       ),
-    );
-  }
-
-  Widget _buildChecksum() {
-    return FutureBuilder<String>(
-      future: widget.checksumFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Loader();
-        }
-        if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) return const SizedBox.shrink();
-
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (context.mounted) widget.setChecksum(snapshot.data!);
-        });
-
-        return InkWell(
-          onTap: () => _copyChecksum(context),
-          child: _buildItem(context, 'CHECKPHRASE', snapshot.data!, isCheckphrase: true, isCopied: _checksumCopied),
-        );
-      },
-    );
-  }
-
-  Widget _buildAddress(BuildContext context) {
-    return InkWell(
-      onTap: () => _copyAddress(context),
-      child: _buildItem(context, 'ADDRESS', widget.accountId, isCopied: _addressCopied),
     );
   }
 
@@ -380,8 +312,8 @@ class _AddressTabState extends State<AddressTab> {
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: isCopied ? const Color(0xFF0C1C14) : Colors.transparent,
-        border: Border.all(color: isCopied ? const Color(0xFF1A3226) : context.colors.borderButton, width: 1),
+        color: isCopied ? context.colors.copyButtonCopiedBg : Colors.transparent,
+        border: Border.all(color: isCopied ? context.colors.copyButtonCopiedBorder : context.colors.borderButton, width: 1),
         borderRadius: BorderRadius.circular(100),
       ),
       child: Center(

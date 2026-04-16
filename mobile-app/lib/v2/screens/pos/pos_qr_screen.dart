@@ -177,11 +177,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(color: colors.textSecondary, strokeWidth: 2),
-            ),
+            const Loader(),
             const SizedBox(width: 10),
             Text('Waiting for payment', style: text.smallTitle?.copyWith(color: colors.textSecondary, fontSize: 16)),
           ],
