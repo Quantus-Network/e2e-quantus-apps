@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/providers/active_account_transactions_p
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -14,16 +15,48 @@ import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 
-class ActivityScreen extends ConsumerWidget {
+// ignore: constant_identifier_names
+enum _ActivityFilterOption { All, Received, Sent }
+
+class ActivityScreen extends ConsumerStatefulWidget {
   const ActivityScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ActivityScreen> createState() => _ActivityScreenState();
+}
+
+class _ActivityScreenState extends ConsumerState<ActivityScreen> {
+  _ActivityFilterOption _filterOption = _ActivityFilterOption.All;
+
+  void _onFilterOptionChanged(_ActivityFilterOption option) {
+    setState(() {
+      _filterOption = option;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final colors = context.colors;
     final text = context.themeText;
     final accountAsync = ref.watch(activeAccountProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider);
     final formatTxAmount = ref.watch(txAmountFormatterProvider);
+
+    final filterButtonWidthMap = {
+      _ActivityFilterOption.All: 80.0,
+      _ActivityFilterOption.Received: 130.0,
+      _ActivityFilterOption.Sent: 90.0,
+    };
+    final filterButtons = _ActivityFilterOption.values
+        .map(
+          (e) => _buildFilterButton(
+            e.name,
+            width: filterButtonWidthMap[e]!,
+            onTap: () => _onFilterOptionChanged(e),
+            isSelected: _filterOption == e,
+          ),
+        )
+        .toList();
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Activity'),
@@ -53,43 +86,71 @@ class ActivityScreen extends ConsumerWidget {
                 );
               }
               final grouped = _groupByDate(all);
-              return ListView.builder(
-                padding: EdgeInsets.zero,
-                itemCount: grouped.length,
-                itemBuilder: (context, i) {
-                  final group = grouped[i];
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (i > 0) const SizedBox(height: 40),
-                      Text(
-                        group.label,
-                        style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-                      ),
-                      const SizedBox(height: 8),
-                      ...group.transactions.mapIndexed((index, tx) {
-                        final itemData = TxItemData.from(tx, active.account.accountId, colors);
-                        final isLastItem = index == group.transactions.length - 1;
-                        return buildTxItem(
-                          tx,
-                          itemData,
-                          colors,
-                          text,
-                          formattedAmount: formatTxAmount(itemData.amount, isSend: itemData.isSend),
-                          isLastItem: isLastItem,
-                          onTap: () {
-                            showTransactionDetailSheet(context, tx, active.account.accountId);
-                          },
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(spacing: 12, children: filterButtons),
+                  ),
+
+                  const SizedBox(height: 40),
+
+                  Expanded(
+                    child: ListView.builder(
+                      padding: EdgeInsets.zero,
+                      itemCount: grouped.length,
+                      itemBuilder: (context, i) {
+                        final group = grouped[i];
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (i > 0) const SizedBox(height: 32),
+                            Text(group.label, style: text.activityGroupLabel?.copyWith(color: colors.textTertiary)),
+                            ...group.transactions.mapIndexed((index, tx) {
+                              final itemData = TxItemData.from(tx, active.account.accountId, colors);
+                              final isLastItem = index == group.transactions.length - 1;
+                              return buildTxItem(
+                                tx,
+                                itemData,
+                                colors,
+                                text,
+                                formattedAmount: formatTxAmount(itemData.amount, isSend: itemData.isSend),
+                                isLastItem: isLastItem,
+                                onTap: () {
+                                  showTransactionDetailSheet(context, tx, active.account.accountId);
+                                },
+                              );
+                            }),
+                          ],
                         );
-                      }),
-                    ],
-                  );
-                },
+                      },
+                    ),
+                  ),
+                ],
               );
             },
           );
         },
       ),
+    );
+  }
+
+  Widget _buildFilterButton(
+    String label, {
+    bool isSelected = false,
+    required double width,
+    required VoidCallback onTap,
+  }) {
+    final variant = isSelected ? ButtonVariant.primary : ButtonVariant.outline;
+
+    return QuantusButton.simple(
+      label: label,
+      variant: variant,
+      width: width,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      onTap: onTap,
     );
   }
 
@@ -105,7 +166,7 @@ class ActivityScreen extends ConsumerWidget {
       labelMap.putIfAbsent(key, () => dateGroupLabel(tx.timestamp));
     }
 
-    return groups.entries.map((e) => _DateGroup(label: labelMap[e.key]!, transactions: e.value)).toList();
+    return groups.entries.map((e) => _DateGroup(label: labelMap[e.key]!.toUpperCase(), transactions: e.value)).toList();
   }
 }
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
-enum ButtonVariant { transparent, primary, secondary, danger, success }
+enum ButtonVariant { transparent, primary, secondary, danger, success, outline }
 
 enum IconPlacement { leading, trailing, top }
 
@@ -67,14 +67,9 @@ class QuantusButton extends StatelessWidget {
     final visibility = disabled ? 0.25 : 1.0;
     final buttonContent = _buildContent(context, variant: variant);
     final borderRadius = BorderRadius.circular(this.borderRadius);
-    final decorationShape = RoundedRectangleBorder(
-      borderRadius: borderRadius,
-      side: variant == ButtonVariant.secondary
-          ? BorderSide(color: context.colors.borderButton, width: 1)
-          : BorderSide.none,
-    );
 
     final Color buttonDecorationColor;
+    BorderSide borderSide = BorderSide.none;
 
     switch (variant) {
       case ButtonVariant.primary:
@@ -83,6 +78,7 @@ class QuantusButton extends StatelessWidget {
 
       case ButtonVariant.secondary:
         buttonDecorationColor = context.colors.sheetBackground;
+        borderSide = BorderSide(color: context.colors.borderButton, width: 1);
         break;
 
       case ButtonVariant.danger:
@@ -96,6 +92,11 @@ class QuantusButton extends StatelessWidget {
       case ButtonVariant.transparent:
         buttonDecorationColor = Colors.transparent;
         break;
+
+      case ButtonVariant.outline:
+        buttonDecorationColor = Colors.transparent;
+        borderSide = BorderSide(color: context.colors.borderButton, width: 1);
+        break;
     }
 
     return InkWell(
@@ -105,7 +106,10 @@ class QuantusButton extends StatelessWidget {
         child: Container(
           width: width,
           padding: padding,
-          decoration: ShapeDecoration(color: buttonDecorationColor, shape: decorationShape),
+          decoration: ShapeDecoration(
+            color: buttonDecorationColor,
+            shape: RoundedRectangleBorder(borderRadius: borderRadius, side: borderSide),
+          ),
           child: buttonContent,
         ),
       ),
@@ -119,6 +123,7 @@ class QuantusButton extends StatelessWidget {
       ButtonVariant.danger => context.colors.textPrimary,
       ButtonVariant.transparent => context.colors.textPrimary,
       ButtonVariant.success => context.colors.textPrimary,
+      ButtonVariant.outline => context.colors.textLabel,
     };
 
     if (isLoading) {
