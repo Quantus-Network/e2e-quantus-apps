@@ -13,22 +13,15 @@ class OtherTransfersResult {
 class ChainHistoryService {
   final GraphQlEndpointService _graphQlEndpointService = GraphQlEndpointService();
 
-  // We don't need a client instance anymore, just the endpoint
   ChainHistoryService();
 
-  /// Builds the scheduled reversible transfers query.
-  ///
-  /// [filter] controls which direction condition is injected:
-  ///  - [TransactionFilter.all]     → match any account in `$accounts`
-  ///  - [TransactionFilter.send]    → `from` is in `$accounts`
-  ///  - [TransactionFilter.receive] → `to` is in `$accounts`
   String _buildScheduledReversibleTransfersQuery(TransactionFilter filter) {
     final String directionCondition;
     switch (filter) {
       case TransactionFilter.Send:
-        directionCondition = 'scheduledReversibleTransfer: {from: {id_in: \$accounts}, scheduledAt_gt: \$after}';
+        directionCondition = 'account: {id_in: \$accounts}, scheduledReversibleTransfer: {from: {id_in: \$accounts}, scheduledAt_gt: \$after}';
       case TransactionFilter.Receive:
-        directionCondition = 'scheduledReversibleTransfer: {to: {id_in: \$accounts}, scheduledAt_gt: \$after}';
+        directionCondition = 'account: {id_in: \$accounts}, scheduledReversibleTransfer: {to: {id_in: \$accounts}, scheduledAt_gt: \$after}';
       case TransactionFilter.All:
         directionCondition = 'account: {id_in: \$accounts}, scheduledReversibleTransfer: {scheduledAt_gt: \$after}';
     }
@@ -108,15 +101,11 @@ query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: In
 
     switch (filter) {
       case TransactionFilter.Send:
-        // Send: the `from` of the transfer (or reversible) is one of our accounts.
-        // Miner rewards have no "from" so they are naturally excluded.
         whereClause =
-            '{AND: [{$baseCondition}, $transferGuard, {OR: [{transfer: {from: {id_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {from: {id_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {from: {id_in: \$accounts}}}}]}]}';
+            '{AND: [{account: {id_in: \$accounts}, $baseCondition}, $transferGuard, {OR: [{transfer: {from: {id_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {from: {id_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {from: {id_in: \$accounts}}}}]}]}';
         connectionWhereClause =
-            '{AND: [{$baseCondition}, $transferGuard, {OR: [{transfer: {from: {id_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {from: {id_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {from: {id_in: \$accounts}}}}]}]}';
+            '{AND: [{account: {id_in: \$accounts}, $baseCondition}, $transferGuard, {OR: [{transfer: {from: {id_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {from: {id_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {from: {id_in: \$accounts}}}}]}]}';
       case TransactionFilter.Receive:
-        // Receive: the `to` of the transfer (or reversible) is one of our accounts,
-        // OR it is a miner reward credited to one of our accounts.
         whereClause =
             '{AND: [{account: {id_in: \$accounts}, $baseCondition}, $transferGuard, {OR: [{transfer: {to: {id_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {to: {id_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {to: {id_in: \$accounts}}}}, {minerReward_isNull: false}]}]}';
         connectionWhereClause =
@@ -390,7 +379,7 @@ query SearchPendingTransaction(
     try {
       final http.Response response = await _graphQlEndpointService.post(body: jsonBody);
       sw.stop();
-      printTiming('fetchScheduledTransfers HTTP', sw.elapsedMilliseconds);
+      print('fetchScheduledTransfers HTTP: ${sw.elapsedMilliseconds}ms');
 
       if (response.statusCode != 200) {
         throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
@@ -442,7 +431,7 @@ query SearchPendingTransaction(
     try {
       final http.Response response = await _graphQlEndpointService.post(body: jsonBody);
       sw.stop();
-      printTiming('fetchAccountEvents HTTP', sw.elapsedMilliseconds);
+      print('fetchAccountEvents HTTP: ${sw.elapsedMilliseconds}ms');
 
       if (response.statusCode != 200) {
         throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
