@@ -9,9 +9,14 @@ import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 /// Unified pagination controller that handles both all-accounts and
 /// filtered-accounts scenarios
 class UnifiedPaginationController extends StateNotifier<PaginationState> {
-  UnifiedPaginationController(this.ref, {this.accountIds, int pageLimit = 20})
-    : _limit = pageLimit,
-      super(PaginationState.initial()) {
+  UnifiedPaginationController(
+    this.ref, {
+    this.accountIds,
+    int pageLimit = 20,
+    TransactionFilter filter = TransactionFilter.All,
+  }) : _limit = pageLimit,
+       _filter = filter,
+       super(PaginationState.initial()) {
     if (accountIds == null) {
       _listenToAccounts();
     }
@@ -21,6 +26,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
   final Ref ref;
   final List<String>? accountIds; // If null, load all accounts from provider
   final int _limit;
+  final TransactionFilter _filter;
 
   void _listenToAccounts() {
     ref.listen(accountsProvider, (previous, next) {
@@ -78,6 +84,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
             limit: _limit,
             otherOffset: state.otherOffset,
             scheduledOffset: state.scheduledOffset,
+            filter: _filter,
           );
 
       final newOtherTransfers = newTransactions.otherTransfers;
@@ -149,7 +156,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
     try {
       final newTransactions = await ref
           .read(chainHistoryServiceProvider)
-          .fetchAllTransactionTypes(accountIds: targetAccountIds, limit: _limit);
+          .fetchAllTransactionTypes(accountIds: targetAccountIds, limit: _limit, filter: _filter);
 
       final newOtherTransfers = newTransactions.otherTransfers;
       final newScheduledReversibleTransfers = newTransactions.scheduledReversibleTransfers;

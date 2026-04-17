@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/app_lifecycle_manager.dart';
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
+import 'package:resonance_network_wallet/models/filtered_transactions_params.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_cancellations_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -157,7 +158,14 @@ class ReversibleTransferMonitoringService {
         final affectedAccounts = <String>{transfer.from, transfer.to};
         for (final accountId in affectedAccounts) {
           _ref
-              .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get([accountId])).notifier)
+              .read(
+                filteredPaginationControllerProviderFamily(
+                  FilteredTransactionsParams(
+                    accountIds: AccountIdListCache.get([accountId]),
+                    filter: TransactionFilter.All,
+                  ),
+                ).notifier,
+              )
               .updateReversibleTransferToExecuted(transfer.txId, transaction.status);
         }
 
@@ -165,7 +173,14 @@ class ReversibleTransferMonitoringService {
         // tx screen views for all accounts reflect the change immediately
         final accountIds = _ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
         _ref
-            .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get(accountIds)).notifier)
+            .read(
+              filteredPaginationControllerProviderFamily(
+                FilteredTransactionsParams(
+                  accountIds: AccountIdListCache.get(accountIds),
+                  filter: TransactionFilter.All,
+                ),
+              ).notifier,
+            )
             .updateReversibleTransferToExecuted(transfer.txId, transaction.status);
 
         // Refresh balance since transfer execution changes balance
@@ -200,7 +215,12 @@ class ReversibleTransferMonitoringService {
       if (active != null) {
         await _ref
             .read(
-              filteredPaginationControllerProviderFamily(AccountIdListCache.get([active.account.accountId])).notifier,
+              filteredPaginationControllerProviderFamily(
+                FilteredTransactionsParams(
+                  accountIds: AccountIdListCache.get([active.account.accountId]),
+                  filter: TransactionFilter.All,
+                ),
+              ).notifier,
             )
             .silentRefresh();
       }

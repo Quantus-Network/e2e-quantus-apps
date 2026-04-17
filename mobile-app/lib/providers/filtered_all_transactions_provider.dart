@@ -1,44 +1,58 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/combined_transactions_list.dart';
+import 'package:resonance_network_wallet/models/filtered_transactions_params.dart';
 import 'package:resonance_network_wallet/models/pagination_state.dart';
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/controllers/unified_pagination_controller.dart';
 import 'package:resonance_network_wallet/providers/pending_cancellations_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 
-/// Family provider for filtered pagination controllers
+/// Family provider for filtered pagination controllers.
+///
+/// Keyed on [FilteredTransactionsParams] so each unique (accountIds, filter)
+/// combination owns its own [UnifiedPaginationController] instance and
+/// independently cached page data.
 final filteredPaginationControllerProviderFamily =
-    StateNotifierProvider.family<UnifiedPaginationController, PaginationState, List<String>>(
-      (ref, accountIds) => UnifiedPaginationController(ref, accountIds: accountIds),
+    StateNotifierProvider.family<UnifiedPaginationController, PaginationState, FilteredTransactionsParams>(
+      (ref, params) => UnifiedPaginationController(ref, accountIds: params.accountIds, filter: params.filter),
     );
 
-/// Combined provider for filtered transactions (similar to
-/// allTransactionsProvider)
-final filteredTransactionsProviderFamily = Provider.family<AsyncValue<CombinedTransactionsList>, List<String>>((
-  ref,
-  accountIds,
-) {
-  final pendingCancellationIds = ref.watch(pendingCancellationsProvider);
-  final pending = ref.watch(pendingTransactionsProvider);
-  final pagination = ref.watch(filteredPaginationControllerProviderFamily(AccountIdListCache.get(accountIds)));
+/// Combined provider for filtered transactions.
+final filteredTransactionsProviderFamily =
+    Provider.family<AsyncValue<CombinedTransactionsList>, FilteredTransactionsParams>((ref, params) {
+      final normalizedParams = FilteredTransactionsParams(
+        accountIds: AccountIdListCache.get(params.accountIds),
+        filter: params.filter,
+      );
 
-  if (pagination.error != null) {
-    print('FilteredTransactionsProvider: Error: ${pagination.error}');
-    return AsyncValue.error(pagination.error!, pagination.stackTrace!);
-  }
-  if (pagination.isFetching && pagination.otherTransfers.isEmpty) {
-    return const AsyncValue.loading();
-  }
+      final pendingCancellationIds = ref.watch(pendingCancellationsProvider);
+      final pending = ref.watch(pendingTransactionsProvider);
+      final pagination = ref.watch(filteredPaginationControllerProviderFamily(normalizedParams));
 
-  // Filter pending transactions based on account selection
-  final filteredPending = pending.where((tx) => accountIds.contains(tx.from) || accountIds.contains(tx.to)).toList();
+      if (pagination.error != null) {
+        print('FilteredTransactionsProvider: Error: ${pagination.error}');
+        return AsyncValue.error(pagination.error!, pagination.stackTrace!);
+      }
+      if (pagination.isFetching && pagination.otherTransfers.isEmpty) {
+        return const AsyncValue.loading();
+      }
 
-  return AsyncValue.data(
-    CombinedTransactionsList(
-      pendingCancellationIds: pendingCancellationIds,
-      pendingTransactions: filteredPending,
-      scheduledReversibleTransfers: pagination.scheduledReversibleTransfers,
-      otherTransfers: pagination.otherTransfers,
-    ),
-  );
-});
+      final accountIds = params.accountIds;
+      final filteredPending = pending
+          .where(
+            (tx) =>
+                normalizedParams.filter != TransactionFilter.Receive &&
+                (accountIds.contains(tx.from) || accountIds.contains(tx.to)),
+          )
+          .toList();
+
+      return AsyncValue.data(
+        CombinedTransactionsList(
+          pendingCancellationIds: pendingCancellationIds,
+          pendingTransactions: filteredPending,
+          scheduledReversibleTransfers: pagination.scheduledReversibleTransfers,
+          otherTransfers: pagination.otherTransfers,
+        ),
+      );
+    });

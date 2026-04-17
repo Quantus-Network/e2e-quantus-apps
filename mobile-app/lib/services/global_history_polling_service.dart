@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
+import 'package:resonance_network_wallet/models/filtered_transactions_params.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
@@ -91,10 +93,20 @@ class GlobalHistoryPollingService {
       _ref.read(paginationControllerProvider.notifier).silentRefresh();
       final accountIds = _ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
       for (var id in accountIds) {
-        _ref.read(filteredPaginationControllerProviderFamily(AccountIdListCache.get([id])).notifier).silentRefresh();
+        _ref
+            .read(
+              filteredPaginationControllerProviderFamily(
+                FilteredTransactionsParams(accountIds: AccountIdListCache.get([id]), filter: TransactionFilter.All),
+              ).notifier,
+            )
+            .silentRefresh();
       }
       _ref
-          .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get(accountIds)).notifier)
+          .read(
+            filteredPaginationControllerProviderFamily(
+              FilteredTransactionsParams(accountIds: AccountIdListCache.get(accountIds), filter: TransactionFilter.All),
+            ).notifier,
+          )
           .silentRefresh();
 
       // Reconcile pending transactions with confirmed transactions
@@ -126,7 +138,14 @@ class GlobalHistoryPollingService {
     final active = _ref.read(activeAccountProvider).value;
     if (active != null) {
       await _ref
-          .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get([active.account.accountId])).notifier)
+          .read(
+            filteredPaginationControllerProviderFamily(
+              FilteredTransactionsParams(
+                accountIds: AccountIdListCache.get([active.account.accountId]),
+                filter: TransactionFilter.All,
+              ),
+            ).notifier,
+          )
           .loadingRefresh();
     }
 

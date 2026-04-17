@@ -12,6 +12,7 @@ import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
+import 'package:resonance_network_wallet/models/filtered_transactions_params.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_cancellations_provider.dart';
 import 'package:resonance_network_wallet/services/reversible_transfer_monitoring_service.dart';
@@ -552,7 +553,14 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
         final affectedAccounts = <String>{widget.transaction.from, widget.transaction.to};
         for (final accountId in affectedAccounts) {
           ref
-              .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get([accountId])).notifier)
+              .read(
+                filteredPaginationControllerProviderFamily(
+                  FilteredTransactionsParams(
+                    accountIds: AccountIdListCache.get([accountId]),
+                    filter: TransactionFilter.All,
+                  ),
+                ).notifier,
+              )
               .updateReversibleTransferToExecuted(extrinsicHash, ReversibleTransferStatus.CANCELLED);
         }
 

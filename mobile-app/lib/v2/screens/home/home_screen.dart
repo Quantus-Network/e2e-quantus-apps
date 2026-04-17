@@ -15,6 +15,7 @@ import 'package:resonance_network_wallet/v2/screens/send/send_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
+import 'package:resonance_network_wallet/models/filtered_transactions_params.dart';
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
@@ -42,7 +43,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.invalidate(activeAccountTransactionsProvider);
     if (active != null) {
       await ref
-          .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get([active.account.accountId])).notifier)
+          .read(
+            filteredPaginationControllerProviderFamily(
+              FilteredTransactionsParams(
+                accountIds: AccountIdListCache.get([active.account.accountId]),
+                filter: TransactionFilter.All,
+              ),
+            ).notifier,
+          )
           .loadingRefresh();
     }
   }
@@ -81,7 +89,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final isPosMode = ref.watch(posModeProvider);
     final accountAsync = ref.watch(activeAccountProvider);
-    final txAsync = ref.watch(activeAccountTransactionsProvider);
+    final txAsync = ref.watch(activeAccountTransactionsProvider(TransactionFilter.All));
     final colors = context.colors;
     final text = context.themeText;
 

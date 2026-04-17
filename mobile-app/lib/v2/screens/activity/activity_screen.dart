@@ -15,9 +15,6 @@ import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 
-// ignore: constant_identifier_names
-enum _ActivityFilterOption { All, Received, Sent }
-
 class ActivityScreen extends ConsumerStatefulWidget {
   const ActivityScreen({super.key});
 
@@ -26,9 +23,10 @@ class ActivityScreen extends ConsumerStatefulWidget {
 }
 
 class _ActivityScreenState extends ConsumerState<ActivityScreen> {
-  _ActivityFilterOption _filterOption = _ActivityFilterOption.All;
+  TransactionFilter _filterOption = TransactionFilter.All;
 
-  void _onFilterOptionChanged(_ActivityFilterOption option) {
+  void _onFilterOptionChanged(TransactionFilter option) {
+    if (_filterOption == option) return;
     setState(() {
       _filterOption = option;
     });
@@ -39,15 +37,15 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     final colors = context.colors;
     final text = context.themeText;
     final accountAsync = ref.watch(activeAccountProvider);
-    final txAsync = ref.watch(activeAccountTransactionsProvider);
+    final txAsync = ref.watch(activeAccountTransactionsProvider(_filterOption));
     final formatTxAmount = ref.watch(txAmountFormatterProvider);
 
     final filterButtonWidthMap = {
-      _ActivityFilterOption.All: 80.0,
-      _ActivityFilterOption.Received: 130.0,
-      _ActivityFilterOption.Sent: 90.0,
+      TransactionFilter.All: 80.0,
+      TransactionFilter.Receive: 130.0,
+      TransactionFilter.Send: 90.0,
     };
-    final filterButtons = _ActivityFilterOption.values
+    final filterButtons = TransactionFilter.values
         .map(
           (e) => _buildFilterButton(
             e.name,

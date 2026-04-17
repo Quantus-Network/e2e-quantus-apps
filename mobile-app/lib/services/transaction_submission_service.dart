@@ -9,6 +9,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
+import 'package:resonance_network_wallet/models/filtered_transactions_params.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
@@ -343,7 +344,12 @@ class TransactionSubmissionService {
 
       for (final accountId in targets) {
         final controller = _ref.read(
-          filteredPaginationControllerProviderFamily(AccountIdListCache.get([accountId])).notifier,
+          filteredPaginationControllerProviderFamily(
+            FilteredTransactionsParams(
+              accountIds: AccountIdListCache.get([accountId]),
+              filter: TransactionFilter.All,
+            ),
+          ).notifier,
         );
         if (newTransaction != null) {
           controller.addTransactionToHistory(newTransaction);
@@ -354,7 +360,12 @@ class TransactionSubmissionService {
       // Trigger silent refresh on all accounts filtered pagination so the tx history has the data without manual refresh
       final accountIds = _ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
       final allAccountsController = _ref.read(
-        filteredPaginationControllerProviderFamily(AccountIdListCache.get(accountIds)).notifier,
+        filteredPaginationControllerProviderFamily(
+          FilteredTransactionsParams(
+            accountIds: AccountIdListCache.get(accountIds),
+            filter: TransactionFilter.All,
+          ),
+        ).notifier,
       );
       if (newTransaction != null) {
         allAccountsController.addTransactionToHistory(newTransaction);
