@@ -10,8 +10,10 @@ import 'package:resonance_network_wallet/providers/filtered_all_transactions_pro
 ///
 /// Parameterised by [TransactionFilter] so callers can independently watch
 /// the send-only, receive-only, or combined history.
-final activeAccountTransactionsProvider =
-    Provider.family<AsyncValue<CombinedTransactionsList>, TransactionFilter>((ref, filter) {
+final activeAccountTransactionsProvider = Provider.family<AsyncValue<CombinedTransactionsList>, TransactionFilter>((
+  ref,
+  filter,
+) {
   final activeAccountValue = ref.watch(activeAccountProvider);
 
   return activeAccountValue.when(

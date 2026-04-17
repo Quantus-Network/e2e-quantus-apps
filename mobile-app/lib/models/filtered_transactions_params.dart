@@ -14,9 +14,7 @@ class FilteredTransactionsParams {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is FilteredTransactionsParams &&
-          _listEquals(other.accountIds, accountIds) &&
-          other.filter == filter;
+      other is FilteredTransactionsParams && _listEquals(other.accountIds, accountIds) && other.filter == filter;
 
   @override
   int get hashCode => Object.hash(Object.hashAll(accountIds), filter);

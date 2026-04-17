@@ -85,7 +85,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (i > 0) const SizedBox(height: 32),
-                        
+
                         const Skeleton(width: 100, height: 24),
                         const SizedBox(height: 12),
 

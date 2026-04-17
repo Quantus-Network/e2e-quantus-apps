@@ -19,9 +19,11 @@ class ChainHistoryService {
     final String directionCondition;
     switch (filter) {
       case TransactionFilter.Send:
-        directionCondition = 'account: {id_in: \$accounts}, scheduledReversibleTransfer: {from: {id_in: \$accounts}, scheduledAt_gt: \$after}';
+        directionCondition =
+            'account: {id_in: \$accounts}, scheduledReversibleTransfer: {from: {id_in: \$accounts}, scheduledAt_gt: \$after}';
       case TransactionFilter.Receive:
-        directionCondition = 'account: {id_in: \$accounts}, scheduledReversibleTransfer: {to: {id_in: \$accounts}, scheduledAt_gt: \$after}';
+        directionCondition =
+            'account: {id_in: \$accounts}, scheduledReversibleTransfer: {to: {id_in: \$accounts}, scheduledAt_gt: \$after}';
       case TransactionFilter.All:
         directionCondition = 'account: {id_in: \$accounts}, scheduledReversibleTransfer: {scheduledAt_gt: \$after}';
     }

@@ -345,10 +345,7 @@ class TransactionSubmissionService {
       for (final accountId in targets) {
         final controller = _ref.read(
           filteredPaginationControllerProviderFamily(
-            FilteredTransactionsParams(
-              accountIds: AccountIdListCache.get([accountId]),
-              filter: TransactionFilter.All,
-            ),
+            FilteredTransactionsParams(accountIds: AccountIdListCache.get([accountId]), filter: TransactionFilter.All),
           ).notifier,
         );
         if (newTransaction != null) {
@@ -361,10 +358,7 @@ class TransactionSubmissionService {
       final accountIds = _ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
       final allAccountsController = _ref.read(
         filteredPaginationControllerProviderFamily(
-          FilteredTransactionsParams(
-            accountIds: AccountIdListCache.get(accountIds),
-            filter: TransactionFilter.All,
-          ),
+          FilteredTransactionsParams(accountIds: AccountIdListCache.get(accountIds), filter: TransactionFilter.All),
         ).notifier,
       );
       if (newTransaction != null) {

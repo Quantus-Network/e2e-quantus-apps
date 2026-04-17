@@ -313,7 +313,10 @@ class _AddressTabState extends State<AddressTab> {
       height: 40,
       decoration: BoxDecoration(
         color: isCopied ? context.colors.copyButtonCopiedBg : Colors.transparent,
-        border: Border.all(color: isCopied ? context.colors.copyButtonCopiedBorder : context.colors.borderButton, width: 1),
+        border: Border.all(
+          color: isCopied ? context.colors.copyButtonCopiedBorder : context.colors.borderButton,
+          width: 1,
+        ),
         borderRadius: BorderRadius.circular(100),
       ),
       child: Center(

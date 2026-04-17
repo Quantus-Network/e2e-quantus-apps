@@ -97,16 +97,10 @@ class _AmountSection extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(
-              amount.primaryAmount,
-              style: text.transactionDetailAmountPrimary?.copyWith(color: amountColor),
-            ),
+            Text(amount.primaryAmount, style: text.transactionDetailAmountPrimary?.copyWith(color: amountColor)),
             if (!amount.isFlipped) ...[
               const SizedBox(width: 8),
-              Text(
-                AppConstants.tokenSymbol,
-                style: text.transactionDetailAmountSymbol?.copyWith(color: amountColor),
-              ),
+              Text(AppConstants.tokenSymbol, style: text.transactionDetailAmountSymbol?.copyWith(color: amountColor)),
             ],
           ],
         ),
@@ -175,15 +169,10 @@ class _DetailRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: text.transactionDetailRowLabel?.copyWith(color: colors.textTertiary),
-          ),
+          Text(label, style: text.transactionDetailRowLabel?.copyWith(color: colors.textTertiary)),
           Text(
             value,
-            style: text.transactionDetailRowValue?.copyWith(
-              color: valueColor ?? Colors.white.withValues(alpha: 0.8),
-            ),
+            style: text.transactionDetailRowValue?.copyWith(color: valueColor ?? Colors.white.withValues(alpha: 0.8)),
           ),
         ],
       ),

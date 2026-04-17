@@ -29,7 +29,9 @@ class Toaster extends StatelessWidget {
         children: [
           Icon(iconData, color: iconColor, size: iconSize),
           const SizedBox(width: 8.86),
-          Expanded(child: Text(message, style: context.themeText.detail?.copyWith(color: textColor), softWrap: true)),
+          Expanded(
+            child: Text(message, style: context.themeText.detail?.copyWith(color: textColor), softWrap: true),
+          ),
         ],
       ),
     );
