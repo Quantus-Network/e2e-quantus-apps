@@ -19,6 +19,10 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
   final TextStyle? timer;
   final TextStyle? detail;
   final TextStyle? tiny;
+  final TextStyle? transactionDetailAmountPrimary;
+  final TextStyle? transactionDetailAmountSymbol;
+  final TextStyle? transactionDetailRowLabel;
+  final TextStyle? transactionDetailRowValue;
 
   const AppTextTheme({
     this.lockTitle,
@@ -35,6 +39,10 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
     this.timer,
     this.detail,
     this.tiny,
+    this.transactionDetailAmountPrimary,
+    this.transactionDetailAmountSymbol,
+    this.transactionDetailRowLabel,
+    this.transactionDetailRowValue,
   });
 
   const AppTextTheme.defaultTheme()
@@ -53,6 +61,29 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
         timer: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600, fontFamily: fontFamily),
         detail: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400, fontFamily: fontFamily),
         tiny: const TextStyle(fontSize: 11, fontWeight: FontWeight.w400, fontFamily: fontFamily),
+        transactionDetailAmountPrimary: const TextStyle(
+          fontFamily: fontFamilySecondary,
+          fontSize: 64,
+          fontWeight: FontWeight.w300,
+          letterSpacing: -2.77,
+          height: 1.0,
+        ),
+        transactionDetailAmountSymbol: const TextStyle(
+          fontFamily: fontFamilySecondary,
+          fontSize: 24,
+          fontWeight: FontWeight.w300,
+        ),
+        transactionDetailRowLabel: const TextStyle(
+          fontFamily: fontFamilySecondary,
+          fontSize: 12,
+          fontWeight: FontWeight.w400,
+          letterSpacing: 0.85,
+        ),
+        transactionDetailRowValue: const TextStyle(
+          fontFamily: fontFamilySecondary,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
       );
 
   const AppTextTheme.iPad()
@@ -71,6 +102,29 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
         timer: const TextStyle(fontSize: 36, fontWeight: FontWeight.w600, fontFamily: fontFamily),
         detail: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400, fontFamily: fontFamily),
         tiny: const TextStyle(fontSize: 15, fontWeight: FontWeight.w400, fontFamily: fontFamily),
+        transactionDetailAmountPrimary: const TextStyle(
+          fontFamily: fontFamilySecondary,
+          fontSize: 80,
+          fontWeight: FontWeight.w300,
+          letterSpacing: -2.77,
+          height: 1.0,
+        ),
+        transactionDetailAmountSymbol: const TextStyle(
+          fontFamily: fontFamilySecondary,
+          fontSize: 30,
+          fontWeight: FontWeight.w300,
+        ),
+        transactionDetailRowLabel: const TextStyle(
+          fontFamily: fontFamilySecondary,
+          fontSize: 16,
+          fontWeight: FontWeight.w400,
+          letterSpacing: 0.85,
+        ),
+        transactionDetailRowValue: const TextStyle(
+          fontFamily: fontFamilySecondary,
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
       );
 
   @override
@@ -88,6 +142,10 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
     TextStyle? timer,
     TextStyle? detail,
     TextStyle? tiny,
+    TextStyle? transactionDetailAmountPrimary,
+    TextStyle? transactionDetailAmountSymbol,
+    TextStyle? transactionDetailRowLabel,
+    TextStyle? transactionDetailRowValue,
   }) {
     return AppTextTheme(
       lockTitle: lockTitle ?? this.lockTitle,
@@ -103,6 +161,10 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
       timer: timer ?? this.timer,
       detail: detail ?? this.detail,
       tiny: tiny ?? this.tiny,
+      transactionDetailAmountPrimary: transactionDetailAmountPrimary ?? this.transactionDetailAmountPrimary,
+      transactionDetailAmountSymbol: transactionDetailAmountSymbol ?? this.transactionDetailAmountSymbol,
+      transactionDetailRowLabel: transactionDetailRowLabel ?? this.transactionDetailRowLabel,
+      transactionDetailRowValue: transactionDetailRowValue ?? this.transactionDetailRowValue,
     );
   }
 
@@ -123,6 +185,18 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
       timer: TextStyle.lerp(timer, other.timer, t),
       detail: TextStyle.lerp(detail, other.detail, t),
       tiny: TextStyle.lerp(tiny, other.tiny, t),
+      transactionDetailAmountPrimary: TextStyle.lerp(
+        transactionDetailAmountPrimary,
+        other.transactionDetailAmountPrimary,
+        t,
+      ),
+      transactionDetailAmountSymbol: TextStyle.lerp(
+        transactionDetailAmountSymbol,
+        other.transactionDetailAmountSymbol,
+        t,
+      ),
+      transactionDetailRowLabel: TextStyle.lerp(transactionDetailRowLabel, other.transactionDetailRowLabel, t),
+      transactionDetailRowValue: TextStyle.lerp(transactionDetailRowValue, other.transactionDetailRowValue, t),
     );
   }
 }

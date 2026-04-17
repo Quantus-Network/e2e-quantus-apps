@@ -88,6 +88,7 @@ class _AmountSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final amount = ref.watch(txAmountFormatterProvider)(tx.amount, isSend: isSend, customHiddenText: '-----');
     final amountColor = isSend ? colors.textPrimary : colors.success;
+    final text = context.themeText;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -98,25 +99,13 @@ class _AmountSection extends ConsumerWidget {
           children: [
             Text(
               amount.primaryAmount,
-              style: TextStyle(
-                fontFamily: AppTextTheme.fontFamilySecondary,
-                fontSize: 64,
-                fontWeight: FontWeight.w300,
-                color: amountColor,
-                letterSpacing: -2.77,
-                height: 1.0,
-              ),
+              style: text.transactionDetailAmountPrimary?.copyWith(color: amountColor),
             ),
             if (!amount.isFlipped) ...[
               const SizedBox(width: 8),
               Text(
                 AppConstants.tokenSymbol,
-                style: TextStyle(
-                  fontFamily: AppTextTheme.fontFamilySecondary,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w300,
-                  color: amountColor,
-                ),
+                style: text.transactionDetailAmountSymbol?.copyWith(color: amountColor),
               ),
             ],
           ],
@@ -179,6 +168,8 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final text = context.themeText;
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -186,20 +177,11 @@ class _DetailRow extends StatelessWidget {
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontFamily: AppTextTheme.fontFamilySecondary,
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
-              color: colors.textTertiary,
-              letterSpacing: 0.85,
-            ),
+            style: text.transactionDetailRowLabel?.copyWith(color: colors.textTertiary),
           ),
           Text(
             value,
-            style: TextStyle(
-              fontFamily: AppTextTheme.fontFamilySecondary,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+            style: text.transactionDetailRowValue?.copyWith(
               color: valueColor ?? Colors.white.withValues(alpha: 0.8),
             ),
           ),
