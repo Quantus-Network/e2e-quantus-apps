@@ -94,9 +94,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final text = context.themeText;
 
     Widget screen = accountAsync.when(
-      loading: () => const ScaffoldBase(
-        child: Center(child: Loader()),
-      ),
+      loading: () => const ScaffoldBase(child: Center(child: Loader())),
       error: (e, _) => ScaffoldBase(
         child: Center(
           child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError)),
@@ -152,8 +150,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(height: 40),
         if (active is RegularAccount) ...[_buildActionButtons(), const SizedBox(height: 40)],
         DottedBorder(
-          dashLength: 10,
-          gapLength: 6,
+          dashLength: 3,
+          gapLength: 5,
           color: colors.borderButton.useOpacity(0.5),
           child: const SizedBox(width: double.infinity, height: 1),
         ),
@@ -189,11 +187,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _circleIconButton({
-    required IconData icon,
-    required VoidCallback onTap,
-    bool isActive = false,
-  }) {
+  Widget _circleIconButton({required IconData icon, required VoidCallback onTap, bool isActive = false}) {
     return QuantusIconButton.circular(icon: icon, onTap: onTap, isActive: isActive);
   }
 

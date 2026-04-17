@@ -69,6 +69,10 @@ class DatetimeFormattingService {
     return DateFormat('dd-MM-yyyy HH:mm:ss').format(timestamp.toLocal());
   }
 
+  static String formatTxDateTime(DateTime timestamp) {
+    return DateFormat('MMM d, yyyy · h:mm a').format(timestamp.toLocal());
+  }
+
   /// Helper function to format future durations.
   static String _formatFuture(Duration duration) {
     if (duration.inSeconds < 10) {

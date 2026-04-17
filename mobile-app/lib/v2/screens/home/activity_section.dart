@@ -74,7 +74,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
                 data,
                 colors,
                 text,
-                formattedAmount: formatTxAmount(data.amount, isSend: data.isSend),
+                formattedAmount: formatTxAmount(data.amount, isSend: data.isSend).primaryAmount,
                 isLastItem: isLastItem,
                 onTap: () {
                   showTransactionDetailSheet(context, tx, widget.activeAccount.accountId);

@@ -30,20 +30,6 @@ enum FiatCurrency {
     SymbolPosition.suffix => '$amount $symbol',
   };
 
-  /// Same as [format] but prepends a `+` or `-` sign. Used for transaction
-  /// list items where direction matters.
-  ///
-  /// Example:
-  ///   FiatCurrency.usd.formatSigned('1,250.00', isSend: true)  →  '-$1,250.00'
-  ///   FiatCurrency.usd.formatSigned('1,250.00', isSend: false) →  '+$1,250.00'
-  String formatSigned(String amount, {required bool isSend}) {
-    final sign = isSend ? '-' : '+';
-    return switch (symbolPosition) {
-      SymbolPosition.prefix => '$sign$symbol$amount',
-      SymbolPosition.suffix => '$sign$amount $symbol',
-    };
-  }
-
   /// Looks up a [FiatCurrency] by its [code], returning [fallback] if not found.
   static FiatCurrency fromCode(String code, {FiatCurrency fallback = FiatCurrency.usd}) {
     return FiatCurrency.values.firstWhere((c) => c.code == code, orElse: () => fallback);
