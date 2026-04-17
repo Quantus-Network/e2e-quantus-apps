@@ -379,7 +379,7 @@ query SearchPendingTransaction(
     try {
       final http.Response response = await _graphQlEndpointService.post(body: jsonBody);
       sw.stop();
-      print('fetchScheduledTransfers HTTP: ${sw.elapsedMilliseconds}ms');
+      printTiming('fetchScheduledTransfers HTTP', sw.elapsedMilliseconds);
 
       if (response.statusCode != 200) {
         throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
@@ -431,7 +431,7 @@ query SearchPendingTransaction(
     try {
       final http.Response response = await _graphQlEndpointService.post(body: jsonBody);
       sw.stop();
-      print('fetchAccountEvents HTTP: ${sw.elapsedMilliseconds}ms');
+      printTiming('fetchAccountEvents HTTP', sw.elapsedMilliseconds);
 
       if (response.statusCode != 200) {
         throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
