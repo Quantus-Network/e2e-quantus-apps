@@ -2,6 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
@@ -58,45 +59,65 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Activity'),
-      child: accountAsync.when(
-        loading: () => const Center(child: Loader()),
-        error: (e, _) => Center(
-          child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError)),
-        ),
-        data: (active) {
-          if (active == null) return const Center(child: Text('No account'));
-          return txAsync.when(
-            loading: () => const Center(child: Loader()),
-            error: (e, _) => Center(
-              child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError)),
-            ),
-            data: (data) {
-              final txService = ref.read(transactionServiceProvider);
-              final all = txService.combineAndDeduplicateTransactions(
-                pendingCancellationIds: data.pendingCancellationIds,
-                pendingTransactions: data.pendingTransactions,
-                scheduledReversibleTransfers: data.scheduledReversibleTransfers,
-                otherTransfers: data.otherTransfers,
-              );
-              if (all.isEmpty) {
-                return Center(
-                  child: Text('No transactions yet', style: text.paragraph?.copyWith(color: colors.textSecondary)),
-                );
-              }
-              final grouped = _groupByDate(all);
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(spacing: 12, children: filterButtons),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(spacing: 12, children: filterButtons),
+          ),
+
+          const SizedBox(height: 40),
+
+          Expanded(
+            child: accountAsync.when(
+              loading: () => const Center(child: Loader()),
+              error: (e, _) => Center(
+                child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError)),
+              ),
+              data: (active) {
+                if (active == null) return const Center(child: Text('No account'));
+                return txAsync.when(
+                  loading: () => ListView.builder(
+                    itemCount: 3,
+                    itemBuilder: (context, i) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (i > 0) const SizedBox(height: 32),
+                        
+                        const Skeleton(width: 100, height: 24),
+                        const SizedBox(height: 12),
+
+                        for (var j = 0; j < 3; j++) ...[
+                          const Skeleton.txItem(),
+                          if (j < 2) Divider(color: colors.txItemSeparator, height: 24),
+                        ],
+                      ],
+                    ),
                   ),
+                  error: (e, _) => Center(
+                    child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError)),
+                  ),
+                  data: (data) {
+                    final txService = ref.read(transactionServiceProvider);
+                    final all = txService.combineAndDeduplicateTransactions(
+                      pendingCancellationIds: data.pendingCancellationIds,
+                      pendingTransactions: data.pendingTransactions,
+                      scheduledReversibleTransfers: data.scheduledReversibleTransfers,
+                      otherTransfers: data.otherTransfers,
+                    );
+                    if (all.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'No transactions yet',
+                          style: text.paragraph?.copyWith(color: colors.textSecondary),
+                        ),
+                      );
+                    }
+                    final grouped = _groupByDate(all);
 
-                  const SizedBox(height: 40),
-
-                  Expanded(
-                    child: ListView.builder(
+                    return ListView.builder(
                       padding: EdgeInsets.zero,
                       itemCount: grouped.length,
                       itemBuilder: (context, i) {
@@ -124,13 +145,13 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                           ],
                         );
                       },
-                    ),
-                  ),
-                ],
-              );
-            },
-          );
-        },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
