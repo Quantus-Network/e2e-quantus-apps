@@ -86,7 +86,12 @@ class _AmountSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final amount = ref.watch(txAmountFormatterProvider)(tx.amount, isSend: isSend, customHiddenText: '-----');
+    final amount = ref.watch(txAmountFormatterProvider)(
+      tx.amount,
+      isSend: isSend,
+      withQuanSymbol: false,
+      customHiddenText: '-----',
+    );
     final amountColor = isSend ? colors.textPrimary : colors.success;
     final text = context.themeText;
 

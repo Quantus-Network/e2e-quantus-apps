@@ -139,13 +139,13 @@ final currencyDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref)
 // ---------------------------------------------------------------------------
 
 final txAmountFormatterProvider =
-    Provider<CurrencyDisplayState Function(BigInt, {required bool isSend, String? customHiddenText})>((ref) {
+    Provider<CurrencyDisplayState Function(BigInt, {required bool isSend,  bool withQuanSymbol, String? customHiddenText})>((ref) {
       final isHidden = ref.watch(isBalanceHiddenProvider);
       final isFlipped = ref.watch(isCurrencyFlippedProvider);
       final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
       final xRate = ref.watch(exchangeRateServiceProvider);
 
-      return (BigInt amount, {required bool isSend, String? customHiddenText}) {
+      return (BigInt amount, {required bool isSend, bool withQuanSymbol = true, String? customHiddenText}) {
         final hiddenText = customHiddenText ?? '- - - - -';
         final prefix = isSend ? '-' : '+';
 
@@ -153,6 +153,10 @@ final txAmountFormatterProvider =
 
         if (!isHidden) {
           data = data.copyWith(primaryAmount: '$prefix${data.primaryAmount}', secondaryAmount: data.secondaryAmount);
+        }
+
+        if (withQuanSymbol && !isFlipped) {
+          data = data.copyWith(primaryAmount: '${data.primaryAmount} ${AppConstants.tokenSymbol}', secondaryAmount: data.secondaryAmount);
         }
 
         return data;
