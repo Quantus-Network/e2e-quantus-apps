@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:quantus_miner/features/miner/miner_balance_card.dart';
 import 'package:quantus_miner/features/miner/miner_app_bar.dart';
 import 'package:quantus_miner/features/miner/miner_stats_card.dart';
@@ -381,13 +382,19 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
     );
   }
 
+  void _onWithdraw(BigInt balance, String address, String secretHex) {
+    // Navigate to withdrawal screen
+    // Balance refresh happens automatically via MinerStateService streams
+    context.push('/withdraw', extra: {'balance': balance, 'address': address, 'secretHex': secretHex});
+  }
+
   Widget _buildResponsiveCards() {
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth > 800) {
           return Row(
             children: [
-              Expanded(child: MinerBalanceCard(currentBlock: _miningStats.currentBlock)),
+              Expanded(child: MinerBalanceCard(onWithdraw: _onWithdraw)),
               const SizedBox(width: 16),
               Expanded(child: MinerStatsCard(miningStats: _miningStats)),
             ],
@@ -395,7 +402,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
         } else {
           return Column(
             children: [
-              MinerBalanceCard(currentBlock: _miningStats.currentBlock),
+              MinerBalanceCard(onWithdraw: _onWithdraw),
               MinerStatsCard(miningStats: _miningStats),
             ],
           );
