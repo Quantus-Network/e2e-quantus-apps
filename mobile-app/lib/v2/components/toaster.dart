@@ -16,7 +16,7 @@ class Toaster extends StatelessWidget {
     final double iconSize = context.isTablet ? 18 : 14;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 17.73, vertical: 7.09),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 7),
       decoration: ShapeDecoration(
         color: context.colors.toasterBackground,
         shape: RoundedRectangleBorder(
@@ -28,7 +28,7 @@ class Toaster extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Icon(iconData, color: iconColor, size: iconSize),
-          const SizedBox(width: 8.86),
+          const SizedBox(width: 9),
           Expanded(
             child: Text(message, style: context.themeText.detail?.copyWith(color: textColor), softWrap: true),
           ),

@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/fiat_currency.dart';
@@ -115,6 +116,8 @@ class CurrencyDisplayState {
 // Balance display provider
 // ---------------------------------------------------------------------------
 
+final _hiddenAmountText = '- - - - -';
+
 /// Combines balance, hidden state, flip state, selected fiat, and exchange
 /// rate into [CurrencyDisplayState] ready for widgets to render.
 final currencyDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref) {
@@ -128,7 +131,14 @@ final currencyDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref)
     loading: () => const AsyncValue.loading(),
     error: (err, stack) => AsyncValue.error(err, stack),
     data: (balance) {
-      CurrencyDisplayState data = _toFiatDisplayState(balance, selectedFiat, xRate, isFlipped, isHidden, '- - - - -');
+      CurrencyDisplayState data = _toFiatDisplayState(
+        balance,
+        selectedFiat,
+        xRate,
+        isFlipped,
+        isHidden,
+        _hiddenAmountText,
+      );
       return AsyncValue.data(data);
     },
   );
@@ -139,14 +149,16 @@ final currencyDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref)
 // ---------------------------------------------------------------------------
 
 final txAmountFormatterProvider =
-    Provider<CurrencyDisplayState Function(BigInt, {required bool isSend,  bool withQuanSymbol, String? customHiddenText})>((ref) {
+    Provider<
+      CurrencyDisplayState Function(BigInt, {required bool isSend, bool withQuanSymbol, String? customHiddenText})
+    >((ref) {
       final isHidden = ref.watch(isBalanceHiddenProvider);
       final isFlipped = ref.watch(isCurrencyFlippedProvider);
       final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
       final xRate = ref.watch(exchangeRateServiceProvider);
 
       return (BigInt amount, {required bool isSend, bool withQuanSymbol = true, String? customHiddenText}) {
-        final hiddenText = customHiddenText ?? '- - - - -';
+        final hiddenText = customHiddenText ?? _hiddenAmountText;
         final prefix = isSend ? '-' : '+';
 
         CurrencyDisplayState data = _toFiatDisplayState(amount, selectedFiat, xRate, isFlipped, isHidden, hiddenText);
@@ -156,7 +168,10 @@ final txAmountFormatterProvider =
         }
 
         if (withQuanSymbol && !isFlipped) {
-          data = data.copyWith(primaryAmount: '${data.primaryAmount} ${AppConstants.tokenSymbol}', secondaryAmount: data.secondaryAmount);
+          data = data.copyWith(
+            primaryAmount: '${data.primaryAmount} ${AppConstants.tokenSymbol}',
+            secondaryAmount: data.secondaryAmount,
+          );
         }
 
         return data;
@@ -168,9 +183,11 @@ final txAmountFormatterProvider =
 // ---------------------------------------------------------------------------
 
 String _toFiatNumeric(BigInt rawBalance, FiatCurrency fiat, ExchangeRateService xRate) {
-  final scaleFactorDouble = BigInt.from(10).pow(AppConstants.decimals).toDouble();
-  final quanDouble = rawBalance.toDouble() / scaleFactorDouble;
-  return xRate.convert(quanDouble, fiat).toStringAsFixed(2);
+  final scaleFactor = BigInt.from(10).pow(AppConstants.decimals);
+  final quantity = (Decimal.fromBigInt(rawBalance) / Decimal.fromBigInt(scaleFactor)).toDecimal();
+  final fiatValue = xRate.convert(quantity, fiat);
+
+  return fiatValue.toStringAsFixed(2);
 }
 
 CurrencyDisplayState _toFiatDisplayState(

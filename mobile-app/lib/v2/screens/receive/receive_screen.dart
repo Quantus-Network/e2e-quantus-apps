@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -13,6 +15,8 @@ import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
 enum ReceiveTab { qrCode, address }
+
+const _actionButtonPadding = EdgeInsets.symmetric(vertical: 20, horizontal: 16);
 
 class ReceiveScreen extends StatefulWidget {
   const ReceiveScreen({super.key});
@@ -83,7 +87,7 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
             const Expanded(child: Center(child: Loader()))
           else if (_selectedTab == ReceiveTab.qrCode)
             QrCodeTab(accountId: _accountId!, onShare: _share, checksum: _checksum!)
-          else if (_selectedTab == ReceiveTab.address)
+          else
             AddressTab(accountId: _accountId!, onShare: _share, checksum: _checksum!),
         ],
       ),
@@ -107,6 +111,8 @@ class QrCodeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final qrSize = 267.0;
+
     return Expanded(
       child: Column(
         children: [
@@ -115,15 +121,15 @@ class QrCodeTab extends StatelessWidget {
               border: Border.all(color: context.colors.textTertiary, width: 1),
               borderRadius: BorderRadius.circular(16),
             ),
-            width: 267,
-            height: 267,
+            width: qrSize,
+            height: qrSize,
             child: QrImageView(
               data: accountId,
               errorCorrectionLevel: QrErrorCorrectLevel.M,
               embeddedImage: const AssetImage('assets/v2/uppercase_q.png'),
               embeddedImageStyle: const QrEmbeddedImageStyle(size: Size(64, 64)),
               version: QrVersions.auto,
-              size: 267,
+              size: qrSize,
               padding: const EdgeInsets.all(16),
               eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: Colors.white),
               dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: Colors.white),
@@ -153,7 +159,7 @@ class QrCodeTab extends StatelessWidget {
             children: [
               Expanded(
                 child: QuantusButton.simple(
-                  padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                  padding: _actionButtonPadding,
                   label: 'Copy',
                   onTap: () => _copyAccountDetails(context),
                   icon: Icon(Icons.copy, size: 20, color: context.colors.textPrimary),
@@ -162,15 +168,7 @@ class QrCodeTab extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 22),
-              Expanded(
-                child: QuantusButton.simple(
-                  padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-                  label: 'Share',
-                  onTap: onShare,
-                  icon: Icon(Icons.shortcut_rounded, size: 20, color: context.colors.background),
-                  iconPlacement: IconPlacement.leading,
-                ),
-              ),
+              Expanded(child: _ShareButton(onTap: onShare)),
             ],
           ),
 
@@ -195,6 +193,7 @@ class AddressTab extends StatefulWidget {
 class _AddressTabState extends State<AddressTab> {
   bool _addressCopied = false;
   bool _checksumCopied = false;
+  Timer? _resetTimer;
 
   void _copyAddress(BuildContext context) {
     context.copyTextWithToaster(widget.accountId);
@@ -207,6 +206,8 @@ class _AddressTabState extends State<AddressTab> {
   }
 
   void _triggerCopied({required bool isAddress}) {
+    _resetTimer?.cancel();
+
     setState(() {
       if (isAddress) {
         _addressCopied = true;
@@ -214,7 +215,8 @@ class _AddressTabState extends State<AddressTab> {
         _checksumCopied = true;
       }
     });
-    Future.delayed(const Duration(seconds: 2), () {
+
+    _resetTimer = Timer(const Duration(seconds: 2), () {
       if (mounted) {
         setState(() {
           if (isAddress) {
@@ -225,6 +227,12 @@ class _AddressTabState extends State<AddressTab> {
         });
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _resetTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -264,13 +272,7 @@ class _AddressTabState extends State<AddressTab> {
 
           const Spacer(),
 
-          QuantusButton.simple(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-            label: 'Share',
-            onTap: widget.onShare,
-            icon: Icon(Icons.shortcut_rounded, size: 20, color: context.colors.background),
-            iconPlacement: IconPlacement.leading,
-          ),
+          _ShareButton(onTap: widget.onShare),
 
           const SizedBox(height: 24),
         ],
@@ -278,17 +280,21 @@ class _AddressTabState extends State<AddressTab> {
     );
   }
 
-  Widget _buildItem(BuildContext context, String label, String value, {isCheckphrase = false, required bool isCopied}) {
+  Widget _buildItem(
+    BuildContext context,
+    String label,
+    String value, {
+    bool isCheckphrase = false,
+    required bool isCopied,
+  }) {
     final valueTextStyle = isCheckphrase
         ? context.themeText.smallParagraph?.copyWith(color: context.colors.checksum)
         : context.themeText.smallParagraph?.copyWith(fontFamily: AppTextTheme.fontFamilySecondary);
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SizedBox(
-          width: 186,
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -299,7 +305,7 @@ class _AddressTabState extends State<AddressTab> {
           ),
         ),
 
-        const Spacer(),
+        const SizedBox(width: 32),
 
         _copyButton(isCopied: isCopied),
       ],
@@ -326,6 +332,23 @@ class _AddressTabState extends State<AddressTab> {
           color: isCopied ? context.colors.success : context.colors.textPrimary,
         ),
       ),
+    );
+  }
+}
+
+class _ShareButton extends StatelessWidget {
+  const _ShareButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return QuantusButton.simple(
+      padding: _actionButtonPadding,
+      label: 'Share',
+      onTap: onTap,
+      icon: Icon(Icons.shortcut_rounded, size: 20, color: context.colors.background),
+      iconPlacement: IconPlacement.leading,
     );
   }
 }
