@@ -14,6 +14,7 @@ class QuantusIconButton extends StatelessWidget {
   final bool isDisabled;
   final bool isLoading;
   final bool isActive;
+  final double? radius;
 
   const QuantusIconButton.rounded({
     super.key,
@@ -23,6 +24,7 @@ class QuantusIconButton extends StatelessWidget {
     this.isActive = false,
     this.isLoading = false,
     this.isDisabled = false,
+    this.radius,
   }) : shape = IconButtonShape.rounded;
 
   const QuantusIconButton.circular({
@@ -33,6 +35,7 @@ class QuantusIconButton extends StatelessWidget {
     this.isActive = false,
     this.isLoading = false,
     this.isDisabled = false,
+    this.radius,
   }) : shape = IconButtonShape.circular;
 
   @override
@@ -41,7 +44,7 @@ class QuantusIconButton extends StatelessWidget {
 
     final double buttonSize = size == IconButtonSize.small ? 24 : 40;
     final double iconSize = size == IconButtonSize.small ? 16 : 20;
-    final double radius = size == IconButtonSize.small ? 6 : 14;
+    final double radius = this.radius ?? (size == IconButtonSize.small ? 6 : 14);
 
     final buttonContent = Center(
       child: isLoading
