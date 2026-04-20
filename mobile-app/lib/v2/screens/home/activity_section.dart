@@ -32,7 +32,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
 
   @override
   Widget build(BuildContext context) {
-    final formatTxAmount = ref.watch(txAmountFormatterProvider);
+    final formatTxAmount = ref.watch(txAmountDisplayProvider);
     final colors = context.colors;
     final text = context.themeText;
 

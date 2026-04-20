@@ -15,6 +15,7 @@ import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
+import 'package:resonance_network_wallet/shared/utils/tx_filter_family_provider.dart';
 
 class TransactionSubmissionService {
   final Ref _ref;
@@ -336,35 +337,33 @@ class TransactionSubmissionService {
       }
       mainController.silentRefresh();
 
-      final targets = <String>{...?(affectedAccountIds)};
+      final targets = affectedAccountIds?.map((id) => [id]).toList() ?? [];
       final active = _ref.read(activeAccountProvider).value;
+
       if (active != null) {
-        targets.add(active.account.accountId);
+        targets.add([active.account.accountId]);
       }
 
-      for (final accountId in targets) {
-        final controller = _ref.read(
-          filteredPaginationControllerProviderFamily(
-            FilteredTransactionsParams(accountIds: AccountIdListCache.get([accountId]), filter: TransactionFilter.All),
-          ).notifier,
-        );
+      final accountIds = _ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
+      if (accountIds.isNotEmpty) {
+        targets.add(accountIds);
+      }
+
+      for (final targetIds in targets) {
         if (newTransaction != null) {
+          final controller = _ref.read(
+            filteredPaginationControllerProviderFamily(
+              FilteredTransactionsParams(accountIds: AccountIdListCache.get(targetIds), filter: TransactionFilter.all),
+            ).notifier,
+          );
+
           controller.addTransactionToHistory(newTransaction);
         }
-        controller.silentRefresh();
-      }
 
-      // Trigger silent refresh on all accounts filtered pagination so the tx history has the data without manual refresh
-      final accountIds = _ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
-      final allAccountsController = _ref.read(
-        filteredPaginationControllerProviderFamily(
-          FilteredTransactionsParams(accountIds: AccountIdListCache.get(accountIds), filter: TransactionFilter.All),
-        ).notifier,
-      );
-      if (newTransaction != null) {
-        allAccountsController.addTransactionToHistory(newTransaction);
+        refreshPaginationFiltersFor(_ref.read, targetIds, (notifier) {
+          notifier.silentRefresh();
+        });
       }
-      allAccountsController.silentRefresh();
 
       print('Silent history refresh triggered successfully');
     } catch (e, stackTrace) {

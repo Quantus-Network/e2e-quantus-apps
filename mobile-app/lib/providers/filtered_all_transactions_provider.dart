@@ -42,7 +42,7 @@ final filteredTransactionsProviderFamily =
       final filteredPending = pending
           .where(
             (tx) =>
-                normalizedParams.filter != TransactionFilter.Receive &&
+                normalizedParams.filter != TransactionFilter.receive &&
                 (accountIds.contains(tx.from) || accountIds.contains(tx.to)),
           )
           .toList();

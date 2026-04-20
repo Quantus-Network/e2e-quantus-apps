@@ -18,13 +18,13 @@ class ChainHistoryService {
   String _buildScheduledReversibleTransfersQuery(TransactionFilter filter) {
     final String directionCondition;
     switch (filter) {
-      case TransactionFilter.Send:
+      case TransactionFilter.send:
         directionCondition =
             'account: {id_in: \$accounts}, scheduledReversibleTransfer: {from: {id_in: \$accounts}, scheduledAt_gt: \$after}';
-      case TransactionFilter.Receive:
+      case TransactionFilter.receive:
         directionCondition =
             'account: {id_in: \$accounts}, scheduledReversibleTransfer: {to: {id_in: \$accounts}, scheduledAt_gt: \$after}';
-      case TransactionFilter.All:
+      case TransactionFilter.all:
         directionCondition = 'account: {id_in: \$accounts}, scheduledReversibleTransfer: {scheduledAt_gt: \$after}';
     }
 
@@ -80,7 +80,7 @@ query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: In
     const String transferGuard = '{OR: [{transfer_isNull: true}, {transfer: {extrinsic_isNull: false}}]}';
 
     // Whether to include the minerReward field in the response
-    final bool includeMinerReward = filter != TransactionFilter.Send;
+    final bool includeMinerReward = filter != TransactionFilter.send;
 
     final String minerRewardField = includeMinerReward
         ? '''
@@ -99,22 +99,16 @@ query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: In
         : '';
 
     final String whereClause;
-    final String connectionWhereClause;
 
     switch (filter) {
-      case TransactionFilter.Send:
+      case TransactionFilter.send:
         whereClause =
             '{AND: [{account: {id_in: \$accounts}, $baseCondition}, $transferGuard, {OR: [{transfer: {from: {id_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {from: {id_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {from: {id_in: \$accounts}}}}]}]}';
-        connectionWhereClause =
-            '{AND: [{account: {id_in: \$accounts}, $baseCondition}, $transferGuard, {OR: [{transfer: {from: {id_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {from: {id_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {from: {id_in: \$accounts}}}}]}]}';
-      case TransactionFilter.Receive:
+      case TransactionFilter.receive:
         whereClause =
             '{AND: [{account: {id_in: \$accounts}, $baseCondition}, $transferGuard, {OR: [{transfer: {to: {id_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {to: {id_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {to: {id_in: \$accounts}}}}, {minerReward_isNull: false}]}]}';
-        connectionWhereClause =
-            '{AND: [{account: {id_in: \$accounts}, $baseCondition}, $transferGuard, {OR: [{transfer: {to: {id_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {to: {id_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {to: {id_in: \$accounts}}}}, {minerReward_isNull: false}]}]}';
-      case TransactionFilter.All:
+      case TransactionFilter.all:
         whereClause = '{AND: [{account: {id_in: \$accounts}, $baseCondition}, $transferGuard]}';
-        connectionWhereClause = '{AND: [{account: {id_in: \$accounts}, $baseCondition}, $transferGuard]}';
     }
 
     return '''
@@ -186,7 +180,7 @@ query AccountEvents(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!) {
       }
     }$minerRewardField
   }
-  accountEventsConnection(orderBy: id_ASC, where: $connectionWhereClause) {
+  accountEventsConnection(orderBy: id_ASC, where: $whereClause) {
     totalCount
   }
 }

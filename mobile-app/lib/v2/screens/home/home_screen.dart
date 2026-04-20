@@ -47,7 +47,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             filteredPaginationControllerProviderFamily(
               FilteredTransactionsParams(
                 accountIds: AccountIdListCache.get([active.account.accountId]),
-                filter: TransactionFilter.All,
+                filter: TransactionFilter.all,
               ),
             ).notifier,
           )
@@ -89,7 +89,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final isPosMode = ref.watch(posModeProvider);
     final accountAsync = ref.watch(activeAccountProvider);
-    final txAsync = ref.watch(activeAccountTransactionsProvider(TransactionFilter.All));
+    final txAsync = ref.watch(activeAccountTransactionsProvider(TransactionFilter.all));
     final colors = context.colors;
     final text = context.themeText;
 
@@ -188,7 +188,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildBalance(AppColorsV2 colors, AppTextTheme text) {
-    final currencyAsync = ref.watch(currencyDisplayProvider);
+    final currencyAsync = ref.watch(balanceDisplayProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

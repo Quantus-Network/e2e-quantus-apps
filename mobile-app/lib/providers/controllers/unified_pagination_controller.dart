@@ -13,7 +13,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
     this.ref, {
     this.accountIds,
     int pageLimit = 20,
-    TransactionFilter filter = TransactionFilter.All,
+    TransactionFilter filter = TransactionFilter.all,
   }) : _limit = pageLimit,
        _filter = filter,
        super(PaginationState.initial()) {

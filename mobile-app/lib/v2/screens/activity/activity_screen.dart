@@ -24,7 +24,7 @@ class ActivityScreen extends ConsumerStatefulWidget {
 }
 
 class _ActivityScreenState extends ConsumerState<ActivityScreen> {
-  TransactionFilter _filterOption = TransactionFilter.All;
+  TransactionFilter _filterOption = TransactionFilter.all;
 
   void _onFilterOptionChanged(TransactionFilter option) {
     if (_filterOption == option) return;
@@ -39,21 +39,12 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     final text = context.themeText;
     final accountAsync = ref.watch(activeAccountProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider(_filterOption));
-    final formatTxAmount = ref.watch(txAmountFormatterProvider);
+    final formatTxAmount = ref.watch(txAmountDisplayProvider);
 
-    final filterButtonWidthMap = {
-      TransactionFilter.All: 80.0,
-      TransactionFilter.Receive: 130.0,
-      TransactionFilter.Send: 90.0,
-    };
     final filterButtons = TransactionFilter.values
         .map(
-          (e) => _buildFilterButton(
-            e.name,
-            width: filterButtonWidthMap[e]!,
-            onTap: () => _onFilterOptionChanged(e),
-            isSelected: _filterOption == e,
-          ),
+          (e) =>
+              _buildFilterButton(e.displayName, onTap: () => _onFilterOptionChanged(e), isSelected: _filterOption == e),
         )
         .toList();
 
@@ -156,20 +147,16 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     );
   }
 
-  Widget _buildFilterButton(
-    String label, {
-    bool isSelected = false,
-    required double width,
-    required VoidCallback onTap,
-  }) {
+  Widget _buildFilterButton(String label, {bool isSelected = false, required VoidCallback onTap}) {
     final variant = isSelected ? ButtonVariant.primary : ButtonVariant.outline;
 
-    return QuantusButton.simple(
-      label: label,
-      variant: variant,
-      width: width,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      onTap: onTap,
+    return IntrinsicWidth(
+      child: QuantusButton.simple(
+        label: label,
+        variant: variant,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        onTap: onTap,
+      ),
     );
   }
 

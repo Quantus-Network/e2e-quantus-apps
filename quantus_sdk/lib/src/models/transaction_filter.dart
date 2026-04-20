@@ -1,2 +1,14 @@
-// ignore: constant_identifier_names
-enum TransactionFilter { All, Send, Receive }
+enum TransactionFilter { all, send, receive }
+
+extension DisplayName on TransactionFilter {
+  String get displayName {
+    switch (this) {
+      case TransactionFilter.all:
+        return 'All';
+      case TransactionFilter.send:
+        return 'Send';
+      case TransactionFilter.receive:
+        return 'Receive';
+    }
+  }
+}

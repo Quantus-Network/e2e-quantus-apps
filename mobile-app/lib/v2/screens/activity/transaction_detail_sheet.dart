@@ -86,7 +86,7 @@ class _AmountSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final amount = ref.watch(txAmountFormatterProvider)(
+    final amount = ref.watch(txAmountDisplayProvider)(
       tx.amount,
       isSend: isSend,
       withQuanSymbol: false,

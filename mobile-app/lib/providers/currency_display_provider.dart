@@ -120,12 +120,13 @@ final _hiddenAmountText = '- - - - -';
 
 /// Combines balance, hidden state, flip state, selected fiat, and exchange
 /// rate into [CurrencyDisplayState] ready for widgets to render.
-final currencyDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref) {
+final balanceDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref) {
   final balanceAsync = ref.watch(balanceProvider);
   final isHidden = ref.watch(isBalanceHiddenProvider);
   final isFlipped = ref.watch(isCurrencyFlippedProvider);
   final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
   final xRate = ref.watch(exchangeRateServiceProvider);
+  final fmt = ref.watch(numberFormattingServiceProvider);
 
   return balanceAsync.when(
     loading: () => const AsyncValue.loading(),
@@ -135,6 +136,7 @@ final currencyDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref)
         balance,
         selectedFiat,
         xRate,
+        fmt,
         isFlipped,
         isHidden,
         _hiddenAmountText,
@@ -145,10 +147,10 @@ final currencyDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref)
 });
 
 // ---------------------------------------------------------------------------
-// Per-amount formatter (for transaction items)
+// Per-amount display provider (for transaction items)
 // ---------------------------------------------------------------------------
 
-final txAmountFormatterProvider =
+final txAmountDisplayProvider =
     Provider<
       CurrencyDisplayState Function(BigInt, {required bool isSend, bool withQuanSymbol, String? customHiddenText})
     >((ref) {
@@ -156,22 +158,28 @@ final txAmountFormatterProvider =
       final isFlipped = ref.watch(isCurrencyFlippedProvider);
       final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
       final xRate = ref.watch(exchangeRateServiceProvider);
+      final fmt = ref.watch(numberFormattingServiceProvider);
 
       return (BigInt amount, {required bool isSend, bool withQuanSymbol = true, String? customHiddenText}) {
         final hiddenText = customHiddenText ?? _hiddenAmountText;
         final prefix = isSend ? '-' : '+';
 
-        CurrencyDisplayState data = _toFiatDisplayState(amount, selectedFiat, xRate, isFlipped, isHidden, hiddenText);
+        CurrencyDisplayState data = _toFiatDisplayState(
+          amount,
+          selectedFiat,
+          xRate,
+          fmt,
+          isFlipped,
+          isHidden,
+          hiddenText,
+        );
 
         if (!isHidden) {
-          data = data.copyWith(primaryAmount: '$prefix${data.primaryAmount}', secondaryAmount: data.secondaryAmount);
+          data = data.copyWith(primaryAmount: '$prefix${data.primaryAmount}');
         }
 
         if (withQuanSymbol && !isFlipped) {
-          data = data.copyWith(
-            primaryAmount: '${data.primaryAmount} ${AppConstants.tokenSymbol}',
-            secondaryAmount: data.secondaryAmount,
-          );
+          data = data.copyWith(primaryAmount: '${data.primaryAmount} ${AppConstants.tokenSymbol}');
         }
 
         return data;
@@ -194,11 +202,12 @@ CurrencyDisplayState _toFiatDisplayState(
   BigInt amount,
   FiatCurrency selectedFiat,
   ExchangeRateService xRate,
+  NumberFormattingService fmt,
   bool isFlipped,
   bool isHidden,
   String hiddenText,
 ) {
-  final quanFormatted = NumberFormattingService().formatBalance(amount, addSymbol: isFlipped);
+  final quanFormatted = fmt.formatBalance(amount, addSymbol: isFlipped);
   final fiatFormatted = selectedFiat.format(_toFiatNumeric(amount, selectedFiat, xRate));
 
   CurrencyDisplayState data = CurrencyDisplayState(
