@@ -144,12 +144,8 @@ final _router = GoRouter(
     GoRoute(
       path: '/withdraw',
       builder: (context, state) {
-        final extra = state.extra as Map<String, dynamic>;
-        return WithdrawalScreen(
-          availableBalance: extra['balance'] as BigInt,
-          wormholeAddress: extra['address'] as String,
-          secretHex: extra['secretHex'] as String,
-        );
+        final extra = state.extra as Map<String, dynamic>?;
+        return WithdrawalScreen(wormholeAddress: extra?['address'] as String?);
       },
     ),
   ],

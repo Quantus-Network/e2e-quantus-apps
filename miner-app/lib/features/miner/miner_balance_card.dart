@@ -1,69 +1,43 @@
 import 'package:flutter/material.dart';
-import 'package:quantus_miner/src/services/miner_state_service.dart';
+import 'package:quantus_miner/src/services/miner_wallet_service.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
 
-/// Card widget displaying mining rewards balance.
+/// Card displaying the configured rewards wormhole address.
 ///
-/// Uses [MinerStateService] streams for reactive updates - no local state duplication.
-/// Balance updates automatically when:
-/// - New blocks are mined (transfers tracked)
-/// - Session starts/stops
-/// - Withdrawals complete
+/// Balance tracking + withdraw flow are gated on the new wormhole SDK work;
+/// until that lands the card just surfaces the address so users can confirm
+/// rewards are being directed correctly and withdraw via CLI.
 class MinerBalanceCard extends StatefulWidget {
-  /// Callback when withdraw button is pressed
-  final void Function(BigInt balance, String address, String secretHex)? onWithdraw;
-
-  const MinerBalanceCard({super.key, this.onWithdraw});
+  const MinerBalanceCard({super.key});
 
   @override
   State<MinerBalanceCard> createState() => _MinerBalanceCardState();
 }
 
 class _MinerBalanceCardState extends State<MinerBalanceCard> {
-  final _stateService = MinerStateService();
+  final _walletService = MinerWalletService();
+  String? _address;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAddress();
+  }
+
+  Future<void> _loadAddress() async {
+    final address = await _walletService.getRewardsAddress();
+    if (!mounted) return;
+    setState(() {
+      _address = address;
+      _loading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Use StreamBuilder to reactively update when balance changes
-    return StreamBuilder<BalanceState>(
-      stream: _stateService.balanceStream,
-      initialData: BalanceState(
-        balance: _stateService.balance,
-        unspentCount: _stateService.unspentCount,
-        canWithdraw: _stateService.canWithdraw,
-      ),
-      builder: (context, snapshot) {
-        final balanceState = snapshot.data ?? BalanceState(balance: BigInt.zero, unspentCount: 0, canWithdraw: false);
-
-        return _buildCard(
-          balance: balanceState.balance,
-          canWithdraw: balanceState.canWithdraw,
-          isSessionActive: _stateService.isSessionActive,
-        );
-      },
-    );
-  }
-
-  Widget _buildCard({required BigInt balance, required bool canWithdraw, required bool isSessionActive}) {
-    final address = _stateService.wormholeAddress;
-    final secretHex = _stateService.secretHex;
-    final formattedBalance = NumberFormattingService().formatBalance(balance, addSymbol: true);
-
-    // Determine display state
-    String displayBalance;
-    bool showWithdrawButton = false;
-    bool showNotConfigured = false;
-
-    if (address == null) {
-      displayBalance = 'Not configured';
-      showNotConfigured = true;
-    } else if (!isSessionActive) {
-      displayBalance = '0 QTN';
-    } else {
-      displayBalance = formattedBalance;
-      showWithdrawButton = canWithdraw;
-    }
+    final address = _address;
+    final notConfigured = !_loading && address == null;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -89,7 +63,6 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Row(
               children: [
                 Container(
@@ -102,7 +75,7 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Mining Rewards',
+                  'Rewards Address',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -112,21 +85,9 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
               ],
             ),
             const SizedBox(height: 20),
-
-            // Balance display
-            Text(
-              displayBalance,
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF10B981),
-                letterSpacing: -1,
-              ),
-            ),
-
-            // Address display
-            if (address != null) ...[
-              const SizedBox(height: 12),
+            if (_loading)
+              const SizedBox(height: 32, child: Center(child: CircularProgressIndicator()))
+            else if (address != null) ...[
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -159,11 +120,28 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
                   ],
                 ),
               ),
-            ],
-
-            // Not configured warning
-            if (showNotConfigured) ...[
               const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.blue.withValues(alpha: 0.2), width: 1),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.blue.shade300, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'In-app withdrawals coming soon. Use the CLI to claim rewards in the meantime.',
+                        style: TextStyle(fontSize: 12, color: Colors.blue.shade200),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ] else if (notConfigured) ...[
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -177,32 +155,11 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Import your full wallet to track balance and withdraw rewards.',
+                        'Rewards address not configured — complete the inner-hash setup first.',
                         style: TextStyle(fontSize: 12, color: Colors.amber.shade200),
                       ),
                     ),
                   ],
-                ),
-              ),
-            ],
-
-            // Withdraw button
-            if (showWithdrawButton && address != null && secretHex != null) ...[
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    widget.onWithdraw?.call(balance, address, secretHex);
-                  },
-                  icon: const Icon(Icons.output, size: 18),
-                  label: const Text('Withdraw Rewards'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF10B981),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
                 ),
               ),
             ],

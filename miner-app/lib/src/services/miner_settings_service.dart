@@ -60,16 +60,16 @@ class MinerSettingsService {
     // Configure RPC endpoint for SubstrateService
     final rpcService = RpcEndpointService();
     _log.i('  RPC endpoints before: ${rpcService.endpoints.length}');
-    rpcService.setEndpoints([chain.rpcUrl]);
-    _log.i('  RPC endpoints after: ${rpcService.endpoints.length}');
-    _log.i('  Best RPC endpoint: ${rpcService.bestEndpointUrl}');
+    // rpcService.setEndpoints([chain.rpcUrl]);
+    // _log.i('  RPC endpoints after: ${rpcService.endpoints.length}');
+    // _log.i('  Best RPC endpoint: ${rpcService.bestEndpointUrl}');
 
     // Configure GraphQL endpoint (for any remaining Subsquid usage)
-    if (chain.subsquidUrl != null) {
-      GraphQlEndpointService().setEndpoints([chain.subsquidUrl!]);
-    } else {
-      GraphQlEndpointService().setEndpoints([]);
-    }
+    // if (chain.subsquidUrl != null) {
+    //   GraphQlEndpointService().setEndpoints([chain.subsquidUrl!]);
+    // } else {
+    //   GraphQlEndpointService().setEndpoints([]);
+    // }
   }
 
   /// Get the saved chain ID, returns default if not set.

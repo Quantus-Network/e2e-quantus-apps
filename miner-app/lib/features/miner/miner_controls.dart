@@ -8,7 +8,6 @@ import 'package:quantus_miner/src/services/mining_orchestrator.dart';
 import 'package:quantus_miner/src/services/mining_stats_service.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
 
 import '../../main.dart';
 import '../../src/services/binary_manager.dart';
@@ -108,7 +107,7 @@ class _MinerControlsState extends State<MinerControls> {
       if (mounted) {
         context.showWarningSnackbar(
           title: 'Wallet not configured!',
-          message: 'Please set up your rewards address first.',
+          message: 'Please set up your inner hash first.',
         );
       }
       return;
@@ -129,21 +128,6 @@ class _MinerControlsState extends State<MinerControls> {
       }
       return;
     }
-
-    // Log comprehensive wormhole derivation info for debugging
-    _log.i('=== WORMHOLE DERIVATION DEBUG ===');
-    _log.i('Preimage (SS58): ${wormholeKeyPair.rewardsPreimage}');
-    _log.i('Preimage (hex):  ${wormholeKeyPair.rewardsPreimageHex}');
-    _log.i('Address (SS58):  ${wormholeKeyPair.address}');
-    _log.i('Address (hex):   ${wormholeKeyPair.addressHex}');
-    _log.i('Secret (hex):    ${wormholeKeyPair.secretHex.substring(0, 10)}...[redacted]');
-
-    // Verify: compute address from preimage hex and check it matches
-    final wormholeService = WormholeService();
-    final verifiedAddress = wormholeService.preimageToAddress(wormholeKeyPair.rewardsPreimageHex);
-    _log.i('Verified addr:   $verifiedAddress');
-    _log.i('Addresses match: ${verifiedAddress == wormholeKeyPair.address}');
-    _log.i('=================================');
 
     // Create new orchestrator
     final orchestrator = MiningOrchestrator();

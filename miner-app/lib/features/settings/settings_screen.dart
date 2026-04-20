@@ -221,13 +221,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(height: 16),
 
-                        // Backup Wallet Button
+                        // Inner hash button
                         _buildActionTile(
-                          title: 'Backup Recovery Phrase',
-                          subtitle: 'View your 24-word recovery phrase',
+                          title: 'View Inner Hash',
+                          subtitle: 'Copy the inner hash used by the miner',
                           icon: Icons.shield_outlined,
                           accentColor: const Color(0xFFFF9800),
-                          onTap: _showBackupDialog,
+                          onTap: _showInnerHashDialog,
                         ),
 
                         const SizedBox(height: 32),
@@ -493,15 +493,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Future<void> _showBackupDialog() async {
-    final mnemonic = await _walletService.getMnemonic();
+  Future<void> _showInnerHashDialog() async {
+    final innerHash = await _walletService.readRewardsPreimageFile();
 
-    if (mnemonic == null || mnemonic.isEmpty) {
+    if (innerHash == null || innerHash.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'No recovery phrase found. Please set up your wallet first.',
+              'No inner hash found. Please set up your wallet first.',
             ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
@@ -513,8 +513,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (!mounted) return;
 
-    final words = mnemonic.split(RegExp(r'\s+'));
-
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -525,13 +523,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Icon(Icons.shield_outlined, color: Colors.orange, size: 24),
             const SizedBox(width: 12),
             const Text(
-              'Recovery Phrase',
+              'Inner Hash',
               style: TextStyle(color: Colors.white, fontSize: 18),
             ),
           ],
         ),
         content: SizedBox(
-          width: 400,
+          width: 420,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -553,7 +551,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Never share this phrase. Anyone with these words can access your funds.',
+                        'Anyone with this inner hash can direct mining rewards to the associated address.',
                         style: TextStyle(
                           color: Colors.orange.useOpacity(0.9),
                           fontSize: 12,
@@ -571,54 +569,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.white.useOpacity(0.1)),
                 ),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: words.asMap().entries.map((entry) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF2C2C2C),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        '${entry.key + 1}. ${entry.value}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'Courier',
-                          fontSize: 12,
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                child: SelectableText(
+                  innerHash,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontFamily: 'Courier',
+                    fontSize: 13,
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
               Text(
-                'Use this phrase to import your wallet into the quantus-cli:',
+                'Use this value in the miner setup flow or copy it into your CLI workflow:',
                 style: TextStyle(
                   color: Colors.white.useOpacity(0.7),
                   fontSize: 12,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.white.useOpacity(0.1)),
-                ),
-                child: SelectableText(
-                  'quantus wallet import --name my-wallet --mnemonic "${words.join(' ')}"',
-                  style: const TextStyle(
-                    color: Color(0xFF00E676),
-                    fontFamily: 'Courier',
-                    fontSize: 11,
-                  ),
                 ),
               ),
             ],
@@ -627,17 +592,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              Clipboard.setData(ClipboardData(text: mnemonic));
+              Clipboard.setData(ClipboardData(text: innerHash));
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Recovery phrase copied to clipboard'),
+                  content: Text('Inner hash copied to clipboard'),
                   backgroundColor: Color(0xFF00E676),
                   behavior: SnackBarBehavior.floating,
                 ),
               );
             },
             child: const Text(
-              'Copy Phrase',
+              'Copy Inner Hash',
               style: TextStyle(color: Colors.orange),
             ),
           ),

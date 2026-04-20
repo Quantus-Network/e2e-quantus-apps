@@ -9,44 +9,42 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 final _log = log.withTag('MinerWallet');
 
-/// Service for managing the miner's wallet (mnemonic and wormhole key pair).
+/// Miner wallet: mnemonic (secure storage) + rewards preimage (file on disk).
 ///
-/// The miner uses a wormhole address to receive rewards. This address is derived
-/// from a mnemonic using a specific HD path for miner rewards.
-///
-/// The mnemonic is stored securely using flutter_secure_storage, while the
-/// rewards preimage (needed by the node) is stored in a file.
-///
-/// This is a singleton - use `MinerWalletService()` to get the instance.
+/// Two setup flows are supported:
+/// - Full: mnemonic is stored and the wormhole key pair can be re-derived (enables
+///   withdrawals later).
+/// - Preimage-only: only the rewards preimage file is written. The node can mine
+///   but the user must withdraw via CLI.
 class MinerWalletService {
-  // Singleton
   static final MinerWalletService _instance = MinerWalletService._internal();
   factory MinerWalletService() => _instance;
 
   static const String _mnemonicKey = 'miner_mnemonic';
   static const String _rewardsPreimageFileName = 'rewards-preimage.txt';
-  // Legacy file for backward compatibility
   static const String _legacyRewardsAddressFileName = 'rewards-address.txt';
 
   final FlutterSecureStorage _secureStorage;
+  final HdWalletService _hdWallet = HdWalletService();
 
   MinerWalletService._internal()
     : _secureStorage = const FlutterSecureStorage(
-        aOptions: AndroidOptions(encryptedSharedPreferences: true),
         iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
         mOptions: MacOsOptions(usesDataProtectionKeychain: false),
       );
 
-  /// Generate a new 24-word mnemonic.
+  Future<File> _preimageFile() async =>
+      File('${await BinaryManager.getQuantusHomeDirectoryPath()}/$_rewardsPreimageFileName');
+  Future<File> _legacyPreimageFile() async =>
+      File('${await BinaryManager.getQuantusHomeDirectoryPath()}/$_legacyRewardsAddressFileName');
+
+  /// Generate a new 24-word mnemonic (256 bits of entropy).
   String generateMnemonic() {
-    // Generate 256 bits of entropy for a 24-word mnemonic
     final random = Random.secure();
     final entropy = List<int>.generate(32, (_) => random.nextInt(256));
-    final mnemonic = Mnemonic(entropy, Language.english);
-    return mnemonic.sentence;
+    return Mnemonic(entropy, Language.english).sentence;
   }
 
-  /// Validate a mnemonic phrase.
   bool validateMnemonic(String mnemonic) {
     try {
       Mnemonic.fromSentence(mnemonic.trim(), Language.english);
@@ -57,108 +55,85 @@ class MinerWalletService {
     }
   }
 
-  /// Save the mnemonic securely and derive the wormhole key pair.
-  ///
-  /// Returns the derived [WormholeKeyPair] on success.
+  /// Save the mnemonic securely and derive + persist the wormhole key pair.
   Future<WormholeKeyPair> saveMnemonic(String mnemonic) async {
-    // Validate first
     if (!validateMnemonic(mnemonic)) {
       throw ArgumentError('Invalid mnemonic phrase');
     }
 
-    // Store mnemonic securely
-    await _secureStorage.write(key: _mnemonicKey, value: mnemonic.trim());
+    final trimmed = mnemonic.trim();
+    await _secureStorage.write(key: _mnemonicKey, value: trimmed);
     _log.i('Mnemonic saved securely');
 
-    // Derive wormhole key pair
-    final wormholeService = WormholeService();
-    final keyPair = wormholeService.deriveMinerRewardsKeyPair(mnemonic: mnemonic.trim(), index: 0);
-
-    // Save the rewards preimage to file (needed by the node)
+    final keyPair = _hdWallet.deriveMinerRewardsKeyPair(mnemonic: trimmed, index: 0);
     await _saveRewardsPreimage(keyPair.rewardsPreimage);
 
     _log.i('Wormhole address derived: ${keyPair.address}');
     return keyPair;
   }
 
-  /// Get the stored mnemonic, if any.
-  Future<String?> getMnemonic() async {
-    return await _secureStorage.read(key: _mnemonicKey);
-  }
+  Future<String?> getMnemonic() => _secureStorage.read(key: _mnemonicKey);
 
-  /// Check if a mnemonic is stored.
   Future<bool> hasMnemonic() async {
     final mnemonic = await getMnemonic();
     return mnemonic != null && mnemonic.isNotEmpty;
   }
 
-  /// Get the wormhole key pair derived from the stored mnemonic.
-  ///
-  /// Returns null if no mnemonic is stored.
+  /// Wormhole key pair derived from the stored mnemonic, or null if no mnemonic.
   Future<WormholeKeyPair?> getWormholeKeyPair() async {
     final mnemonic = await getMnemonic();
-    if (mnemonic == null || mnemonic.isEmpty) {
-      return null;
-    }
-
-    final wormholeService = WormholeService();
-    return wormholeService.deriveMinerRewardsKeyPair(mnemonic: mnemonic, index: 0);
+    if (mnemonic == null || mnemonic.isEmpty) return null;
+    return _hdWallet.deriveMinerRewardsKeyPair(mnemonic: mnemonic, index: 0);
   }
 
-  /// Get the rewards inner hash from the stored mnemonic.
-  ///
-  /// This is the value passed to the node's --rewards-inner-hash flag.
-  /// Returns the hex-encoded value with 0x prefix.
+  /// Hex value for the node's `--rewards-inner-hash` flag. Falls back to the
+  /// preimage-only file when no mnemonic is stored.
   Future<String?> getRewardsInnerHash() async {
     final keyPair = await getWormholeKeyPair();
-    return keyPair?.rewardsPreimageHex;
+    if (keyPair != null) return keyPair.rewardsPreimageHex;
+    final fromFile = await readRewardsPreimageFile();
+    if (fromFile == null || fromFile.isEmpty) return null;
+    return _hdWallet.preimageSs58ToHex(fromFile);
   }
 
-  /// Get the wormhole address where rewards are sent.
+  /// SS58 wormhole address where rewards are sent.
   Future<String?> getRewardsAddress() async {
     final keyPair = await getWormholeKeyPair();
-    return keyPair?.address;
+    if (keyPair != null) return keyPair.address;
+    final hexPreimage = await getRewardsInnerHash();
+    if (hexPreimage == null) return null;
+    return _hdWallet.preimageToAddress(hexPreimage);
   }
 
-  /// Check if the rewards preimage file exists.
   Future<bool> hasRewardsPreimageFile() async {
     try {
-      final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
-      final preimageFile = File('$quantusHome/$_rewardsPreimageFileName');
-      return await preimageFile.exists();
+      return await (await _preimageFile()).exists();
     } catch (e) {
       _log.e('Error checking rewards preimage file', error: e);
       return false;
     }
   }
 
-  /// Read the rewards preimage from the file.
   Future<String?> readRewardsPreimageFile() async {
     try {
-      final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
-      final preimageFile = File('$quantusHome/$_rewardsPreimageFileName');
-      if (await preimageFile.exists()) {
-        return (await preimageFile.readAsString()).trim();
-      }
-      return null;
+      final file = await _preimageFile();
+      if (!await file.exists()) return null;
+      return (await file.readAsString()).trim();
     } catch (e) {
       _log.e('Error reading rewards preimage file', error: e);
       return null;
     }
   }
 
-  /// Save the rewards preimage to file.
   Future<void> _saveRewardsPreimage(String preimage) async {
     try {
-      final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
-      final preimageFile = File('$quantusHome/$_rewardsPreimageFileName');
-      await preimageFile.writeAsString(preimage);
-      _log.i('Rewards preimage saved to: ${preimageFile.path}');
+      final file = await _preimageFile();
+      await file.writeAsString(preimage);
+      _log.i('Rewards preimage saved to: ${file.path}');
 
-      // Also delete legacy rewards-address.txt if it exists
-      final legacyFile = File('$quantusHome/$_legacyRewardsAddressFileName');
-      if (await legacyFile.exists()) {
-        await legacyFile.delete();
+      final legacy = await _legacyPreimageFile();
+      if (await legacy.exists()) {
+        await legacy.delete();
         _log.i('Deleted legacy rewards address file');
       }
     } catch (e) {
@@ -167,49 +142,26 @@ class MinerWalletService {
     }
   }
 
-  /// Validate a rewards preimage (SS58 format check).
-  ///
-  /// The preimage should be a valid SS58 address (the first_hash encoded).
-  bool validatePreimage(String preimage) {
-    final trimmed = preimage.trim();
-    // Basic SS58 validation: starts with valid prefix and has reasonable length
-    // Quantus SS58 addresses typically start with 'q' and are 47-48 characters
-    if (trimmed.isEmpty) return false;
-    if (trimmed.length < 40 || trimmed.length > 50) return false;
-    // Check for valid base58 characters (no 0, O, I, l)
-    final base58Regex = RegExp(r'^[1-9A-HJ-NP-Za-km-z]+$');
-    return base58Regex.hasMatch(trimmed);
-  }
+  /// Validate a rewards preimage (SS58 base58 shape check).
+  bool validatePreimage(String preimage) => _hdWallet.validatePreimage(preimage);
 
-  /// Save just the rewards preimage directly (without mnemonic).
-  ///
-  /// Use this when the user has a preimage from another source (e.g., CLI)
-  /// and doesn't want to import their full mnemonic.
-  ///
-  /// Note: Without the mnemonic, the user cannot withdraw rewards from this app.
-  /// They will need to use the CLI or another tool with access to the secret.
+  /// Save just the rewards preimage (no mnemonic). Mining only; withdrawals
+  /// require the secret via another tool.
   Future<void> savePreimageOnly(String preimage) async {
     final trimmed = preimage.trim();
-
     if (!validatePreimage(trimmed)) {
       throw ArgumentError('Invalid preimage format. Expected SS58-encoded address.');
     }
-
-    // Save the preimage to file
     await _saveRewardsPreimage(trimmed);
     _log.i('Preimage saved (without mnemonic)');
   }
 
-  /// Check if we have the full mnemonic (can withdraw) or just preimage (mining only).
-  Future<bool> canWithdraw() async {
-    return await hasMnemonic();
-  }
+  Future<bool> canWithdraw() => hasMnemonic();
 
-  /// Delete all wallet data (for logout/reset).
+  /// Delete mnemonic + preimage files (logout/reset).
   Future<void> deleteWalletData() async {
     _log.i('Deleting wallet data...');
 
-    // Delete mnemonic from secure storage
     try {
       await _secureStorage.delete(key: _mnemonicKey);
       _log.i('Mnemonic deleted from secure storage');
@@ -217,44 +169,25 @@ class MinerWalletService {
       _log.e('Error deleting mnemonic', error: e);
     }
 
-    // Delete rewards preimage file
-    try {
-      final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
-      final preimageFile = File('$quantusHome/$_rewardsPreimageFileName');
-      if (await preimageFile.exists()) {
-        await preimageFile.delete();
-        _log.i('Rewards preimage file deleted');
+    for (final getFile in [_preimageFile, _legacyPreimageFile]) {
+      try {
+        final file = await getFile();
+        if (await file.exists()) {
+          await file.delete();
+          _log.i('Deleted: ${file.path}');
+        }
+      } catch (e) {
+        _log.e('Error deleting wallet file', error: e);
       }
-    } catch (e) {
-      _log.e('Error deleting rewards preimage file', error: e);
-    }
-
-    // Delete legacy rewards address file
-    try {
-      final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
-      final legacyFile = File('$quantusHome/$_legacyRewardsAddressFileName');
-      if (await legacyFile.exists()) {
-        await legacyFile.delete();
-        _log.i('Legacy rewards address file deleted');
-      }
-    } catch (e) {
-      _log.e('Error deleting legacy rewards address file', error: e);
     }
   }
 
-  /// Check if the setup is complete (either new preimage file or legacy address file exists).
+  /// True if either the new preimage file or the legacy address file exists.
   Future<bool> isSetupComplete() async {
-    // Check for new preimage file first
-    if (await hasRewardsPreimageFile()) {
-      return true;
-    }
-
-    // Fall back to checking legacy file for backward compatibility
+    if (await hasRewardsPreimageFile()) return true;
     try {
-      final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
-      final legacyFile = File('$quantusHome/$_legacyRewardsAddressFileName');
-      return await legacyFile.exists();
-    } catch (e) {
+      return await (await _legacyPreimageFile()).exists();
+    } catch (_) {
       return false;
     }
   }

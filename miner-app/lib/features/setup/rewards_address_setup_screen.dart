@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:quantus_miner/src/services/miner_wallet_service.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-/// Setup screen for miner wallet (mnemonic-based wormhole address).
-///
-/// Users can either generate a new 24-word mnemonic or import an existing one.
-/// The mnemonic is used to derive a wormhole address where mining rewards are sent.
+final _log = log.withTag('InnerHashSetup');
+
+/// Setup screen for the miner inner hash.
 class RewardsAddressSetupScreen extends StatefulWidget {
   const RewardsAddressSetupScreen({super.key});
 
@@ -41,6 +41,29 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
 
   // For preimage-only flow (no keypair available)
   String? _savedPreimageOnly;
+
+  @override
+  void initState() {
+    super.initState();
+    _showImportView = true;
+    _importMode = _ImportMode.preimage;
+    _loadExistingInnerHash();
+  }
+
+  Future<void> _loadExistingInnerHash() async {
+    try {
+      final innerHash = await _walletService.readRewardsPreimageFile();
+      if (!mounted || innerHash == null || innerHash.isEmpty) {
+        return;
+      }
+
+      setState(() {
+        _importController.text = innerHash;
+      });
+    } catch (e) {
+      _log.e('Error loading existing inner hash', error: e);
+    }
+  }
 
   @override
   void dispose() {
@@ -154,7 +177,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Wallet Setup'),
+        title: const Text('Inner Hash Setup'),
         leading: canGoBack
             ? IconButton(
                 icon: const Icon(Icons.arrow_back),
@@ -195,13 +218,13 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
             SvgPicture.asset('assets/logo/logo.svg', width: 80, height: 80),
             const SizedBox(height: 24),
             const Text(
-              'Set Up Rewards Wallet',
+              'Set Up Inner Hash',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             const Text(
-              'Your mining rewards will be sent to a wormhole address derived from a recovery phrase.',
+              'Paste the wormhole inner hash that the miner should use for rewards.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16, color: Colors.grey),
             ),
@@ -223,7 +246,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                 });
               },
               icon: const Icon(Icons.download),
-              label: const Text('Import Existing Wallet'),
+              label: const Text('Enter Inner Hash'),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 textStyle: const TextStyle(fontSize: 18),
@@ -243,7 +266,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'If you already have a Quantus mobile wallet, you can use the same recovery phrase to receive rewards to the same account.',
+                      'If you already have an inner hash from the CLI, paste it here to use the same rewards destination.',
                       style: TextStyle(fontSize: 14, color: Colors.amber.shade200),
                     ),
                   ),
