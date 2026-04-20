@@ -138,7 +138,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
-        _buildTopBar(active, colors),
+        _buildTopBar(),
         const SizedBox(height: 40),
         _buildBalance(colors, text),
         const SizedBox(height: 40),
@@ -153,7 +153,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildTopBar(DisplayAccount active, AppColorsV2 colors) {
+  Widget _buildTopBar() {
     final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
 
     return Row(
@@ -165,13 +165,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         Row(
           children: [
-            _circleIconButton(
+            QuantusIconButton.circular(
               icon: isBalanceHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
               onTap: _toggleBalanceHidden,
               isActive: isBalanceHidden,
             ),
             const SizedBox(width: 12),
-            _circleIconButton(
+            QuantusIconButton.circular(
               icon: Icons.settings_outlined,
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreenV2())),
             ),
@@ -179,14 +179,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ],
     );
-  }
-
-  Widget _circleIconButton({
-    required IconData icon,
-    required VoidCallback onTap,
-    bool isActive = false,
-  }) {
-    return QuantusIconButton.circular(icon: icon, onTap: onTap, isActive: isActive);
   }
 
   Widget _buildBalance(AppColorsV2 colors, AppTextTheme text) {

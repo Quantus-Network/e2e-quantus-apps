@@ -171,6 +171,16 @@ class TaskmasterService {
     return jsonEncode(requestBody);
   }
 
+  Future<String> getMiningAccountId() async {
+    final mnemonic = await _settingsService.getMnemonic(0);
+    if (mnemonic == null) {
+      throw Exception('Mnemonic not found.');
+    }
+    final address = HdWalletService().deriveWormhole(mnemonic).address;
+    return address;
+  }
+
+  // In the past in the beginnings some people mined with a non-derived account
   Future<String> getOldMiningAccountId() async {
     final mnemonic = await _settingsService.getMnemonic(0);
     if (mnemonic == null) {
@@ -510,9 +520,8 @@ class TaskmasterService {
   }
 
   Future<MinerStats> getMinerStats() async {
-    final mainAccount = await getMainAccount();
-    final oldMiningAccountId = await getOldMiningAccountId();
-    final List<String> accountIds = [oldMiningAccountId, mainAccount.accountId];
+    final miningAccountId = await getMiningAccountId();
+    final List<String> accountIds = [miningAccountId];
 
     final Map<String, dynamic> requestBody = {
       'query': _minerStatsQuery,
