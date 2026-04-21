@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
@@ -188,7 +188,7 @@ class _SwapScreenState extends State<SwapScreen> {
             SizedBox(
               width: 119,
               height: 56,
-              child: GlassButton(
+              child: QuantusButton(
                 centered: false,
                 onTap: _pickToken,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -268,9 +268,9 @@ class _SwapScreenState extends State<SwapScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              _smallGlassIconButton(colors: colors, iconAsset: _qrIconAsset, onTap: _scanQr),
+              _smallIconButton(colors: colors, iconAsset: _qrIconAsset, onTap: _scanQr),
               const SizedBox(width: 8),
-              _smallGlassIconButton(
+              _smallIconButton(
                 colors: colors,
                 iconAsset: _historyIconAsset,
                 onTap: () async {
@@ -295,18 +295,18 @@ class _SwapScreenState extends State<SwapScreen> {
         SizedBox(
           width: 40,
           height: 40,
-          child: _smallGlassIconButton(colors: colors, iconAsset: _swapDirectionIconAsset, onTap: () {}),
+          child: _smallIconButton(colors: colors, iconAsset: _swapDirectionIconAsset, onTap: () {}),
         ),
         Expanded(child: Divider(color: colors.separator)),
       ],
     );
   }
 
-  Widget _smallGlassIconButton({required AppColorsV2 colors, required String iconAsset, VoidCallback? onTap}) {
+  Widget _smallIconButton({required AppColorsV2 colors, required String iconAsset, VoidCallback? onTap}) {
     return SizedBox(
       width: 40,
       height: 40,
-      child: GlassButton(
+      child: QuantusButton(
         onTap: onTap,
         padding: EdgeInsets.zero,
         borderRadius: 8,
@@ -349,7 +349,7 @@ class _SwapScreenState extends State<SwapScreen> {
             SizedBox(
               width: 119,
               height: 56,
-              child: GlassButton(
+              child: QuantusButton(
                 centered: false,
                 onTap: () {},
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -415,7 +415,7 @@ class _SwapScreenState extends State<SwapScreen> {
 
   Widget _quoteButton(AppColorsV2 colors, AppTextTheme text) {
     final enabled = _canGetQuote && !_loading;
-    return GlassButton.simple(
+    return QuantusButton.simple(
       label: 'Get a Quote',
       onTap: _getQuote,
       isDisabled: !enabled,

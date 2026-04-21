@@ -7,8 +7,8 @@ import 'package:resonance_network_wallet/services/firebase_messaging_service.dar
 import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
-import 'package:resonance_network_wallet/v2/components/glass_icon_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/create/recovery_phrase_sheet.dart';
@@ -185,7 +185,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
                   ),
                   if (_accountNameError != null) ...[
                     const SizedBox(height: 6),
-                    Text(_accountNameError!, style: text.detail?.copyWith(color: colors.accentPink)),
+                    Text(_accountNameError!, style: text.detail?.copyWith(color: colors.accentOrange)),
                   ],
                   const SizedBox(height: 24),
                   _Field(
@@ -207,7 +207,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
                     label: 'Wallet Checkphrase',
                     value: _isLoading ? '...' : _checksum,
                     isLoading: _isLoading,
-                    valueColor: colors.accentPink,
+                    valueColor: colors.checksum,
                     actionIcon: Icons.copy_outlined,
                     onAction: () => context.copyTextWithToaster(_checksum, message: 'Checkphrase copied'),
                   ),
@@ -232,7 +232,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
             ),
           ),
           const SizedBox(height: 24),
-          GlassButton.simple(
+          QuantusButton.simple(
             label: 'Continue',
             onTap: _continue,
             isLoading: _isSubmitting,
@@ -292,7 +292,7 @@ class _Field extends StatelessWidget {
               SizedBox(
                 width: 40,
                 height: 40,
-                child: GlassIconButton.rounded(radius: 8, icon: actionIcon, onTap: isLoading ? null : onAction),
+                child: QuantusIconButton.rounded(onTap: onAction, icon: actionIcon, radius: 8, isLoading: isLoading),
               ),
             ],
           ),

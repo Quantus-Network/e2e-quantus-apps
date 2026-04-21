@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/services/logout_service.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/reset_confirmation_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/select_wallet_screen.dart';
@@ -316,6 +316,6 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
   }
 
   Widget _resetButton(AppColorsV2 colors, AppTextTheme text) {
-    return GlassButton.simple(label: 'Reset Quantus', onTap: _showResetConfirmation, variant: ButtonVariant.danger);
+    return QuantusButton.simple(label: 'Reset Quantus', onTap: _showResetConfirmation, variant: ButtonVariant.danger);
   }
 }

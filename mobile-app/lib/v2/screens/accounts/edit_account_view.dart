@@ -3,7 +3,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_shared_components.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
@@ -49,7 +49,7 @@ class EditAccountView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        GlassButton.simple(
+        QuantusButton.simple(
           label: 'Share Account Details',
           onTap: () => shareAccountDetails(context, account.accountId, checksum: checksum),
         ),
@@ -86,9 +86,9 @@ class EditAccountView extends StatelessWidget {
         readOnly: !isEditingName || isSavingName,
         style: context.themeText.smallParagraph!.copyWith(
           fontWeight: FontWeight.w500,
-          color: context.colors.accentPink,
+          color: context.colors.accentOrange,
         ),
-        cursorColor: context.colors.accentPink,
+        cursorColor: context.colors.accentOrange,
         decoration: accountFieldDecoration,
         onSubmitted: (_) {
           if (isEditingName && !isSavingName) {
@@ -121,7 +121,7 @@ class EditAccountView extends StatelessWidget {
           AccountCopyRow(
             value: checksum,
             onCopy: () => context.copyTextWithToaster(checksum, message: 'Checkphrase copied to clipboard'),
-            textStyle: context.themeText.smallParagraph!.copyWith(color: context.colors.accentPink),
+            textStyle: context.themeText.smallParagraph!.copyWith(color: context.colors.checksum),
           ),
         ],
       ),

@@ -3,7 +3,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/mnemonic_grid.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -98,9 +98,9 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.warning_amber_rounded, color: colors.accentPink, size: 24),
+            Icon(Icons.warning_amber_rounded, color: colors.accentOrange, size: 24),
             const SizedBox(width: 8),
-            Text('Important Warning', style: text.smallTitle?.copyWith(color: colors.accentPink)),
+            Text('Important Warning', style: text.smallTitle?.copyWith(color: colors.accentOrange)),
           ],
         ),
         const SizedBox(height: 8),
@@ -114,7 +114,7 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
   }
 
   Widget _copyRow(AppColorsV2 colors, AppTextTheme text) {
-    return GlassButton.simple(
+    return QuantusButton.simple(
       padding: const EdgeInsets.all(0),
       label: 'Copy to clipboard',
       onTap: _copyToClipboard,
@@ -128,7 +128,7 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
     final label = _revealed ? 'Hide Recovery Phrase' : 'Reveal Recovery Phrase';
     final icon = _revealed ? Icons.visibility_off_outlined : Icons.visibility_outlined;
 
-    return GlassButton.simple(
+    return QuantusButton.simple(
       label: label,
       onTap: _toggleReveal,
       variant: ButtonVariant.secondary,

@@ -1,14 +1,13 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/button.dart';
-import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
+import 'package:resonance_network_wallet/features/components/dotted_border.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
+import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart' hide ButtonVariant;
-import 'package:resonance_network_wallet/v2/components/glass_icon_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_sheet.dart';
@@ -20,6 +19,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
+import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -34,8 +34,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  final NumberFormattingService _fmt = NumberFormattingService();
-
   Future<void> _refresh() async {
     final active = ref.read(activeAccountProvider).value;
     ref.invalidate(balanceProviderFamily);
@@ -67,19 +65,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  Future<void> toggleBalanceHidden(bool isBalanceHidden) async {
-    final isBalanceHiddenNotifier = ref.read(isBalanceHiddenProvider.notifier);
-    await isBalanceHiddenNotifier.setIsBalanceHidden(!isBalanceHidden);
+  Future<void> _toggleBalanceHidden() async {
+    final notifier = ref.read(isBalanceHiddenProvider.notifier);
+    await notifier.setIsBalanceHidden(!ref.read(isBalanceHiddenProvider));
+  }
+
+  Future<void> _toggleFlip() async {
+    await ref.read(isCurrencyFlippedProvider.notifier).toggle();
   }
 
   @override
   Widget build(BuildContext context) {
     _processIntentIfAvailable();
 
-    final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
     final isPosMode = ref.watch(posModeProvider);
     final accountAsync = ref.watch(activeAccountProvider);
-    final balanceAsync = ref.watch(balanceProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider);
     final colors = context.colors;
     final text = context.themeText;
@@ -100,7 +100,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return ScaffoldBase.refreshable(
           onRefresh: _refresh,
           slivers: [
-            _buildContent(active, balanceAsync, isBalanceHidden, colors, text),
+            _buildContent(active, colors, text),
             ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
             SizedBox(height: isPosMode ? 120 : 58),
           ],
@@ -124,34 +124,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildPosButton(AppColorsV2 colors, AppTextTheme text) {
-    return Button(
+    return QuantusButton.simple(
       label: 'New Charge',
-      variant: ButtonVariant.accent,
-      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosAmountScreen())),
+      variant: ButtonVariant.success,
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosAmountScreen())),
       textStyle: text.smallTitle?.copyWith(fontWeight: FontWeight.w700, fontSize: 20, decoration: TextDecoration.none),
     );
   }
 
-  Widget _buildContent(
-    DisplayAccount active,
-    AsyncValue<BigInt> balanceAsync,
-    bool isBalanceHidden,
-    AppColorsV2 colors,
-    AppTextTheme text,
-  ) {
+  Widget _buildContent(DisplayAccount active, AppColorsV2 colors, AppTextTheme text) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
-        _buildTopBar(active, isBalanceHidden, colors),
-        const SizedBox(height: 64),
-        _buildBalance(balanceAsync, isBalanceHidden, colors, text),
-        const SizedBox(height: 64),
-        if (active is RegularAccount) _buildActionButtons(),
+        _buildTopBar(),
+        const SizedBox(height: 40),
+        _buildBalance(colors, text),
+        const SizedBox(height: 40),
+        if (active is RegularAccount) ...[_buildActionButtons(), const SizedBox(height: 40)],
+        DottedBorder(
+          dashLength: 10,
+          gapLength: 6,
+          color: colors.borderButton.useOpacity(0.5),
+          child: const SizedBox(width: double.infinity, height: 1),
+        ),
       ],
     );
   }
 
-  Widget _buildTopBar(DisplayAccount active, bool isBalanceHidden, AppColorsV2 colors) {
+  Widget _buildTopBar() {
+    final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -161,15 +164,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         Row(
           children: [
-            _glassCircleButton(
+            QuantusIconButton.circular(
               icon: isBalanceHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-              colors: colors,
-              onTap: () => toggleBalanceHidden(isBalanceHidden),
+              onTap: _toggleBalanceHidden,
+              isActive: isBalanceHidden,
             ),
             const SizedBox(width: 12),
-            _glassCircleButton(
+            QuantusIconButton.circular(
               icon: Icons.settings_outlined,
-              colors: colors,
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreenV2())),
             ),
           ],
@@ -178,45 +180,63 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _glassCircleButton({required IconData icon, required AppColorsV2 colors, required VoidCallback onTap}) {
-    return GlassIconButton.circular(icon: icon, onTap: onTap);
-  }
+  Widget _buildBalance(AppColorsV2 colors, AppTextTheme text) {
+    final currencyAsync = ref.watch(currencyDisplayProvider);
 
-  Widget _buildBalance(AsyncValue<BigInt> balanceAsync, bool isBalanceHidden, AppColorsV2 colors, AppTextTheme text) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        balanceAsync.when(
-          data: (balance) {
-            final formatted = isBalanceHidden ? '-----' : _fmt.formatBalance(balance);
-            final usdFormatted = isBalanceHidden ? '-----' : '\$${_fmt.formatBalance(balance)}';
+        currencyAsync.when(
+          data: (display) {
             return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Stack(
-                  alignment: Alignment.center,
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: display.primaryAmount,
+                        style: text.extraLargeTitle?.copyWith(fontFamily: AppTextTheme.fontFamily),
+                      ),
+                      if (!display.isFlipped) ...[
+                        const TextSpan(text: '     '),
+                        TextSpan(
+                          text: AppConstants.tokenSymbol,
+                          style: text.mediumTitle?.copyWith(fontFamily: AppTextTheme.fontFamilySecondary),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
                   children: [
-                    ImageFiltered(
-                      imageFilter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-                      child: Text(
-                        '$formatted ${AppConstants.tokenSymbol}',
-                        style: text.extraLargeTitle?.copyWith(color: colors.textSecondary),
+                    Text(
+                      '≈ ${display.secondaryAmount}',
+                      style: text.paragraph?.copyWith(
+                        color: colors.textSecondary,
+                        fontFamily: AppTextTheme.fontFamilySecondary,
                       ),
                     ),
-                    Text(
-                      '$formatted ${AppConstants.tokenSymbol}',
-                      style: text.extraLargeTitle?.copyWith(color: colors.textPrimary),
+                    const SizedBox(width: 8),
+                    QuantusIconButton.circular(
+                      icon: Icons.swap_vert,
+                      onTap: _toggleFlip,
+                      isActive: display.isFlipped,
+                      size: IconButtonSize.small,
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
-                Text('≈ $usdFormatted', style: text.paragraph?.copyWith(color: colors.textSecondary)),
               ],
             );
           },
-          loading: () => Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          loading: () => const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Skeleton(width: 200, height: 36),
-              Text(' ${AppConstants.tokenSymbol}', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+              SizedBox(height: 12),
+              Skeleton(width: 200, height: 36),
+              SizedBox(height: 16),
+              Skeleton(width: 100, height: 18),
             ],
           ),
           error: (_, _) => Text('Error loading balance', style: text.detail?.copyWith(color: colors.textError)),
@@ -244,9 +264,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(width: 104, child: receiveCard),
-          const SizedBox(width: 32),
-          SizedBox(width: 104, child: sendCard),
+          SizedBox(width: 151, child: receiveCard),
+          const SizedBox(width: 20),
+          SizedBox(width: 151, child: sendCard),
         ],
       );
     }
@@ -269,12 +289,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _actionCard({required String iconAsset, required String label, required VoidCallback onTap}) {
-    return GlassButton.simple(
+    return QuantusButton.simple(
       label: label,
       onTap: onTap,
       icon: SvgPicture.asset(iconAsset, width: 24, height: 24),
       iconPlacement: IconPlacement.top,
       padding: const EdgeInsets.all(14),
+      variant: ButtonVariant.secondary,
+      textStyle: context.themeText.paragraph?.copyWith(color: context.colors.textPrimary.useOpacity(0.8)),
     );
   }
 }

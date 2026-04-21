@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
@@ -22,7 +22,7 @@ class ActivityScreen extends ConsumerWidget {
     final text = context.themeText;
     final accountAsync = ref.watch(activeAccountProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider);
-    final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
+    final formatTxAmount = ref.watch(txAmountFormatterProvider);
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Activity'),
@@ -67,14 +67,14 @@ class ActivityScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 8),
                       ...group.transactions.mapIndexed((index, tx) {
-                        final itemData = TxItemData.from(tx, active.account.accountId);
+                        final itemData = TxItemData.from(tx, active.account.accountId, colors);
                         final isLastItem = index == group.transactions.length - 1;
                         return buildTxItem(
                           tx,
                           itemData,
                           colors,
                           text,
-                          isBalanceHidden: isBalanceHidden,
+                          formattedAmount: formatTxAmount(itemData.amount, isSend: itemData.isSend),
                           isLastItem: isLastItem,
                           onTap: () {
                             showTransactionDetailSheet(context, tx, active.account.accountId);

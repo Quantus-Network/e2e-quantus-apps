@@ -6,9 +6,9 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/services/pos_service.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/services/tx_watch_service.dart';
 import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -128,7 +128,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
           style: text.mediumTitle?.copyWith(color: colors.textSecondary),
         ),
         const Spacer(),
-        GlassButton.simple(label: 'Done', onTap: _newCharge, variant: ButtonVariant.primary),
+        QuantusButton.simple(label: 'Done', onTap: _newCharge, variant: ButtonVariant.primary),
         const SizedBox(height: 24),
       ],
     );
@@ -160,7 +160,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         // const SizedBox(height: 8),
         Text('Ref: ${request.refId}', style: text.detail?.copyWith(color: colors.textTertiary)),
         const Spacer(),
-        GlassButton.simple(label: 'New Charge', onTap: _newCharge, variant: ButtonVariant.secondary),
+        QuantusButton.simple(label: 'New Charge', onTap: _newCharge, variant: ButtonVariant.secondary),
         const SizedBox(height: 16),
         _buildWaitingButton(colors, text),
         const SizedBox(height: 24),
@@ -170,7 +170,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
 
   Widget _buildWaitingButton(AppColorsV2 colors, AppTextTheme text) {
     if (_watching) {
-      return GlassButton(
+      return QuantusButton(
         variant: ButtonVariant.primary,
         onTap: () {},
         child: Row(
@@ -193,10 +193,10 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         if (_watchError != null) ...[
           Text('Network Error', style: text.detail?.copyWith(color: colors.textError)),
           const SizedBox(height: 8),
-          GlassButton.simple(label: 'Try Again', onTap: _startWatching, variant: ButtonVariant.secondary),
+          QuantusButton.simple(label: 'Try Again', onTap: _startWatching, variant: ButtonVariant.secondary),
           const SizedBox(height: 12),
         ],
-        GlassButton.simple(label: 'Done', onTap: _newCharge, variant: ButtonVariant.primary),
+        QuantusButton.simple(label: 'Done', onTap: _newCharge, variant: ButtonVariant.primary),
       ],
     );
   }

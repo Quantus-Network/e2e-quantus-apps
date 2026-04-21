@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/features/components/network_status_banner.dart';
-import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
+import 'package:resonance_network_wallet/v2/components/base_background.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
 class ScaffoldBase extends StatelessWidget {
@@ -56,7 +56,7 @@ class ScaffoldBase extends StatelessWidget {
     if (backgroundWidget != null) {
       scaffoldBody = Stack(fit: StackFit.expand, children: [backgroundWidget!, scaffoldBody]);
     } else {
-      scaffoldBody = GradientBackground(child: scaffoldBody);
+      scaffoldBody = BaseBackground(child: scaffoldBody);
     }
 
     return Scaffold(body: scaffoldBody);

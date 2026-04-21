@@ -2,9 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
-import 'package:resonance_network_wallet/v2/components/glass_icon_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart';
@@ -393,7 +393,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       if (_recipientChecksum != null)
-                        Text(_recipientChecksum!, style: text.detail?.copyWith(color: colors.accentPink)),
+                        Text(_recipientChecksum!, style: text.detail?.copyWith(color: colors.checksum)),
                     ],
                   ),
                 ),
@@ -503,7 +503,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         ),
         if (_recipientChecksum != null) ...[
           const SizedBox(height: 4),
-          Text(_recipientChecksum!, style: text.smallParagraph?.copyWith(color: colors.accentPink)),
+          Text(_recipientChecksum!, style: text.smallParagraph?.copyWith(color: colors.checksum)),
         ],
         if (_errorMessage != null) ...[
           const SizedBox(height: 16),
@@ -553,7 +553,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   }
 
   Widget _iconButton(IconData icon, AppColorsV2 colors, VoidCallback onTap) {
-    return GlassIconButton.rounded(icon: icon, onTap: onTap);
+    return QuantusIconButton.rounded(icon: icon, onTap: onTap);
   }
 
   Widget _actionButton({
@@ -563,7 +563,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     bool disabled = false,
     VoidCallback? onTap,
   }) {
-    return GlassButton.simple(label: label, onTap: onTap, isDisabled: disabled, variant: ButtonVariant.secondary);
+    return QuantusButton.simple(label: label, onTap: onTap, isDisabled: disabled, variant: ButtonVariant.secondary);
   }
 }
 

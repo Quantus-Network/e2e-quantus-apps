@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:resonance_network_wallet/v2/components/inset_button_container.dart';
-import 'package:resonance_network_wallet/v2/components/liquid_glass_base.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
-enum ButtonVariant { transparent, primary, secondary, danger }
+enum ButtonVariant { transparent, primary, secondary, danger, success }
 
 enum IconPlacement { leading, trailing, top }
 
-class GlassButton extends StatelessWidget {
+class QuantusButton extends StatelessWidget {
   final Widget? child;
   final String? _label;
   final Widget? _icon;
@@ -26,7 +24,7 @@ class GlassButton extends StatelessWidget {
   static const double defaultBorderRadius = 14.0;
   static const double buttonFontSize = 16.0;
 
-  const GlassButton({
+  const QuantusButton({
     super.key,
     required Widget this.child,
     this.onTap,
@@ -43,7 +41,7 @@ class GlassButton extends StatelessWidget {
        _textStyle = null;
 
   // this is a simple button with a label and an icon
-  const GlassButton.simple({
+  const QuantusButton.simple({
     super.key,
     required String label,
     Widget? icon,
@@ -67,78 +65,78 @@ class GlassButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool disabled = onTap == null || isLoading || isDisabled;
     final visibility = disabled ? 0.25 : 1.0;
-    final buttonContent = _buildContent(context);
+    final buttonContent = _buildContent(context, variant: variant);
+    final borderRadius = BorderRadius.circular(this.borderRadius);
+    final decorationShape = RoundedRectangleBorder(
+      borderRadius: borderRadius,
+      side: variant == ButtonVariant.secondary
+          ? BorderSide(color: context.colors.borderButton, width: 1)
+          : BorderSide.none,
+    );
 
-    Widget buttonWidget;
+    final Color buttonDecorationColor;
 
     switch (variant) {
       case ButtonVariant.primary:
-        buttonWidget = LiquidGlassBase.rounded(
-          glassColor: context.colors.surfaceGlass,
-          visibility: visibility,
-          radius: borderRadius,
-          centered: centered,
-          child: Padding(padding: padding, child: buttonContent),
-        );
+        buttonDecorationColor = context.colors.accentOrange;
         break;
 
       case ButtonVariant.secondary:
-        buttonWidget = LiquidGlassBase.rounded(
-          visibility: visibility,
-          radius: borderRadius,
-          centered: centered,
-          child: InsetButtonContainer(
-            width: width,
-            padding: padding,
-            border: BoxBorder.all(color: context.colors.borderSubtle, width: 0.8),
-            child: buttonContent,
-          ),
-        );
+        buttonDecorationColor = context.colors.sheetBackground;
         break;
 
       case ButtonVariant.danger:
-        buttonWidget = LiquidGlassBase.rounded(
-          visibility: visibility,
-          radius: borderRadius,
-          centered: centered,
-          child: InsetButtonContainer(
-            width: width,
-            padding: padding,
-            backgroundColor: context.colors.buttonDanger,
-            border: BoxBorder.all(color: context.colors.borderDanger, width: 1.5),
-            child: buttonContent,
-          ),
-        );
+        buttonDecorationColor = context.colors.buttonDanger;
+        break;
+
+      case ButtonVariant.success:
+        buttonDecorationColor = context.colors.success;
         break;
 
       case ButtonVariant.transparent:
-        buttonWidget = Container(
-          width: width,
-          padding: padding,
-          decoration: ShapeDecoration(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius))),
-          child: Opacity(opacity: visibility, child: buttonContent),
-        );
+        buttonDecorationColor = Colors.transparent;
         break;
     }
 
-    return InkWell(onTap: disabled ? null : onTap, child: buttonWidget);
+    return InkWell(
+      onTap: disabled ? null : onTap,
+      child: Opacity(
+        opacity: visibility,
+        child: Container(
+          width: width,
+          padding: padding,
+          decoration: ShapeDecoration(color: buttonDecorationColor, shape: decorationShape),
+          child: buttonContent,
+        ),
+      ),
+    );
   }
 
-  Widget _buildContent(BuildContext context) {
+  Widget _buildContent(BuildContext context, {ButtonVariant variant = ButtonVariant.primary}) {
+    final textColor = switch (variant) {
+      ButtonVariant.primary => context.colors.background,
+      ButtonVariant.secondary => context.colors.textPrimary,
+      ButtonVariant.danger => context.colors.textPrimary,
+      ButtonVariant.transparent => context.colors.textPrimary,
+      ButtonVariant.success => context.colors.textPrimary,
+    };
+
     if (isLoading) {
       final size = (_textStyle?.fontSize ?? buttonFontSize) + 6;
       return Center(
         child: SizedBox(
           width: size,
           height: size,
-          child: CircularProgressIndicator(color: context.colors.textPrimary, strokeWidth: 2.0),
+          child: CircularProgressIndicator(color: textColor, strokeWidth: 2.0),
         ),
       );
     }
 
     if (child != null) return child!;
 
-    final effectiveTextStyle = _textStyle ?? context.themeText.smallTitle!.copyWith(fontSize: buttonFontSize);
+    final effectiveTextStyle =
+        _textStyle ??
+        context.themeText.paragraph!.copyWith(fontSize: buttonFontSize, color: textColor, fontWeight: FontWeight.w500);
 
     Widget content;
     if (_iconPlacement == IconPlacement.top) {
