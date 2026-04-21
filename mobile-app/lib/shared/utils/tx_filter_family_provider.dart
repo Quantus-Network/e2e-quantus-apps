@@ -7,7 +7,11 @@ import 'package:resonance_network_wallet/providers/filtered_all_transactions_pro
 
 typedef Reader = T Function<T>(ProviderListenable<T> provider);
 
-void refreshPaginationFiltersFor(Reader read, List<String> targetIds, void Function(UnifiedPaginationController notifier) action) {
+void updatePaginationFiltersFor(
+  Reader read,
+  List<String> targetIds,
+  void Function(UnifiedPaginationController notifier, TransactionFilter filter) action,
+) {
   final cachedIds = AccountIdListCache.get(targetIds);
 
   for (final filter in TransactionFilter.values) {
@@ -17,6 +21,6 @@ void refreshPaginationFiltersFor(Reader read, List<String> targetIds, void Funct
       ).notifier,
     );
 
-    action(notifier);
+    action(notifier, filter);
   }
 }
