@@ -139,7 +139,17 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     if (!_canContinue) return;
 
     final address = _recipientController.text.trim();
-    Navigator.push(context, MaterialPageRoute(builder: (_) => InputAmountScreen(recipientAddress: address)));
+    Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => InputAmountScreen(recipientAddress: address)),
+    ).then((popped) {
+      if (!mounted || popped != true) return;
+      _recipientController.clear();
+      setState(() {
+        _recipientChecksum = null;
+        _hasAddressError = true;
+      });
+    });
   }
 
   void _onRecentTap(String address) {

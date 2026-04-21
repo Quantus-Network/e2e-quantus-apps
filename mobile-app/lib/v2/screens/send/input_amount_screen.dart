@@ -220,7 +220,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
             shape: const CircleBorder(),
             child: InkWell(
               customBorder: const CircleBorder(),
-              onTap: () => Navigator.of(context).pop(),
+              onTap: () => Navigator.of(context).pop(true),
               child: Container(
                 width: 36,
                 height: 36,
