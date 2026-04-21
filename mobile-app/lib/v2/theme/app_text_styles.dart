@@ -23,6 +23,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
   final TextStyle? transactionDetailAmountSymbol;
   final TextStyle? transactionDetailRowLabel;
   final TextStyle? transactionDetailRowValue;
+  final TextStyle? sendSectionLabel;
 
   const AppTextTheme({
     this.lockTitle,
@@ -43,6 +44,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
     this.transactionDetailAmountSymbol,
     this.transactionDetailRowLabel,
     this.transactionDetailRowValue,
+    this.sendSectionLabel,
   });
 
   const AppTextTheme.defaultTheme()
@@ -83,6 +85,12 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
           fontFamily: fontFamilySecondary,
           fontSize: 12,
           fontWeight: FontWeight.w500,
+        ),
+        sendSectionLabel: const TextStyle(
+          fontSize: 20,
+          height: 1.0,
+          fontWeight: FontWeight.w400,
+          fontFamily: fontFamily,
         ),
       );
 
@@ -125,6 +133,12 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
           fontSize: 16,
           fontWeight: FontWeight.w500,
         ),
+        sendSectionLabel: const TextStyle(
+          fontSize: 20,
+          height: 1.0,
+          fontWeight: FontWeight.w400,
+          fontFamily: fontFamily,
+        ),
       );
 
   @override
@@ -146,6 +160,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
     TextStyle? transactionDetailAmountSymbol,
     TextStyle? transactionDetailRowLabel,
     TextStyle? transactionDetailRowValue,
+    TextStyle? sendSectionLabel,
   }) {
     return AppTextTheme(
       lockTitle: lockTitle ?? this.lockTitle,
@@ -165,6 +180,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
       transactionDetailAmountSymbol: transactionDetailAmountSymbol ?? this.transactionDetailAmountSymbol,
       transactionDetailRowLabel: transactionDetailRowLabel ?? this.transactionDetailRowLabel,
       transactionDetailRowValue: transactionDetailRowValue ?? this.transactionDetailRowValue,
+      sendSectionLabel: sendSectionLabel ?? this.sendSectionLabel,
     );
   }
 
@@ -197,6 +213,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
       ),
       transactionDetailRowLabel: TextStyle.lerp(transactionDetailRowLabel, other.transactionDetailRowLabel, t),
       transactionDetailRowValue: TextStyle.lerp(transactionDetailRowValue, other.transactionDetailRowValue, t),
+      sendSectionLabel: TextStyle.lerp(sendSectionLabel, other.sendSectionLabel, t),
     );
   }
 }

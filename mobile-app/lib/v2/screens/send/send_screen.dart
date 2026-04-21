@@ -1,0 +1,412 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/dotted_border.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/v2/components/loader.dart';
+import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
+import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
+
+class SendScreen extends ConsumerStatefulWidget {
+  const SendScreen({super.key});
+
+  @override
+  ConsumerState<SendScreen> createState() => _SendScreenState();
+}
+
+class _SendScreenState extends ConsumerState<SendScreen> {
+  final _searchController = TextEditingController();
+  final _searchFocus = FocusNode();
+  final _checksumService = HumanReadableChecksumService();
+
+  List<String> _recents = [];
+  final Map<String, String> _checksums = {};
+  String? _lookupChecksum;
+  bool _hasAddressError = true;
+  bool _loadingRecents = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+    _loadRecents();
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    _searchFocus.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadRecents() async {
+    try {
+      final all = await RecentAddressesService().getAddresses();
+      final active = await SettingsService().getActiveAccount();
+      final currentId = active?.account.accountId;
+      final addresses = all.where((a) => a != currentId).toList();
+      if (!mounted) return;
+      setState(() {
+        _recents = addresses;
+        _loadingRecents = false;
+      });
+      for (final addr in addresses) {
+        _checksumService.getHumanReadableName(addr).then((name) {
+          if (mounted) setState(() => _checksums[addr] = name);
+        });
+      }
+    } catch (e) {
+      debugPrint('SendScreen recents: $e');
+      if (mounted) setState(() => _loadingRecents = false);
+    }
+  }
+
+  void _onSearchChanged() {
+    final text = _searchController.text.trim();
+    final substrate = ref.read(substrateServiceProvider);
+    if (text.isEmpty) {
+      setState(() {
+        _hasAddressError = true;
+        _lookupChecksum = null;
+      });
+      return;
+    }
+    final valid = substrate.isValidSS58Address(text);
+    setState(() {
+      _hasAddressError = !valid;
+      _lookupChecksum = null;
+    });
+    if (valid) {
+      _checksumService.getHumanReadableName(text).then((c) {
+        if (mounted && _searchController.text.trim() == text) {
+          setState(() => _lookupChecksum = c);
+        }
+      });
+    }
+  }
+
+  List<String> get _filteredRecents {
+    final q = _searchController.text.trim().toLowerCase();
+    if (q.isEmpty) return _recents;
+    return _recents.where((a) {
+      final cs = _checksums[a]?.toLowerCase() ?? '';
+      return a.toLowerCase().contains(q) || cs.contains(q);
+    }).toList();
+  }
+
+  String _initials(String? checksum) {
+    if (checksum == null || checksum.isEmpty) return '?';
+    final parts = checksum.split('-').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    if (parts.length >= 2) {
+      final a = parts[0];
+      final b = parts[1];
+      return '${a[0]}${b[0]}'.toUpperCase();
+    }
+    return checksum.length >= 2 ? checksum.substring(0, 2).toUpperCase() : checksum[0].toUpperCase();
+  }
+
+  bool get _canContinue {
+    final text = _searchController.text.trim();
+    if (text.isEmpty) return false;
+    if (_hasAddressError) return false;
+    final activeId = ref.read(activeAccountProvider).value?.account.accountId ?? '';
+    if (text == activeId) return false;
+    return true;
+  }
+
+  Future<void> _scanQr() async {
+    final substrate = ref.read(substrateServiceProvider);
+    final scanResult = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => QrScannerPage(
+          validator: (code) => substrate.isValidSS58Address(code) || PaymentIntent.tryParseUrl(code) != null,
+        ),
+      ),
+    );
+    if (scanResult == null || !mounted) return;
+    final payment = PaymentIntent.tryParseUrl(scanResult);
+    if (payment != null) {
+      Navigator.pop(context);
+      return;
+    }
+    _searchController.text = scanResult;
+  }
+
+  void _continue() {
+    if (!_canContinue) return;
+    Navigator.pop(context);
+  }
+
+  void _onRecentTap(String _) {
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.watch(activeAccountProvider);
+    final colors = context.colors;
+    final text = context.themeText;
+    final filtered = _filteredRecents;
+
+    return ScaffoldBase(
+      appBar: const V2AppBar(title: 'Send'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: CustomScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text('Send To', style: text.sendSectionLabel?.copyWith(color: colors.textPrimary)),
+                      const SizedBox(height: 12),
+                      _buildSearchField(colors, text),
+                      const SizedBox(height: 28),
+                      _buildScanRow(colors, text),
+                      const SizedBox(height: 28),
+                      DottedBorder(
+                        dashLength: 3,
+                        gapLength: 5,
+                        color: colors.borderButton.useOpacity(0.5),
+                        child: const SizedBox(width: double.infinity, height: 1),
+                      ),
+                      const SizedBox(height: 28),
+                    ],
+                  ),
+                ),
+                if (_loadingRecents)
+                  const SliverFillRemaining(hasScrollBody: false, child: Center(child: Loader()))
+                else if (filtered.isNotEmpty) ...[
+                  SliverToBoxAdapter(
+                    child: Text('Recents', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 32)),
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate((context, i) {
+                      final isLast = i == filtered.length - 1;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _recentRow(filtered[i], colors, text),
+                          if (!isLast) ...[
+                            const SizedBox(height: 14),
+                            Container(height: 1, color: colors.txItemSeparator),
+                          ],
+                        ],
+                      );
+                    }, childCount: filtered.length),
+                  ),
+                ] else
+                  const SliverFillRemaining(hasScrollBody: false, child: SizedBox.shrink()),
+              ],
+            ),
+          ),
+          _buildBottomButton(colors),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchField(AppColorsV2 colors, AppTextTheme text) {
+    final hasValid = _searchController.text.trim().isNotEmpty && !_hasAddressError;
+
+    return SizedBox(
+      height: 48,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: IgnorePointer(
+              ignoring: hasValid,
+              child: Opacity(
+                opacity: hasValid ? 0 : 1,
+                child: Container(
+                  padding: const EdgeInsets.only(left: 12, right: 8),
+                  decoration: BoxDecoration(color: colors.sheetBackground, borderRadius: BorderRadius.circular(8)),
+                  child: Row(
+                    children: [
+                      Icon(Icons.search, size: 14, color: colors.textLabel),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          focusNode: _searchFocus,
+                          keyboardType: TextInputType.text,
+                          textInputAction: TextInputAction.done,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          textCapitalization: TextCapitalization.none,
+                          scrollPadding: const EdgeInsets.only(bottom: 120),
+                          style: text.smallParagraph?.copyWith(color: colors.textPrimary),
+                          decoration: const InputDecoration(hintText: 'Search Qu Address or Checkphrase'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (hasValid)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () {
+                  _searchController.clear();
+                  _searchFocus.requestFocus();
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(color: colors.sheetBackground, borderRadius: BorderRadius.circular(8)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (_lookupChecksum != null) ...[
+                        Text(
+                          _lookupChecksum!,
+                          style: text.smallParagraph?.copyWith(color: colors.checksum),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                      ],
+                      Text(
+                        AddressFormattingService.formatAddress(_searchController.text.trim()),
+                        style: text.smallParagraph?.copyWith(
+                          color: colors.textMuted,
+                          fontFamily: AppTextTheme.fontFamilySecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScanRow(AppColorsV2 colors, AppTextTheme text) {
+    final iconContainerSize = 44.0;
+    final iconSize = 24.0;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _scanQr,
+        borderRadius: BorderRadius.circular(12),
+        child: Row(
+          children: [
+            Container(
+              width: iconContainerSize,
+              height: iconContainerSize,
+              decoration: BoxDecoration(
+                color: colors.background,
+                borderRadius: BorderRadius.circular(36),
+                border: Border.all(color: colors.borderButton),
+              ),
+              child: Icon(Icons.qr_code_scanner, size: iconSize, color: colors.textPrimary),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Scan QR code', style: text.paragraph?.copyWith(color: colors.textPrimary)),
+                  const SizedBox(height: 4),
+                  Text('Tap to scan a QU address', style: text.detail?.copyWith(color: colors.textTertiary)),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, size: 20, color: colors.textPrimary),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _recentRow(String address, AppColorsV2 colors, AppTextTheme text) {
+    final checksum = _checksums[address];
+    final formattedAddress = AddressFormattingService.formatAddress(address);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _onRecentTap(address),
+        borderRadius: BorderRadius.circular(8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: colors.sheetBackground, borderRadius: BorderRadius.circular(20)),
+              child: Text(
+                _initials(checksum),
+                style: text.detail?.copyWith(
+                  color: colors.textLabel,
+                  fontFamily: AppTextTheme.fontFamilySecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (checksum != null)
+                    Text(
+                      checksum,
+                      style: text.smallParagraph?.copyWith(color: colors.checksum),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  if (checksum != null) const SizedBox(height: 4),
+                  Text(
+                    formattedAddress,
+                    style: text.smallParagraph?.copyWith(
+                      color: colors.textMuted,
+                      fontFamily: AppTextTheme.fontFamilySecondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomButton(AppColorsV2 colors) {
+    return Container(
+      padding: const EdgeInsets.only(top: 24, bottom: 40),
+      child: QuantusButton.simple(
+        label: 'Enter Address',
+        variant: ButtonVariant.secondary,
+        isDisabled: !_canContinue,
+        onTap: _canContinue ? _continue : null,
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+      ),
+    );
+  }
+}

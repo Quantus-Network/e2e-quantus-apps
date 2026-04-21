@@ -13,6 +13,7 @@ class AppTheme {
   static ThemeData darkTheme(BuildContext context) {
     final isTablet = context.isTablet;
     final colors = const AppColorsV2.dark();
+    final text = isTablet ? const AppTextTheme.iPad() : const AppTextTheme.defaultTheme();
 
     return ThemeData(
       scaffoldBackgroundColor: colors.background,
@@ -29,16 +30,20 @@ class AppTheme {
         style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
       ),
       textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(foregroundColor: colors.textPrimary)),
+      textSelectionTheme: TextSelectionThemeData(cursorColor: colors.accentOrange),
       inputDecorationTheme: InputDecorationTheme(
+        hintStyle: text.smallParagraph?.copyWith(color: colors.textLabel, fontFamily: AppTextTheme.fontFamilySecondary),
+        contentPadding: EdgeInsets.zero,
+        isDense: true,
         border: InputBorder.none,
         enabledBorder: InputBorder.none,
         focusedBorder: InputBorder.none,
         filled: true,
-        fillColor: colors.surface,
+        fillColor: Colors.transparent,
       ),
       extensions: [
         colors,
-        isTablet ? const AppTextTheme.iPad() : const AppTextTheme.defaultTheme(),
+        text,
         isTablet ? const AppSizeTheme.iPad() : const AppSizeTheme.defaultTheme(),
         // v1 compat: keeps existing screens working until migrated
         const v1_colors.AppColorsTheme.dark(),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
+import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
 class QrScannerPage extends StatefulWidget {
@@ -67,8 +67,6 @@ class _QrScannerPageState extends State<QrScannerPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _actionButton(icon: Icons.image_outlined, onTap: _pickImage, colors: colors),
-                const SizedBox(width: 8),
                 ValueListenableBuilder<MobileScannerState>(
                   valueListenable: _controller,
                   builder: (_, state, _) {
@@ -80,15 +78,16 @@ class _QrScannerPageState extends State<QrScannerPage> {
                     );
                   },
                 ),
+                const SizedBox(width: 8),
+                _actionButton(icon: Icons.image_outlined, onTap: _pickImage, colors: colors),
               ],
             ),
           ),
-
-          Positioned(
-            bottom: 58,
+          const Positioned(
+            top: 20,
             left: 24,
             right: 24,
-            child: QuantusButton.simple(label: 'Cancel', onTap: () => Navigator.pop(context)),
+            child: V2AppBar(title: 'Scan QR Code',),
           ),
         ],
       ),
@@ -131,7 +130,8 @@ class _ScanFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = Colors.white.withValues(alpha: 0.92);
+    final color = context.colors.accentOrange;
+
     return SizedBox(
       width: size,
       height: size,
