@@ -31,6 +31,7 @@ export 'src/models/pending_transfer_event.dart';
 export 'src/models/reversible_transfer_status.dart';
 export 'src/models/sorted_transactions.dart';
 export 'src/models/transaction_event.dart';
+export 'src/models/transaction_filter.dart';
 export 'src/models/transaction_state.dart';
 export 'src/models/raider_submissions.dart';
 export 'src/models/raid_quest.dart';

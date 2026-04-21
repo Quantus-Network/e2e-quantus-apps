@@ -32,7 +32,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
 
   @override
   Widget build(BuildContext context) {
-    final formatTxAmount = ref.watch(txAmountFormatterProvider);
+    final formatTxAmount = ref.watch(txAmountDisplayProvider);
     final colors = context.colors;
     final text = context.themeText;
 
@@ -74,7 +74,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
                 data,
                 colors,
                 text,
-                formattedAmount: formatTxAmount(data.amount, isSend: data.isSend),
+                formattedAmount: formatTxAmount(data.amount, isSend: data.isSend).primaryAmount,
                 isLastItem: isLastItem,
                 onTap: () {
                   showTransactionDetailSheet(context, tx, widget.activeAccount.accountId);
@@ -92,7 +92,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
             _header(colors, text, context),
             const SizedBox(height: 24),
             for (var i = 0; i < 3; i++) ...[
-              const Skeleton(width: double.infinity, height: 32),
+              const Skeleton.txItem(),
               if (i < 2) Divider(color: colors.txItemSeparator, height: 24),
             ],
           ],

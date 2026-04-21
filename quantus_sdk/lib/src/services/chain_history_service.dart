@@ -13,17 +13,28 @@ class OtherTransfersResult {
 class ChainHistoryService {
   final GraphQlEndpointService _graphQlEndpointService = GraphQlEndpointService();
 
-  // We don't need a client instance anymore, just the endpoint
   ChainHistoryService();
 
-  final String _scheduledReversibleTransfersQuery = r'''
-query ScheduledReversibleTransfersByAccounts($accounts: [String!]!, $limit: Int!, $offset: Int!, $after: DateTime!) {
-  accountEvents(limit: $limit, 
-    offset: $offset, 
+  String _buildScheduledReversibleTransfersQuery(TransactionFilter filter) {
+    final String directionCondition;
+    switch (filter) {
+      case TransactionFilter.send:
+        directionCondition =
+            'account: {id_in: \$accounts}, scheduledReversibleTransfer: {from: {id_in: \$accounts}, scheduledAt_gt: \$after}';
+      case TransactionFilter.receive:
+        directionCondition =
+            'account: {id_in: \$accounts}, scheduledReversibleTransfer: {to: {id_in: \$accounts}, scheduledAt_gt: \$after}';
+      case TransactionFilter.all:
+        directionCondition = 'account: {id_in: \$accounts}, scheduledReversibleTransfer: {scheduledAt_gt: \$after}';
+    }
+
+    return '''
+query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!, \$after: DateTime!) {
+  accountEvents(limit: \$limit, 
+    offset: \$offset, 
     where: {
-      account: {id_in: $accounts},
       scheduledReversibleTransfer_isNull: false,
-      scheduledReversibleTransfer: {scheduledAt_gt: $after}
+      $directionCondition
     }, orderBy: timestamp_DESC
   ) {
     id
@@ -51,10 +62,58 @@ query ScheduledReversibleTransfersByAccounts($accounts: [String!]!, $limit: Int!
   }
 }
 ''';
+  }
 
-  final String _accountEventsQuery = r'''
-query AccountEvents($accounts: [String!]!, $limit: Int!, $offset: Int!) {
-  accountEvents(limit: $limit, offset: $offset, where: {AND: [{account: {id_in: $accounts}, balanceEvent_isNull: true, scheduledReversibleTransfer_isNull: true}, {OR: [{transfer_isNull: true}, {transfer: {extrinsic_isNull: false}}]}]}, orderBy: timestamp_DESC) {
+  /// Builds the account-events (other transfers) query.
+  ///
+  /// When [filter] is [TransactionFilter.send] or [TransactionFilter.receive],
+  /// a direction-specific condition is injected so the database only returns
+  /// matching rows instead of filtering client-side.
+  ///
+  /// Mining rewards are always a "receive", so they are excluded when the
+  /// filter is [TransactionFilter.send] and included otherwise.
+  String _buildAccountEventsQuery(TransactionFilter filter) {
+    // The base condition that applies to every variant
+    const String baseCondition = 'balanceEvent_isNull: true, scheduledReversibleTransfer_isNull: true';
+
+    // Transfer extrinsic guard — only include on-chain transfers
+    const String transferGuard = '{OR: [{transfer_isNull: true}, {transfer: {extrinsic_isNull: false}}]}';
+
+    // Whether to include the minerReward field in the response
+    final bool includeMinerReward = filter != TransactionFilter.send;
+
+    final String minerRewardField = includeMinerReward
+        ? '''
+    minerReward {
+      id
+      reward
+      timestamp
+      miner {
+        id
+      }
+      block {
+        height
+        hash
+      }
+    }'''
+        : '';
+
+    final String whereClause;
+
+    switch (filter) {
+      case TransactionFilter.send:
+        whereClause =
+            '{AND: [{account: {id_in: \$accounts}, $baseCondition}, $transferGuard, {OR: [{transfer: {from: {id_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {from: {id_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {from: {id_in: \$accounts}}}}]}]}';
+      case TransactionFilter.receive:
+        whereClause =
+            '{AND: [{account: {id_in: \$accounts}, $baseCondition}, $transferGuard, {OR: [{transfer: {to: {id_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {to: {id_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {to: {id_in: \$accounts}}}}, {minerReward_isNull: false}]}]}';
+      case TransactionFilter.all:
+        whereClause = '{AND: [{account: {id_in: \$accounts}, $baseCondition}, $transferGuard]}';
+    }
+
+    return '''
+query AccountEvents(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!) {
+  accountEvents(limit: \$limit, offset: \$offset, where: $whereClause, orderBy: timestamp_DESC) {
     id
     transfer {
       id
@@ -119,25 +178,14 @@ query AccountEvents($accounts: [String!]!, $limit: Int!, $offset: Int!) {
         }
         scheduledAt
       }
-    }
-    minerReward {
-      id
-      reward
-      timestamp
-      miner {
-        id
-      }
-      block {
-        height
-        hash
-      }
-    }
+    }$minerRewardField
   }
-  accountEventsConnection(orderBy: id_ASC, where: {AND: [{account: {id_in: $accounts}, balanceEvent_isNull: true, scheduledReversibleTransfer_isNull: true}, {OR: [{transfer_isNull: true}, {transfer: {extrinsic_isNull: false}}]}]}) {
+  accountEventsConnection(orderBy: id_ASC, where: $whereClause) {
     totalCount
   }
 }
 ''';
+  }
 
   // GraphQL query to fetch transactions by their hash
   final String _executedTransactionByTxId = r'''
@@ -312,11 +360,12 @@ query SearchPendingTransaction(
     required List<String> accountIds,
     int limit = 10,
     int offset = 0,
+    required TransactionFilter filter,
   }) async {
     final after = DateTime.now().subtract(const Duration(minutes: 2)).toUtc().toIso8601String();
 
     final Map<String, dynamic> requestBody = {
-      'query': _scheduledReversibleTransfersQuery,
+      'query': _buildScheduledReversibleTransfersQuery(filter),
       'variables': {'accounts': accountIds, 'limit': limit, 'offset': offset, 'after': after},
     };
 
@@ -365,9 +414,10 @@ query SearchPendingTransaction(
     required List<String> accountIds,
     int limit = 10,
     int offset = 0,
+    required TransactionFilter filter,
   }) async {
     final Map<String, dynamic> requestBody = {
-      'query': _accountEventsQuery,
+      'query': _buildAccountEventsQuery(filter),
       'variables': {'accounts': accountIds, 'limit': limit, 'offset': offset},
     };
 
@@ -434,11 +484,17 @@ query SearchPendingTransaction(
     int limit = 20,
     int otherOffset = 0,
     int scheduledOffset = 0,
+    required TransactionFilter filter,
   }) async {
     try {
       final results = await Future.wait([
-        fetchScheduledReversibleTransfers(accountIds: accountIds, limit: limit, offset: scheduledOffset),
-        fetchOtherTransfers(accountIds: accountIds, limit: limit, offset: otherOffset),
+        fetchScheduledReversibleTransfers(
+          accountIds: accountIds,
+          limit: limit,
+          offset: scheduledOffset,
+          filter: filter,
+        ),
+        fetchOtherTransfers(accountIds: accountIds, limit: limit, offset: otherOffset, filter: filter),
       ]);
 
       final scheduledReversibleTransfers = results[0] as List<ReversibleTransferEvent>;

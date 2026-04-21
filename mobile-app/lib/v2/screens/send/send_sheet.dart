@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
+import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
@@ -466,11 +467,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       children: [
         Text('Network Fee:', style: text.detail?.copyWith(color: colors.textSecondary)),
         if (_isFetchingFee)
-          SizedBox(
-            width: 12,
-            height: 12,
-            child: CircularProgressIndicator(strokeWidth: 1.5, color: colors.textSecondary),
-          )
+          const Loader()
         else
           Text(
             '${_fmt.formatBalance(_networkFee, maxDecimals: 4)} ${AppConstants.tokenSymbol}',
@@ -522,7 +519,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       mainAxisSize: MainAxisSize.min,
       children: [
         const SizedBox(height: 48),
-        CircularProgressIndicator(color: colors.textPrimary),
+        const Loader(),
         const SizedBox(height: 24),
         Text(
           widget.isPayMode ? 'Paying...' : 'Sending...',

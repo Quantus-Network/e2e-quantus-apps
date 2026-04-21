@@ -6,14 +6,13 @@ import 'dart:typed_data';
 import 'package:convert/convert.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
-import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
+import 'package:resonance_network_wallet/shared/utils/tx_filter_family_provider.dart';
 
 class TransactionSubmissionService {
   final Ref _ref;
@@ -335,31 +334,31 @@ class TransactionSubmissionService {
       }
       mainController.silentRefresh();
 
-      final targets = <String>{...?(affectedAccountIds)};
+      final targets = affectedAccountIds?.map((id) => [id]).toList() ?? [];
       final active = _ref.read(activeAccountProvider).value;
+
       if (active != null) {
-        targets.add(active.account.accountId);
+        targets.add([active.account.accountId]);
       }
 
-      for (final accountId in targets) {
-        final controller = _ref.read(
-          filteredPaginationControllerProviderFamily(AccountIdListCache.get([accountId])).notifier,
-        );
-        if (newTransaction != null) {
-          controller.addTransactionToHistory(newTransaction);
-        }
-        controller.silentRefresh();
-      }
-
-      // Trigger silent refresh on all accounts filtered pagination so the tx history has the data without manual refresh
       final accountIds = _ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
-      final allAccountsController = _ref.read(
-        filteredPaginationControllerProviderFamily(AccountIdListCache.get(accountIds)).notifier,
-      );
-      if (newTransaction != null) {
-        allAccountsController.addTransactionToHistory(newTransaction);
+      if (accountIds.isNotEmpty) {
+        targets.add(accountIds);
       }
-      allAccountsController.silentRefresh();
+
+      for (final targetIds in targets) {
+        if (newTransaction != null) {
+          updatePaginationFiltersFor(_ref.read, targetIds, (notifier, filter) {
+            if (filter != TransactionFilter.receive) {
+              notifier.addTransactionToHistory(newTransaction);
+            }
+          });
+        }
+
+        updatePaginationFiltersFor(_ref.read, targetIds, (notifier, _) {
+          notifier.silentRefresh();
+        });
+      }
 
       print('Silent history refresh triggered successfully');
     } catch (e, stackTrace) {

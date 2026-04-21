@@ -6,6 +6,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/services/pos_service.dart';
+import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/services/tx_watch_service.dart';
 import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
@@ -101,7 +102,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
     return ScaffoldBase(
       appBar: V2AppBar(title: _isPaid ? 'Payment Received' : 'Scan to Pay'),
       child: accountAsync.when(
-        loading: () => Center(child: CircularProgressIndicator(color: colors.textPrimary)),
+        loading: () => const Center(child: Loader()),
         error: (e, _) => Center(
           child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError)),
         ),
@@ -176,11 +177,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(color: colors.textSecondary, strokeWidth: 2),
-            ),
+            const Loader(),
             const SizedBox(width: 10),
             Text('Waiting for payment', style: text.smallTitle?.copyWith(color: colors.textSecondary, fontSize: 16)),
           ],

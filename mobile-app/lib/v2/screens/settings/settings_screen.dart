@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/services/logout_service.dart';
+import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/reset_confirmation_sheet.dart';
@@ -181,8 +182,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
       skipLoadingOnRefresh: false,
       data: (data) =>
           Text('Total: ${data.totalBlocks} blocks', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
-      loading: () =>
-          const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+      loading: () => const Loader(),
       error: (_, _) => Text('Tap to retry', style: text.smallParagraph?.copyWith(color: colors.textError)),
     );
     return GestureDetector(

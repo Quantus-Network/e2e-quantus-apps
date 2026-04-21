@@ -6,14 +6,16 @@ import 'package:resonance_network_wallet/features/components/dotted_border.dart'
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
+import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_sheet.dart';
-import 'package:resonance_network_wallet/v2/screens/receive/receive_sheet.dart';
+import 'package:resonance_network_wallet/v2/screens/receive/receive_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
+import 'package:resonance_network_wallet/models/filtered_transactions_params.dart';
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
@@ -41,7 +43,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.invalidate(activeAccountTransactionsProvider);
     if (active != null) {
       await ref
-          .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get([active.account.accountId])).notifier)
+          .read(
+            filteredPaginationControllerProviderFamily(
+              FilteredTransactionsParams(
+                accountIds: AccountIdListCache.get([active.account.accountId]),
+                filter: TransactionFilter.all,
+              ),
+            ).notifier,
+          )
           .loadingRefresh();
     }
   }
@@ -80,14 +89,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final isPosMode = ref.watch(posModeProvider);
     final accountAsync = ref.watch(activeAccountProvider);
-    final txAsync = ref.watch(activeAccountTransactionsProvider);
+    final txAsync = ref.watch(activeAccountTransactionsProvider(TransactionFilter.all));
     final colors = context.colors;
     final text = context.themeText;
 
     Widget screen = accountAsync.when(
-      loading: () => ScaffoldBase(
-        child: Center(child: CircularProgressIndicator(color: colors.textPrimary)),
-      ),
+      loading: () => const ScaffoldBase(child: Center(child: Loader())),
       error: (e, _) => ScaffoldBase(
         child: Center(
           child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError)),
@@ -143,8 +150,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(height: 40),
         if (active is RegularAccount) ...[_buildActionButtons(), const SizedBox(height: 40)],
         DottedBorder(
-          dashLength: 10,
-          gapLength: 6,
+          dashLength: 3,
+          gapLength: 5,
           color: colors.borderButton.useOpacity(0.5),
           child: const SizedBox(width: double.infinity, height: 1),
         ),
@@ -181,7 +188,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildBalance(AppColorsV2 colors, AppTextTheme text) {
-    final currencyAsync = ref.watch(currencyDisplayProvider);
+    final currencyAsync = ref.watch(balanceDisplayProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,7 +258,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final receiveCard = _actionCard(
       iconAsset: 'assets/v2/action_receive.svg',
       label: 'Receive',
-      onTap: () => showReceiveSheetV2(context),
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReceiveScreen())),
     );
 
     final sendCard = _actionCard(

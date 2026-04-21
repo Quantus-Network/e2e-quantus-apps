@@ -12,11 +12,17 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
   final TextStyle? smallTitle;
   final TextStyle? paragraph;
   final TextStyle? smallParagraph;
+  final TextStyle? activityGroupLabel;
+  final TextStyle? receiveLabel;
   final TextStyle? largeTag;
   final TextStyle? tag;
   final TextStyle? timer;
   final TextStyle? detail;
   final TextStyle? tiny;
+  final TextStyle? transactionDetailAmountPrimary;
+  final TextStyle? transactionDetailAmountSymbol;
+  final TextStyle? transactionDetailRowLabel;
+  final TextStyle? transactionDetailRowValue;
 
   const AppTextTheme({
     this.lockTitle,
@@ -26,11 +32,17 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
     this.smallTitle,
     this.paragraph,
     this.smallParagraph,
+    this.activityGroupLabel,
+    this.receiveLabel,
     this.largeTag,
     this.tag,
     this.timer,
     this.detail,
     this.tiny,
+    this.transactionDetailAmountPrimary,
+    this.transactionDetailAmountSymbol,
+    this.transactionDetailRowLabel,
+    this.transactionDetailRowValue,
   });
 
   const AppTextTheme.defaultTheme()
@@ -42,11 +54,36 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
         smallTitle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, fontFamily: fontFamily),
         paragraph: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400, fontFamily: fontFamily),
         smallParagraph: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400, fontFamily: fontFamily),
+        activityGroupLabel: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, fontFamily: fontFamilySecondary),
+        receiveLabel: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, fontFamily: fontFamilySecondary),
         largeTag: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400, fontFamily: fontFamily),
         tag: const TextStyle(fontSize: 12, fontWeight: FontWeight.w300, fontFamily: fontFamily),
         timer: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600, fontFamily: fontFamily),
         detail: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400, fontFamily: fontFamily),
         tiny: const TextStyle(fontSize: 11, fontWeight: FontWeight.w400, fontFamily: fontFamily),
+        transactionDetailAmountPrimary: const TextStyle(
+          fontFamily: fontFamilySecondary,
+          fontSize: 64,
+          fontWeight: FontWeight.w300,
+          letterSpacing: -2.77,
+          height: 1.0,
+        ),
+        transactionDetailAmountSymbol: const TextStyle(
+          fontFamily: fontFamilySecondary,
+          fontSize: 24,
+          fontWeight: FontWeight.w300,
+        ),
+        transactionDetailRowLabel: const TextStyle(
+          fontFamily: fontFamilySecondary,
+          fontSize: 12,
+          fontWeight: FontWeight.w400,
+          letterSpacing: 0.85,
+        ),
+        transactionDetailRowValue: const TextStyle(
+          fontFamily: fontFamilySecondary,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
       );
 
   const AppTextTheme.iPad()
@@ -58,11 +95,36 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
         smallTitle: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500, fontFamily: fontFamily),
         paragraph: const TextStyle(fontSize: 20, fontWeight: FontWeight.w400, fontFamily: fontFamily),
         smallParagraph: const TextStyle(fontSize: 18, fontWeight: FontWeight.w400, fontFamily: fontFamily),
+        activityGroupLabel: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, fontFamily: fontFamilySecondary),
+        receiveLabel: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, fontFamily: fontFamilySecondary),
         largeTag: const TextStyle(fontSize: 24, fontWeight: FontWeight.w400, fontFamily: fontFamily),
         tag: const TextStyle(fontSize: 16, fontWeight: FontWeight.w300, fontFamily: fontFamily),
         timer: const TextStyle(fontSize: 36, fontWeight: FontWeight.w600, fontFamily: fontFamily),
         detail: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400, fontFamily: fontFamily),
         tiny: const TextStyle(fontSize: 15, fontWeight: FontWeight.w400, fontFamily: fontFamily),
+        transactionDetailAmountPrimary: const TextStyle(
+          fontFamily: fontFamilySecondary,
+          fontSize: 80,
+          fontWeight: FontWeight.w300,
+          letterSpacing: -2.77,
+          height: 1.0,
+        ),
+        transactionDetailAmountSymbol: const TextStyle(
+          fontFamily: fontFamilySecondary,
+          fontSize: 30,
+          fontWeight: FontWeight.w300,
+        ),
+        transactionDetailRowLabel: const TextStyle(
+          fontFamily: fontFamilySecondary,
+          fontSize: 16,
+          fontWeight: FontWeight.w400,
+          letterSpacing: 0.85,
+        ),
+        transactionDetailRowValue: const TextStyle(
+          fontFamily: fontFamilySecondary,
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
       );
 
   @override
@@ -74,11 +136,16 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
     TextStyle? smallTitle,
     TextStyle? paragraph,
     TextStyle? smallParagraph,
+    TextStyle? receiveLabel,
     TextStyle? largeTag,
     TextStyle? tag,
     TextStyle? timer,
     TextStyle? detail,
     TextStyle? tiny,
+    TextStyle? transactionDetailAmountPrimary,
+    TextStyle? transactionDetailAmountSymbol,
+    TextStyle? transactionDetailRowLabel,
+    TextStyle? transactionDetailRowValue,
   }) {
     return AppTextTheme(
       lockTitle: lockTitle ?? this.lockTitle,
@@ -88,11 +155,16 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
       smallTitle: smallTitle ?? this.smallTitle,
       paragraph: paragraph ?? this.paragraph,
       smallParagraph: smallParagraph ?? this.smallParagraph,
+      receiveLabel: receiveLabel ?? this.receiveLabel,
       largeTag: largeTag ?? this.largeTag,
       tag: tag ?? this.tag,
       timer: timer ?? this.timer,
       detail: detail ?? this.detail,
       tiny: tiny ?? this.tiny,
+      transactionDetailAmountPrimary: transactionDetailAmountPrimary ?? this.transactionDetailAmountPrimary,
+      transactionDetailAmountSymbol: transactionDetailAmountSymbol ?? this.transactionDetailAmountSymbol,
+      transactionDetailRowLabel: transactionDetailRowLabel ?? this.transactionDetailRowLabel,
+      transactionDetailRowValue: transactionDetailRowValue ?? this.transactionDetailRowValue,
     );
   }
 
@@ -107,11 +179,24 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
       smallTitle: TextStyle.lerp(smallTitle, other.smallTitle, t),
       paragraph: TextStyle.lerp(paragraph, other.paragraph, t),
       smallParagraph: TextStyle.lerp(smallParagraph, other.smallParagraph, t),
+      receiveLabel: TextStyle.lerp(receiveLabel, other.receiveLabel, t),
       largeTag: TextStyle.lerp(largeTag, other.largeTag, t),
       tag: TextStyle.lerp(tag, other.tag, t),
       timer: TextStyle.lerp(timer, other.timer, t),
       detail: TextStyle.lerp(detail, other.detail, t),
       tiny: TextStyle.lerp(tiny, other.tiny, t),
+      transactionDetailAmountPrimary: TextStyle.lerp(
+        transactionDetailAmountPrimary,
+        other.transactionDetailAmountPrimary,
+        t,
+      ),
+      transactionDetailAmountSymbol: TextStyle.lerp(
+        transactionDetailAmountSymbol,
+        other.transactionDetailAmountSymbol,
+        t,
+      ),
+      transactionDetailRowLabel: TextStyle.lerp(transactionDetailRowLabel, other.transactionDetailRowLabel, t),
+      transactionDetailRowValue: TextStyle.lerp(transactionDetailRowValue, other.transactionDetailRowValue, t),
     );
   }
 }

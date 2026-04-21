@@ -25,11 +25,11 @@ class BottomSheetContainer extends StatelessWidget {
     final text = context.themeText;
     return Container(
       height: height,
-      padding: const EdgeInsets.fromLTRB(24, 40, 24, 40),
+      padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        border: Border.all(color: const Color(0xFF3D3D3D)),
-        borderRadius: BorderRadius.circular(24),
+        color: colors.background,
+        border: Border.all(color: colors.borderButton, width: 1),
+        borderRadius: BorderRadius.circular(32),
       ),
       child: Column(
         mainAxisSize: height != null ? MainAxisSize.max : MainAxisSize.min,
