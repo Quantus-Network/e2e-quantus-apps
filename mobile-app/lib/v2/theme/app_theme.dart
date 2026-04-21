@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart' as v1_colors;
@@ -30,7 +31,11 @@ class AppTheme {
         style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
       ),
       textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(foregroundColor: colors.textPrimary)),
-      textSelectionTheme: TextSelectionThemeData(cursorColor: colors.accentOrange),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: colors.accentOrange,
+        selectionColor: colors.accentOrange.useOpacity(0.2),
+        selectionHandleColor: colors.accentOrange,
+      ),
       inputDecorationTheme: InputDecorationTheme(
         hintStyle: text.smallParagraph?.copyWith(color: colors.textLabel, fontFamily: AppTextTheme.fontFamilySecondary),
         contentPadding: EdgeInsets.zero,

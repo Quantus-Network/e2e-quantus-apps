@@ -21,28 +21,28 @@ class SendScreen extends ConsumerStatefulWidget {
 }
 
 class _SendScreenState extends ConsumerState<SendScreen> {
-  final _searchController = TextEditingController();
-  final _searchFocus = FocusNode();
+  final _recipientController = TextEditingController();
+  final _recipientFocus = FocusNode();
   final _checksumService = HumanReadableChecksumService();
 
-  List<String> _recents = [];
   final Map<String, String> _checksums = {};
-  String? _lookupChecksum;
+  List<String> _recents = [];
   bool _hasAddressError = true;
   bool _loadingRecents = true;
+  String? _recipientChecksum;
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(_onSearchChanged);
+    _recipientController.addListener(_onRecipientChanged);
     _loadRecents();
   }
 
   @override
   void dispose() {
-    _searchController.removeListener(_onSearchChanged);
-    _searchController.dispose();
-    _searchFocus.dispose();
+    _recipientController.removeListener(_onRecipientChanged);
+    _recipientController.dispose();
+    _recipientFocus.dispose();
     super.dispose();
   }
 
@@ -68,37 +68,30 @@ class _SendScreenState extends ConsumerState<SendScreen> {
     }
   }
 
-  void _onSearchChanged() {
-    final text = _searchController.text.trim();
-    final substrate = ref.read(substrateServiceProvider);
+  void _onRecipientChanged() {
+    final text = _recipientController.text.trim();
     if (text.isEmpty) {
       setState(() {
         _hasAddressError = true;
-        _lookupChecksum = null;
+        _recipientChecksum = null;
       });
       return;
     }
-    final valid = substrate.isValidSS58Address(text);
-    setState(() {
-      _hasAddressError = !valid;
-      _lookupChecksum = null;
-    });
-    if (valid) {
-      _checksumService.getHumanReadableName(text).then((c) {
-        if (mounted && _searchController.text.trim() == text) {
-          setState(() => _lookupChecksum = c);
-        }
-      });
-    }
+    _lookupAddress(text);
   }
 
-  List<String> get _filteredRecents {
-    final q = _searchController.text.trim().toLowerCase();
-    if (q.isEmpty) return _recents;
-    return _recents.where((a) {
-      final cs = _checksums[a]?.toLowerCase() ?? '';
-      return a.toLowerCase().contains(q) || cs.contains(q);
-    }).toList();
+  void _lookupAddress(String address) {
+    final substrate = ref.read(substrateServiceProvider);
+    final isValid = substrate.isValidSS58Address(address);
+    setState(() {
+      _hasAddressError = !isValid;
+      _recipientChecksum = null;
+    });
+    if (isValid) {
+      _checksumService.getHumanReadableName(address).then((checksum) {
+        if (mounted) setState(() => _recipientChecksum = checksum);
+      });
+    }
   }
 
   String _initials(String? checksum) {
@@ -113,7 +106,7 @@ class _SendScreenState extends ConsumerState<SendScreen> {
   }
 
   bool get _canContinue {
-    final text = _searchController.text.trim();
+    final text = _recipientController.text.trim();
     if (text.isEmpty) return false;
     if (_hasAddressError) return false;
     final activeId = ref.read(activeAccountProvider).value?.account.accountId ?? '';
@@ -138,7 +131,7 @@ class _SendScreenState extends ConsumerState<SendScreen> {
       Navigator.pop(context);
       return;
     }
-    _searchController.text = scanResult;
+    _recipientController.text = scanResult;
   }
 
   void _continue() {
@@ -155,7 +148,6 @@ class _SendScreenState extends ConsumerState<SendScreen> {
     ref.watch(activeAccountProvider);
     final colors = context.colors;
     final text = context.themeText;
-    final filtered = _filteredRecents;
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Send'),
@@ -172,7 +164,7 @@ class _SendScreenState extends ConsumerState<SendScreen> {
                     children: [
                       Text('Send To', style: text.sendSectionLabel?.copyWith(color: colors.textPrimary)),
                       const SizedBox(height: 12),
-                      _buildSearchField(colors, text),
+                      _buildRecipientField(colors, text),
                       const SizedBox(height: 28),
                       _buildScanRow(colors, text),
                       const SizedBox(height: 28),
@@ -188,26 +180,26 @@ class _SendScreenState extends ConsumerState<SendScreen> {
                 ),
                 if (_loadingRecents)
                   const SliverFillRemaining(hasScrollBody: false, child: Center(child: Loader()))
-                else if (filtered.isNotEmpty) ...[
+                else if (_recents.isNotEmpty) ...[
                   SliverToBoxAdapter(
                     child: Text('Recents', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
                   ),
                   const SliverToBoxAdapter(child: SizedBox(height: 32)),
                   SliverList(
                     delegate: SliverChildBuilderDelegate((context, i) {
-                      final isLast = i == filtered.length - 1;
+                      final isLast = i == _recents.length - 1;
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          _recentRow(filtered[i], colors, text),
+                          _recentRow(_recents[i], colors, text),
                           if (!isLast) ...[
                             const SizedBox(height: 14),
                             Container(height: 1, color: colors.txItemSeparator),
                           ],
                         ],
                       );
-                    }, childCount: filtered.length),
+                    }, childCount: _recents.length),
                   ),
                 ] else
                   const SliverFillRemaining(hasScrollBody: false, child: SizedBox.shrink()),
@@ -220,8 +212,8 @@ class _SendScreenState extends ConsumerState<SendScreen> {
     );
   }
 
-  Widget _buildSearchField(AppColorsV2 colors, AppTextTheme text) {
-    final hasValid = _searchController.text.trim().isNotEmpty && !_hasAddressError;
+  Widget _buildRecipientField(AppColorsV2 colors, AppTextTheme text) {
+    final hasValid = _recipientController.text.trim().isNotEmpty && !_hasAddressError;
 
     return SizedBox(
       height: 48,
@@ -241,8 +233,8 @@ class _SendScreenState extends ConsumerState<SendScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextField(
-                          controller: _searchController,
-                          focusNode: _searchFocus,
+                          controller: _recipientController,
+                          focusNode: _recipientFocus,
                           keyboardType: TextInputType.text,
                           textInputAction: TextInputAction.done,
                           autocorrect: false,
@@ -250,7 +242,7 @@ class _SendScreenState extends ConsumerState<SendScreen> {
                           textCapitalization: TextCapitalization.none,
                           scrollPadding: const EdgeInsets.only(bottom: 120),
                           style: text.smallParagraph?.copyWith(color: colors.textPrimary),
-                          decoration: const InputDecoration(hintText: 'Search Qu Address or Checkphrase'),
+                          decoration: const InputDecoration(hintText: 'Search ${AppConstants.tokenSymbol} Address'),
                         ),
                       ),
                     ],
@@ -263,34 +255,29 @@ class _SendScreenState extends ConsumerState<SendScreen> {
             Positioned.fill(
               child: GestureDetector(
                 onTap: () {
-                  _searchController.clear();
-                  _searchFocus.requestFocus();
+                  _recipientController.clear();
+                  _recipientFocus.requestFocus();
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(color: colors.sheetBackground, borderRadius: BorderRadius.circular(8)),
+                  decoration: BoxDecoration(color: colors.toasterBackground, borderRadius: BorderRadius.circular(8)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      if (_lookupChecksum != null) ...[
-                        Text(
-                          _lookupChecksum!,
-                          style: text.smallParagraph?.copyWith(color: colors.checksum),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                      ],
                       Text(
-                        AddressFormattingService.formatAddress(_searchController.text.trim()),
-                        style: text.smallParagraph?.copyWith(
-                          color: colors.textMuted,
-                          fontFamily: AppTextTheme.fontFamilySecondary,
+                        AddressFormattingService.formatAddress(
+                          _recipientController.text.trim(),
+                          prefix: 15,
+                          ellipses: '.......',
+                          postFix: 14,
                         ),
+                        style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      if (_recipientChecksum != null)
+                        Text(_recipientChecksum!, style: text.detail?.copyWith(color: colors.checksum)),
                     ],
                   ),
                 ),
@@ -329,7 +316,7 @@ class _SendScreenState extends ConsumerState<SendScreen> {
                 children: [
                   Text('Scan QR code', style: text.paragraph?.copyWith(color: colors.textPrimary)),
                   const SizedBox(height: 4),
-                  Text('Tap to scan a QU address', style: text.detail?.copyWith(color: colors.textTertiary)),
+                  Text('Tap to scan a ${AppConstants.tokenSymbol} Address', style: text.detail?.copyWith(color: colors.textTertiary)),
                 ],
               ),
             ),
@@ -398,13 +385,15 @@ class _SendScreenState extends ConsumerState<SendScreen> {
   }
 
   Widget _buildBottomButton(AppColorsV2 colors) {
+    final btnText = _canContinue ? 'Continue' : 'Enter Address';
+
     return Container(
       padding: const EdgeInsets.only(top: 24, bottom: 40),
       child: QuantusButton.simple(
-        label: 'Enter Address',
+        label: btnText,
         variant: ButtonVariant.secondary,
         isDisabled: !_canContinue,
-        onTap: _canContinue ? _continue : null,
+        onTap: _continue,
         padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
       ),
     );
