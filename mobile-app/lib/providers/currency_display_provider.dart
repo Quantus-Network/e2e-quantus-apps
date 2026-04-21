@@ -152,7 +152,13 @@ final balanceDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref) 
 
 final txAmountDisplayProvider =
     Provider<
-      CurrencyDisplayState Function(BigInt, {required bool isSend, bool withQuanSymbol, String? customHiddenText})
+      CurrencyDisplayState Function(
+        BigInt, {
+        bool isSend,
+        bool withQuanSymbol,
+        bool withSignPrefix,
+        String? customHiddenText,
+      })
     >((ref) {
       final isHidden = ref.watch(isBalanceHiddenProvider);
       final isFlipped = ref.watch(isCurrencyFlippedProvider);
@@ -160,7 +166,13 @@ final txAmountDisplayProvider =
       final xRate = ref.watch(exchangeRateServiceProvider);
       final fmt = ref.watch(numberFormattingServiceProvider);
 
-      return (BigInt amount, {required bool isSend, bool withQuanSymbol = true, String? customHiddenText}) {
+      return (
+        BigInt amount, {
+        bool isSend = true,
+        bool withQuanSymbol = true,
+        bool withSignPrefix = true,
+        String? customHiddenText,
+      }) {
         final hiddenText = customHiddenText ?? _hiddenAmountText;
         final prefix = isSend ? '-' : '+';
 
@@ -175,7 +187,7 @@ final txAmountDisplayProvider =
         );
 
         if (!isHidden) {
-          data = data.copyWith(primaryAmount: '$prefix${data.primaryAmount}');
+          data = data.copyWith(primaryAmount: withSignPrefix ? '$prefix${data.primaryAmount}' : data.primaryAmount);
         }
 
         if (withQuanSymbol && !isFlipped) {

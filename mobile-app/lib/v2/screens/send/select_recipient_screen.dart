@@ -10,17 +10,18 @@ import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
-class SendScreen extends ConsumerStatefulWidget {
-  const SendScreen({super.key});
+class SelectRecipientScreen extends ConsumerStatefulWidget {
+  const SelectRecipientScreen({super.key});
 
   @override
-  ConsumerState<SendScreen> createState() => _SendScreenState();
+  ConsumerState<SelectRecipientScreen> createState() => _SelectRecipientScreenState();
 }
 
-class _SendScreenState extends ConsumerState<SendScreen> {
+class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   final _recipientController = TextEditingController();
   final _recipientFocus = FocusNode();
   final _checksumService = HumanReadableChecksumService();
@@ -63,7 +64,7 @@ class _SendScreenState extends ConsumerState<SendScreen> {
         });
       }
     } catch (e) {
-      debugPrint('SendScreen recents: $e');
+      debugPrint('SelectRecipientScreen recents: $e');
       if (mounted) setState(() => _loadingRecents = false);
     }
   }
@@ -136,11 +137,13 @@ class _SendScreenState extends ConsumerState<SendScreen> {
 
   void _continue() {
     if (!_canContinue) return;
-    Navigator.pop(context);
+
+    final address = _recipientController.text.trim();
+    Navigator.push(context, MaterialPageRoute(builder: (_) => InputAmountScreen(recipientAddress: address)));
   }
 
-  void _onRecentTap(String _) {
-    Navigator.pop(context);
+  void _onRecentTap(String address) {
+    _recipientController.text = address;
   }
 
   @override
@@ -154,30 +157,28 @@ class _SendScreenState extends ConsumerState<SendScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Send To', style: text.sendSectionLabel?.copyWith(color: colors.textPrimary)),
+              const SizedBox(height: 12),
+              _buildRecipientField(colors, text),
+              const SizedBox(height: 28),
+              _buildScanRow(colors, text),
+              const SizedBox(height: 28),
+              DottedBorder(
+                dashLength: 3,
+                gapLength: 5,
+                color: colors.borderButton.useOpacity(0.5),
+                child: const SizedBox(width: double.infinity, height: 1),
+              ),
+              const SizedBox(height: 28),
+            ],
+          ),
           Expanded(
             child: CustomScrollView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               slivers: [
-                SliverToBoxAdapter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text('Send To', style: text.sendSectionLabel?.copyWith(color: colors.textPrimary)),
-                      const SizedBox(height: 12),
-                      _buildRecipientField(colors, text),
-                      const SizedBox(height: 28),
-                      _buildScanRow(colors, text),
-                      const SizedBox(height: 28),
-                      DottedBorder(
-                        dashLength: 3,
-                        gapLength: 5,
-                        color: colors.borderButton.useOpacity(0.5),
-                        child: const SizedBox(width: double.infinity, height: 1),
-                      ),
-                      const SizedBox(height: 28),
-                    ],
-                  ),
-                ),
                 if (_loadingRecents)
                   const SliverFillRemaining(hasScrollBody: false, child: Center(child: Loader()))
                 else if (_recents.isNotEmpty) ...[
@@ -187,15 +188,17 @@ class _SendScreenState extends ConsumerState<SendScreen> {
                   const SliverToBoxAdapter(child: SizedBox(height: 32)),
                   SliverList(
                     delegate: SliverChildBuilderDelegate((context, i) {
+                      final isFirst = i == 0;
                       final isLast = i == _recents.length - 1;
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          if (!isFirst) ...[const SizedBox(height: 14)],
                           _recentRow(_recents[i], colors, text),
                           if (!isLast) ...[
                             const SizedBox(height: 14),
-                            Container(height: 1, color: colors.txItemSeparator),
+                            Divider(height: 1, color: colors.txItemSeparator),
                           ],
                         ],
                       );
@@ -316,7 +319,10 @@ class _SendScreenState extends ConsumerState<SendScreen> {
                 children: [
                   Text('Scan QR code', style: text.paragraph?.copyWith(color: colors.textPrimary)),
                   const SizedBox(height: 4),
-                  Text('Tap to scan a ${AppConstants.tokenSymbol} Address', style: text.detail?.copyWith(color: colors.textTertiary)),
+                  Text(
+                    'Tap to scan a ${AppConstants.tokenSymbol} Address',
+                    style: text.detail?.copyWith(color: colors.textTertiary),
+                  ),
                 ],
               ),
             ),
@@ -391,10 +397,9 @@ class _SendScreenState extends ConsumerState<SendScreen> {
       padding: const EdgeInsets.only(top: 24, bottom: 40),
       child: QuantusButton.simple(
         label: btnText,
-        variant: ButtonVariant.secondary,
+        variant: ButtonVariant.primary,
         isDisabled: !_canContinue,
         onTap: _continue,
-        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
       ),
     );
   }

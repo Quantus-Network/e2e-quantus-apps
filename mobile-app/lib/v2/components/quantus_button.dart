@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -64,9 +65,10 @@ class QuantusButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool disabled = onTap == null || isLoading || isDisabled;
-    final visibility = disabled ? 0.25 : 1.0;
-    final buttonContent = _buildContent(context, variant: variant);
+    final visibility = disabled ? 0.5 : 1.0;
+    final buttonContent = _buildContent(context, variant: variant, disabled: disabled);
     final borderRadius = BorderRadius.circular(this.borderRadius);
+    final basicBorder = BorderSide(color: context.colors.borderButton, width: 1);
 
     final Color buttonDecorationColor;
     BorderSide borderSide = BorderSide.none;
@@ -78,7 +80,7 @@ class QuantusButton extends StatelessWidget {
 
       case ButtonVariant.secondary:
         buttonDecorationColor = context.colors.sheetBackground;
-        borderSide = BorderSide(color: context.colors.borderButton, width: 1);
+        borderSide = basicBorder;
         break;
 
       case ButtonVariant.danger:
@@ -95,7 +97,7 @@ class QuantusButton extends StatelessWidget {
 
       case ButtonVariant.outline:
         buttonDecorationColor = Colors.transparent;
-        borderSide = BorderSide(color: context.colors.borderButton, width: 1);
+        borderSide = basicBorder;
         break;
     }
 
@@ -107,8 +109,8 @@ class QuantusButton extends StatelessWidget {
           width: width,
           padding: padding,
           decoration: ShapeDecoration(
-            color: buttonDecorationColor,
-            shape: RoundedRectangleBorder(borderRadius: borderRadius, side: borderSide),
+            color: disabled ? context.colors.sheetBackground : buttonDecorationColor,
+            shape: RoundedRectangleBorder(borderRadius: borderRadius, side: disabled ? basicBorder : borderSide),
           ),
           child: buttonContent,
         ),
@@ -116,7 +118,7 @@ class QuantusButton extends StatelessWidget {
     );
   }
 
-  Widget _buildContent(BuildContext context, {ButtonVariant variant = ButtonVariant.primary}) {
+  Widget _buildContent(BuildContext context, {ButtonVariant variant = ButtonVariant.primary, bool disabled = false}) {
     final textColor = switch (variant) {
       ButtonVariant.primary => context.colors.background,
       ButtonVariant.secondary => context.colors.textPrimary,
@@ -141,7 +143,11 @@ class QuantusButton extends StatelessWidget {
 
     final effectiveTextStyle =
         _textStyle ??
-        context.themeText.paragraph!.copyWith(fontSize: buttonFontSize, color: textColor, fontWeight: FontWeight.w500);
+        context.themeText.paragraph!.copyWith(
+          fontSize: buttonFontSize,
+          color: disabled ? context.colors.textPrimary.useOpacity(0.5) : textColor,
+          fontWeight: FontWeight.w500,
+        );
 
     Widget content;
     if (_iconPlacement == IconPlacement.top) {
