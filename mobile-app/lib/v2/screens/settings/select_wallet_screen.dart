@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
+import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_screen.dart';
@@ -20,7 +21,7 @@ class SelectWalletScreen extends ConsumerWidget {
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Select Wallet'),
       child: accountsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: Colors.white24)),
+        loading: () => const Center(child: Loader()),
         error: (e, _) => Center(
           child: Text('Failed to load wallets', style: text.paragraph?.copyWith(color: colors.textSecondary)),
         ),

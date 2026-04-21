@@ -12,6 +12,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
   final TextStyle? smallTitle;
   final TextStyle? paragraph;
   final TextStyle? smallParagraph;
+  final TextStyle? receiveLabel;
   final TextStyle? largeTag;
   final TextStyle? tag;
   final TextStyle? timer;
@@ -26,6 +27,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
     this.smallTitle,
     this.paragraph,
     this.smallParagraph,
+    this.receiveLabel,
     this.largeTag,
     this.tag,
     this.timer,
@@ -42,6 +44,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
         smallTitle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, fontFamily: fontFamily),
         paragraph: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400, fontFamily: fontFamily),
         smallParagraph: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400, fontFamily: fontFamily),
+        receiveLabel: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, fontFamily: fontFamilySecondary),
         largeTag: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400, fontFamily: fontFamily),
         tag: const TextStyle(fontSize: 12, fontWeight: FontWeight.w300, fontFamily: fontFamily),
         timer: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600, fontFamily: fontFamily),
@@ -58,6 +61,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
         smallTitle: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500, fontFamily: fontFamily),
         paragraph: const TextStyle(fontSize: 20, fontWeight: FontWeight.w400, fontFamily: fontFamily),
         smallParagraph: const TextStyle(fontSize: 18, fontWeight: FontWeight.w400, fontFamily: fontFamily),
+        receiveLabel: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, fontFamily: fontFamilySecondary),
         largeTag: const TextStyle(fontSize: 24, fontWeight: FontWeight.w400, fontFamily: fontFamily),
         tag: const TextStyle(fontSize: 16, fontWeight: FontWeight.w300, fontFamily: fontFamily),
         timer: const TextStyle(fontSize: 36, fontWeight: FontWeight.w600, fontFamily: fontFamily),
@@ -74,6 +78,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
     TextStyle? smallTitle,
     TextStyle? paragraph,
     TextStyle? smallParagraph,
+    TextStyle? receiveLabel,
     TextStyle? largeTag,
     TextStyle? tag,
     TextStyle? timer,
@@ -88,6 +93,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
       smallTitle: smallTitle ?? this.smallTitle,
       paragraph: paragraph ?? this.paragraph,
       smallParagraph: smallParagraph ?? this.smallParagraph,
+      receiveLabel: receiveLabel ?? this.receiveLabel,
       largeTag: largeTag ?? this.largeTag,
       tag: tag ?? this.tag,
       timer: timer ?? this.timer,
@@ -107,6 +113,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
       smallTitle: TextStyle.lerp(smallTitle, other.smallTitle, t),
       paragraph: TextStyle.lerp(paragraph, other.paragraph, t),
       smallParagraph: TextStyle.lerp(smallParagraph, other.smallParagraph, t),
+      receiveLabel: TextStyle.lerp(receiveLabel, other.receiveLabel, t),
       largeTag: TextStyle.lerp(largeTag, other.largeTag, t),
       tag: TextStyle.lerp(tag, other.tag, t),
       timer: TextStyle.lerp(timer, other.timer, t),

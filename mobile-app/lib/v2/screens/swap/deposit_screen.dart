@@ -3,6 +3,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
+import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -233,7 +234,7 @@ class _DepositScreenState extends State<DepositScreen> {
     return Column(
       children: [
         const SizedBox(height: 80),
-        CircularProgressIndicator(color: colors.accentGreen),
+        Loader(color: colors.accentGreen),
         const SizedBox(height: 32),
         Text('Processing Swap', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
         const SizedBox(height: 12),
