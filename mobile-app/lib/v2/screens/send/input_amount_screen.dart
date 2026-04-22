@@ -51,7 +51,9 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     if (widget.initialAmount != null) {
       _amountController.text = widget.initialAmount!;
     }
-    if (widget.recipientChecksum == null) {
+    if (widget.recipientChecksum != null) {
+      _recipientChecksum = widget.recipientChecksum;
+    } else {
       _checksumService.getHumanReadableName(widget.recipientAddress.trim()).then((name) {
         if (mounted) setState(() => _recipientChecksum = name);
       });

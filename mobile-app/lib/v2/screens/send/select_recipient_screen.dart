@@ -33,9 +33,8 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   List<String> _recents = [];
   bool _hasAddressError = true;
   bool _loadingRecents = true;
+  bool _isPayMode = false;
   String? _recipientChecksum;
-
-  bool get _isPayMode => _amountController.text.isNotEmpty;
 
   @override
   void initState() {
@@ -126,6 +125,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     if (payment != null) {
       _recipientController.text = payment.to;
       _amountController.text = payment.amount;
+      _isPayMode = true;
     } else {
       _recipientController.text = scanResult;
     }
@@ -138,13 +138,18 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            InputAmountScreen(recipientAddress: address, initialAmount: _amountController.text, isPayMode: _isPayMode),
+        builder: (_) => InputAmountScreen(
+          recipientAddress: address,
+          recipientChecksum: _recipientChecksum,
+          initialAmount: _amountController.text,
+          isPayMode: _isPayMode,
+        ),
       ),
     ).then((popped) {
       if (!mounted || popped != true) return;
       _recipientController.clear();
       _amountController.clear();
+      _isPayMode = false;
 
       setState(() {
         _recipientChecksum = null;

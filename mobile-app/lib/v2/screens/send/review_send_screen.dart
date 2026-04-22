@@ -65,6 +65,10 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
         widget.blockHeight,
       );
       RecentAddressesService().addAddress(widget.recipientAddress.trim());
+      setState(() {
+        _submitting = false;
+      });
+
       if (mounted) {
         Navigator.push(
           context,
