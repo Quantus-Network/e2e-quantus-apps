@@ -77,9 +77,11 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   void _onRecipientChanged() {
     final text = _recipientController.text.trim();
     if (text.isEmpty) {
+      _amountController.clear();
       setState(() {
         _hasAddressError = true;
         _recipientChecksum = null;
+        _isPayMode = false;
       });
       return;
     }
@@ -123,11 +125,16 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     if (scanResult == null || !mounted) return;
     final payment = PaymentIntent.tryParseUrl(scanResult);
     if (payment != null) {
-      _recipientController.text = payment.to;
-      _amountController.text = payment.amount;
-      _isPayMode = true;
+      setState(() {
+        _recipientController.text = payment.to;
+        _amountController.text = payment.amount;
+        _isPayMode = true;
+      });
     } else {
-      _recipientController.text = scanResult;
+      setState(() {
+        _recipientController.text = scanResult;
+        _isPayMode = false;
+      });
     }
   }
 
@@ -159,6 +166,8 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   }
 
   void _onRecentTap(String address) {
+    _amountController.clear();
+    setState(() => _isPayMode = false);
     _recipientController.text = address;
   }
 
