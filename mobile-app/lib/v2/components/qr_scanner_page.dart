@@ -83,12 +83,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
               ],
             ),
           ),
-          const Positioned(
-            top: 20,
-            left: 24,
-            right: 24,
-            child: V2AppBar(title: 'Scan QR Code',),
-          ),
+          const Positioned(top: 20, left: 24, right: 24, child: V2AppBar(title: 'Scan QR Code')),
         ],
       ),
     );
