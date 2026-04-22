@@ -173,8 +173,6 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       formattingService: _fmt,
     );
 
-    final isSelfTransfer = recipient.isNotEmpty && recipient == activeId;
-
     return ScaffoldBase(
       appBar: V2AppBar(title: widget.isPayMode ? 'Pay' : 'Send'),
       child: Column(
@@ -182,7 +180,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         children: [
           _recipientCard(colors, text),
           Expanded(child: _amountCenter(colors, text)),
-          _bottomSection(colors, text, btnText, balance, btnDisabled, isSelfTransfer),
+          _bottomSection(colors, text, btnText, balance, btnDisabled),
         ],
       ),
     );
@@ -316,7 +314,6 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     String btnText,
     AsyncValue<BigInt> balance,
     bool btnDisabled,
-    bool isSelfTransfer,
   ) {
     return Container(
       padding: const EdgeInsets.only(top: 25, bottom: 40),
