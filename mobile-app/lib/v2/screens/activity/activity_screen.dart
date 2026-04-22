@@ -117,7 +117,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if (i > 0) const SizedBox(height: 32),
-                            Text(group.label, style: text.activityGroupLabel?.copyWith(color: colors.textTertiary)),
+                            Text(group.label, style: text.receiveLabel?.copyWith(color: colors.textTertiary)),
                             ...group.transactions.mapIndexed((index, tx) {
                               final itemData = TxItemData.from(tx, active.account.accountId, colors);
                               final isLastItem = index == group.transactions.length - 1;

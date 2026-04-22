@@ -12,7 +12,6 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
   final TextStyle? smallTitle;
   final TextStyle? paragraph;
   final TextStyle? smallParagraph;
-  final TextStyle? activityGroupLabel;
   final TextStyle? receiveLabel;
   final TextStyle? largeTag;
   final TextStyle? tag;
@@ -33,7 +32,6 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
     this.smallTitle,
     this.paragraph,
     this.smallParagraph,
-    this.activityGroupLabel,
     this.receiveLabel,
     this.largeTag,
     this.tag,
@@ -56,7 +54,6 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
         smallTitle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, fontFamily: fontFamily),
         paragraph: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400, fontFamily: fontFamily),
         smallParagraph: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400, fontFamily: fontFamily),
-        activityGroupLabel: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, fontFamily: fontFamilySecondary),
         receiveLabel: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, fontFamily: fontFamilySecondary),
         largeTag: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400, fontFamily: fontFamily),
         tag: const TextStyle(fontSize: 12, fontWeight: FontWeight.w300, fontFamily: fontFamily),
@@ -103,7 +100,6 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
         smallTitle: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500, fontFamily: fontFamily),
         paragraph: const TextStyle(fontSize: 20, fontWeight: FontWeight.w400, fontFamily: fontFamily),
         smallParagraph: const TextStyle(fontSize: 18, fontWeight: FontWeight.w400, fontFamily: fontFamily),
-        activityGroupLabel: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, fontFamily: fontFamilySecondary),
         receiveLabel: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, fontFamily: fontFamilySecondary),
         largeTag: const TextStyle(fontSize: 24, fontWeight: FontWeight.w400, fontFamily: fontFamily),
         tag: const TextStyle(fontSize: 16, fontWeight: FontWeight.w300, fontFamily: fontFamily),

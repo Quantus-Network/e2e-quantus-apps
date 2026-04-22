@@ -4,10 +4,10 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/screens/send/review_send_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -118,8 +118,22 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   }
 
   Future<void> _openReview() async {
+    if (_recipientChecksum == null) return;
+
     FocusScope.of(context).unfocus();
-    final completed = await BottomSheetContainer.show<bool>(context, builder: (_) => const SizedBox.shrink());
+    final completed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => ReviewSendScreen(
+          recipientAddress: widget.recipientAddress,
+          amount: _amount,
+          networkFee: _networkFee,
+          blockHeight: _blockHeight,
+          recipientChecksum: _recipientChecksum!,
+          isPayMode: widget.isPayMode,
+        ),
+      ),
+    );
+    
     if (completed == true && mounted) {
       Navigator.of(context).pop();
     }

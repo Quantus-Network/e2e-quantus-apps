@@ -5,6 +5,7 @@ import 'package:resonance_network_wallet/features/components/dotted_border.dart'
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
@@ -95,17 +96,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     }
   }
 
-  String _initials(String? checksum) {
-    if (checksum == null || checksum.isEmpty) return '?';
-    final parts = checksum.split('-').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-    if (parts.length >= 2) {
-      final a = parts[0];
-      final b = parts[1];
-      return '${a[0]}${b[0]}'.toUpperCase();
-    }
-    return checksum.length >= 2 ? checksum.substring(0, 2).toUpperCase() : checksum[0].toUpperCase();
-  }
-
   bool get _canContinue {
     final text = _recipientController.text.trim();
     if (text.isEmpty) return false;
@@ -139,17 +129,16 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     if (!_canContinue) return;
 
     final address = _recipientController.text.trim();
-    Navigator.push<bool>(
-      context,
-      MaterialPageRoute(builder: (_) => InputAmountScreen(recipientAddress: address)),
-    ).then((popped) {
-      if (!mounted || popped != true) return;
-      _recipientController.clear();
-      setState(() {
-        _recipientChecksum = null;
-        _hasAddressError = true;
-      });
-    });
+    Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => InputAmountScreen(recipientAddress: address))).then(
+      (popped) {
+        if (!mounted || popped != true) return;
+        _recipientController.clear();
+        setState(() {
+          _recipientChecksum = null;
+          _hasAddressError = true;
+        });
+      },
+    );
   }
 
   void _onRecentTap(String address) {
@@ -352,50 +341,9 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
       child: InkWell(
         onTap: () => _onRecentTap(address),
         borderRadius: BorderRadius.circular(8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(color: colors.sheetBackground, borderRadius: BorderRadius.circular(20)),
-              child: Text(
-                _initials(checksum),
-                style: text.detail?.copyWith(
-                  color: colors.textLabel,
-                  fontFamily: AppTextTheme.fontFamilySecondary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (checksum != null)
-                    Text(
-                      checksum,
-                      style: text.smallParagraph?.copyWith(color: colors.checksum),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  if (checksum != null) const SizedBox(height: 4),
-                  Text(
-                    formattedAddress,
-                    style: text.smallParagraph?.copyWith(
-                      color: colors.textMuted,
-                      fontFamily: AppTextTheme.fontFamilySecondary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+        child: checksum != null
+            ? AddressCheckphraseWithInitial(recipientChecksum: checksum, recipientAddress: formattedAddress)
+            : const Center(child: Loader()),
       ),
     );
   }
