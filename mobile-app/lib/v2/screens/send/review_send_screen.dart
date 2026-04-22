@@ -182,7 +182,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
 
   Widget _summarySection(String addr, BigInt totalRaw) {
     final shownDecimals = AppConstants.decimals;
-    final shortAddr = AddressFormattingService.formatAddress(addr, prefix: 6, ellipses: '...', postFix: 6);
+    final shortAddr = AddressFormattingService.formatAddress(addr);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,

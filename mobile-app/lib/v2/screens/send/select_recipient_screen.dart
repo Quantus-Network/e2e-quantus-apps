@@ -124,7 +124,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     if (scanResult == null || !mounted) return;
     final payment = PaymentIntent.tryParseUrl(scanResult);
     if (payment != null) {
-      _recipientController.text = scanResult;
+      _recipientController.text = payment.to;
       _amountController.text = payment.amount;
     } else {
       _recipientController.text = scanResult;
@@ -144,6 +144,8 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     ).then((popped) {
       if (!mounted || popped != true) return;
       _recipientController.clear();
+      _amountController.clear();
+
       setState(() {
         _recipientChecksum = null;
         _hasAddressError = true;

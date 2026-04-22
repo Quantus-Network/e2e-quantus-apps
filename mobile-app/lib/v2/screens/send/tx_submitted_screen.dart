@@ -37,7 +37,7 @@ class TxSubmittedScreen extends StatelessWidget {
     final colors = context.colors;
     final text = context.themeText;
     final addr = recipientAddress.trim();
-    final shortAddr = AddressFormattingService.formatAddress(addr, prefix: 8, ellipses: '.......', postFix: 8);
+    final shortAddr = AddressFormattingService.formatAddress(addr);
 
     return PopScope(
       canPop: false,

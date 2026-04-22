@@ -15,10 +15,17 @@ import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class InputAmountScreen extends ConsumerStatefulWidget {
   final String recipientAddress;
+  final String? recipientChecksum;
   final String? initialAmount;
   final bool isPayMode;
 
-  const InputAmountScreen({super.key, required this.recipientAddress, this.initialAmount, this.isPayMode = false});
+  const InputAmountScreen({
+    super.key,
+    required this.recipientAddress,
+    this.recipientChecksum,
+    this.initialAmount,
+    this.isPayMode = false,
+  });
 
   @override
   ConsumerState<InputAmountScreen> createState() => _InputAmountScreenState();
@@ -44,9 +51,12 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     if (widget.initialAmount != null) {
       _amountController.text = widget.initialAmount!;
     }
-    _checksumService.getHumanReadableName(widget.recipientAddress.trim()).then((name) {
-      if (mounted) setState(() => _recipientChecksum = name);
-    });
+    if (widget.recipientChecksum == null) {
+      _checksumService.getHumanReadableName(widget.recipientAddress.trim()).then((name) {
+        if (mounted) setState(() => _recipientChecksum = name);
+      });
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchEstimatedFee();
     });
@@ -144,12 +154,14 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final recipient = widget.recipientAddress.trim();
 
     final amountStatus = SendScreenLogic.getAmountStatus(_amount, balance.value ?? BigInt.zero, _networkFee);
-    final btnDisabled = _recipientChecksum == null || SendScreenLogic.isButtonDisabled(
-      hasAddressError: false,
-      amountStatus: amountStatus,
-      recipientText: recipient,
-      activeAccountId: activeId,
-    );
+    final btnDisabled =
+        _recipientChecksum == null ||
+        SendScreenLogic.isButtonDisabled(
+          hasAddressError: false,
+          amountStatus: amountStatus,
+          recipientText: recipient,
+          activeAccountId: activeId,
+        );
     final btnText = SendScreenLogic.getButtonText(
       hasAddressError: false,
       amountStatus: amountStatus,
