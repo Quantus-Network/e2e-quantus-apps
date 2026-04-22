@@ -121,7 +121,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     if (_recipientChecksum == null) return;
 
     FocusScope.of(context).unfocus();
-    final completed = await Navigator.of(context).push<bool>(
+    Navigator.push(
+      context,
       MaterialPageRoute(
         builder: (_) => ReviewSendScreen(
           recipientAddress: widget.recipientAddress,
@@ -133,10 +134,6 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         ),
       ),
     );
-    
-    if (completed == true && mounted) {
-      Navigator.of(context).pop();
-    }
   }
 
   @override

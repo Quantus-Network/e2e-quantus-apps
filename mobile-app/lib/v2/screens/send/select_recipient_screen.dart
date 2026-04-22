@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
+import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -343,7 +344,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
         borderRadius: BorderRadius.circular(8),
         child: checksum != null
             ? AddressCheckphraseWithInitial(recipientChecksum: checksum, recipientAddress: formattedAddress)
-            : const Center(child: Loader()),
+            : const Skeleton(height: 36),
       ),
     );
   }

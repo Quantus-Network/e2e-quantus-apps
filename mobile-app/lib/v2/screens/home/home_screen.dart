@@ -12,8 +12,8 @@ import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
@@ -62,7 +62,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (payment != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(paymentIntentProvider.notifier).state = null;
-        showSendSheetV2(context, address: payment.to, amount: payment.amount, isPayMode: true);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                InputAmountScreen(recipientAddress: payment.to, initialAmount: payment.amount, isPayMode: true),
+          ),
+        );
       });
       return;
     }
@@ -197,7 +203,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       children: [
         currencyAsync.when(
           data: (display) {
-            return AmountDisplayWithConversion(amountDisplay: display, onFlip: _toggleFlip, alignment: CrossAxisAlignment.start);
+            return AmountDisplayWithConversion(
+              amountDisplay: display,
+              onFlip: _toggleFlip,
+              alignment: CrossAxisAlignment.start,
+            );
           },
           loading: () => const Column(
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -9,10 +9,10 @@ import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/screens/send/tx_submitted_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
-/// Figma: Send review — hero card, line-item summary, primary confirm.
 class ReviewSendScreen extends ConsumerStatefulWidget {
   final String recipientAddress;
   final BigInt amount;
@@ -65,7 +65,19 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
         widget.blockHeight,
       );
       RecentAddressesService().addAddress(widget.recipientAddress.trim());
-      if (mounted) Navigator.of(context).pop(true);
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TxSubmittedScreen(
+              amount: widget.amount,
+              recipientAddress: widget.recipientAddress,
+              recipientChecksum: widget.recipientChecksum,
+              isPayMode: widget.isPayMode,
+            ),
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
