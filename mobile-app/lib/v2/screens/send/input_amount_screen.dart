@@ -118,8 +118,6 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   }
 
   Future<void> _openReview() async {
-    if (_recipientChecksum == null) return;
-
     FocusScope.of(context).unfocus();
     Navigator.push(
       context,
@@ -146,7 +144,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final recipient = widget.recipientAddress.trim();
 
     final amountStatus = SendScreenLogic.getAmountStatus(_amount, balance.value ?? BigInt.zero, _networkFee);
-    final btnDisabled = SendScreenLogic.isButtonDisabled(
+    final btnDisabled = _recipientChecksum == null || SendScreenLogic.isButtonDisabled(
       hasAddressError: false,
       amountStatus: amountStatus,
       recipientText: recipient,
@@ -178,7 +176,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
 
   Widget _recipientCard(AppColorsV2 colors, AppTextTheme text) {
     final addr = widget.recipientAddress.trim();
-    final shortAddr = AddressFormattingService.formatAddress(addr, prefix: 6, ellipses: '...', postFix: 6);
+    final shortAddr = AddressFormattingService.formatAddress(addr);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),

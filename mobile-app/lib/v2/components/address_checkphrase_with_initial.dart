@@ -53,12 +53,7 @@ class AddressCheckphraseWithInitial extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                AddressFormattingService.formatAddress(
-                  recipientAddress.trim(),
-                  prefix: 8,
-                  ellipses: '.......',
-                  postFix: 8,
-                ).toLowerCase(),
+                AddressFormattingService.formatAddress(recipientAddress.trim()),
                 style: text.transactionDetailRowValue?.copyWith(fontSize: 14),
               ),
             ],

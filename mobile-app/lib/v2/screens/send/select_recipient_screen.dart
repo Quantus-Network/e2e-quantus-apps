@@ -24,6 +24,7 @@ class SelectRecipientScreen extends ConsumerStatefulWidget {
 }
 
 class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
+  final _amountController = TextEditingController();
   final _recipientController = TextEditingController();
   final _recipientFocus = FocusNode();
   final _checksumService = HumanReadableChecksumService();
@@ -33,6 +34,8 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   bool _hasAddressError = true;
   bool _loadingRecents = true;
   String? _recipientChecksum;
+
+  bool get _isPayMode => _amountController.text.isNotEmpty;
 
   @override
   void initState() {
@@ -45,6 +48,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   void dispose() {
     _recipientController.removeListener(_onRecipientChanged);
     _recipientController.dispose();
+    _amountController.dispose();
     _recipientFocus.dispose();
     super.dispose();
   }
@@ -120,26 +124,31 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     if (scanResult == null || !mounted) return;
     final payment = PaymentIntent.tryParseUrl(scanResult);
     if (payment != null) {
-      Navigator.pop(context);
-      return;
+      _recipientController.text = scanResult;
+      _amountController.text = payment.amount;
+    } else {
+      _recipientController.text = scanResult;
     }
-    _recipientController.text = scanResult;
   }
 
   void _continue() {
     if (!_canContinue) return;
 
     final address = _recipientController.text.trim();
-    Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => InputAmountScreen(recipientAddress: address))).then(
-      (popped) {
-        if (!mounted || popped != true) return;
-        _recipientController.clear();
-        setState(() {
-          _recipientChecksum = null;
-          _hasAddressError = true;
-        });
-      },
-    );
+    Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            InputAmountScreen(recipientAddress: address, initialAmount: _amountController.text, isPayMode: _isPayMode),
+      ),
+    ).then((popped) {
+      if (!mounted || popped != true) return;
+      _recipientController.clear();
+      setState(() {
+        _recipientChecksum = null;
+        _hasAddressError = true;
+      });
+    });
   }
 
   void _onRecentTap(String address) {
@@ -269,12 +278,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        AddressFormattingService.formatAddress(
-                          _recipientController.text.trim(),
-                          prefix: 15,
-                          ellipses: '.......',
-                          postFix: 14,
-                        ),
+                        AddressFormattingService.formatAddress(_recipientController.text.trim()),
                         style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -335,7 +339,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
 
   Widget _recentRow(String address, AppColorsV2 colors, AppTextTheme text) {
     final checksum = _checksums[address];
-    final formattedAddress = AddressFormattingService.formatAddress(address);
 
     return Material(
       color: Colors.transparent,
@@ -343,7 +346,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
         onTap: () => _onRecentTap(address),
         borderRadius: BorderRadius.circular(8),
         child: checksum != null
-            ? AddressCheckphraseWithInitial(recipientChecksum: checksum, recipientAddress: formattedAddress)
+            ? AddressCheckphraseWithInitial(recipientChecksum: checksum, recipientAddress: address)
             : const Skeleton(height: 36),
       ),
     );

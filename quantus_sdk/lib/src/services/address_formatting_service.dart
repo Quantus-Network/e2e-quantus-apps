@@ -1,7 +1,7 @@
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class AddressFormattingService {
-  static String formatAddress(String address, {int prefix = 5, String ellipses = '...', int postFix = 5}) {
+  static String formatAddress(String address, {int prefix = 6, String ellipses = '...', int postFix = 6}) {
     return address.shortenedCryptoAddress(prefix: prefix, ellipses: ellipses, postFix: postFix);
   }
 
