@@ -65,7 +65,7 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'New Charge'),
-      child: Column(
+      mainContent: Column(
         children: [
           Expanded(
             child: Center(

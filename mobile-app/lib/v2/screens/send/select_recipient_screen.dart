@@ -179,7 +179,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Send'),
-      child: Column(
+      mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Column(

@@ -20,7 +20,7 @@ class SelectWalletScreen extends ConsumerWidget {
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Select Wallet'),
-      child: accountsAsync.when(
+      mainContent: accountsAsync.when(
         loading: () => const Center(child: Loader()),
         error: (e, _) => Center(
           child: Text('Failed to load wallets', style: text.paragraph?.copyWith(color: colors.textSecondary)),

@@ -147,7 +147,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
           child: Icon(Icons.close, color: colors.textPrimary, size: 24),
         ),
       ),
-      child: Column(
+      mainContent: Column(
         children: [
           Expanded(
             child: SingleChildScrollView(

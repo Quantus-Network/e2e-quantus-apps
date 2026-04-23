@@ -107,7 +107,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
 
     return ScaffoldBase(
       appBar: V2AppBar(title: widget.isPayMode ? 'Pay' : 'Send'),
-      child: Column(
+      mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Column(

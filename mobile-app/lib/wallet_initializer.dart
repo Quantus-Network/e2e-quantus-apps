@@ -193,7 +193,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const ScaffoldBase(child: Center(child: CircularProgressIndicator()));
+      return const ScaffoldBase(mainContent: Center(child: CircularProgressIndicator()));
     }
 
     if (_needsMigration) {

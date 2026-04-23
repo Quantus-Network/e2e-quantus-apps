@@ -91,7 +91,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Settings'),
-      child: ListView(
+      mainContent: ListView(
         padding: EdgeInsets.zero,
         children: [
           _section('Wallet', colors, text, [

@@ -50,7 +50,7 @@ class TxSubmittedScreen extends StatelessWidget {
           title: isPayMode ? 'Pay' : 'Send',
           leading: AppBackButton(onTap: () => _popToHome(context)),
         ),
-        child: Column(
+        mainContent: Column(
           children: [
             Center(
               child: Column(

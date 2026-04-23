@@ -19,7 +19,7 @@ class WelcomeScreenV2 extends StatelessWidget {
 
     return ScaffoldBase(
       backgroundWidget: background,
-      child: Column(
+      mainContent: Column(
         children: [
           const Spacer(),
           Image.asset('assets/v2/quantus_orange_logo.png', height: 40),

@@ -19,7 +19,7 @@ class TestnetRewardsScreen extends ConsumerWidget {
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Testnet Rewards'),
-      child: miningAsync.when(
+      mainContent: miningAsync.when(
         skipLoadingOnRefresh: false,
         data: (data) => RefreshIndicator(
           onRefresh: () async => ref.invalidate(miningRewardsProvider),

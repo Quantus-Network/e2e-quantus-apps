@@ -175,7 +175,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
 
     return ScaffoldBase(
       appBar: V2AppBar(title: widget.isPayMode ? 'Pay' : 'Send'),
-      child: Column(
+      mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _recipientCard(colors, text),

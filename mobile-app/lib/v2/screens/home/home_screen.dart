@@ -102,15 +102,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final text = context.themeText;
 
     Widget screen = accountAsync.when(
-      loading: () => const ScaffoldBase(child: Center(child: Loader())),
+      loading: () => const ScaffoldBase(mainContent: Center(child: Loader())),
       error: (e, _) => ScaffoldBase(
-        child: Center(
+        mainContent: Center(
           child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError)),
         ),
       ),
       data: (active) {
         if (active == null) {
-          return const ScaffoldBase(child: Center(child: Text('No active account')));
+          return const ScaffoldBase(mainContent: Center(child: Text('No active account')));
         }
         return ScaffoldBase.refreshable(
           onRefresh: _refresh,

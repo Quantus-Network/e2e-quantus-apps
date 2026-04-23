@@ -79,7 +79,7 @@ class _DepositScreenState extends State<DepositScreen> {
         title: 'Swap',
         trailing: Icon(Icons.info_outline, color: colors.textPrimary, size: 24),
       ),
-      child: Column(
+      mainContent: Column(
         children: [
           if (_order.status == SwapStatus.complete)
             _completedBody(colors, text)

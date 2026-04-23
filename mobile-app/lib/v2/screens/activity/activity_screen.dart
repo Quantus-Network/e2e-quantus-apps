@@ -50,7 +50,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Activity'),
-      child: Column(
+      mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.start,
         children: [

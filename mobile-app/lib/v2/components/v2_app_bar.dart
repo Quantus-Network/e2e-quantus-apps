@@ -16,7 +16,7 @@ class V2AppBar extends StatelessWidget {
     this.leading,
     this.trailing,
     this.showBackButton = true,
-    this.padding = const EdgeInsets.only(top: 16.0, bottom: 40.0),
+    this.padding = const EdgeInsets.only(top: 16.0, bottom: 32.0),
   });
 
   @override
