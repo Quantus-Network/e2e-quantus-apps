@@ -8,6 +8,8 @@ import 'package:resonance_network_wallet/services/transaction_submission_service
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
+import 'package:resonance_network_wallet/v2/components/split_card.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/send/tx_submitted_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -122,18 +124,16 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
               ],
             ],
           ),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.only(top: 25, bottom: 40),
-            child: QuantusButton.simple(
-              label: 'Confirm',
-              variant: ButtonVariant.primary,
-              isLoading: _submitting,
-              isDisabled: _submitting,
-              onTap: _confirmSend,
-            ),
-          ),
         ],
+      ),
+      bottomContent: ScaffoldBaseBottomContent(
+        child: QuantusButton.simple(
+          label: 'Confirm',
+          variant: ButtonVariant.primary,
+          isLoading: _submitting,
+          isDisabled: _submitting,
+          onTap: _confirmSend,
+        ),
       ),
     );
   }
@@ -145,20 +145,14 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
     );
     final sectionLabelStyle = text.receiveLabel?.copyWith(color: colors.textLabel);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-      decoration: BoxDecoration(
-        color: colors.surfaceDeep,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colors.borderButton),
-      ),
-      child: Column(
+    return SplitCard(
+      topChild: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('SENDING', style: sectionLabelStyle),
           const SizedBox(height: 16),
           Text(
-            '${_fmt.formatBalance(widget.amount)} ${AppConstants.tokenSymbol}',
+            '${_fmt.formatBalance(widget.amount, maxDecimals: 4)} ${AppConstants.tokenSymbol}',
             style: TextStyle(
               fontFamily: AppTextTheme.fontFamilySecondary,
               fontSize: 40,
@@ -169,10 +163,11 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
           ),
           const SizedBox(height: 8),
           Text('≈ ${approxDisplay.secondaryAmount}', style: approxStyle),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            child: Divider(height: 1, thickness: 1, color: colors.txItemSeparator),
-          ),
+        ],
+      ),
+      bottomChild: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Text('TO', style: sectionLabelStyle),
           const SizedBox(height: 16),
           AddressCheckphraseWithInitial(

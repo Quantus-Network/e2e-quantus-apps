@@ -6,6 +6,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
+import 'package:resonance_network_wallet/v2/components/split_card.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
@@ -252,34 +253,15 @@ class _AddressTabState extends State<AddressTab> {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Column(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF141414),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Column(
-              children: [
-                InkWell(
-                  onTap: () => _copyAddress(context),
-                  child: _buildItem(context, 'ADDRESS', widget.accountId, isCopied: _addressCopied),
-                ),
-                Divider(color: context.colors.background, thickness: 4),
-                InkWell(
-                  onTap: () => _copyChecksum(context),
-                  child: _buildItem(
-                    context,
-                    'CHECKPHRASE',
-                    widget.checksum,
-                    isCheckphrase: true,
-                    isCopied: _checksumCopied,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+      child: SplitCard(
+        topChild: InkWell(
+          onTap: () => _copyAddress(context),
+          child: _buildItem(context, 'ADDRESS', widget.accountId, isCopied: _addressCopied),
+        ),
+        bottomChild: InkWell(
+          onTap: () => _copyChecksum(context),
+          child: _buildItem(context, 'CHECKPHRASE', widget.checksum, isCheckphrase: true, isCopied: _checksumCopied),
+        ),
       ),
     );
   }
@@ -295,27 +277,24 @@ class _AddressTabState extends State<AddressTab> {
         ? context.themeText.smallParagraph?.copyWith(color: context.colors.checksum)
         : context.themeText.smallParagraph?.copyWith(fontFamily: AppTextTheme.fontFamilySecondary);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: context.themeText.receiveLabel?.copyWith(color: context.colors.textLabel)),
-                const SizedBox(height: 16),
-                Text(value, style: valueTextStyle),
-              ],
-            ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: context.themeText.receiveLabel?.copyWith(color: context.colors.textLabel)),
+              const SizedBox(height: 16),
+              Text(value, style: valueTextStyle),
+            ],
           ),
-      
-          const SizedBox(width: 32),
-      
-          _copyButton(isCopied: isCopied),
-        ],
-      ),
+        ),
+
+        const SizedBox(width: 32),
+
+        _copyButton(isCopied: isCopied),
+      ],
     );
   }
 

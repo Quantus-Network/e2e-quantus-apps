@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
@@ -234,9 +235,9 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
               ],
             ),
           ),
-          _buildBottomButton(colors),
         ],
       ),
+      bottomContent: _buildBottomButton(),
     );
   }
 
@@ -368,11 +369,10 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     );
   }
 
-  Widget _buildBottomButton(AppColorsV2 colors) {
+  Widget _buildBottomButton() {
     final btnText = _canContinue ? 'Continue' : 'Enter Address';
 
-    return Container(
-      padding: const EdgeInsets.only(top: 24, bottom: 40),
+    return ScaffoldBaseBottomContent(
       child: QuantusButton.simple(
         label: btnText,
         variant: ButtonVariant.primary,
