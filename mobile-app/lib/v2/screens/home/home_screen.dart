@@ -10,7 +10,7 @@ import 'package:resonance_network_wallet/v2/components/amount_display_with_conve
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
-import 'package:resonance_network_wallet/v2/screens/accounts/accounts_sheet.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/open_accounts_management_button.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen.dart';
@@ -173,10 +173,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        GestureDetector(
-          onTap: () => showAccountsSheet(context),
-          child: SvgPicture.asset('assets/v2/uppercase_q.svg', width: 32, height: 32),
-        ),
+       const OpenAccountsManagementButton(),
         Row(
           children: [
             QuantusIconButton.circular(

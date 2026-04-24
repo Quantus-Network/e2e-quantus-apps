@@ -1,6 +1,6 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/v2/components/glass_button_base.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
 enum IconButtonShape { rounded, circular }
@@ -108,39 +108,6 @@ class QuantusIconButton extends StatelessWidget {
   }
 
   Widget _buildGlassStyle(Widget child, {required double buttonSize, required BorderRadius borderRadius}) {
-    return Container(
-      width: buttonSize,
-      height: buttonSize,
-      decoration: BoxDecoration(
-        borderRadius: borderRadius,
-        gradient: const LinearGradient(
-          transform: GradientRotation(30 * math.pi / 180),
-          colors: [
-            Color(0xFF6F6F6F), // 0%
-            Color(0xFF1F1F1F), // 25%
-            Color(0xFF0E0E0E), // 50%
-            Color(0xFF1F1F1F), // 75%
-            Color(0xFF6F6F6F), // 100%
-          ],
-          stops: [0.0, 0.25, 0.50, 0.75, 1.0],
-        ),
-      ),
-      // The padding acts as the border thickness!
-      padding: const EdgeInsets.all(0.5),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: borderRadius,
-          gradient: const LinearGradient(
-            transform: GradientRotation(45 * math.pi / 180),
-            colors: [Color(0xFF050505), Color(0xFF171717)],
-            stops: [0, 1],
-          ),
-        ),
-        child: Container(
-          decoration: BoxDecoration(borderRadius: borderRadius, color: const Color.fromRGBO(255, 255, 255, 0.02)),
-          child: child,
-        ),
-      ),
-    );
+    return GlassButtonBase(buttonHeight: buttonSize, buttonWidth: buttonSize, borderRadius: borderRadius, child: child);
   }
 }
