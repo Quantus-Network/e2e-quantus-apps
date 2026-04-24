@@ -292,7 +292,13 @@ class _Field extends StatelessWidget {
               SizedBox(
                 width: 40,
                 height: 40,
-                child: QuantusIconButton.rounded(onTap: onAction, icon: actionIcon, radius: 8, isLoading: isLoading),
+                child: QuantusIconButton.rounded(
+                  onTap: onAction,
+                  icon: actionIcon,
+                  radius: 8,
+                  isLoading: isLoading,
+                  size: IconButtonSize.large,
+                ),
               ),
             ],
           ),

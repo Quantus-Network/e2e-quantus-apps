@@ -130,7 +130,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
         textSecondary: const Color(0x80FFFFFF),
         textTertiary: const Color(0xFF3D3D3D),
         textMuted: const Color(0xFF888888),
-        textError: const Color(0xFFFF5252),
+        textError: const Color(0xFFC0392B),
         textLabel: const Color(0xFF787878),
         accentOrange: const Color(0xFFFF6B35),
         accentGreen: const Color(0xFF34C759),

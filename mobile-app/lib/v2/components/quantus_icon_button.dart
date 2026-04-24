@@ -7,7 +7,7 @@ enum IconButtonShape { rounded, circular }
 
 enum IconButtonStyle { glass, flat }
 
-enum IconButtonSize { small, medium }
+enum IconButtonSize { small, medium, large }
 
 class QuantusIconButton extends StatelessWidget {
   final IconData icon;
@@ -44,13 +44,30 @@ class QuantusIconButton extends StatelessWidget {
     this.style = IconButtonStyle.flat,
   }) : shape = IconButtonShape.circular;
 
+  double get buttonSize {
+    switch (size) {
+      case IconButtonSize.small:
+        return 28;
+      case IconButtonSize.medium:
+        return 36;
+      case IconButtonSize.large:
+        return 44;
+    }
+  }
+
+  double get iconSize {
+    switch (size) {
+      case IconButtonSize.small:
+        return 16;
+      case IconButtonSize.medium:
+        return 18;
+      case IconButtonSize.large:
+        return 20;
+    }
+  }
   @override
   Widget build(BuildContext context) {
     final bool disabled = onTap == null || isLoading || isDisabled;
-
-    final double buttonSize = size == IconButtonSize.small ? 28 : 44;
-    final double iconSize = size == IconButtonSize.small ? 16 : 20;
-
     final double defaultRadius = size == IconButtonSize.small ? 8 : 16;
     final double cornerRadius = radius ?? defaultRadius;
     final Color iconColor = isActive ? context.colors.accentOrange : context.colors.textPrimary;

@@ -3,18 +3,18 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
+import 'package:resonance_network_wallet/v2/components/account_badge.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/add_hardware_account_screen.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
-import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
-import 'package:resonance_network_wallet/v2/screens/accounts/account_shared_components.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/account_menu_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/create_account_view.dart';
-import 'package:resonance_network_wallet/v2/screens/accounts/edit_account_view.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -33,17 +33,12 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
   final AccountsService _accountsService = AccountsService();
   final NumberFormattingService _formattingService = NumberFormattingService();
   final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
-  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _createNameController = TextEditingController();
 
   bool _isCreatingAccount = false;
   bool _isSavingCreatedAccount = false;
-  bool _isEditingName = false;
   bool _isEditingCreatedName = false;
-  bool _isSavingName = false;
   bool _isCreateViewOpen = false;
-  String? _editingAccountId;
-  String _editingAccountChecksum = 'Loading...';
   Account? _draftAccount;
   String _draftChecksum = 'Loading...';
 
@@ -123,28 +118,8 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     }
   }
 
-  Future<void> _openEdit(Account account) async {
-    _nameController.text = account.name;
-
-    setState(() {
-      _editingAccountId = account.accountId;
-      _isEditingName = false;
-    });
-
-    final checksum = await _checksumService.getHumanReadableName(account.accountId);
-    if (!mounted) return;
-    setState(() {
-      _editingAccountChecksum = checksum;
-    });
-  }
-
-  void _closeEdit() {
-    setState(() {
-      _editingAccountId = null;
-      _isEditingName = false;
-      _isSavingName = false;
-      _editingAccountChecksum = 'Loading...';
-    });
+  void _openAccountMenu(Account account) {
+    Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => AccountMenuScreen(accountId: account.accountId)));
   }
 
   void _closeCreateView() {
@@ -158,41 +133,8 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     });
   }
 
-  Future<void> _saveEditedName(Account account) async {
-    final name = _nameController.text.trim();
-    if (name.isEmpty) {
-      context.showErrorToaster(message: "Account name can't be empty");
-      return;
-    }
-    if (name == account.name) {
-      setState(() => _isEditingName = false);
-      return;
-    }
-
-    setState(() => _isSavingName = true);
-    try {
-      await _accountsService.updateAccountName(account, name);
-      ref.invalidate(accountsProvider);
-      ref.invalidate(activeAccountProvider);
-      if (mounted) {
-        setState(() {
-          _isEditingName = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        context.showErrorToaster(message: 'Failed to rename account.');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isSavingName = false);
-      }
-    }
-  }
-
   @override
   void dispose() {
-    _nameController.dispose();
     _createNameController.dispose();
     super.dispose();
   }
@@ -206,27 +148,8 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     final activeDisplayAccount = activeDisplayAccountAsync.value;
     final displayAccounts = _displayAccounts(accounts);
     final activeAccountId = activeDisplayAccount?.account.accountId;
-    final editingAccount = _editingAccountId == null
-        ? null
-        : displayAccounts.firstWhereOrNull((a) => a.accountId == _editingAccountId);
-
     String title = 'Accounts';
     VoidCallback? onBack;
-    Widget titleBuilder(String title) => Row(
-      spacing: 12,
-      children: [
-        SizedBox(
-          width: 32.0,
-          height: 32.0,
-          child: AccountGradientImage(accountId: activeAccountId ?? 'loading..', width: 32.0, height: 32.0),
-        ),
-        Text(
-          title,
-          style: context.themeText.smallTitle?.copyWith(color: context.colors.textPrimary, fontSize: 20),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
 
     final media = MediaQuery.of(context);
     final maxHeight = media.size.height - media.padding.top - 20;
@@ -235,14 +158,13 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     if (_isCreateViewOpen && _draftAccount != null) {
       title = 'New Account';
       onBack = _closeCreateView;
-    } else if (editingAccount != null) {
-      title = 'Edit Account';
-      onBack = _closeEdit;
     }
+
+    final showAccountsChrome = !_isCreateViewOpen;
 
     return BottomSheetContainer(
       title: title,
-      titleBuilder: editingAccount == null && !_isCreateViewOpen ? titleBuilder : null,
+      showDragHandle: showAccountsChrome,
       onBack: onBack,
       height: sheetHeight,
       child: _buildContent(
@@ -250,7 +172,6 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
         activeDisplayAccountAsync: activeDisplayAccountAsync,
         displayAccounts: displayAccounts,
         activeAccountId: activeAccountId,
-        editingAccount: editingAccount,
       ),
     );
   }
@@ -260,7 +181,6 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     required AsyncValue<DisplayAccount?> activeDisplayAccountAsync,
     required List<Account> displayAccounts,
     required String? activeAccountId,
-    required Account? editingAccount,
   }) {
     if (accountsAsync.isLoading || activeDisplayAccountAsync.isLoading) {
       return const Center(child: Loader());
@@ -270,7 +190,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       return Center(
         child: Text(
           'Failed to load accounts.',
-          style: context.themeText.smallParagraph?.copyWith(color: Colors.white70),
+          style: context.themeText.smallParagraph?.copyWith(color: context.colors.textSecondary),
         ),
       );
     }
@@ -279,7 +199,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       return Center(
         child: Text(
           'Failed to load active account.',
-          style: context.themeText.smallParagraph?.copyWith(color: Colors.white70),
+          style: context.themeText.smallParagraph?.copyWith(color: context.colors.textSecondary),
         ),
       );
     }
@@ -296,22 +216,6 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       );
     }
 
-    if (editingAccount != null) {
-      if (!_isEditingName && _nameController.text != editingAccount.name) {
-        _nameController.text = editingAccount.name;
-      }
-
-      return EditAccountView(
-        account: editingAccount,
-        checksum: _editingAccountChecksum,
-        isEditingName: _isEditingName,
-        isSavingName: _isSavingName,
-        nameController: _nameController,
-        onToggleEditingName: () => setState(() => _isEditingName = !_isEditingName),
-        onSaveName: () => _saveEditedName(editingAccount),
-      );
-    }
-
     return _buildAccountsListView(displayAccounts, activeAccountId);
   }
 
@@ -324,20 +228,27 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
               ? Center(
                   child: Text(
                     'No accounts found.',
-                    style: context.themeText.smallParagraph?.copyWith(color: Colors.white70),
+                    style: context.themeText.smallParagraph?.copyWith(color: context.colors.textSecondary),
                   ),
                 )
               : ListView.separated(
                   itemCount: displayAccounts.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 20),
+                  separatorBuilder: (_, _) => const SizedBox(height: 14),
                   itemBuilder: (_, index) {
                     final account = displayAccounts[index];
-                    return _buildAccountRow(account, account.accountId == activeAccountId);
+                    final isActive = account.accountId == activeAccountId;
+
+                    return _buildAccountRow(account, isActive);
                   },
                 ),
         ),
         const SizedBox(height: 24),
-        QuantusButton.simple(label: 'Add Account', onTap: _createNewAccount, isLoading: _isCreatingAccount),
+        QuantusButton.simple(
+          label: 'Add Account',
+          onTap: _createNewAccount,
+          isLoading: _isCreatingAccount,
+          variant: ButtonVariant.primary,
+        ),
       ],
     );
   }
@@ -349,35 +260,60 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       error: (_, _) => 'Balance unavailable',
       data: (balance) => '${_formattingService.formatBalance(balance)} ${AppConstants.tokenSymbol}',
     );
+    final colors = context.colors;
 
     return GestureDetector(
       onTap: () => _switchAccount(account),
       child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
+          color: colors.surfaceDeep,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: context.colors.borderSubtle, width: 0.9),
+          border: isActive ? Border.all(color: colors.borderButton) : null,
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    account.name,
-                    style: context.themeText.paragraph!.copyWith(
-                      fontWeight: FontWeight.w500,
-                      color: isActive ? context.colors.accentOrange : Colors.white,
+                  AccountBadge(account: account, isActive: isActive),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          account.name,
+                          style: context.themeText.paragraph!.copyWith(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w400,
+                            color: colors.textPrimary,
+                            height: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          balanceText,
+                          style: context.themeText.smallParagraph!.copyWith(
+                            fontSize: 14,
+                            color: colors.textTertiary,
+                            height: 1,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(balanceText, style: context.themeText.detail!.copyWith(color: context.colors.textSecondary)),
                 ],
               ),
             ),
-            const SizedBox(width: 12),
-            AccountIconActionButton(icon: Icons.edit_outlined, onTap: () => _openEdit(account)),
+            const SizedBox(width: 8),
+            QuantusIconButton.circular(
+              icon: Icons.edit_outlined,
+              onTap: () => _openAccountMenu(account),
+              size: IconButtonSize.medium,
+            ),
           ],
         ),
       ),

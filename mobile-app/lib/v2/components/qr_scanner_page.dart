@@ -90,7 +90,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
   }
 
   Widget _actionButton({required IconData icon, required VoidCallback onTap, required AppColorsV2 colors}) {
-    return QuantusIconButton.rounded(icon: icon, onTap: onTap);
+    return QuantusIconButton.rounded(icon: icon, onTap: onTap, size: IconButtonSize.large);
   }
 }
 

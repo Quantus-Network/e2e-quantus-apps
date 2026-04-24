@@ -72,7 +72,7 @@ class AccountIconActionButton extends StatelessWidget {
     return QuantusIconButton.rounded(
       icon: icon,
       onTap: onTap,
-      size: isTiny ? IconButtonSize.small : IconButtonSize.medium,
+      size: isTiny ? IconButtonSize.small : IconButtonSize.large,
     );
   }
 }
