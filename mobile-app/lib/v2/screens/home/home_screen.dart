@@ -180,12 +180,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         Row(
           children: [
             QuantusIconButton.circular(
+              style: IconButtonStyle.glass,
               icon: isBalanceHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
               onTap: _toggleBalanceHidden,
               isActive: isBalanceHidden,
             ),
             const SizedBox(width: 12),
             QuantusIconButton.circular(
+              style: IconButtonStyle.glass,
               icon: Icons.settings_outlined,
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreenV2())),
             ),
