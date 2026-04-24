@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -70,7 +71,8 @@ class QuantusButton extends StatelessWidget {
     final borderRadius = BorderRadius.circular(this.borderRadius);
     final basicBorder = BorderSide(color: context.colors.borderButton, width: 1);
 
-    final Color buttonDecorationColor;
+    Color? buttonDecorationColor;
+    LinearGradient? buttonDecorationGradient;
     BorderSide borderSide = BorderSide.none;
 
     switch (variant) {
@@ -79,8 +81,12 @@ class QuantusButton extends StatelessWidget {
         break;
 
       case ButtonVariant.secondary:
-        buttonDecorationColor = context.colors.sheetBackground;
-        borderSide = basicBorder;
+        buttonDecorationGradient = LinearGradient(
+          transform: const GradientRotation(90 * math.pi / 180),
+          colors: [context.colors.surfaceDeep, context.colors.sheetBackground],
+          stops: [0.0, 1.0],
+        );
+        borderSide = basicBorder.copyWith(color: context.colors.borderButton.useOpacity(0.5));
         break;
 
       case ButtonVariant.danger:
@@ -110,6 +116,7 @@ class QuantusButton extends StatelessWidget {
           padding: padding,
           decoration: ShapeDecoration(
             color: disabled ? context.colors.sheetBackground : buttonDecorationColor,
+            gradient: disabled ? null : buttonDecorationGradient,
             shape: RoundedRectangleBorder(borderRadius: borderRadius, side: disabled ? basicBorder : borderSide),
           ),
           child: buttonContent,
