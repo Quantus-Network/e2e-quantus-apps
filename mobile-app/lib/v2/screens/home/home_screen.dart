@@ -132,7 +132,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           left: 24,
           right: 24,
           bottom: MediaQuery.of(context).padding.bottom + 24,
-          child: _buildPosButton(colors, text),
+          child: Material(color: Colors.transparent, child: _buildPosButton(colors, text)),
         ),
       ],
     );
@@ -173,7 +173,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-       const OpenAccountsManagementButton(),
+        const OpenAccountsManagementButton(),
         Row(
           children: [
             QuantusIconButton.circular(

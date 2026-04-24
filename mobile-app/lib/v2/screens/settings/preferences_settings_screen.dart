@@ -1,11 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/notification_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/currency_picker_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -17,33 +18,13 @@ class PreferencesSettingsScreenV2 extends ConsumerStatefulWidget {
 }
 
 class _PreferencesSettingsScreenV2State extends ConsumerState<PreferencesSettingsScreenV2> {
-  final _settingsService = SettingsService();
-  int _reversibleTimeSeconds = 600;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSettings();
-  }
-
-  Future<void> _loadSettings() async {
-    final revTime = await _settingsService.getReversibleTimeSeconds() ?? 600;
-    if (!mounted) return;
-    setState(() => _reversibleTimeSeconds = revTime);
-  }
-
   void _toggleNotifications(bool enable) {
     final current = ref.read(notificationConfigProvider);
     ref.read(notificationConfigProvider.notifier).updateConfig(current.copyWith(enabled: enable));
   }
 
-  String _timeLimitLabel() {
-    if (_reversibleTimeSeconds <= 0) return 'Disabled';
-    final mins = _reversibleTimeSeconds ~/ 60;
-    if (mins < 60) return '$mins minutes';
-    final hours = mins ~/ 60;
-    final remMins = mins % 60;
-    return remMins > 0 ? '${hours}h ${remMins}m' : '$hours hours';
+  void _openCurrencyPicker() {
+    Navigator.push<void>(context, MaterialPageRoute<void>(builder: (_) => const CurrencyPickerScreenV2()));
   }
 
   @override
@@ -52,124 +33,130 @@ class _PreferencesSettingsScreenV2State extends ConsumerState<PreferencesSetting
     final text = context.themeText;
     final notifConfig = ref.watch(notificationConfigProvider);
     final posMode = ref.watch(posModeProvider);
+    final fiat = ref.watch(selectedFiatCurrencyProvider);
+
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Preferences'),
       mainContent: ListView(
-        padding: const EdgeInsets.only(top: 8, bottom: 48),
         children: [
-          _section('Reversible Transactions', colors, text, [
-            _comingSoonItem('Reversible Transactions', null, colors, text),
-            _divider(colors),
-            _chevronItem('Time Limit', _timeLimitLabel(), colors, text, onTap: () {}),
-            _divider(colors),
-            _chevronItem('Amount Limit', 'No Limit', colors, text, onTap: () {}),
-          ]),
-          const SizedBox(height: 40),
-          _section('Preferences', colors, text, [
-            _comingSoonItem('Currency', 'Display amounts in your preferred currency', colors, text),
-            _divider(colors),
-            _comingSoonItem('Language', 'App language', colors, text),
-            _divider(colors),
-            _toggleItem(
-              'POS Mode',
-              posMode ? 'Point of Sale Enabled' : 'Disabled',
-              posMode,
-              (v) => ref.read(posModeProvider.notifier).setPosMode(v),
-              colors,
-              text,
+          _preferenceBlock(
+            child: _currencyRow(colors, text, trailingCode: fiat.code, onTap: _openCurrencyPicker),
+            colors: colors,
+          ),
+          const SizedBox(height: 24),
+          _preferenceBlock(
+            child: _toggleRow(
+              title: 'POS Mode',
+              subtitle: 'Point of sale features',
+              value: posMode,
+              onChanged: (v) => ref.read(posModeProvider.notifier).setPosMode(v),
+              colors: colors,
+              text: text,
             ),
-            _divider(colors),
-            _toggleItem(
-              'Notifications',
-              notifConfig.enabled ? 'Transaction Alerts Enabled' : 'Alerts Disabled',
-              notifConfig.enabled,
-              _toggleNotifications,
-              colors,
-              text,
+            colors: colors,
+          ),
+          const SizedBox(height: 24),
+          _preferenceBlock(
+            child: _toggleRow(
+              title: 'Notifications',
+              subtitle: 'Transaction and wallet alerts',
+              value: notifConfig.enabled,
+              onChanged: _toggleNotifications,
+              colors: colors,
+              text: text,
             ),
-          ]),
+            colors: colors,
+            showDividerBelow: false,
+          ),
         ],
       ),
     );
   }
 
-  Widget _section(String title, AppColorsV2 colors, AppTextTheme text, List<Widget> children) {
+  TextStyle _rowTitleStyle(AppTextTheme text, AppColorsV2 colors) {
+    return text.smallTitle!.copyWith(fontWeight: FontWeight.w400);
+  }
+
+  TextStyle _rowSubtitleStyle(AppTextTheme text, AppColorsV2 colors) {
+    return text.smallParagraph!.copyWith(color: colors.textTertiary);
+  }
+
+  Widget _preferenceBlock({required Widget child, required AppColorsV2 colors, bool showDividerBelow = true}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        child,
+        if (showDividerBelow) ...[const SizedBox(height: 16), Divider(color: colors.toasterBackground, height: 1)],
+      ],
+    );
+  }
+
+  Widget _labeledColumn({
+    required String title,
+    required String subtitle,
+    required AppTextTheme text,
+    required AppColorsV2 colors,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(color: colors.surfaceCard, borderRadius: BorderRadius.circular(14)),
-          child: Column(children: children),
-        ),
+        Text(title, style: _rowTitleStyle(text, colors)),
+        const SizedBox(height: 2),
+        Text(subtitle, style: _rowSubtitleStyle(text, colors)),
       ],
     );
   }
 
-  Column _itemContent(String title, AppTextTheme text, AppColorsV2 colors, String? subtitle) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: text.paragraph?.copyWith(color: colors.textPrimary)),
-        if (subtitle != null) const SizedBox(height: 4),
-        if (subtitle != null) Text(subtitle, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
-      ],
-    );
-  }
-
-  Widget _toggleItem(
-    String title,
-    String subtitle,
-    bool value,
-    ValueChanged<bool>? onChanged,
-    AppColorsV2 colors,
-    AppTextTheme text,
-  ) {
-    return Row(
-      children: [
-        Expanded(child: _itemContent(title, text, colors, subtitle)),
-        CupertinoSwitch(value: value, onChanged: onChanged, activeTrackColor: colors.accentGreen),
-      ],
-    );
-  }
-
-  Widget _chevronItem(
-    String title,
-    String subtitle,
+  Widget _currencyRow(
     AppColorsV2 colors,
     AppTextTheme text, {
+    required String trailingCode,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Row(
-        children: [
-          Expanded(child: _itemContent(title, text, colors, subtitle)),
-          Icon(Icons.chevron_right, color: colors.textSecondary, size: 20),
-        ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: _labeledColumn(title: 'Currency', subtitle: 'Fiat display preference', text: text, colors: colors),
+            ),
+            const SizedBox(width: 16),
+            Row(
+              children: [
+                Text(trailingCode, style: text.smallParagraph?.copyWith(color: colors.textMuted)),
+                const SizedBox(width: 4),
+                Icon(Icons.chevron_right, size: 18, color: colors.textMuted),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _comingSoonItem(String title, String? subtitle, AppColorsV2 colors, AppTextTheme text) {
+  Widget _toggleRow({
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+    required AppColorsV2 colors,
+    required AppTextTheme text,
+  }) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Expanded(child: _itemContent(title, text, colors, subtitle)),
-        Text('Coming Soon', style: text.detail?.copyWith(color: colors.textTertiary)),
+        Expanded(
+          child: _labeledColumn(title: title, subtitle: subtitle, text: text, colors: colors),
+        ),
+        const SizedBox(width: 16),
+        CupertinoSwitch(value: value, onChanged: onChanged, activeTrackColor: colors.accentGreen),
       ],
-    );
-  }
-
-  Widget _divider(AppColorsV2 colors) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Divider(color: colors.separator, height: 1),
     );
   }
 }

@@ -31,7 +31,7 @@ class SettingsScreenV2 extends StatelessWidget {
           SettingsHubListRow(
             icon: _settingsHubIcon(Icons.tune, colors),
             title: 'Preferences',
-            subtitle: 'Currency, Language, Notifications',
+            subtitle: 'Currency, POS mode, notifications',
             onTap: () =>
                 Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const PreferencesSettingsScreenV2())),
           ),
