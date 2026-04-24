@@ -58,7 +58,7 @@ packages:
     source: hosted
     version: "2.0.1"
   bip39_mnemonic:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: bip39_mnemonic
       sha256: dd6bdfc2547d986b2c00f99bba209c69c0b6fa5c1a185e1f728998282f1249d5
@@ -377,7 +377,7 @@ packages:
     source: hosted
     version: "2.11.1"
   flutter_secure_storage:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: flutter_secure_storage
       sha256: da922f2aab2d733db7e011a6bcc4a825b844892d4edd6df83ff156b09a9b2e40
@@ -1073,7 +1073,7 @@ packages:
     source: hosted
     version: "0.7.1"
   ss58:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: ss58
       sha256: ad12bcdc909e73648aba52754b1eab81880bd2cbc4fc6cbaa02695affe49201d
