@@ -6,7 +6,8 @@ import 'package:resonance_network_wallet/v2/components/account_badge.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_details_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/accounts/edit_acount_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/edit_account_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -25,17 +26,25 @@ class AccountMenuScreen extends ConsumerWidget {
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Accounts'),
-      mainContent:  account != null ? Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(height: 8),
-          _ProfileHeader(account: account, colors: colors, text: text),
-          const SizedBox(height: 80),
-          _MenuRow(label: 'Account Name', value: account.name, onTap: () => _openNameEditor(context, ref, account)),
-          Divider(color: colors.toasterBackground, height: 1),
-          _MenuRow(label: 'Address Details', onTap: () => _openAddressDetails(context, account)),
-        ],
-      ) : const Center(child: Text('Account not found')),
+      mainContent: account != null
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 8),
+                _ProfileHeader(account: account, colors: colors, text: text),
+                const SizedBox(height: 80),
+                _MenuRow(
+                  label: 'Account Name',
+                  value: account.name,
+                  onTap: () => _openNameEditor(context, ref, account),
+                ),
+                Divider(color: colors.toasterBackground, height: 1),
+                _MenuRow(label: 'Address Details', onTap: () => _openAddressDetails(context, account)),
+                Divider(color: colors.toasterBackground, height: 1),
+                _MenuRow(label: 'Show Recovery Phrase', onTap: () => _openRecoveryPhrase(context, account)),
+              ],
+            )
+          : const Center(child: Text('Account not found')),
     );
   }
 
@@ -47,8 +56,14 @@ class AccountMenuScreen extends ConsumerWidget {
     ref.invalidate(accountsProvider);
   }
 
-  void _openAddressDetails(BuildContext context, Account a) {
-    Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => AccountDetailsScreen(account: a)));
+  void _openRecoveryPhrase(BuildContext context, Account account) {
+    Navigator.of(
+      context,
+    ).push<void>(MaterialPageRoute(builder: (_) => RecoveryPhraseScreen(walletIndex: account.walletIndex)));
+  }
+
+  void _openAddressDetails(BuildContext context, Account account) {
+    Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => AccountDetailsScreen(account: account)));
   }
 }
 
