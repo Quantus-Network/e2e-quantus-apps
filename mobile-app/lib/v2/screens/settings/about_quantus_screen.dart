@@ -10,65 +10,106 @@ import 'package:url_launcher/url_launcher.dart';
 class AboutQuantusScreenV2 extends StatelessWidget {
   const AboutQuantusScreenV2({super.key});
 
+  static const _kIntro =
+      'Quantus is a Layer 1 blockchain secured by ML-DSA Dilithium-5, the gold standard in quantum-resistant encryption. '
+      'Built for a future where classical cryptography is no longer enough. Post-quantum cryptography for everyone.';
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final text = context.themeText;
+
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'About Quantus'),
-      mainContent: ListView(
-        padding: const EdgeInsets.only(top: 8, bottom: 48),
+      appBar: const V2AppBar(title: 'About'),
+      mainContent: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 8),
-          Text(
-            'Version $appVersion ($appBuildNumber)',
-            style: text.paragraph?.copyWith(color: colors.textTertiary),
-          ),
-          const SizedBox(height: 32),
-          _section(colors, text, [
-            _externalItem(
-              'Privacy & terms of service',
-              null,
-              colors,
-              text,
-              onTap: () => launchUrl(Uri.parse(AppConstants.termsOfServiceUrl)),
+          Expanded(
+            child: ListView(
+              children: [
+                Text(_kIntro, style: text.smallParagraph?.copyWith(color: colors.textMuted, height: 1.35)),
+                const SizedBox(height: 40),
+                _linkRow(
+                  context,
+                  title: 'Terms of Service',
+                  pathLabel: 'quantus.com/terms/',
+                  onTap: () => launchUrl(Uri.parse('${AppConstants.websiteBaseUrl}/terms')),
+                  text: text,
+                  colors: colors,
+                ),
+                const SizedBox(height: 16),
+                Divider(color: colors.toasterBackground, height: 1),
+                const SizedBox(height: 24),
+                _linkRow(
+                  context,
+                  title: 'Privacy policy',
+                  pathLabel: 'quantus.com/privacy-policy/',
+                  onTap: () => launchUrl(Uri.parse('${AppConstants.websiteBaseUrl}/privacy-policy')),
+                  text: text,
+                  colors: colors,
+                ),
+                const SizedBox(height: 16),
+                Divider(color: colors.toasterBackground, height: 1),
+                const SizedBox(height: 24),
+                _linkRow(
+                  context,
+                  title: 'Visit Website',
+                  pathLabel: 'quantus.com',
+                  onTap: () => launchUrl(Uri.parse(AppConstants.websiteBaseUrl)),
+                  text: text,
+                  colors: colors,
+                ),
+              ],
             ),
-          ]),
+          ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset('assets/v2/quantus_orange_logo.png', height: 40),
+              const SizedBox(height: 14),
+              Text(
+                'Version $appVersion ($appBuildNumber)',
+                textAlign: TextAlign.center,
+                style: text.paragraph?.copyWith(color: colors.textMuted, fontSize: 16, height: 1.0),
+              ),
+            ],
+          ),
+          const SizedBox(height: 64),
         ],
       ),
     );
   }
 
-  Widget _section(AppColorsV2 colors, AppTextTheme text, List<Widget> children) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(color: colors.surfaceCard, borderRadius: BorderRadius.circular(14)),
-          child: Column(children: children),
-        ),
-      ],
-    );
-  }
-
-  Widget _externalItem(
-    String title,
-    String? subtitle,
-    AppColorsV2 colors,
-    AppTextTheme text, {
+  Widget _linkRow(
+    BuildContext context, {
+    required String title,
+    required String pathLabel,
     required VoidCallback onTap,
+    required AppTextTheme text,
+    required AppColorsV2 colors,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(title, style: text.paragraph?.copyWith(color: colors.textPrimary)),
-          ),
-          Icon(Icons.north_east, color: colors.textSecondary, size: 20),
-        ],
+    final titleStyle = text.smallTitle?.copyWith(fontWeight: FontWeight.w400);
+    final pathStyle = text.smallParagraph?.copyWith(color: colors.textTertiary);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: titleStyle),
+                const SizedBox(height: 2),
+                Text(pathLabel, style: pathStyle),
+              ],
+            ),
+            Icon(Icons.north_east, size: 14, color: colors.textLabel),
+          ],
+        ),
       ),
     );
   }
