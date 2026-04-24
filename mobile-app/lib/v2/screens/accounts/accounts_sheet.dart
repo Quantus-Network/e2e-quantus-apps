@@ -52,7 +52,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
   }
 
   void _openAccountMenu(Account account) {
-    Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => AccountMenuScreen(accountId: account.accountId)));
+    Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => AccountMenuScreen(initialAccount: account)));
   }
 
   @override

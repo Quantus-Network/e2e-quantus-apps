@@ -52,7 +52,9 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
   bool get _hasInput => _controller.text.trim().isNotEmpty;
 
   Future<void> _import() async {
+    final accounts = ref.read(accountsProvider).value ?? <Account>[];
     final mnemonic = _controller.text.trim();
+
     setState(() {
       _isLoading = true;
       _error = null;
@@ -69,7 +71,12 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       final key = HdWalletService().keyPairAtIndex(mnemonic, 0);
       await _settingsService.setMnemonic(mnemonic, widget.walletIndex);
       await _accountsService.addAccount(
-        Account(walletIndex: widget.walletIndex, index: 0, name: 'Wallet ${widget.walletIndex + 1} - Account 1', accountId: key.ss58Address),
+        Account(
+          walletIndex: widget.walletIndex,
+          index: 0,
+          name: 'Account ${accounts.length + 1}',
+          accountId: key.ss58Address,
+        ),
       );
 
       if (!HdWalletService.isDevAccount(mnemonic)) {
@@ -80,8 +87,10 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       _settingsService.setReferralCheckCompleted();
       _settingsService.setExistingUserSeenPromoVideo();
 
-      if (ref.read(remoteConfigProvider).enableRemoteNotifications) {
+      if (ref.read(remoteConfigProvider).enableRemoteNotifications && widget.walletIndex == 0) {
         ref.read(firebaseMessagingServiceProvider).registerDeviceIfPossible();
+      } else if (ref.read(remoteConfigProvider).enableRemoteNotifications && widget.walletIndex > 0) {
+        ref.read(firebaseMessagingServiceProvider).insertNewAddress(key.ss58Address);
       }
 
       if (!mounted) return;

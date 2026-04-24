@@ -11,9 +11,9 @@ import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class AccountMenuScreen extends ConsumerWidget {
-  final String accountId;
+  final Account initialAccount;
 
-  const AccountMenuScreen({super.key, required this.accountId});
+  const AccountMenuScreen({super.key, required this.initialAccount});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -21,7 +21,7 @@ class AccountMenuScreen extends ConsumerWidget {
     final text = context.themeText;
 
     final accounts = ref.watch(accountsProvider);
-    final account = accounts.value?.firstWhere((a) => a.accountId == accountId);
+    final account = accounts.value?.firstWhere((a) => a.accountId == initialAccount.accountId);
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Accounts'),
