@@ -1,4 +1,3 @@
-import 'package:collection/collection.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,15 +6,12 @@ import 'package:resonance_network_wallet/v2/components/account_badge.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
-import 'package:resonance_network_wallet/v2/screens/accounts/add_hardware_account_screen.dart';
-import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_menu_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/accounts/create_account_view.dart';
-import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/add_account_menu_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 Future<T?> showAccountsSheet<T>(BuildContext context) async {
@@ -30,34 +26,7 @@ class AccountsSheet extends ConsumerStatefulWidget {
 }
 
 class _AccountsScreenState extends ConsumerState<AccountsSheet> {
-  final AccountsService _accountsService = AccountsService();
   final NumberFormattingService _formattingService = NumberFormattingService();
-  final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
-  final TextEditingController _createNameController = TextEditingController();
-
-  bool _isCreatingAccount = false;
-  bool _isSavingCreatedAccount = false;
-  bool _isEditingCreatedName = false;
-  bool _isCreateViewOpen = false;
-  Account? _draftAccount;
-  String _draftChecksum = 'Loading...';
-
-  bool _isHardwareWallet(List<Account> accounts) {
-    return accounts.isNotEmpty && accounts.every((a) => a.accountType == AccountType.keystone);
-  }
-
-  int _walletIndexForActiveAccount(List<Account> accounts, DisplayAccount? activeDisplayAccount) {
-    if (activeDisplayAccount is RegularAccount) {
-      return activeDisplayAccount.account.walletIndex;
-    }
-
-    if (activeDisplayAccount is EntrustedDisplayAccount) {
-      final parent = accounts.firstWhereOrNull((a) => a.accountId == activeDisplayAccount.account.parentAccountId);
-      if (parent != null) return parent.walletIndex;
-    }
-
-    return accounts.isNotEmpty ? accounts.first.walletIndex : 0;
-  }
 
   List<Account> _displayAccounts(List<Account> accounts) {
     final sorted = [...accounts];
@@ -69,46 +38,10 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     return sorted;
   }
 
-  Future<void> _createNewAccount() async {
-    if (_isCreatingAccount) return;
-
-    setState(() => _isCreatingAccount = true);
-    try {
-      final accounts = ref.read(accountsProvider).value ?? <Account>[];
-      final activeDisplayAccount = ref.read(activeAccountProvider).value;
-      final walletIndex = _walletIndexForActiveAccount(accounts, activeDisplayAccount);
-      final selectedWalletAccounts = accounts.where((a) => a.walletIndex == walletIndex).toList();
-
-      if (_isHardwareWallet(selectedWalletAccounts)) {
-        final created = await Navigator.push<bool?>(
-          context,
-          MaterialPageRoute(builder: (context) => AddHardwareAccountScreen(walletIndex: walletIndex)),
-        );
-        if (created == true) {
-          ref.invalidate(accountsProvider);
-          ref.invalidate(activeAccountProvider);
-        }
-      } else {
-        final draft = await _accountsService.createNewAccount(walletIndex: walletIndex);
-        final checksum = await _checksumService.getHumanReadableName(draft.accountId);
-        if (!mounted) return;
-        _createNameController.text = draft.name;
-        setState(() {
-          _draftAccount = draft;
-          _draftChecksum = checksum;
-          _isCreateViewOpen = true;
-          _isEditingCreatedName = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        context.showErrorToaster(message: 'Could not add account.');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isCreatingAccount = false);
-      }
-    }
+  void _openAddAccountMenu() {
+    Navigator.of(context, rootNavigator: true).push<void>(
+      MaterialPageRoute<void>(builder: (_) => const AddAccountMenuScreen()),
+    );
   }
 
   Future<void> _switchAccount(Account account) async {
@@ -122,23 +55,6 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => AccountMenuScreen(accountId: account.accountId)));
   }
 
-  void _closeCreateView() {
-    setState(() {
-      _isCreateViewOpen = false;
-      _isEditingCreatedName = false;
-      _isSavingCreatedAccount = false;
-      _draftAccount = null;
-      _draftChecksum = 'Loading...';
-      _createNameController.clear();
-    });
-  }
-
-  @override
-  void dispose() {
-    _createNameController.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final accountsAsync = ref.watch(accountsProvider);
@@ -148,24 +64,13 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     final activeDisplayAccount = activeDisplayAccountAsync.value;
     final displayAccounts = _displayAccounts(accounts);
     final activeAccountId = activeDisplayAccount?.account.accountId;
-    String title = 'Accounts';
-    VoidCallback? onBack;
 
     final media = MediaQuery.of(context);
     final maxHeight = media.size.height - media.padding.top - 20;
     final sheetHeight = math.min(610.0, maxHeight);
 
-    if (_isCreateViewOpen && _draftAccount != null) {
-      title = 'New Account';
-      onBack = _closeCreateView;
-    }
-
-    final showAccountsChrome = !_isCreateViewOpen;
-
     return BottomSheetContainer(
-      title: title,
-      showDragHandle: showAccountsChrome,
-      onBack: onBack,
+      title: 'Accounts',
       height: sheetHeight,
       child: _buildContent(
         accountsAsync: accountsAsync,
@@ -204,18 +109,6 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       );
     }
 
-    if (_isCreateViewOpen && _draftAccount != null) {
-      return CreateAccountView(
-        draftAccount: _draftAccount!,
-        draftChecksum: _draftChecksum,
-        isSaving: _isSavingCreatedAccount,
-        isEditingName: _isEditingCreatedName,
-        nameController: _createNameController,
-        onToggleEditingName: () => setState(() => _isEditingCreatedName = !_isEditingCreatedName),
-        onSubmit: _submitCreatedAccount,
-      );
-    }
-
     return _buildAccountsListView(displayAccounts, activeAccountId);
   }
 
@@ -245,8 +138,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
         const SizedBox(height: 24),
         QuantusButton.simple(
           label: 'Add Account',
-          onTap: _createNewAccount,
-          isLoading: _isCreatingAccount,
+          onTap: _openAddAccountMenu,
           variant: ButtonVariant.primary,
         ),
       ],
@@ -318,36 +210,5 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
         ),
       ),
     );
-  }
-
-  Future<void> _submitCreatedAccount() async {
-    final draft = _draftAccount;
-    if (draft == null) return;
-    final name = _createNameController.text.trim();
-    if (name.isEmpty) {
-      context.showErrorToaster(message: "Account name can't be empty");
-      return;
-    }
-
-    setState(() => _isSavingCreatedAccount = true);
-    try {
-      final accountToSave = draft.copyWith(name: name);
-      await _accountsService.addAccount(accountToSave);
-      ref.invalidate(accountsProvider);
-      ref.invalidate(activeAccountProvider);
-      ref.read(firebaseMessagingServiceProvider).insertNewAddress(accountToSave.accountId);
-
-      if (mounted) {
-        _closeCreateView();
-      }
-    } catch (_) {
-      if (mounted) {
-        context.showErrorToaster(message: 'Failed to create account.');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isSavingCreatedAccount = false);
-      }
-    }
   }
 }
