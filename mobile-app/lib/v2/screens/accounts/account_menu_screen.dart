@@ -7,7 +7,7 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_details_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/edit_account_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_confirmation_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -59,7 +59,11 @@ class AccountMenuScreen extends ConsumerWidget {
   void _openRecoveryPhrase(BuildContext context, Account account) {
     Navigator.of(
       context,
-    ).push<void>(MaterialPageRoute(builder: (_) => RecoveryPhraseScreen(walletIndex: account.walletIndex)));
+    ).push<void>(
+      MaterialPageRoute(
+        builder: (_) => RecoveryPhraseConfirmationScreen(walletIndex: account.walletIndex),
+      ),
+    );
   }
 
   void _openAddressDetails(BuildContext context, Account account) {
