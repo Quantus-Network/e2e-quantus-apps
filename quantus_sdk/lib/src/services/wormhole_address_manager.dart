@@ -4,15 +4,6 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:quantus_sdk/src/services/hd_wallet_service.dart';
 
-/// Purpose values for wormhole HD derivation.
-class WormholeAddressPurpose {
-  /// Change addresses for wormhole withdrawals.
-  static const int change = 0;
-
-  /// Miner rewards (primary address).
-  static const int minerRewards = 1;
-}
-
 /// Information about a tracked wormhole address.
 class TrackedWormholeAddress {
   /// The wormhole address (SS58 format).
@@ -27,12 +18,9 @@ class TrackedWormholeAddress {
   /// The secret for this address (hex encoded, needed for proofs).
   final String secretHex;
 
-  /// Whether this is the primary miner rewards address.
-  bool get isPrimary => purpose == WormholeAddressPurpose.minerRewards && index == 0;
-
   const TrackedWormholeAddress({
     required this.address,
-    required this.purpose,
+    this.purpose = 0,
     required this.index,
     required this.secretHex,
   });
@@ -87,8 +75,6 @@ class WormholeAddressManager {
   List<TrackedWormholeAddress> get allAddresses => _addresses.values.toList();
   Set<String> get allAddressStrings => _addresses.keys.toSet();
 
-  TrackedWormholeAddress? get primaryAddress => _addresses.values.where((a) => a.isPrimary).firstOrNull;
-
   TrackedWormholeAddress? getAddress(String address) => _addresses[address];
   bool isTracked(String address) => _addresses.containsKey(address);
 
@@ -97,16 +83,9 @@ class WormholeAddressManager {
     await _loadFromDisk();
     final mnemonic = await _getMnemonic();
     if (mnemonic != null) {
-      await _ensurePrimaryAddressTracked(mnemonic);
-    }
-  }
-
-  Future<void> _ensurePrimaryAddressTracked(String mnemonic) async {
-    final keyPair = _hdWalletService.deriveMinerRewardsKeyPair(mnemonic: mnemonic, index: 0);
-    if (!_addresses.containsKey(keyPair.address)) {
+      final keyPair = _hdWalletService.deriveWormholeKeyPair(mnemonic: mnemonic, index: 0);
       _addresses[keyPair.address] = TrackedWormholeAddress(
         address: keyPair.address,
-        purpose: WormholeAddressPurpose.minerRewards,
         index: 0,
         secretHex: keyPair.secretHex,
       );
@@ -114,58 +93,6 @@ class WormholeAddressManager {
     }
   }
 
-  /// Derive and track a new change address. Returns the new address.
-  Future<TrackedWormholeAddress> deriveNextChangeAddress() async {
-    final mnemonic = await _getMnemonic();
-    if (mnemonic == null) {
-      throw StateError('No mnemonic available - cannot derive change address');
-    }
-
-    final keyPair = _hdWalletService.deriveWormholeKeyPair(
-      mnemonic: mnemonic,
-      purpose: WormholeAddressPurpose.change,
-      index: _nextChangeIndex,
-    );
-
-    final tracked = TrackedWormholeAddress(
-      address: keyPair.address,
-      purpose: WormholeAddressPurpose.change,
-      index: _nextChangeIndex,
-      secretHex: keyPair.secretHex,
-    );
-
-    _addresses[keyPair.address] = tracked;
-    _nextChangeIndex++;
-    await _saveToDisk();
-    return tracked;
-  }
-
-  /// Re-derive all addresses from the mnemonic (for restore/re-sync).
-  Future<void> rederiveAllSecrets() async {
-    final mnemonic = await _getMnemonic();
-    if (mnemonic == null) return;
-
-    final updated = <String, TrackedWormholeAddress>{};
-    for (final tracked in _addresses.values) {
-      final keyPair = _hdWalletService.deriveWormholeKeyPair(
-        mnemonic: mnemonic,
-        purpose: tracked.purpose,
-        index: tracked.index,
-      );
-      if (keyPair.address != tracked.address) continue;
-      updated[keyPair.address] = TrackedWormholeAddress(
-        address: keyPair.address,
-        purpose: tracked.purpose,
-        index: tracked.index,
-        secretHex: keyPair.secretHex,
-      );
-    }
-
-    _addresses
-      ..clear()
-      ..addAll(updated);
-    await _saveToDisk();
-  }
 
   Future<void> _loadFromDisk() async {
     try {
@@ -212,7 +139,6 @@ class WormholeAddressManager {
   /// Clear all tracked addresses (for reset/logout).
   Future<void> clearAll() async {
     _addresses.clear();
-    _nextChangeIndex = 0;
     try {
       final file = await _getStorageFile();
       if (await file.exists()) {
