@@ -63,13 +63,9 @@ class HdWalletService {
     return crypto.deriveWormhole(mnemonicStr: mnemonic, path: path);
   }
 
-  /// Derive a wormhole key pair for any supported [WormholePurpose].
+  /// Derive the wormhole key pair at HD index `index` (account=0, change=0).
   WormholeKeyPair deriveWormholeKeyPair({required String mnemonic, int index = 0}) =>
       WormholeKeyPair.fromResult(deriveWormhole(mnemonic, addressIndex: index));
-
-  /// Convenience for the miner's primary rewards address.
-  WormholeKeyPair deriveMinerRewardsKeyPair({required String mnemonic, int index = 0}) =>
-      deriveWormholeKeyPair(mnemonic: mnemonic, index: index);
 
   /// Compute the on-chain wormhole address for a rewards preimage (first_hash hex).
   String preimageToAddress(String preimageHex) => crypto.firstHashToAddress(firstHashHex: preimageHex);
