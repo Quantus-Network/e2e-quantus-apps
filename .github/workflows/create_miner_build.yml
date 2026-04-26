@@ -117,9 +117,7 @@ jobs:
           # Check for hardened runtime
           codesign -d --entitlements - "$APP_PATH" | grep -q "com.apple.security.cs.allow-unsigned-executable-memory" || echo "Warning: Hardened runtime entitlements may be missing"
 
-      # Create a single ZIP that we will both notarize AND ship to users.
-      # This guarantees the shipped bits are exactly what Apple accepted.
-      - name: Create ZIP for notarization and distribution
+      - name: Create ZIP for notarization submission
         run: |
           cd miner-app/build/macos/Build/Products/Release/
           ditto -c -k --keepParent "Quantus Miner.app" quantus_miner_macos.zip
@@ -136,6 +134,15 @@ jobs:
             --team-id "$APPLE_TEAM_ID" \
             --password "$APPLE_APP_SPECIFIC_PASSWORD" \
             --wait
+
+      - name: Staple ticket and repackage for distribution
+        run: |
+          cd miner-app/build/macos/Build/Products/Release/
+          xcrun stapler staple "Quantus Miner.app"
+          xcrun stapler validate "Quantus Miner.app"
+          spctl --assess --type execute --verbose "Quantus Miner.app"
+          rm quantus_miner_macos.zip
+          ditto -c -k --keepParent "Quantus Miner.app" quantus_miner_macos.zip
 
       - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4
