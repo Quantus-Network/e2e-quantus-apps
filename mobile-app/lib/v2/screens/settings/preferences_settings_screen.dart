@@ -49,7 +49,7 @@ class _PreferencesSettingsScreenV2State extends ConsumerState<PreferencesSetting
               children: [
                 Text(fiat.code, style: text.smallParagraph?.copyWith(color: colors.textMuted)),
                 const SizedBox(width: 4),
-                Icon(Icons.chevron_right, size: 18, color: colors.textMuted),
+                SettingsTappableRowUtils.chevron(colors, color: colors.textMuted, size: 18),
               ],
             ),
           ),
