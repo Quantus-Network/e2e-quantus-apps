@@ -167,14 +167,14 @@ flutter:
           weight: 700
 
 flutter_native_splash:
-  background_image: assets/v2/welcome_screen_bg_image.jpg
-  image: assets/v2/quantus_orange_logo.png
+  color: "#0E0E0E"
+  image: assets/v2/uppercase_q.png
   android: true
   ios: true
 
   android_12:
     image: assets/v2/android12_icon_empty_1152.png
-    color: "#141414"
-    icon_background_color: "#141414"
-    branding: assets/v2/android12_branding_800x320.png
+    color: "#0E0E0E"
+    icon_background_color: "#0E0E0E"
+    branding: assets/v2/uppercase_q.png
     branding_bottom_padding: 88
