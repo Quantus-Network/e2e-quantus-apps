@@ -29,7 +29,7 @@ class _WalletSettingsScreenV2State extends ConsumerState<WalletSettingsScreenV2>
       context.showErrorToaster(message: 'No wallets found');
       return;
     }
-    
+
     if (walletIndices.length == 1) {
       Navigator.push(
         context,
@@ -41,7 +41,7 @@ class _WalletSettingsScreenV2State extends ConsumerState<WalletSettingsScreenV2>
   }
 
   void _showResetConfirmation() {
-    Navigator.of(context).push<void>(MaterialPageRoute<void>(builder: (_) => const ResetConfirmationScreen()));
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ResetConfirmationScreen()));
   }
 
   @override
@@ -49,6 +49,7 @@ class _WalletSettingsScreenV2State extends ConsumerState<WalletSettingsScreenV2>
     final colors = context.colors;
     final text = context.themeText;
     final titleColor = colors.textError;
+    final subtitleColor = const Color(0xFF67231C);
 
     final accountsAsync = ref.watch(accountsProvider);
 
@@ -72,7 +73,7 @@ class _WalletSettingsScreenV2State extends ConsumerState<WalletSettingsScreenV2>
               title: 'Reset Wallet',
               titleColor: titleColor,
               subtitle: 'Removes all data from this device',
-              subtitleColor: const Color(0xFF67231C),
+              subtitleColor: subtitleColor,
               onTap: _showResetConfirmation,
               trailing: SettingsTappableRowUtils.chevron(colors, color: titleColor),
             ),

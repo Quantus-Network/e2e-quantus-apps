@@ -25,7 +25,7 @@ class _PreferencesSettingsScreenV2State extends ConsumerState<PreferencesSetting
   }
 
   void _openCurrencyPicker() {
-    Navigator.push<void>(context, MaterialPageRoute<void>(builder: (_) => const CurrencyPickerScreenV2()));
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const CurrencyPickerScreenV2()));
   }
 
   @override
