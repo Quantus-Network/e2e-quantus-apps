@@ -207,7 +207,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             return AmountDisplayWithConversion(
               amountDisplay: display,
               onFlip: _toggleFlip,
-              alignment: CrossAxisAlignment.start,
+              alignment: CrossAxisAlignment.center,
+              useQuanLogo: true,
             );
           },
           loading: () => const Column(
