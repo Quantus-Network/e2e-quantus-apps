@@ -7,11 +7,9 @@ import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_confirmation_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/reset_confirmation_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/select_wallet_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/settings_tappable_row.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
-
-/// Subtitle for Reset Wallet row — [AppColorsV2] does not include this token.
-const _resetWalletSubtitleColor = Color(0xFF67231C);
 
 class WalletSettingsScreenV2 extends ConsumerStatefulWidget {
   const WalletSettingsScreenV2({super.key});
@@ -44,83 +42,28 @@ class _WalletSettingsScreenV2State extends ConsumerState<WalletSettingsScreenV2>
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final text = context.themeText;
+    final titleColor = colors.textError;
+
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Wallet'),
       mainContent: ListView(
         children: [
-          _recoveryRow(colors, text, onTap: _navigateToRecoveryPhrase),
-          const SizedBox(height: 16),
-          Divider(color: colors.toasterBackground, thickness: 1),
-          const SizedBox(height: 24),
-          _resetWalletRow(colors, text, onTap: _showResetConfirmation),
+          SettingsTappableRow(
+            title: 'Recovery Phrase',
+            subtitle: 'View your 24-word Backup Password',
+            onTap: _navigateToRecoveryPhrase,
+            trailing: SettingsTappableRowUtils.chevron(colors),
+          ),
+          const SettingsDivider(style: SettingsDividerStyle.walletSection),
+          SettingsTappableRow(
+            title: 'Reset Wallet',
+            titleColor: titleColor,
+            subtitle: 'Removes all data from this device',
+            subtitleColor: const Color(0xFF67231C),
+            onTap: _showResetConfirmation,
+            trailing: SettingsTappableRowUtils.chevron(colors, color: titleColor),
+          ),
         ],
-      ),
-    );
-  }
-
-  TextStyle _rowTitle18(AppTextTheme text, {required Color color}) {
-    return text.smallTitle!.copyWith(fontWeight: FontWeight.w400, color: color);
-  }
-
-  TextStyle _rowSubtitle14(AppTextTheme text, {required Color color}) {
-    return text.smallParagraph!.copyWith(color: color);
-  }
-
-  Widget _recoveryRow(AppColorsV2 colors, AppTextTheme text, {required VoidCallback onTap}) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Recovery Phrase', style: _rowTitle18(text, color: colors.textPrimary)),
-                  const SizedBox(height: 8),
-                  Text('View your 24-word Backup Password', style: _rowSubtitle14(text, color: colors.textTertiary)),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right, color: colors.textSecondary, size: 14),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _resetWalletRow(AppColorsV2 colors, AppTextTheme text, {required VoidCallback onTap}) {
-    final titleColor = colors.textError;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Reset Wallet', style: _rowTitle18(text, color: titleColor)),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Removes all data from this device',
-                    style: _rowSubtitle14(text, color: _resetWalletSubtitleColor),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right, color: titleColor, size: 14),
-          ],
-        ),
       ),
     );
   }

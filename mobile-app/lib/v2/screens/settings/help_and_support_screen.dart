@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/settings_tappable_row.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -18,7 +20,7 @@ class _HelpAndSupportScreenV2State extends State<HelpAndSupportScreenV2> {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final text = context.themeText;
-    
+
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Help & Support'),
       mainContent: ListView(
@@ -33,9 +35,7 @@ class _HelpAndSupportScreenV2State extends State<HelpAndSupportScreenV2> {
 
               launchUrl(emailLaunchUri);
             },
-            showBottomDivider: true,
           ),
-          const SizedBox(height: 24),
           _contactBlock(
             title: 'Telegram',
             subtitle: AppConstants.telegramHandle,
@@ -55,37 +55,18 @@ class _HelpAndSupportScreenV2State extends State<HelpAndSupportScreenV2> {
     required AppColorsV2 colors,
     required AppTextTheme text,
     required VoidCallback onTap,
-    required bool showBottomDivider,
+    bool showBottomDivider = true,
   }) {
-    final titleStyle = text.smallTitle?.copyWith(fontWeight: FontWeight.w400);
-    final subtitleStyle = text.smallParagraph?.copyWith(color: colors.textTertiary);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: titleStyle),
-                    const SizedBox(height: 8),
-                    Text(subtitle, style: subtitleStyle),
-                  ],
-                ),
-
-                Icon(Icons.north_east, size: 14, color: colors.textLabel),
-              ],
-            ),
-          ),
+        SettingsTappableRow(
+          title: title,
+          subtitle: subtitle,
+          onTap: onTap,
+          trailing: SettingsTappableRowUtils.externalLink(colors),
         ),
-        if (showBottomDivider) ...[const SizedBox(height: 16), Divider(color: colors.toasterBackground, height: 1)],
+        if (showBottomDivider) const SettingsDivider(),
       ],
     );
   }

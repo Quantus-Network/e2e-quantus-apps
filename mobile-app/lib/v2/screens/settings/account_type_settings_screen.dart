@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -23,7 +24,6 @@ class AccountTypeSettingsScreenV2 extends StatelessWidget {
             _intro,
             style: text.smallParagraph?.copyWith(
               color: colors.textMuted,
-              height: 1.35,
             ),
           ),
           const SizedBox(height: 40),
@@ -33,21 +33,18 @@ class AccountTypeSettingsScreenV2 extends StatelessWidget {
             title: 'Reversible Transactions',
             subtitle: 'Reverse your sends within a time window',
           ),
-          const SizedBox(height: 24),
           _featureBlock(
             colors,
             text,
             title: 'High Security Account',
             subtitle: 'Guardian approval required',
           ),
-          const SizedBox(height: 24),
           _featureBlock(
             colors,
             text,
             title: 'Multi-Signature',
             subtitle: 'Multiple approvals required',
           ),
-          const SizedBox(height: 24),
           _featureBlock(
             colors,
             text,
@@ -102,10 +99,7 @@ class AccountTypeSettingsScreenV2 extends StatelessWidget {
             ],
           ),
         ),
-        if (showDividerBelow) ...[
-          const SizedBox(height: 16),
-          Divider(color: colors.toasterBackground, height: 1),
-        ],
+        if (showDividerBelow) const SettingsDivider(),
       ],
     );
   }

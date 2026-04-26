@@ -74,7 +74,13 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
       child: Row(
         children: [
           Expanded(
-            child: QuantusButton.simple(label: 'Copy', onTap: _copyToClipboard, variant: ButtonVariant.secondary),
+            child: QuantusButton.simple(
+              label: 'Copy',
+              icon: Icon(Icons.copy, color: colors.textPrimary, size: 14),
+              iconPlacement: IconPlacement.leading,
+              onTap: _copyToClipboard,
+              variant: ButtonVariant.secondary,
+            ),
           ),
           const SizedBox(width: 24),
           Expanded(

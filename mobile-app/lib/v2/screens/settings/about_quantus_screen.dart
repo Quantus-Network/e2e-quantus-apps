@@ -3,6 +3,8 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/generated/version.g.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/settings_tappable_row.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -29,35 +31,25 @@ class AboutQuantusScreenV2 extends StatelessWidget {
               children: [
                 Text(_kIntro, style: text.smallParagraph?.copyWith(color: colors.textMuted, height: 1.35)),
                 const SizedBox(height: 40),
-                _linkRow(
-                  context,
+                SettingsTappableRow(
                   title: 'Terms of Service',
-                  pathLabel: 'quantus.com/terms/',
+                  subtitle: 'quantus.com/terms/',
                   onTap: () => launchUrl(Uri.parse('${AppConstants.websiteBaseUrl}/terms')),
-                  text: text,
-                  colors: colors,
+                  trailing: SettingsTappableRowUtils.externalLink(colors),
                 ),
-                const SizedBox(height: 16),
-                Divider(color: colors.toasterBackground, height: 1),
-                const SizedBox(height: 24),
-                _linkRow(
-                  context,
+                const SettingsDivider(),
+                SettingsTappableRow(
                   title: 'Privacy policy',
-                  pathLabel: 'quantus.com/privacy-policy/',
+                  subtitle: 'quantus.com/privacy-policy/',
                   onTap: () => launchUrl(Uri.parse('${AppConstants.websiteBaseUrl}/privacy-policy')),
-                  text: text,
-                  colors: colors,
+                  trailing: SettingsTappableRowUtils.externalLink(colors),
                 ),
-                const SizedBox(height: 16),
-                Divider(color: colors.toasterBackground, height: 1),
-                const SizedBox(height: 24),
-                _linkRow(
-                  context,
+                const SettingsDivider(),
+                SettingsTappableRow(
                   title: 'Visit Website',
-                  pathLabel: 'quantus.com',
+                  subtitle: 'quantus.com',
                   onTap: () => launchUrl(Uri.parse(AppConstants.websiteBaseUrl)),
-                  text: text,
-                  colors: colors,
+                  trailing: SettingsTappableRowUtils.externalLink(colors),
                 ),
               ],
             ),
@@ -76,40 +68,6 @@ class AboutQuantusScreenV2 extends StatelessWidget {
           ),
           const SizedBox(height: 64),
         ],
-      ),
-    );
-  }
-
-  Widget _linkRow(
-    BuildContext context, {
-    required String title,
-    required String pathLabel,
-    required VoidCallback onTap,
-    required AppTextTheme text,
-    required AppColorsV2 colors,
-  }) {
-    final titleStyle = text.smallTitle?.copyWith(fontWeight: FontWeight.w400);
-    final pathStyle = text.smallParagraph?.copyWith(color: colors.textTertiary);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: titleStyle),
-                const SizedBox(height: 2),
-                Text(pathLabel, style: pathStyle),
-              ],
-            ),
-            Icon(Icons.north_east, size: 14, color: colors.textLabel),
-          ],
-        ),
       ),
     );
   }

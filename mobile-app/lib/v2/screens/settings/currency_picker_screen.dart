@@ -4,6 +4,7 @@ import 'package:resonance_network_wallet/models/fiat_currency.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -70,7 +71,10 @@ class _CurrencyPickerScreenV2State extends ConsumerState<CurrencyPickerScreenV2>
                       )
                     : ListView.separated(
                         itemCount: filtered.length,
-                        separatorBuilder: (context, index) => Divider(color: colors.background, thickness: 2),
+                        separatorBuilder: (context, index) => const SettingsDivider(
+                          style: SettingsDividerStyle.currencyList,
+                          padding: EdgeInsets.zero,
+                        ),
                         itemBuilder: (context, index) {
                           final c = filtered[index];
                           final isSelected = c == selected;
@@ -163,7 +167,7 @@ class _CurrencyListTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: Text(label, style: text.paragraph!.copyWith(color: fg, height: 1.2)),
+                child: Text(label, style: text.paragraph?.copyWith(color: fg, height: 1.2)),
               ),
               if (selected) ...[const SizedBox(width: 12), Icon(Icons.check, size: 18, color: accent)],
             ],
