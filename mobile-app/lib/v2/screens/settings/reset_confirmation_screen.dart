@@ -37,7 +37,7 @@ class _ResetConfirmationScreenState extends ConsumerState<ResetConfirmationScree
         await ref.read(logoutServiceProvider).logout(context);
       } catch (e) {
         if (mounted) {
-          context.showErrorToaster(message: 'Failed to reset wallet');
+          context.showErrorToaster(message: 'Failed to reset wallet: $e');
         }
         setState(() => _isResetting = false);
       }
