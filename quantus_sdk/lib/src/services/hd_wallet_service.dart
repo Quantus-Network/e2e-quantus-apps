@@ -5,14 +5,6 @@ import 'package:ss58/ss58.dart';
 import '../extensions/address_extension.dart';
 import '../rust/api/crypto.dart' as crypto;
 
-/// HD derivation `change` values for wormhole addresses.
-///
-/// Full path: `m/44'/189189189'/0'/{purpose}'/{index}'`.
-class WormholePurpose {
-  static const int mobileSends = 0;
-  static const int minerRewards = 1;
-}
-
 /// A wormhole commitment chain: `secret -> first_hash = poseidon(salt || secret) -> address = poseidon(first_hash)`.
 ///
 /// Funds are claimed either by revealing [rewardsPreimage] (miner rewards) or by
@@ -71,13 +63,9 @@ class HdWalletService {
     return crypto.deriveWormhole(mnemonicStr: mnemonic, path: path);
   }
 
-  /// Derive a wormhole key pair for any supported [WormholePurpose].
-  WormholeKeyPair deriveWormholeKeyPair({required String mnemonic, required int purpose, int index = 0}) =>
-      WormholeKeyPair.fromResult(deriveWormhole(mnemonic, change: purpose, addressIndex: index));
-
-  /// Convenience for the miner's primary rewards address.
-  WormholeKeyPair deriveMinerRewardsKeyPair({required String mnemonic, int index = 0}) =>
-      deriveWormholeKeyPair(mnemonic: mnemonic, purpose: WormholePurpose.minerRewards, index: index);
+  /// Derive the wormhole key pair at HD index `index` (account=0, change=0).
+  WormholeKeyPair deriveWormholeKeyPair({required String mnemonic, int index = 0}) =>
+      WormholeKeyPair.fromResult(deriveWormhole(mnemonic, addressIndex: index));
 
   /// Compute the on-chain wormhole address for a rewards preimage (first_hash hex).
   String preimageToAddress(String preimageHex) => crypto.firstHashToAddress(firstHashHex: preimageHex);
