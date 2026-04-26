@@ -27,7 +27,11 @@ class MinerWalletService {
   final FlutterSecureStorage _secureStorage;
   final HdWalletService _hdWallet = HdWalletService();
 
-  MinerWalletService._internal() : _secureStorage = const FlutterSecureStorage();
+  MinerWalletService._internal()
+    : _secureStorage = const FlutterSecureStorage(
+        iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+        mOptions: MacOsOptions(usesDataProtectionKeychain: false),
+      );
 
   Future<File> _preimageFile() async =>
       File('${await BinaryManager.getQuantusHomeDirectoryPath()}/$_rewardsPreimageFileName');
