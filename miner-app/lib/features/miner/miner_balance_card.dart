@@ -283,7 +283,10 @@ class _CliStep extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                  Text(
+                    title,
+                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
                   const SizedBox(height: 2),
                   Text(description, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12)),
                 ],
@@ -307,12 +310,7 @@ class _CliStep extends StatelessWidget {
                 Expanded(
                   child: SelectableText(
                     command,
-                    style: const TextStyle(
-                      color: Color(0xFF7CE38B),
-                      fontFamily: 'Courier',
-                      fontSize: 12,
-                      height: 1.45,
-                    ),
+                    style: const TextStyle(color: Color(0xFF7CE38B), fontFamily: 'Courier', fontSize: 12, height: 1.45),
                   ),
                 ),
                 IconButton(

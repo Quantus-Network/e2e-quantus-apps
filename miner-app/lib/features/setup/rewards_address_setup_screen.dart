@@ -190,9 +190,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Encrypted Account'),
-        leading: canGoBack
-            ? IconButton(icon: const Icon(Icons.arrow_back), onPressed: _backToInitialChoice)
-            : null,
+        leading: canGoBack ? IconButton(icon: const Icon(Icons.arrow_back), onPressed: _backToInitialChoice) : null,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -331,10 +329,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                         children: [
                           SizedBox(
                             width: 24,
-                            child: Text(
-                              '${index + 1}.',
-                              style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
-                            ),
+                            child: Text('${index + 1}.', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
                           ),
                           Expanded(
                             child: Text(
