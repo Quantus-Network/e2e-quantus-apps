@@ -9,6 +9,8 @@ class TxItemData {
   final String timeLabel;
   final Color iconBg;
   final Color iconColor;
+  final Color labelColor;
+  final Color amountColor;
   final Color borderColor;
   final bool isSend;
   final BigInt amount;
@@ -19,6 +21,8 @@ class TxItemData {
     required this.timeLabel,
     required this.iconBg,
     required this.iconColor,
+    required this.labelColor,
+    required this.amountColor,
     required this.borderColor,
     required this.isSend,
     required this.amount,
@@ -73,9 +77,32 @@ class TxItemData {
         return colors.success;
       }
       if (isHighlighted && isSend) {
-        return colors.txItemOutgoingHighlight;
+        return colors.checksum;
       }
       return colors.txItemIconDefault;
+    }
+
+    Color getLabelColor() {
+      if (isHighlighted && !isSend) {
+        return colors.success;
+      }
+      if (isHighlighted && isSend) {
+        return colors.checksum;
+      }
+
+      return colors.textPrimary;
+    }
+
+    Color getAmountColor() {
+      if (!isSend) {
+        return colors.success;
+      }
+
+      if (isHighlighted && isSend) {
+        return colors.checksum;
+      }
+
+      return colors.textPrimary;
     }
 
     Color getBorderColor() {
@@ -83,7 +110,7 @@ class TxItemData {
         return colors.txItemIncomingHighlightBorder;
       }
       if (isHighlighted && isSend) {
-        return colors.txItemOutgoingHighlight;
+        return colors.txItemOutgoingHighlightBorder;
       }
       return colors.txItemBorderDefault;
     }
@@ -93,6 +120,8 @@ class TxItemData {
       timeLabel: getTimeLabel(),
       iconBg: getIconBg(),
       iconColor: getIconColor(),
+      labelColor: getLabelColor(),
+      amountColor: getAmountColor(),
       borderColor: getBorderColor(),
       isSend: isSend,
       amount: tx.amount,
@@ -110,8 +139,6 @@ Widget buildTxItem(
   required bool isLastItem,
   VoidCallback? onTap,
 }) {
-  final amountColor = data.isSend ? colors.textPrimary : colors.success;
-
   return GestureDetector(
     onTap: onTap,
     behavior: HitTestBehavior.opaque,
@@ -139,7 +166,7 @@ Widget buildTxItem(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(data.label, style: text.paragraph),
+                    Text(data.label, style: text.paragraph?.copyWith(color: data.labelColor)),
                     const SizedBox(height: 2),
                     Text(data.timeLabel, style: text.detail?.copyWith(color: colors.textTertiary)),
                   ],
@@ -151,7 +178,7 @@ Widget buildTxItem(
                 children: [
                   Text(
                     formattedAmount,
-                    style: text.paragraph?.copyWith(color: amountColor, fontFamily: AppTextTheme.fontFamilySecondary),
+                    style: text.paragraph?.copyWith(color: data.amountColor, fontFamily: AppTextTheme.fontFamilySecondary),
                   ),
                   const SizedBox(height: 2),
                   Text(
