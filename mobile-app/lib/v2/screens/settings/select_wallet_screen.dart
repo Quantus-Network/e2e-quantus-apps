@@ -6,6 +6,8 @@ import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_confirmation_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/settings_tappable_row.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/settings_wallet_accounts_state.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -22,15 +24,11 @@ class SelectWalletScreen extends ConsumerWidget {
       appBar: const V2AppBar(title: 'Select Wallet'),
       mainContent: accountsAsync.when(
         loading: () => const Center(child: Loader()),
-        error: (e, _) => Center(
-          child: Text('Failed to load wallets', style: text.paragraph?.copyWith(color: colors.textSecondary)),
-        ),
+        error: (e, _) => SettingsWalletAccountsState.loadErrorView(text, colors),
         data: (accounts) {
           final indices = getNonHardwareWalletIndices(accounts);
           if (indices.isEmpty) {
-            return Center(
-              child: Text('No wallets found', style: text.paragraph?.copyWith(color: colors.textSecondary)),
-            );
+            return SettingsWalletAccountsState.noSoftwareWalletForRecoveryView(text, colors);
           }
           return ListView.separated(
             itemCount: indices.length,
@@ -61,7 +59,7 @@ class SelectWalletScreen extends ConsumerWidget {
                 style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
               ),
             ),
-            Icon(Icons.chevron_right, color: colors.textSecondary, size: 20),
+            SettingsTappableRowUtils.chevron(colors, size: 20),
           ],
         ),
       ),

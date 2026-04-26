@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -24,7 +25,11 @@ class WalletSettingsScreenV2 extends ConsumerStatefulWidget {
 class _WalletSettingsScreenV2State extends ConsumerState<WalletSettingsScreenV2> {
   void _navigateToRecoveryPhrase(List<Account> accounts) {
     final walletIndices = getNonHardwareWalletIndices(accounts);
-    if (walletIndices.isEmpty) return;
+    if (walletIndices.isEmpty) {
+      context.showErrorToaster(message: 'No wallets found');
+      return;
+    }
+    
     if (walletIndices.length == 1) {
       Navigator.push(
         context,

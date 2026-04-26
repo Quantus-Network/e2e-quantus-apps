@@ -16,6 +16,20 @@ class AboutQuantusScreenV2 extends StatelessWidget {
       'Quantus is a Layer 1 blockchain secured by ML-DSA Dilithium-5, the gold standard in quantum-resistant encryption. '
       'Built for a future where classical cryptography is no longer enough. Post-quantum cryptography for everyone.';
 
+  /// [path] is a path under [AppConstants.websiteBaseUrl] (e.g. `/terms`), or empty for the site root.
+  static const _externalLinks = <({String title, String subtitle, String path})>[
+    (title: 'Terms of Service', subtitle: 'quantus.com/terms/', path: '/terms'),
+    (title: 'Privacy policy', subtitle: 'quantus.com/privacy-policy/', path: '/privacy-policy'),
+    (title: 'Visit Website', subtitle: 'quantus.com', path: ''),
+  ];
+
+  static Uri _uriForAboutLink(({String title, String subtitle, String path}) link) {
+    if (link.path.isEmpty) {
+      return Uri.parse(AppConstants.websiteBaseUrl);
+    }
+    return Uri.parse('${AppConstants.websiteBaseUrl}${link.path}');
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
@@ -31,26 +45,15 @@ class AboutQuantusScreenV2 extends StatelessWidget {
               children: [
                 Text(_kIntro, style: text.smallParagraph?.copyWith(color: colors.textMuted, height: 1.35)),
                 const SizedBox(height: 40),
-                SettingsTappableRow(
-                  title: 'Terms of Service',
-                  subtitle: 'quantus.com/terms/',
-                  onTap: () => launchUrl(Uri.parse('${AppConstants.websiteBaseUrl}/terms')),
-                  trailing: SettingsTappableRowUtils.externalLink(colors),
-                ),
-                const SettingsDivider(),
-                SettingsTappableRow(
-                  title: 'Privacy policy',
-                  subtitle: 'quantus.com/privacy-policy/',
-                  onTap: () => launchUrl(Uri.parse('${AppConstants.websiteBaseUrl}/privacy-policy')),
-                  trailing: SettingsTappableRowUtils.externalLink(colors),
-                ),
-                const SettingsDivider(),
-                SettingsTappableRow(
-                  title: 'Visit Website',
-                  subtitle: 'quantus.com',
-                  onTap: () => launchUrl(Uri.parse(AppConstants.websiteBaseUrl)),
-                  trailing: SettingsTappableRowUtils.externalLink(colors),
-                ),
+                for (final entry in _externalLinks.asMap().entries) ...[
+                  SettingsTappableRow(
+                    title: entry.value.title,
+                    subtitle: entry.value.subtitle,
+                    onTap: () => launchUrl(_uriForAboutLink(entry.value)),
+                    trailing: SettingsTappableRowUtils.externalLink(colors),
+                  ),
+                  if (entry.key < _externalLinks.length - 1) const SettingsDivider(),
+                ],
               ],
             ),
           ),

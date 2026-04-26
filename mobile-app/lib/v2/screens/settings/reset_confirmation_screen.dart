@@ -33,7 +33,13 @@ class _ResetConfirmationScreenState extends ConsumerState<ResetConfirmationScree
     final authed = await LocalAuthService().authenticate(localizedReason: 'Authenticate to reset wallet');
 
     if (authed && mounted) {
-      ref.read(logoutServiceProvider).logout(context);
+      try {
+        await ref.read(logoutServiceProvider).logout(context);
+      } catch (e) {
+        // ignore: use_build_context_synchronously
+        context.showErrorToaster(message: 'Failed to reset wallet');
+        setState(() => _isResetting = false);
+      }
     } else if (mounted) {
       context.showErrorToaster(message: 'Authentication required to reset wallet');
 

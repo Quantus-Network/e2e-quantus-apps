@@ -11,6 +11,13 @@ class AccountTypeSettingsScreenV2 extends StatelessWidget {
   static const _intro =
       'Advanced account features are coming soon. These will give you greater control over how transactions are authorised and secured.';
 
+  static const _upcomingFeatures = <({String title, String subtitle})>[
+    (title: 'Reversible Transactions', subtitle: 'Reverse your sends within a time window'),
+    (title: 'High Security Account', subtitle: 'Guardian approval required'),
+    (title: 'Multi-Signature', subtitle: 'Multiple approvals required'),
+    (title: 'Hardware Wallet', subtitle: 'Pair a hardware device'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
@@ -27,44 +34,37 @@ class AccountTypeSettingsScreenV2 extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 40),
-          _featureBlock(
-            colors,
-            text,
-            title: 'Reversible Transactions',
-            subtitle: 'Reverse your sends within a time window',
-          ),
-          _featureBlock(
-            colors,
-            text,
-            title: 'High Security Account',
-            subtitle: 'Guardian approval required',
-          ),
-          _featureBlock(
-            colors,
-            text,
-            title: 'Multi-Signature',
-            subtitle: 'Multiple approvals required',
-          ),
-          _featureBlock(
-            colors,
-            text,
-            title: 'Hardware Wallet',
-            subtitle: 'Pair a hardware device',
-            showDividerBelow: false,
-          ),
+          for (var i = 0; i < _upcomingFeatures.length; i++)
+            _AccountFeatureBlock(
+              colors: colors,
+              text: text,
+              title: _upcomingFeatures[i].title,
+              subtitle: _upcomingFeatures[i].subtitle,
+              showDividerBelow: i < _upcomingFeatures.length - 1,
+            ),
         ],
       ),
     );
   }
+}
 
-  Widget _featureBlock(
-    AppColorsV2 colors,
-    AppTextTheme text, {
-    bool showDividerBelow = true,
-    required String title,
-    required String subtitle,
-    
-  }) {
+class _AccountFeatureBlock extends StatelessWidget {
+  const _AccountFeatureBlock({
+    required this.colors,
+    required this.text,
+    required this.title,
+    required this.subtitle,
+    required this.showDividerBelow,
+  });
+
+  final AppColorsV2 colors;
+  final AppTextTheme text;
+  final String title;
+  final String subtitle;
+  final bool showDividerBelow;
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -95,7 +95,7 @@ class AccountTypeSettingsScreenV2 extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 24),
-              _comingSoonBadge(colors, text),
+              _ComingSoonBadge(colors: colors, text: text),
             ],
           ),
         ),
@@ -103,8 +103,16 @@ class AccountTypeSettingsScreenV2 extends StatelessWidget {
       ],
     );
   }
+}
 
-  Widget _comingSoonBadge(AppColorsV2 colors, AppTextTheme text) {
+class _ComingSoonBadge extends StatelessWidget {
+  const _ComingSoonBadge({required this.colors, required this.text});
+
+  final AppColorsV2 colors;
+  final AppTextTheme text;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(

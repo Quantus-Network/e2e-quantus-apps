@@ -65,11 +65,11 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
           ),
         ],
       ),
-      bottomContent: _bottomBar(colors, text),
+      bottomContent: _bottomBar(colors),
     );
   }
 
-  Widget _bottomBar(AppColorsV2 colors, AppTextTheme text) {
+  Widget _bottomBar(AppColorsV2 colors) {
     return ScaffoldBaseBottomContent(
       child: Row(
         children: [
