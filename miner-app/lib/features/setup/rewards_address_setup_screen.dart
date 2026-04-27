@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:quantus_miner/src/services/miner_wallet_service.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
+import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 final _log = log.withTag('InnerHashSetup');
@@ -171,26 +171,26 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
     }
   }
 
+  void _backToInitialChoice() {
+    setState(() {
+      _showImportView = false;
+      _importController.clear();
+      _importError = null;
+      _importMode = _ImportMode.mnemonic;
+      _generatedMnemonic = null;
+      _mnemonicConfirmed = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final canGoBack = _showImportView && _savedKeyPair == null && _savedPreimageOnly == null;
+    final notSaved = _savedKeyPair == null && _savedPreimageOnly == null;
+    final canGoBack = notSaved && (_showImportView || _generatedMnemonic != null);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Inner Hash Setup'),
-        leading: canGoBack
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () {
-                  setState(() {
-                    _showImportView = false;
-                    _importController.clear();
-                    _importError = null;
-                    _importMode = _ImportMode.mnemonic;
-                  });
-                },
-              )
-            : null,
+        title: const Text('Encrypted Account'),
+        leading: canGoBack ? IconButton(icon: const Icon(Icons.arrow_back), onPressed: _backToInitialChoice) : null,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -218,17 +218,33 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
             SvgPicture.asset('assets/logo/logo.svg', width: 80, height: 80),
             const SizedBox(height: 24),
             const Text(
-              'Set Up Inner Hash',
+              'Set Up Rewards Encrypted Account',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Paste the wormhole inner hash that the miner should use for rewards.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.blue.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.shield_outlined, color: Colors.blue.shade300),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'An encrypted account is a private address that receives your mining rewards. You will need its recovery phrase to claim them later.',
+                      style: TextStyle(fontSize: 14, color: Colors.blue.shade100, height: 1.4),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 48),
+            const SizedBox(height: 32),
             ElevatedButton.icon(
               onPressed: _generateNewMnemonic,
               icon: const Icon(Icons.add_circle_outline),
@@ -246,31 +262,10 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                 });
               },
               icon: const Icon(Icons.download),
-              label: const Text('Enter Inner Hash'),
+              label: const Text('Import Wallet'),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 textStyle: const TextStyle(fontSize: 18),
-              ),
-            ),
-            const SizedBox(height: 48),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.amber.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.info_outline, color: Colors.amber),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'If you already have an inner hash from the CLI, paste it here to use the same rewards destination.',
-                      style: TextStyle(fontSize: 14, color: Colors.amber.shade200),
-                    ),
-                  ),
-                ],
               ),
             ),
           ],
@@ -311,29 +306,35 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
             ),
             child: Column(
               children: [
-                // Grid of words
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
-                    childAspectRatio: 2.5,
+                    mainAxisExtent: 44,
                     crossAxisSpacing: 8,
                     mainAxisSpacing: 8,
                   ),
                   itemCount: words.length,
                   itemBuilder: (context, index) {
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: Colors.grey.shade800, borderRadius: BorderRadius.circular(6)),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      alignment: Alignment.centerLeft,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade800,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                      ),
                       child: Row(
                         children: [
-                          Text('${index + 1}.', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
-                          const SizedBox(width: 4),
+                          SizedBox(
+                            width: 24,
+                            child: Text('${index + 1}.', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                          ),
                           Expanded(
                             child: Text(
                               words[index],
-                              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14, color: Colors.white),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -395,16 +396,6 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
               textStyle: const TextStyle(fontSize: 18),
             ),
             child: const Text('Continue'),
-          ),
-          const SizedBox(height: 8),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _generatedMnemonic = null;
-                _mnemonicConfirmed = false;
-              });
-            },
-            child: const Text('Go Back'),
           ),
         ],
       ),

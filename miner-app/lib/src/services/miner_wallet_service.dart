@@ -65,7 +65,7 @@ class MinerWalletService {
     await _secureStorage.write(key: _mnemonicKey, value: trimmed);
     _log.i('Mnemonic saved securely');
 
-    final keyPair = _hdWallet.deriveMinerRewardsKeyPair(mnemonic: trimmed, index: 0);
+    final keyPair = _hdWallet.deriveWormholeKeyPair(mnemonic: trimmed);
     await _saveRewardsPreimage(keyPair.rewardsPreimage);
 
     _log.i('Wormhole address derived: ${keyPair.address}');
@@ -83,7 +83,7 @@ class MinerWalletService {
   Future<WormholeKeyPair?> getWormholeKeyPair() async {
     final mnemonic = await getMnemonic();
     if (mnemonic == null || mnemonic.isEmpty) return null;
-    return _hdWallet.deriveMinerRewardsKeyPair(mnemonic: mnemonic, index: 0);
+    return _hdWallet.deriveWormholeKeyPair(mnemonic: mnemonic);
   }
 
   /// Hex value for the node's `--rewards-inner-hash` flag. Falls back to the
