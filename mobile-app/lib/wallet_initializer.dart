@@ -6,7 +6,7 @@ import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.da
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/welcome/onboarding_loading.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/services/logout_service.dart';
@@ -203,7 +203,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
     if (_walletExists) {
       return const HomeScreen();
     } else {
-      return const WelcomeScreenV2();
+      return const OnboardingLoadingScreenV2();
     }
   }
 }
