@@ -2,36 +2,29 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:bip39_mnemonic/bip39_mnemonic.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:quantus_miner/src/services/binary_manager.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 final _log = log.withTag('MinerWallet');
 
-/// Miner wallet: mnemonic (secure storage) + rewards preimage (file on disk).
+/// Miner wallet: rewards preimage persisted on disk.
 ///
 /// Two setup flows are supported:
-/// - Full: mnemonic is stored and the wormhole key pair can be re-derived (enables
-///   withdrawals later).
+/// - Full: mnemonic is used once to derive wormhole data; only the rewards
+///   preimage is saved.
 /// - Preimage-only: only the rewards preimage file is written. The node can mine
 ///   but the user must withdraw via CLI.
 class MinerWalletService {
   static final MinerWalletService _instance = MinerWalletService._internal();
   factory MinerWalletService() => _instance;
 
-  static const String _mnemonicKey = 'miner_mnemonic';
   static const String _rewardsPreimageFileName = 'rewards-preimage.txt';
   static const String _legacyRewardsAddressFileName = 'rewards-address.txt';
 
-  final FlutterSecureStorage _secureStorage;
   final HdWalletService _hdWallet = HdWalletService();
 
-  MinerWalletService._internal()
-    : _secureStorage = const FlutterSecureStorage(
-        iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
-        mOptions: MacOsOptions(usesDataProtectionKeychain: false),
-      );
+  MinerWalletService._internal();
 
   Future<File> _preimageFile() async =>
       File('${await BinaryManager.getQuantusHomeDirectoryPath()}/$_rewardsPreimageFileName');
@@ -55,42 +48,42 @@ class MinerWalletService {
     }
   }
 
-  /// Save the mnemonic securely and derive + persist the wormhole key pair.
+  /// Use the mnemonic once, then persist only the rewards preimage.
   Future<WormholeKeyPair> saveMnemonic(String mnemonic) async {
     if (!validateMnemonic(mnemonic)) {
       throw ArgumentError('Invalid mnemonic phrase');
     }
 
     final trimmed = mnemonic.trim();
-    await _secureStorage.write(key: _mnemonicKey, value: trimmed);
-    _log.i('Mnemonic saved securely');
-
     final keyPair = _hdWallet.deriveWormholeKeyPair(mnemonic: trimmed);
     await _saveRewardsPreimage(keyPair.rewardsPreimage);
 
+    _log.i('Mnemonic used for derivation only (not persisted)');
     _log.i('Wormhole address derived: ${keyPair.address}');
     return keyPair;
   }
 
-  Future<String?> getMnemonic() => _secureStorage.read(key: _mnemonicKey);
+  Future<String?> getMnemonic() async => null;
 
-  Future<bool> hasMnemonic() async {
-    final mnemonic = await getMnemonic();
-    return mnemonic != null && mnemonic.isNotEmpty;
-  }
+  Future<bool> hasMnemonic() async => false;
 
-  /// Wormhole key pair derived from the stored mnemonic, or null if no mnemonic.
+  /// Wormhole key pair reconstructed from stored preimage data.
   Future<WormholeKeyPair?> getWormholeKeyPair() async {
-    final mnemonic = await getMnemonic();
-    if (mnemonic == null || mnemonic.isEmpty) return null;
-    return _hdWallet.deriveWormholeKeyPair(mnemonic: mnemonic);
+    final preimage = await readRewardsPreimageFile();
+    if (preimage == null || preimage.isEmpty) return null;
+    final rewardsPreimageHex = _hdWallet.preimageSs58ToHex(preimage);
+    final address = _hdWallet.preimageToAddress(rewardsPreimageHex);
+    return WormholeKeyPair(
+      address: address,
+      addressHex: '',
+      rewardsPreimage: preimage,
+      rewardsPreimageHex: rewardsPreimageHex,
+      secretHex: '',
+    );
   }
 
-  /// Hex value for the node's `--rewards-inner-hash` flag. Falls back to the
-  /// preimage-only file when no mnemonic is stored.
+  /// Hex value for the node's `--rewards-inner-hash` flag.
   Future<String?> getRewardsInnerHash() async {
-    final keyPair = await getWormholeKeyPair();
-    if (keyPair != null) return keyPair.rewardsPreimageHex;
     final fromFile = await readRewardsPreimageFile();
     if (fromFile == null || fromFile.isEmpty) return null;
     return _hdWallet.preimageSs58ToHex(fromFile);
@@ -98,8 +91,6 @@ class MinerWalletService {
 
   /// SS58 wormhole address where rewards are sent.
   Future<String?> getRewardsAddress() async {
-    final keyPair = await getWormholeKeyPair();
-    if (keyPair != null) return keyPair.address;
     final hexPreimage = await getRewardsInnerHash();
     if (hexPreimage == null) return null;
     return _hdWallet.preimageToAddress(hexPreimage);
@@ -156,18 +147,11 @@ class MinerWalletService {
     _log.i('Preimage saved (without mnemonic)');
   }
 
-  Future<bool> canWithdraw() => hasMnemonic();
+  Future<bool> canWithdraw() async => false;
 
-  /// Delete mnemonic + preimage files (logout/reset).
+  /// Delete preimage files (logout/reset).
   Future<void> deleteWalletData() async {
     _log.i('Deleting wallet data...');
-
-    try {
-      await _secureStorage.delete(key: _mnemonicKey);
-      _log.i('Mnemonic deleted from secure storage');
-    } catch (e) {
-      _log.e('Error deleting mnemonic', error: e);
-    }
 
     for (final getFile in [_preimageFile, _legacyPreimageFile]) {
       try {
