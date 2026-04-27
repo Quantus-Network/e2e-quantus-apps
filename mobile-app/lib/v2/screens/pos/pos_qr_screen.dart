@@ -5,12 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
+import 'package:resonance_network_wallet/services/pending_transaction_polling_service.dart';
 import 'package:resonance_network_wallet/services/pos_service.dart';
 import 'package:resonance_network_wallet/services/tx_watch_service.dart';
-import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/components/glass_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -46,20 +48,44 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
     if (active == null) return;
 
     final expectedPlanck = _fmt.parseAmount(widget.amount);
+    if (expectedPlanck == null) {
+      print('[PosQr] ERROR: failed to parse amount "${widget.amount}"');
+      if (mounted) setState(() => _watchError = 'Invalid amount. Tap to retry.');
+      return;
+    }
+
     setState(() {
       _watching = true;
       _watchError = null;
     });
 
+    print('[PosQr] watching address=${active.account.accountId} expected=$expectedPlanck planck');
     _txWatch.watch(
       address: active.account.accountId,
       onTransfer: (tx) {
+        print('[PosQr] onTransfer from=${tx.from} amount=${tx.amount} hash=${tx.txHash}');
         if (_isPaid) return;
         final received = BigInt.tryParse(tx.amount);
-        if (expectedPlanck != null && received == expectedPlanck) {
-          _timeoutTimer?.cancel();
-          if (mounted) setState(() => _paidTransfer = tx);
+        if (received != expectedPlanck) {
+          print('[PosQr] amount mismatch (received=$received expected=$expectedPlanck), ignoring');
+          return;
         }
+
+        _timeoutTimer?.cancel();
+        final pendingTx = PendingTransactionEvent(
+          tempId: 'pending_recv_${DateTime.now().millisecondsSinceEpoch}',
+          from: tx.from,
+          to: active.account.accountId,
+          amount: expectedPlanck,
+          timestamp: DateTime.now(),
+          transactionState: TransactionState.pending,
+          isReversible: false,
+          fee: null,
+          extrinsicHash: tx.txHash,
+        );
+        ref.read(pendingTransactionsProvider.notifier).add(pendingTx);
+        ref.read(pendingTransactionPollingServiceProvider).startPolling(pendingTx);
+        if (mounted) setState(() => _paidTransfer = tx);
       },
       onError: (e) {
         _txWatch.dispose();
@@ -150,14 +176,6 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         const SizedBox(height: 32),
         _buildQrCode(request.paymentUrl, colors),
         const SizedBox(height: 12),
-        // GestureDetector(
-        //   onTap: () => Clipboard.setData(ClipboardData(text: request.paymentUrl)),
-        //   child: Text(
-        //     'Copy Link',
-        //     style: text.detail?.copyWith(color: colors.textTertiary, decoration: TextDecoration.underline),
-        //   ),
-        // ),
-        // const SizedBox(height: 8),
         Text('Ref: ${request.refId}', style: text.detail?.copyWith(color: colors.textTertiary)),
         const Spacer(),
         GlassButton.simple(label: 'New Charge', onTap: _newCharge, variant: ButtonVariant.secondary),
