@@ -154,7 +154,7 @@ final txAmountDisplayProvider =
     Provider<
       CurrencyDisplayState Function(
         BigInt, {
-        bool isSend,
+        required bool isSend,
         bool withQuanSymbol,
         bool withSignPrefix,
         String? customHiddenText,
@@ -168,7 +168,7 @@ final txAmountDisplayProvider =
 
       return (
         BigInt amount, {
-        bool isSend = true,
+        required bool isSend,
         bool withQuanSymbol = true,
         bool withSignPrefix = true,
         String? customHiddenText,
