@@ -100,6 +100,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
     final addr = widget.recipientAddress.trim();
     final approxDisplay = ref.watch(txAmountDisplayProvider)(
       widget.amount,
+      isSend: true,
       withSignPrefix: false,
       withQuanSymbol: false,
     );

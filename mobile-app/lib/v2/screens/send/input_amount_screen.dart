@@ -12,6 +12,8 @@ import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
+import 'package:resonance_network_wallet/v2/components/loader.dart';
 
 class InputAmountScreen extends ConsumerStatefulWidget {
   final String recipientAddress;
@@ -41,7 +43,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   BigInt _amount = BigInt.zero;
   BigInt _networkFee = BigInt.zero;
   int _blockHeight = 0;
-  bool _isFetchingFee = false;
+  bool _isFetchingFee = true;
 
   @override
   void initState() {
@@ -96,6 +98,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       });
     } catch (e) {
       debugPrint('Estimated fee fetch error: $e');
+    } finally {
+      if (mounted) setState(() => _isFetchingFee = false);
     }
   }
 
@@ -130,6 +134,11 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   }
 
   Future<void> _openReview() async {
+    if (_recipientChecksum == null) {
+      context.showErrorToaster(message: 'Recipient checksum is required');
+      return;
+    }
+
     FocusScope.of(context).unfocus();
     Navigator.push(
       context,
@@ -204,16 +213,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'SEND TO',
-                  style: TextStyle(
-                    fontFamily: AppTextTheme.fontFamilySecondary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.85,
-                    color: colors.textLabel,
-                  ),
-                ),
+                Text('SEND TO', style: context.themeText.receiveLabel?.copyWith(color: colors.textLabel)),
                 const SizedBox(height: 16),
                 if (_recipientChecksum != null) ...[
                   Text(
@@ -260,7 +260,12 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   }
 
   Widget _amountCenter(AppColorsV2 colors, AppTextTheme text) {
-    final display = ref.watch(txAmountDisplayProvider)(_amount, withSignPrefix: false, withQuanSymbol: false);
+    final display = ref.watch(txAmountDisplayProvider)(
+      _amount,
+      withSignPrefix: false,
+      isSend: true,
+      withQuanSymbol: false,
+    );
 
     return Center(
       child: Column(
@@ -321,27 +326,49 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Available Balance:', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
-                    const SizedBox(height: 4),
-                    balance.when(
-                      data: (b) => Text(
-                        '${_fmt.formatBalance(b)} ${AppConstants.tokenSymbol}',
-                        style: text.smallParagraph?.copyWith(color: colors.textTertiary),
-                      ),
-                      loading: () => Text('...', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
-                      error: (_, _) => Text('—', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Available Balance:', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+                        const SizedBox(height: 4),
+                        balance.when(
+                          data: (b) => Text(
+                            '${_fmt.formatBalance(b)} ${AppConstants.tokenSymbol}',
+                            style: text.smallParagraph?.copyWith(color: colors.textTertiary),
+                          ),
+                          loading: () => Text('...', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+                          error: (_, _) => Text('—', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text('Network Fee:', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+                        const SizedBox(height: 4),
+                        if (!_isFetchingFee)
+                          Text(
+                            '${_fmt.formatBalance(_networkFee, maxDecimals: 5)} ${AppConstants.tokenSymbol}',
+                            style: text.smallParagraph?.copyWith(color: colors.textTertiary),
+                          )
+                        else
+                          const Loader(),
+                      ],
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 4),
               IntrinsicWidth(
                 child: QuantusButton.simple(
                   label: 'Max',

@@ -130,7 +130,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
           fontWeight: FontWeight.w500,
         ),
         sendSectionLabel: const TextStyle(
-          fontSize: 20,
+          fontSize: 24,
           height: 1.0,
           fontWeight: FontWeight.w400,
           fontFamily: fontFamily,
