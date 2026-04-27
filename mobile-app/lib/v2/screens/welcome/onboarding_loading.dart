@@ -15,11 +15,12 @@ class OnboardingLoadingScreenV2 extends StatefulWidget {
 
 class _OnboardingLoadingScreenV2State extends State<OnboardingLoadingScreenV2> with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
+  final Duration _duration = const Duration(seconds: 4);
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 5))..forward();
+    _controller = AnimationController(vsync: this, duration: _duration)..forward();
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed && mounted) {
         Navigator.of(context).pushReplacement(
