@@ -111,7 +111,7 @@ flutter:
     - assets/v2/swap_clock_counter_clockwise.svg
     - assets/v2/swap_qr_code.svg
     - assets/v2/auth_wrapper_bracket.png
-    - assets/v2/welcome_screen_bg_image.jpg
+    - assets/v2/splash_background.jpg
     - assets/v2/ascii_background.png
     - assets/v2/quantus_orange_logo.png
 
@@ -167,6 +167,7 @@ flutter:
           weight: 700
 
 flutter_native_splash:
+  background_image: assets/v2/splash_background.jpg
   color: "#0E0E0E"
   image: assets/v2/uppercase_q.png
   android: true
