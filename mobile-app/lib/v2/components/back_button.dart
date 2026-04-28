@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:resonance_network_wallet/v2/components/glass_button_base.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
 class AppBackButton extends StatelessWidget {
@@ -9,13 +10,22 @@ class AppBackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double containerSize = 28;
+    final double iconSize = 24;
+
     return GestureDetector(
       onTap: onTap ?? () => Navigator.pop(context),
-      child: SvgPicture.asset(
-        'assets/v2/caret_left.svg',
-        width: 24,
-        height: 24,
-        colorFilter: ColorFilter.mode(context.colors.textPrimary, BlendMode.srcIn),
+      child: GlassButtonBase(
+        buttonHeight: containerSize,
+        buttonWidth: containerSize,
+        borderRadius: BorderRadius.circular(containerSize / 2),
+        padding: const EdgeInsets.all(2),
+        child: SvgPicture.asset(
+          'assets/v2/caret_left.svg',
+          width: iconSize,
+          height: iconSize,
+          colorFilter: ColorFilter.mode(context.colors.textPrimary, BlendMode.srcIn),
+        ),
       ),
     );
   }
