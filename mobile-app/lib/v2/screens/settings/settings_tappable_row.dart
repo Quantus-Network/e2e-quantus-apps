@@ -53,7 +53,6 @@ class SettingsTappableRow extends StatelessWidget {
 
   final String title;
   final Color? titleColor;
-
   final String subtitle;
   final Color? subtitleColor;
 

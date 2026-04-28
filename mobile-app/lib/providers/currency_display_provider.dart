@@ -137,9 +137,10 @@ final balanceDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref) 
         selectedFiat,
         xRate,
         fmt,
-        isFlipped,
-        isHidden,
         _hiddenAmountText,
+        isFlipped: isFlipped,
+        isHidden: isHidden,
+        withQuanSymbol: false,
       );
       return AsyncValue.data(data);
     },
@@ -181,9 +182,10 @@ final txAmountDisplayProvider =
           selectedFiat,
           xRate,
           fmt,
-          isFlipped,
-          isHidden,
           hiddenText,
+          isHidden: isHidden,
+          withQuanSymbol: withQuanSymbol,
+          isFlipped: isFlipped,
         );
 
         if (!isHidden) {
@@ -215,11 +217,12 @@ CurrencyDisplayState _toFiatDisplayState(
   FiatCurrency selectedFiat,
   ExchangeRateService xRate,
   NumberFormattingService fmt,
-  bool isFlipped,
-  bool isHidden,
-  String hiddenText,
-) {
-  final quanFormatted = fmt.formatBalance(amount, addSymbol: isFlipped);
+  String hiddenText, {
+  required bool isFlipped,
+  required bool isHidden,
+  required bool withQuanSymbol,
+}) {
+  final quanFormatted = fmt.formatBalance(amount, addSymbol: withQuanSymbol);
   final fiatFormatted = selectedFiat.format(_toFiatNumeric(amount, selectedFiat, xRate));
 
   CurrencyDisplayState data = CurrencyDisplayState(

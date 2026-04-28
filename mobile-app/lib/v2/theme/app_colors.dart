@@ -37,7 +37,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
   final Color txItemSeparator;
   final Color txItemIncomingHighlightBg;
   final Color txItemOutgoingHighlightBg;
-  final Color txItemOutgoingHighlight;
+  final Color txItemOutgoingHighlightBorder;
   final Color txItemIconDefault;
   final Color txItemIncomingHighlightBorder;
   final Color txItemBorderDefault;
@@ -95,7 +95,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     required this.txItemSeparator,
     required this.txItemIncomingHighlightBg,
     required this.txItemOutgoingHighlightBg,
-    required this.txItemOutgoingHighlight,
+    required this.txItemOutgoingHighlightBorder,
     required this.txItemIconDefault,
     required this.txItemIncomingHighlightBorder,
     required this.txItemBorderDefault,
@@ -143,8 +143,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
         separator: const Color(0x1AFFFFFF),
         txItemSeparator: const Color(0x7F272727),
         txItemIncomingHighlightBg: const Color(0x14408C6B),
-        txItemOutgoingHighlightBg: const Color(0x29FFBC42),
-        txItemOutgoingHighlight: const Color(0xFFFFBC42),
+        txItemOutgoingHighlightBg: const Color(0x1440618C),
+        txItemOutgoingHighlightBorder: const Color(0x2640618C),
         txItemIconDefault: const Color(0xFF363636),
         txItemIncomingHighlightBorder: const Color(0x26408C6B),
         txItemBorderDefault: const Color(0xFF191919),
@@ -185,7 +185,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     Color? txItemSeparator,
     Color? txItemIncomingHighlightBg,
     Color? txItemOutgoingHighlightBg,
-    Color? txItemOutgoingHighlight,
+    Color? txItemOutgoingHighlightBorder,
     Color? txItemIconDefault,
     Color? txItemIncomingHighlightBorder,
     Color? txItemBorderDefault,
@@ -236,7 +236,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       txItemSeparator: txItemSeparator ?? this.txItemSeparator,
       txItemIncomingHighlightBg: txItemIncomingHighlightBg ?? this.txItemIncomingHighlightBg,
       txItemOutgoingHighlightBg: txItemOutgoingHighlightBg ?? this.txItemOutgoingHighlightBg,
-      txItemOutgoingHighlight: txItemOutgoingHighlight ?? this.txItemOutgoingHighlight,
+      txItemOutgoingHighlightBorder: txItemOutgoingHighlightBorder ?? this.txItemOutgoingHighlightBorder,
       txItemIconDefault: txItemIconDefault ?? this.txItemIconDefault,
       txItemIncomingHighlightBorder: txItemIncomingHighlightBorder ?? this.txItemIncomingHighlightBorder,
       txItemBorderDefault: txItemBorderDefault ?? this.txItemBorderDefault,
@@ -289,8 +289,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
           Color.lerp(txItemIncomingHighlightBg, other.txItemIncomingHighlightBg, t) ?? txItemIncomingHighlightBg,
       txItemOutgoingHighlightBg:
           Color.lerp(txItemOutgoingHighlightBg, other.txItemOutgoingHighlightBg, t) ?? txItemOutgoingHighlightBg,
-      txItemOutgoingHighlight:
-          Color.lerp(txItemOutgoingHighlight, other.txItemOutgoingHighlight, t) ?? txItemOutgoingHighlight,
+      txItemOutgoingHighlightBorder:
+          Color.lerp(txItemOutgoingHighlightBorder, other.txItemOutgoingHighlightBorder, t) ?? txItemOutgoingHighlightBorder,
       txItemIconDefault: Color.lerp(txItemIconDefault, other.txItemIconDefault, t) ?? txItemIconDefault,
       txItemIncomingHighlightBorder:
           Color.lerp(txItemIncomingHighlightBorder, other.txItemIncomingHighlightBorder, t) ??

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
@@ -10,6 +11,7 @@ class AmountDisplayWithConversion extends StatelessWidget {
   final VoidCallback? onFlip;
   final CrossAxisAlignment alignment;
   final bool colorizeAmount;
+  final bool useQuanLogo;
 
   const AmountDisplayWithConversion({
     super.key,
@@ -17,13 +19,23 @@ class AmountDisplayWithConversion extends StatelessWidget {
     this.onFlip,
     this.alignment = CrossAxisAlignment.center,
     this.colorizeAmount = false,
+    this.useQuanLogo = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final text = context.themeText;
     final colors = context.colors;
+
     final primaryAmountColor = colorizeAmount ? colors.success : colors.textPrimary;
+    final quanLogoPrimarySize = 32.0;
+
+    final secondaryAmountColor = colors.textTertiary;
+    final secondaryAmountBaseStyle = text.paragraph?.copyWith(
+      color: secondaryAmountColor,
+      fontFamily: AppTextTheme.fontFamilySecondary,
+    );
+    final quanLogoSecondarySize = 12.0;
 
     final MainAxisAlignment mainAxisAlignment = switch (alignment) {
       CrossAxisAlignment.center => MainAxisAlignment.center,
@@ -33,37 +45,59 @@ class AmountDisplayWithConversion extends StatelessWidget {
     return Column(
       crossAxisAlignment: alignment,
       children: [
-        Text.rich(
-          TextSpan(
-            children: [
-              TextSpan(
-                text: amountDisplay.primaryAmount,
-                style: text.extraLargeTitle?.copyWith(fontFamily: AppTextTheme.fontFamily, color: primaryAmountColor),
+        Row(
+          mainAxisAlignment: mainAxisAlignment,
+          children: [
+            if (useQuanLogo && !amountDisplay.isFlipped) ...[
+              SvgPicture.asset(
+                'assets/v2/uppercase_q.svg',
+                width: quanLogoPrimarySize,
+                height: quanLogoPrimarySize,
+                colorFilter: ColorFilter.mode(context.colors.textPrimary, BlendMode.srcIn),
               ),
-              if (!amountDisplay.isFlipped) ...[
-                const TextSpan(text: '     '),
-                TextSpan(
-                  text: AppConstants.tokenSymbol,
-                  style: text.mediumTitle?.copyWith(
-                    fontFamily: AppTextTheme.fontFamilySecondary,
-                    color: primaryAmountColor,
-                  ),
-                ),
-              ],
+              const SizedBox(width: 4),
             ],
-          ),
+            Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: amountDisplay.primaryAmount,
+                    style: text.extraLargeTitle?.copyWith(
+                      fontFamily: AppTextTheme.fontFamily,
+                      color: primaryAmountColor,
+                    ),
+                  ),
+                  if (!useQuanLogo && !amountDisplay.isFlipped) ...[
+                    const TextSpan(text: '     '),
+                    TextSpan(
+                      text: AppConstants.tokenSymbol,
+                      style: text.mediumTitle?.copyWith(
+                        fontFamily: AppTextTheme.fontFamilySecondary,
+                        color: primaryAmountColor,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 6),
         Row(
           mainAxisAlignment: mainAxisAlignment,
           children: [
-            Text(
-              '≈ ${amountDisplay.secondaryAmount}',
-              style: text.paragraph?.copyWith(
-                color: colors.textSecondary,
-                fontFamily: AppTextTheme.fontFamilySecondary,
+            if (useQuanLogo && amountDisplay.isFlipped) ...[
+              Text('≈ ', style: secondaryAmountBaseStyle),
+              SvgPicture.asset(
+                'assets/v2/uppercase_q.svg',
+                width: quanLogoSecondarySize,
+                height: quanLogoSecondarySize,
+                colorFilter: ColorFilter.mode(secondaryAmountColor, BlendMode.srcIn),
               ),
-            ),
+              const SizedBox(width: 2),
+              Text(amountDisplay.secondaryAmount, style: secondaryAmountBaseStyle),
+            ] else
+              Text('≈ ${amountDisplay.secondaryAmount}', style: secondaryAmountBaseStyle),
             if (onFlip != null) ...[
               const SizedBox(width: 8),
               QuantusIconButton.circular(
