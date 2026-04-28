@@ -5,7 +5,7 @@ import 'package:resonance_network_wallet/features/components/mnemonic_grid.dart'
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
-import 'package:resonance_network_wallet/services/referral_service.dart';
+import 'package:resonance_network_wallet/services/wallet_creation_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
@@ -25,10 +25,8 @@ class NewWalletRecoveryPhraseScreen extends ConsumerStatefulWidget {
 }
 
 class _NewWalletRecoveryPhraseScreenState extends ConsumerState<NewWalletRecoveryPhraseScreen> {
-  final SettingsService _settingsService = SettingsService();
-  final AccountsService _accountsService = AccountsService();
+  final WalletCreationService _walletCreationService = WalletCreationService();
   final HdWalletService _hdWalletService = HdWalletService();
-  final ReferralService _referralService = ReferralService();
 
   final String _accountName = 'Account 1';
   final int _walletIndex = 0;
@@ -71,18 +69,15 @@ class _NewWalletRecoveryPhraseScreenState extends ConsumerState<NewWalletRecover
 
     setState(() => _isSubmitting = true);
     try {
-      await _settingsService.setMnemonic(_mnemonic, _walletIndex);
-
       final accounts = ref.read(accountsProvider).value ?? <Account>[];
-      final hasRoot = accounts.any((a) => a.walletIndex == _walletIndex && a.index == 0);
-      if (!hasRoot) {
-        await _accountsService.addAccount(
-          Account(walletIndex: _walletIndex, index: 0, name: _accountName, accountId: _address),
-        );
-        try {
-          _referralService.submitAddressToBackend();
-        } catch (_) {}
-      }
+      await _walletCreationService.createNewWallet(
+        name: _accountName,
+        mnemonic: _mnemonic,
+        walletIndex: _walletIndex,
+        accountId: _address,
+        existingAccounts: accounts,
+      );
+
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
 

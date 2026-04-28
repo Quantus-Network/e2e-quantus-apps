@@ -212,12 +212,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             );
           },
           loading: () => const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(height: 12),
-              Skeleton(width: 200, height: 36),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Skeleton(width: 200, height: 36),
+                ],
+              ),
               SizedBox(height: 16),
-              Skeleton(width: 100, height: 18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Skeleton(width: 100, height: 18),
+                ],
+              ),
             ],
           ),
           error: (_, _) => Text('Error loading balance', style: text.detail?.copyWith(color: colors.textError)),
