@@ -4,9 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
+import 'package:resonance_network_wallet/v2/components/address_details_card.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
-import 'package:resonance_network_wallet/v2/components/split_card.dart';
+import 'package:resonance_network_wallet/v2/components/share_account_button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
@@ -57,8 +58,8 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
   }
 
   void _share() {
-    if (_accountId != null) {
-      shareAccountDetails(context, _accountId!, checksum: _checksum ?? '');
+    if (_accountId != null && _checksum != null) {
+      shareAccountDetails(context, _accountId!, checksum: _checksum!);
     }
   }
 
@@ -95,9 +96,9 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
           if (isLoading)
             const Expanded(child: Center(child: Loader()))
           else if (_selectedTab == ReceiveTab.qrCode)
-            QrCodeTab(accountId: _accountId!, onShare: _share, checksum: _checksum!)
+            QrCodeTab(accountId: _accountId!, checksum: _checksum!)
           else
-            AddressTab(accountId: _accountId!, onShare: _share, checksum: _checksum!),
+            AddressTab(accountId: _accountId!, checksum: _checksum!),
         ],
       ),
       bottomContent: _buildBottomContent(isLoading, _selectedTab),
@@ -112,7 +113,7 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
     }
 
     if (_selectedTab == ReceiveTab.qrCode) {
-      content = _ShareButton(onTap: _share);
+      content = ShareAccountButton(onTap: _share, isDisabled: isLoading);
     } else {
       content = Row(
         children: [
@@ -120,13 +121,14 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
             child: QuantusButton.simple(
               label: 'Copy',
               onTap: () => _copyAccountDetails(context),
+              isDisabled: isLoading,
               icon: Icon(Icons.copy, size: 20, color: context.colors.textPrimary),
               iconPlacement: IconPlacement.leading,
               variant: ButtonVariant.secondary,
             ),
           ),
           const SizedBox(width: 18),
-          Expanded(child: _ShareButton(onTap: _share)),
+          Expanded(child: ShareAccountButton(onTap: _share, isDisabled: isLoading)),
         ],
       );
     }
@@ -136,10 +138,9 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
 }
 
 class QrCodeTab extends StatelessWidget {
-  const QrCodeTab({super.key, required this.accountId, required this.onShare, required this.checksum});
+  const QrCodeTab({super.key, required this.accountId, required this.checksum});
 
   final String accountId;
-  final VoidCallback onShare;
   final String checksum;
 
   @override
@@ -192,148 +193,16 @@ class QrCodeTab extends StatelessWidget {
   }
 }
 
-class AddressTab extends StatefulWidget {
-  const AddressTab({super.key, required this.accountId, required this.onShare, required this.checksum});
-
+class AddressTab extends StatelessWidget {
   final String accountId;
-  final VoidCallback onShare;
   final String checksum;
 
-  @override
-  State<AddressTab> createState() => _AddressTabState();
-}
-
-class _AddressTabState extends State<AddressTab> {
-  bool _addressCopied = false;
-  bool _checksumCopied = false;
-  Timer? _resetTimer;
-
-  void _copyAddress(BuildContext context) {
-    context.copyTextWithToaster(widget.accountId);
-    _triggerCopied(isAddress: true);
-  }
-
-  void _copyChecksum(BuildContext context) {
-    context.copyTextWithToaster(widget.checksum, message: 'Checkphrase copied');
-    _triggerCopied(isAddress: false);
-  }
-
-  void _triggerCopied({required bool isAddress}) {
-    _resetTimer?.cancel();
-
-    setState(() {
-      if (isAddress) {
-        _addressCopied = true;
-        _checksumCopied = false;
-      } else {
-        _checksumCopied = true;
-        _addressCopied = false;
-      }
-    });
-
-    _resetTimer = Timer(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() {
-          if (isAddress) {
-            _addressCopied = false;
-          } else {
-            _checksumCopied = false;
-          }
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _resetTimer?.cancel();
-    super.dispose();
-  }
+  const AddressTab({super.key, required this.accountId, required this.checksum});
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: SplitCard(
-        topChild: InkWell(
-          onTap: () => _copyAddress(context),
-          child: _buildItem(context, 'ADDRESS', widget.accountId, isCopied: _addressCopied),
-        ),
-        bottomChild: InkWell(
-          onTap: () => _copyChecksum(context),
-          child: _buildItem(context, 'CHECKPHRASE', widget.checksum, isCheckphrase: true, isCopied: _checksumCopied),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildItem(
-    BuildContext context,
-    String label,
-    String value, {
-    bool isCheckphrase = false,
-    required bool isCopied,
-  }) {
-    final valueTextStyle = isCheckphrase
-        ? context.themeText.smallParagraph?.copyWith(color: context.colors.checksum)
-        : context.themeText.smallParagraph?.copyWith(fontFamily: AppTextTheme.fontFamilySecondary);
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: context.themeText.receiveLabel?.copyWith(color: context.colors.textLabel)),
-              const SizedBox(height: 16),
-              Text(value, style: valueTextStyle),
-            ],
-          ),
-        ),
-
-        const SizedBox(width: 32),
-
-        _copyButton(isCopied: isCopied),
-      ],
-    );
-  }
-
-  Widget _copyButton({required bool isCopied}) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: isCopied ? context.colors.copyButtonCopiedBg : Colors.transparent,
-        border: Border.all(
-          color: isCopied ? context.colors.copyButtonCopiedBorder : context.colors.borderButton,
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(100),
-      ),
-      child: Center(
-        child: Icon(
-          isCopied ? Icons.check : Icons.copy,
-          size: 16,
-          color: isCopied ? context.colors.success : context.colors.textPrimary,
-        ),
-      ),
-    );
-  }
-}
-
-class _ShareButton extends StatelessWidget {
-  const _ShareButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return QuantusButton.simple(
-      label: 'Share',
-      onTap: onTap,
-      icon: Icon(Icons.shortcut_rounded, size: 20, color: context.colors.background),
-      iconPlacement: IconPlacement.leading,
+      child: AddressDetailsCard(accountId: accountId, checksum: checksum),
     );
   }
 }

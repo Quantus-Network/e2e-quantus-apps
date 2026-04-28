@@ -1,5 +1,7 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -70,7 +72,8 @@ class QuantusButton extends StatelessWidget {
     final borderRadius = BorderRadius.circular(this.borderRadius);
     final basicBorder = BorderSide(color: context.colors.borderButton, width: 1);
 
-    final Color buttonDecorationColor;
+    Color? buttonDecorationColor;
+    LinearGradient? buttonDecorationGradient;
     BorderSide borderSide = BorderSide.none;
 
     switch (variant) {
@@ -79,8 +82,12 @@ class QuantusButton extends StatelessWidget {
         break;
 
       case ButtonVariant.secondary:
-        buttonDecorationColor = context.colors.sheetBackground;
-        borderSide = basicBorder;
+        buttonDecorationGradient = LinearGradient(
+          transform: const GradientRotation(90 * math.pi / 180),
+          colors: [context.colors.surfaceDeep, context.colors.sheetBackground],
+          stops: [0.0, 1.0],
+        );
+        borderSide = basicBorder.copyWith(color: context.colors.borderButton.useOpacity(0.5));
         break;
 
       case ButtonVariant.danger:
@@ -110,6 +117,7 @@ class QuantusButton extends StatelessWidget {
           padding: padding,
           decoration: ShapeDecoration(
             color: disabled ? context.colors.sheetBackground : buttonDecorationColor,
+            gradient: disabled ? null : buttonDecorationGradient,
             shape: RoundedRectangleBorder(borderRadius: borderRadius, side: disabled ? basicBorder : borderSide),
           ),
           child: buttonContent,
@@ -130,13 +138,7 @@ class QuantusButton extends StatelessWidget {
 
     if (isLoading) {
       final size = (_textStyle?.fontSize ?? buttonFontSize) + 6;
-      return Center(
-        child: SizedBox(
-          width: size,
-          height: size,
-          child: CircularProgressIndicator(color: textColor, strokeWidth: 2.0),
-        ),
-      );
+      return Center(child: Loader(size: size));
     }
 
     if (child != null) return child!;

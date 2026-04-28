@@ -4,14 +4,14 @@
 /// Adding a new currency only requires a new enum case here and a matching
 /// rate in [ExchangeRateService]. No widget or provider changes are needed.
 enum FiatCurrency {
-  usd(code: 'USD', symbol: '\$', symbolPosition: SymbolPosition.prefix),
-  myr(code: 'MYR', symbol: 'RM', symbolPosition: SymbolPosition.prefix),
-  idr(code: 'IDR', symbol: 'Rp', symbolPosition: SymbolPosition.prefix),
-  jpy(code: 'JPY', symbol: '¥', symbolPosition: SymbolPosition.prefix),
-  eur(code: 'EUR', symbol: '€', symbolPosition: SymbolPosition.prefix),
-  gbp(code: 'GBP', symbol: '£', symbolPosition: SymbolPosition.prefix);
+  usd(code: 'USD', symbol: '\$', symbolPosition: SymbolPosition.prefix, fullName: 'United States Dollar'),
+  myr(code: 'MYR', symbol: 'RM', symbolPosition: SymbolPosition.prefix, fullName: 'Malaysian Ringgit'),
+  idr(code: 'IDR', symbol: 'Rp', symbolPosition: SymbolPosition.prefix, fullName: 'Indonesian Rupiah'),
+  jpy(code: 'JPY', symbol: '¥', symbolPosition: SymbolPosition.prefix, fullName: 'Japanese Yen'),
+  eur(code: 'EUR', symbol: '€', symbolPosition: SymbolPosition.prefix, fullName: 'Euro'),
+  gbp(code: 'GBP', symbol: '£', symbolPosition: SymbolPosition.prefix, fullName: 'British Pound');
 
-  const FiatCurrency({required this.code, required this.symbol, required this.symbolPosition});
+  const FiatCurrency({required this.code, required this.symbol, required this.symbolPosition, required this.fullName});
 
   /// ISO 4217 code, e.g. "USD", "IDR". Used for persistence and display.
   final String code;
@@ -20,6 +20,8 @@ enum FiatCurrency {
   final String symbol;
 
   final SymbolPosition symbolPosition;
+
+  final String fullName;
 
   /// Wraps a pre-formatted numeric [amount] string with this currency's symbol.
   ///
@@ -35,6 +37,8 @@ enum FiatCurrency {
   static FiatCurrency fromCode(String code, {FiatCurrency fallback = FiatCurrency.usd}) {
     return FiatCurrency.values.firstWhere((c) => c.code == code, orElse: () => fallback);
   }
+
+  String get line => '$code - $fullName ($symbol)';
 }
 
 enum SymbolPosition { prefix, suffix }

@@ -57,12 +57,9 @@ dependencies:
   timezone: ^0.10.1
   flutter_timezone: ^5.0.1
   collection: ^1.19.1
-  glass_kit: ^4.0.2
   firebase_core: ^4.4.0
   firebase_messaging: ^16.1.1
   image_picker: ^1.2.1
-  flutter_inset_shadow: ^2.0.3
-  liquid_glass_renderer: ^0.2.0-dev.4
 
 dev_dependencies:
   flutter_test:
@@ -105,9 +102,6 @@ flutter:
     - assets/v2/green_checkmark.png
     - assets/v2/pin_number_background.png
     - assets/v2/caret_left.svg
-    - assets/v2/send_button.png
-    - assets/v2/receive_button.png
-    - assets/v2/swap_button.png
     - assets/v2/action_receive.svg
     - assets/v2/action_send.svg
     - assets/v2/action_swap.svg

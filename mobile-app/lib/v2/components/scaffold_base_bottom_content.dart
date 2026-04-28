@@ -3,7 +3,6 @@ import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
 class ScaffoldBaseBottomContent extends StatelessWidget {
   final Widget child;
-
     
   const ScaffoldBaseBottomContent({super.key, required this.child});
 
@@ -14,7 +13,7 @@ class ScaffoldBaseBottomContent extends StatelessWidget {
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: context.colors.buttonDanger, width: 1)),
+        border: Border(top: BorderSide(color: context.colors.surfaceDeep, width: 1)),
       ),
       child: child,
     );

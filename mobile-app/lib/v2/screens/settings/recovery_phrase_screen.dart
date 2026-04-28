@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/mnemonic_grid.dart';
-import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -20,24 +20,10 @@ class RecoveryPhraseScreen extends StatefulWidget {
 
 class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
   final _settingsService = SettingsService();
-  final _authService = LocalAuthService();
   List<String> _words = [];
-  bool _revealed = false;
 
-  Future<void> _toggleReveal() async {
-    if (_revealed) {
-      setState(() {
-        _revealed = false;
-      });
-      return;
-    }
-
-    final ok = await _authService.authenticate(localizedReason: 'Authenticate to reveal recovery phrase');
-    if (!ok || !mounted) return;
-
-    setState(() {
-      _revealed = true;
-    });
+  void _back() {
+    Navigator.of(context).pop();
   }
 
   void _loadMnemonic() async {
@@ -67,73 +53,41 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Recovery Phrase'),
       mainContent: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _warning(colors, text),
-          const SizedBox(height: 40),
-          Expanded(
-            child: SingleChildScrollView(
-              child: MnemonicGrid(words: _words, isRevealed: _revealed),
-            ),
+          Text(
+            'Write these words down in order and keep them somewhere only you can access. Do not screenshot or copy to a notes app.',
+            style: text.smallParagraph?.copyWith(color: colors.textTertiary),
           ),
-          const SizedBox(height: 16),
-          IgnorePointer(
-            ignoring: !_revealed,
-            child: AnimatedOpacity(
-              duration: const Duration(milliseconds: 200),
-              opacity: _revealed ? 1.0 : 0.0,
-              child: _copyRow(colors, text),
-            ),
-          ),
-          const SizedBox(height: 16),
-          _revealButton(colors, text),
           const SizedBox(height: 24),
+          Expanded(
+            child: SingleChildScrollView(child: MnemonicGrid(words: _words, isRevealed: true)),
+          ),
         ],
       ),
+      bottomContent: _bottomBar(colors),
     );
   }
 
-  Widget _warning(AppColorsV2 colors, AppTextTheme text) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.warning_amber_rounded, color: colors.accentOrange, size: 24),
-            const SizedBox(width: 8),
-            Text('Important Warning', style: text.smallTitle?.copyWith(color: colors.accentOrange)),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Your recovery phrase is the only way to restore your wallet. Never share it with anyone.',
-          style: text.paragraph,
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-
-  Widget _copyRow(AppColorsV2 colors, AppTextTheme text) {
-    return QuantusButton.simple(
-      padding: const EdgeInsets.all(0),
-      label: 'Copy to clipboard',
-      onTap: _copyToClipboard,
-      variant: ButtonVariant.transparent,
-      textStyle: text.smallParagraph?.copyWith(color: colors.textPrimary),
-      icon: Icon(Icons.copy, color: colors.textPrimary, size: 14),
-    );
-  }
-
-  Widget _revealButton(AppColorsV2 colors, AppTextTheme text) {
-    final label = _revealed ? 'Hide Recovery Phrase' : 'Reveal Recovery Phrase';
-    final icon = _revealed ? Icons.visibility_off_outlined : Icons.visibility_outlined;
-
-    return QuantusButton.simple(
-      label: label,
-      onTap: _toggleReveal,
-      variant: ButtonVariant.secondary,
-      icon: Icon(icon, color: colors.textPrimary, size: 16),
-      iconPlacement: IconPlacement.leading,
+  Widget _bottomBar(AppColorsV2 colors) {
+    return ScaffoldBaseBottomContent(
+      child: Row(
+        children: [
+          Expanded(
+            child: QuantusButton.simple(
+              label: 'Copy',
+              icon: Icon(Icons.copy, color: colors.textPrimary, size: 14),
+              iconPlacement: IconPlacement.leading,
+              onTap: _copyToClipboard,
+              variant: ButtonVariant.secondary,
+            ),
+          ),
+          const SizedBox(width: 24),
+          Expanded(
+            child: QuantusButton.simple(label: 'Done', onTap: _back, variant: ButtonVariant.primary),
+          ),
+        ],
+      ),
     );
   }
 }
