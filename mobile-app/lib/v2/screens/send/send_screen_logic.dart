@@ -56,7 +56,7 @@ class SendScreenLogic {
       case AmountStatus.insufficientBalance:
         return 'Insufficient Balance';
       case AmountStatus.valid:
-        return 'Send ${formattingService.formatBalance(amount, addSymbol: true)}';
+        return 'Review Send';
     }
   }
 

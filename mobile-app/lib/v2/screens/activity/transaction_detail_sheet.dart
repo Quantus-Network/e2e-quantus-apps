@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
+import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -92,33 +93,8 @@ class _AmountSection extends ConsumerWidget {
       withQuanSymbol: false,
       customHiddenText: '-----',
     );
-    final amountColor = isSend ? colors.textPrimary : colors.success;
-    final text = context.themeText;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(amount.primaryAmount, style: text.transactionDetailAmountPrimary?.copyWith(color: amountColor)),
-            if (!amount.isFlipped) ...[
-              const SizedBox(width: 8),
-              Text(AppConstants.tokenSymbol, style: text.transactionDetailAmountSymbol?.copyWith(color: amountColor)),
-            ],
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          '≈ ${amount.secondaryAmount}',
-          style: context.themeText.smallParagraph?.copyWith(
-            fontFamily: AppTextTheme.fontFamilySecondary,
-            color: colors.textTertiary,
-          ),
-        ),
-      ],
-    );
+    return AmountDisplayWithConversion(amountDisplay: amount, colorizeAmount: !isSend);
   }
 }
 

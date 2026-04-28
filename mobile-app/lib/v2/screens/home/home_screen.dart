@@ -6,12 +6,14 @@ import 'package:resonance_network_wallet/features/components/dotted_border.dart'
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
+import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_sheet.dart';
+import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
@@ -60,7 +62,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (payment != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(paymentIntentProvider.notifier).state = null;
-        showSendSheetV2(context, address: payment.to, amount: payment.amount, isPayMode: true);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                InputAmountScreen(recipientAddress: payment.to, initialAmount: payment.amount, isPayMode: true),
+          ),
+        );
       });
       return;
     }
@@ -195,46 +203,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       children: [
         currencyAsync.when(
           data: (display) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(
-                        text: display.primaryAmount,
-                        style: text.extraLargeTitle?.copyWith(fontFamily: AppTextTheme.fontFamily),
-                      ),
-                      if (!display.isFlipped) ...[
-                        const TextSpan(text: '     '),
-                        TextSpan(
-                          text: AppConstants.tokenSymbol,
-                          style: text.mediumTitle?.copyWith(fontFamily: AppTextTheme.fontFamilySecondary),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Text(
-                      '≈ ${display.secondaryAmount}',
-                      style: text.paragraph?.copyWith(
-                        color: colors.textSecondary,
-                        fontFamily: AppTextTheme.fontFamilySecondary,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    QuantusIconButton.circular(
-                      icon: Icons.swap_vert,
-                      onTap: _toggleFlip,
-                      isActive: display.isFlipped,
-                      size: IconButtonSize.small,
-                    ),
-                  ],
-                ),
-              ],
+            return AmountDisplayWithConversion(
+              amountDisplay: display,
+              onFlip: _toggleFlip,
+              alignment: CrossAxisAlignment.start,
             );
           },
           loading: () => const Column(
@@ -264,7 +236,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final sendCard = _actionCard(
       iconAsset: 'assets/v2/action_send.svg',
       label: 'Send',
-      onTap: () => showSendSheetV2(context),
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SelectRecipientScreen())),
     );
 
     if (!enableSwap) {
