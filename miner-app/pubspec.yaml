@@ -15,6 +15,9 @@ dependencies:
   # Workspace packages (managed by melos.yaml)
   quantus_sdk: # Version managed by melos.yaml
   
+  # Hex/byte encoding
+  convert:
+  
   # Networking and storage
   http: # Version managed by melos.yaml
   shared_preferences: # Version managed by melos.yaml

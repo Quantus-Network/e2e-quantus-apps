@@ -48,11 +48,11 @@ class ChainRpcClient {
 
       // Execute multiple RPC calls in parallel for efficiency
       final futures = await Future.wait([
-        _rpcCall('peer_getBasicInfo'),
-        _rpcCall('chain_getHeader'),
-        _rpcCall('system_chain'),
-        _rpcCall('system_version'),
-        _rpcCall('system_syncState'),
+        rpcCall('peer_getBasicInfo'),
+        rpcCall('chain_getHeader'),
+        rpcCall('system_chain'),
+        rpcCall('system_version'),
+        rpcCall('system_syncState'),
       ]);
 
       // print('DEBUG: RPC calls completed');
@@ -140,7 +140,7 @@ class ChainRpcClient {
   /// Get just the peer count (lightweight call)
   Future<int?> getPeerCount() async {
     try {
-      final result = await _rpcCall('peer_getBasicInfo');
+      final result = await rpcCall('peer_getBasicInfo');
       if (result != null && result['peer_count'] != null) {
         return result['peer_count'] as int;
       }
@@ -153,7 +153,7 @@ class ChainRpcClient {
   /// Get current block height
   Future<int?> getCurrentBlock() async {
     try {
-      final result = await _rpcCall('chain_getHeader');
+      final result = await rpcCall('chain_getHeader');
       if (result != null && result['number'] != null) {
         final blockHex = result['number'] as String;
         return _hexToInt(blockHex);
@@ -167,7 +167,7 @@ class ChainRpcClient {
   /// Get block hash by block number.
   Future<String?> getBlockHash(int blockNumber) async {
     try {
-      final result = await _rpcCall('chain_getBlockHash', ['0x${blockNumber.toRadixString(16)}']);
+      final result = await rpcCall('chain_getBlockHash', ['0x${blockNumber.toRadixString(16)}']);
       return result as String?;
     } catch (e) {
       return null;
@@ -188,7 +188,7 @@ class ChainRpcClient {
         return null;
       }
 
-      final result = await _rpcCall('state_getStorage', [storageKey]);
+      final result = await rpcCall('state_getStorage', [storageKey]);
       if (result == null) {
         // Account doesn't exist, balance is 0
         return BigInt.zero;
@@ -377,10 +377,44 @@ class ChainRpcClient {
     return bytes;
   }
 
+  /// Get block header by block hash.
+  Future<Map<String, dynamic>?> getBlockHeader({String? blockHash}) async {
+    try {
+      final params = blockHash != null ? [blockHash] : null;
+      final result = await rpcCall('chain_getHeader', params);
+      return result as Map<String, dynamic>?;
+    } catch (e) {
+      _log.e('getBlockHeader error', error: e);
+      return null;
+    }
+  }
+
+  /// Get the latest finalized block hash.
+  Future<String?> getFinalizedHead() async {
+    try {
+      final result = await rpcCall('chain_getFinalizedHead');
+      return result as String?;
+    } catch (e) {
+      _log.e('getFinalizedHead error', error: e);
+      return null;
+    }
+  }
+
+  /// Get ZK Merkle proof for a leaf at a given block.
+  Future<Map<String, dynamic>?> getZkMerkleProof(BigInt leafIndex, String blockHash) async {
+    try {
+      final result = await rpcCall('zkTree_getMerkleProof', [leafIndex.toInt(), blockHash]);
+      return result as Map<String, dynamic>?;
+    } catch (e) {
+      _log.e('getZkMerkleProof error for leaf $leafIndex', error: e);
+      return null;
+    }
+  }
+
   /// Get sync state information
   Future<Map<String, dynamic>?> getSyncState() async {
     try {
-      return await _rpcCall('system_syncState');
+      return await rpcCall('system_syncState');
     } catch (e) {
       return null;
     }
@@ -389,7 +423,7 @@ class ChainRpcClient {
   /// Check if the node is syncing
   Future<bool?> isSyncing() async {
     try {
-      final syncState = await _rpcCall('system_syncState');
+      final syncState = await rpcCall('system_syncState');
       if (syncState != null && syncState['currentBlock'] != null && syncState['highestBlock'] != null) {
         final current = syncState['currentBlock'] as int;
         final highest = syncState['highestBlock'] as int;
@@ -405,15 +439,14 @@ class ChainRpcClient {
   Future<bool> isReachable() async {
     try {
       // Try the custom peer endpoint since it's definitely available
-      final result = await _rpcCall('peer_getBasicInfo');
+      final result = await rpcCall('peer_getBasicInfo');
       return result != null;
     } catch (e) {
       return false;
     }
   }
 
-  /// Execute a JSON-RPC call
-  Future<dynamic> _rpcCall(String method, [List<dynamic>? params]) async {
+  Future<dynamic> rpcCall(String method, [List<dynamic>? params]) async {
     final request = {'jsonrpc': '2.0', 'id': _requestId++, 'method': method, 'params': ?params};
 
     // Only print RPC calls when debugging connection issues
