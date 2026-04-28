@@ -15,7 +15,6 @@ class ResetConfirmationScreen extends ConsumerStatefulWidget {
 
 class _ResetConfirmationScreenState extends ConsumerState<ResetConfirmationScreen> {
 
-
   bool _backedUpChecked = false;
   bool _isResetting = false;
 
