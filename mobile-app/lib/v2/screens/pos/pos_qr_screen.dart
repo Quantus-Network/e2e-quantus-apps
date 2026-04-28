@@ -127,7 +127,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
 
     return ScaffoldBase(
       appBar: V2AppBar(title: _isPaid ? 'Payment Received' : 'Scan to Pay'),
-      child: accountAsync.when(
+      mainContent: accountAsync.when(
         loading: () => const Center(child: Loader()),
         error: (e, _) => Center(
           child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError)),

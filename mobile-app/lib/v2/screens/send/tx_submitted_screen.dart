@@ -3,6 +3,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -27,7 +28,7 @@ class TxSubmittedScreen extends StatelessWidget {
 
   String get _headline {
     final fmt = NumberFormattingService();
-    final n = fmt.formatBalance(amount);
+    final n = fmt.formatBalance(amount, maxDecimals: 4);
     final action = isPayMode ? 'paid' : 'sent';
     return '$n ${AppConstants.tokenSymbol} $action';
   }
@@ -50,7 +51,7 @@ class TxSubmittedScreen extends StatelessWidget {
           title: isPayMode ? 'Pay' : 'Send',
           leading: AppBackButton(onTap: () => _popToHome(context)),
         ),
-        child: Column(
+        mainContent: Column(
           children: [
             Center(
               child: Column(
@@ -109,16 +110,10 @@ class TxSubmittedScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const Spacer(),
-            Padding(
-              padding: const EdgeInsets.only(top: 25, bottom: 40),
-              child: QuantusButton.simple(
-                label: 'Done',
-                variant: ButtonVariant.primary,
-                onTap: () => _popToHome(context),
-              ),
-            ),
           ],
+        ),
+        bottomContent: ScaffoldBaseBottomContent(
+          child: QuantusButton.simple(label: 'Done', variant: ButtonVariant.primary, onTap: () => _popToHome(context)),
         ),
       ),
     );

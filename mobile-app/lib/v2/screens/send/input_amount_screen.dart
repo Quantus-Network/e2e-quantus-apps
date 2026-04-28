@@ -10,6 +10,7 @@ import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/send/review_send_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
@@ -184,14 +185,14 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
 
     return ScaffoldBase(
       appBar: V2AppBar(title: widget.isPayMode ? 'Pay' : 'Send'),
-      child: Column(
+      mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _recipientCard(colors, text),
           Expanded(child: _amountCenter(colors, text)),
-          _bottomSection(colors, text, btnText, balance, btnDisabled),
         ],
       ),
+      bottomContent: _bottomSection(colors, text, btnText, balance, btnDisabled),
     );
   }
 
@@ -200,11 +201,10 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final shortAddr = AddressFormattingService.formatAddress(addr);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
       decoration: BoxDecoration(
         color: colors.surfaceDeep,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colors.borderButton),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -320,8 +320,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     AsyncValue<BigInt> balance,
     bool btnDisabled,
   ) {
-    return Container(
-      padding: const EdgeInsets.only(top: 25, bottom: 40),
+    return ScaffoldBaseBottomContent(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,

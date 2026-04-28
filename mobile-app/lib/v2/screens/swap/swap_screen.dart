@@ -125,7 +125,7 @@ class _SwapScreenState extends State<SwapScreen> {
         title: 'Swap',
         trailing: Icon(Icons.info_outline, color: colors.textPrimary, size: 24),
       ),
-      child: Column(
+      mainContent: Column(
         children: [
           const SizedBox(height: 24),
           Expanded(

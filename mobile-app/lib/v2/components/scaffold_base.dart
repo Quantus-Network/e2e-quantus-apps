@@ -4,7 +4,8 @@ import 'package:resonance_network_wallet/v2/components/base_background.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
 class ScaffoldBase extends StatelessWidget {
-  final Widget? child;
+  final Widget? mainContent;
+  final Widget? bottomContent;
   final List<Widget>? slivers;
   final Widget? appBar;
   final ScrollController? scrollController;
@@ -21,7 +22,8 @@ class ScaffoldBase extends StatelessWidget {
     this.appBar,
     this.padding = defaultPadding,
     this.backgroundWidget,
-    required Widget this.child,
+    this.bottomContent,
+    required Widget this.mainContent,
   }) : slivers = null,
        scrollController = null,
        scrollPhysics = null,
@@ -35,9 +37,10 @@ class ScaffoldBase extends StatelessWidget {
     this.backgroundWidget,
     this.scrollController,
     this.scrollPhysics = const AlwaysScrollableScrollPhysics(),
+    this.bottomContent,
     required RefreshCallback this.onRefresh,
     required List<Widget> this.slivers,
-  }) : child = null;
+  }) : mainContent = null;
 
   @override
   Widget build(BuildContext context) {
@@ -69,24 +72,39 @@ class ScaffoldBase extends StatelessWidget {
         onRefresh: onRefresh!,
         color: colors.textPrimary,
         backgroundColor: colors.surface,
-        child: CustomScrollView(
-          controller: scrollController,
-          physics: scrollPhysics ?? const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverPadding(
-              padding: padding,
-              sliver: SliverList(delegate: SliverChildListDelegate(slivers!)),
+        child: Column(
+          children: [
+            Expanded(
+              child: CustomScrollView(
+                controller: scrollController,
+                physics: scrollPhysics ?? const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverPadding(
+                    padding: padding,
+                    sliver: SliverList(delegate: SliverChildListDelegate(slivers!)),
+                  ),
+                ],
+              ),
             ),
+            ?bottomContent,
           ],
         ),
       );
     }
 
     // Static content
-    if (child != null) {
-      return Padding(padding: padding, child: child!);
+    if (mainContent != null) {
+      return Column(
+        children: [
+          Expanded(
+            child: Padding(padding: padding, child: mainContent!),
+          ),
+          ?bottomContent,
+        ],
+      );
     }
 
     return const SizedBox.shrink();
   }
 }
+

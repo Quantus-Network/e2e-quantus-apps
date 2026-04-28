@@ -149,7 +149,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
         txItemIncomingHighlightBorder: const Color(0x26408C6B),
         txItemBorderDefault: const Color(0xFF191919),
         segmentedControlPill: const Color(0xFF1C1C1C),
-        surfaceDeep: const Color(0xFF0A0A0A),
+        surfaceDeep: const Color(0xFF141414),
         copyButtonCopiedBg: const Color(0xFF0C1C14),
         copyButtonCopiedBorder: const Color(0xFF1A3226),
         buttonDisabled: const Color(0xFF3D3C44),

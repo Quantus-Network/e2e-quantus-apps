@@ -66,7 +66,7 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Recovery Phrase'),
-      child: Column(
+      mainContent: Column(
         children: [
           _warning(colors, text),
           const SizedBox(height: 40),

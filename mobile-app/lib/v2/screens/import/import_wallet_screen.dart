@@ -125,7 +125,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
           child: Icon(Icons.close, color: colors.textPrimary, size: 24),
         ),
       ),
-      child: GestureDetector(
+      mainContent: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         behavior: HitTestBehavior.opaque,
         child: SingleChildScrollView(
