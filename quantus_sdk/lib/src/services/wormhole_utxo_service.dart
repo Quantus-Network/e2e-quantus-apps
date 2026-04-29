@@ -61,10 +61,8 @@ class WormholeTransfer {
 
 class WormholeUtxoService {
   static const int _prefixLen = 8;
-  static const int _serverMaxLimit = 1000;
-  static const int _chunkSize = 10000;
+  static const int _pageSize = 1000;
   static const int _reorgDepth = 180;
-  static const String _limitExceededMarker = 'exceeds the limit';
 
   final GraphQlEndpointService _graphQlEndpoint = GraphQlEndpointService();
   final RpcEndpointService _rpcEndpoint = RpcEndpointService();
@@ -132,10 +130,9 @@ class WormholeUtxoService {
 
   Future<List<WormholeTransfer>> _queryTransfersByPrefix({
     List<String>? toHashPrefixes,
-    int limit = 1000,
+    int limit = _pageSize,
     int offset = 0,
     int? afterBlock,
-    int? beforeBlock,
   }) async {
     const query = r'''
 query TransfersByHashPrefix($input: TransfersByPrefixInput!) {
@@ -155,14 +152,12 @@ query TransfersByHashPrefix($input: TransfersByPrefixInput!) {
       leafIndex
       transferCount
     }
-    totalCount
   }
 }''';
 
     final input = <String, dynamic>{'limit': limit, 'offset': offset};
     if (toHashPrefixes != null) input['toHashPrefixes'] = toHashPrefixes;
     if (afterBlock != null) input['afterBlock'] = afterBlock;
-    if (beforeBlock != null) input['beforeBlock'] = beforeBlock;
 
     final body = jsonEncode({'query': query, 'variables': {'input': input}});
 
@@ -172,7 +167,6 @@ query TransfersByHashPrefix($input: TransfersByPrefixInput!) {
         'query TransfersByHashPrefix(\$input: TransfersByPrefixInput!) {\n'
         '  transfersByHashPrefix(input: \$input) {\n'
         '    transfers { id blockHeight fromId toId amount toHash leafIndex transferCount }\n'
-        '    totalCount\n'
         '  }\n'
         '}\n'
         '--- VARIABLES PANEL ---\n'
@@ -194,60 +188,41 @@ query TransfersByHashPrefix($input: TransfersByPrefixInput!) {
     }
 
     final data = parsed['data']?['transfersByHashPrefix'];
-    final totalCount = data?['totalCount'];
     final transfers = data?['transfers'] as List<dynamic>?;
-    _log('transfersByHashPrefix: ${transfers?.length ?? 0} transfers, totalCount=$totalCount (${sw.elapsedMilliseconds}ms)');
+    _log('transfersByHashPrefix: ${transfers?.length ?? 0} transfers (${sw.elapsedMilliseconds}ms)');
     if (transfers == null || transfers.isEmpty) return [];
     return transfers.map((t) => WormholeTransfer.fromJson(t as Map<String, dynamic>)).toList();
   }
 
-  Future<void> _fetchRange(List<String> prefixes, int lo, int hi, List<WormholeTransfer> out) async {
-    try {
-      final transfers = await _queryTransfersByPrefix(
-        toHashPrefixes: prefixes,
-        limit: _serverMaxLimit,
-        afterBlock: lo,
-        beforeBlock: hi,
-      );
-      out.addAll(transfers);
-    } catch (e) {
-      if (e.toString().contains(_limitExceededMarker)) {
-        if (lo == hi) rethrow;
-        final mid = lo + (hi - lo) ~/ 2;
-        _log('_fetchRange [$lo..$hi]: limit exceeded, splitting at $mid');
-        await _fetchRange(prefixes, lo, mid, out);
-        await _fetchRange(prefixes, mid + 1, hi, out);
-      } else {
-        rethrow;
-      }
-    }
-  }
-
-  Future<List<WormholeTransfer>> _fetchTransfersInRange(List<String> prefixes, int fromBlock, int toBlock) async {
+  Future<List<WormholeTransfer>> _fetchAllTransfers({
+    required List<String> prefixes,
+    int? afterBlock,
+  }) async {
     final all = <WormholeTransfer>[];
-    int chunks = 0;
-    for (int lo = fromBlock; lo <= toBlock; lo += _chunkSize) {
-      final hi = (lo + _chunkSize - 1).clamp(0, toBlock);
-      chunks++;
-      _log('Fetching chunk $chunks [$lo..$hi]');
-      await _fetchRange(prefixes, lo, hi, all);
+    int offset = 0;
+    while (true) {
+      final page = await _queryTransfersByPrefix(
+        toHashPrefixes: prefixes,
+        limit: _pageSize,
+        offset: offset,
+        afterBlock: afterBlock,
+      );
+      all.addAll(page);
+      if (page.length < _pageSize) break;
+      offset += _pageSize;
+      _log('Paginating: fetched ${all.length} so far, offset=$offset');
     }
-    _log('Fetched $chunks chunks, ${all.length} transfers in [$fromBlock..$toBlock]');
+    _log('Fetched ${all.length} total transfers');
     return all;
   }
 
   // --- Nullifiers ---
 
-  Future<Set<String>> _checkNullifiersSpent(List<(String nullifierHex, String nullifierHash)> nullifiers) async {
-    if (nullifiers.isEmpty) return {};
-
-    final hashToNullifier = <String, String>{};
-    final prefixes = <String>{};
-    for (final (nulHex, nulHash) in nullifiers) {
-      hashToNullifier[nulHash] = nulHex;
-      prefixes.add(_hashPrefix(nulHash));
-    }
-
+  Future<List<Map<String, dynamic>>> _queryNullifiersByPrefix({
+    required List<String> hashPrefixes,
+    int limit = _pageSize,
+    int offset = 0,
+  }) async {
     const query = r'''
 query NullifiersByPrefix($input: NullifiersByPrefixInput!) {
   nullifiersByPrefix(input: $input) {
@@ -258,26 +233,11 @@ query NullifiersByPrefix($input: NullifiersByPrefixInput!) {
       blockHeight
       timestamp
     }
-    totalCount
   }
 }''';
 
-    final inputMap = {'hashPrefixes': prefixes.toList()};
-    final body = jsonEncode({
-      'query': query,
-      'variables': {'input': inputMap},
-    });
-    final prettyVars = const JsonEncoder.withIndent('  ').convert({'input': inputMap});
-    _log('=== NULLIFIERS QUERY ===\n'
-        '--- QUERY PANEL ---\n'
-        'query NullifiersByPrefix(\$input: NullifiersByPrefixInput!) {\n'
-        '  nullifiersByPrefix(input: \$input) {\n'
-        '    nullifiers { nullifier nullifierHash extrinsicHash blockHeight timestamp }\n'
-        '    totalCount\n'
-        '  }\n'
-        '}\n'
-        '--- VARIABLES PANEL ---\n'
-        '$prettyVars');
+    final inputMap = <String, dynamic>{'hashPrefixes': hashPrefixes, 'limit': limit, 'offset': offset};
+    final body = jsonEncode({'query': query, 'variables': {'input': inputMap}});
 
     final sw = Stopwatch()..start();
     final response = await _graphQlEndpoint.post(body: body);
@@ -294,18 +254,35 @@ query NullifiersByPrefix($input: NullifiersByPrefixInput!) {
       throw Exception('GraphQL errors: $msgs');
     }
 
-    final data = parsed['data']?['nullifiersByPrefix'];
-    final totalCount = data?['totalCount'];
-    final results = data?['nullifiers'] as List<dynamic>?;
-    _log('nullifiersByPrefix: ${results?.length ?? 0} results, totalCount=$totalCount (${sw.elapsedMilliseconds}ms)');
-    if (results == null || results.isEmpty) return {};
+    final results = parsed['data']?['nullifiersByPrefix']?['nullifiers'] as List<dynamic>?;
+    _log('nullifiersByPrefix: ${results?.length ?? 0} results (${sw.elapsedMilliseconds}ms)');
+    return results?.cast<Map<String, dynamic>>() ?? [];
+  }
 
-    final spent = <String>{};
-    for (final r in results) {
-      final rHash = (r as Map<String, dynamic>)['nullifierHash'] as String;
-      final nulHex = hashToNullifier[rHash];
-      if (nulHex != null) spent.add(nulHex);
+  Future<Set<String>> _checkNullifiersSpent(List<(String nullifierHex, String nullifierHash)> nullifiers) async {
+    if (nullifiers.isEmpty) return {};
+
+    final hashToNullifier = <String, String>{};
+    final prefixes = <String>{};
+    for (final (nulHex, nulHash) in nullifiers) {
+      hashToNullifier[nulHash] = nulHex;
+      prefixes.add(_hashPrefix(nulHash));
     }
+
+    final prefixList = prefixes.toList();
+    final spent = <String>{};
+    int offset = 0;
+    while (true) {
+      final page = await _queryNullifiersByPrefix(hashPrefixes: prefixList, limit: _pageSize, offset: offset);
+      for (final r in page) {
+        final nulHex = hashToNullifier[r['nullifierHash'] as String];
+        if (nulHex != null) spent.add(nulHex);
+      }
+      if (page.length < _pageSize) break;
+      offset += _pageSize;
+      _log('Nullifiers paginating: offset=$offset');
+    }
+
     _log('Nullifiers: ${spent.length} spent out of ${nullifiers.length}');
     return spent;
   }
@@ -334,8 +311,8 @@ query NullifiersByPrefix($input: NullifiersByPrefixInput!) {
       _log('Cache is current, no new blocks to query');
       newTransfers = [];
     } else {
-      _log('Querying new blocks [$queryFrom..$chainHeight]');
-      final raw = await _fetchTransfersInRange([prefix], queryFrom, chainHeight);
+      _log('Querying transfers after block $queryFrom');
+      final raw = await _fetchAllTransfers(prefixes: [prefix], afterBlock: queryFrom);
       newTransfers = raw.where((t) => t.toHash == fullHash).toList();
       _log('New transfers after filtering: ${newTransfers.length}');
     }
