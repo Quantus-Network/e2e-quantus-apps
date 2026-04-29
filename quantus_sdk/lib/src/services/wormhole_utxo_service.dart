@@ -62,17 +62,14 @@ class WormholeTransfer {
 typedef WormholeProgressCallback = void Function(int phase, int completed, {int? total});
 
 class WormholeUtxoService {
-  static const int _prefixLen = 8;
-  static const int _pageSize = 1000;
+  static const int _transferPageSize = 300;
+  static const int _nullifierBatchSize = 300;
   static const int _reorgDepth = 180;
 
   final GraphQlEndpointService _graphQlEndpoint = GraphQlEndpointService();
   final RpcEndpointService _rpcEndpoint = RpcEndpointService();
 
   static void _log(String msg) => print('[WormholeUtxo] $msg');
-
-  static String _hashPrefix(String fullHash) =>
-      fullHash.substring(0, _prefixLen.clamp(0, fullHash.length));
 
   static String _addressHash(Uint8List raw32) =>
       wormhole_ffi.computeAddressHashHex(rawAddress: raw32);
@@ -130,137 +127,141 @@ class WormholeUtxoService {
 
   // --- GraphQL queries ---
 
-  Future<List<WormholeTransfer>> _queryTransfersByPrefix({
-    List<String>? toHashPrefixes,
-    int limit = _pageSize,
+  Future<List<WormholeTransfer>> _queryTransfers({
+    required String toAddress,
+    int limit = _transferPageSize,
     int offset = 0,
     int? afterBlock,
   }) async {
     const query = r'''
-query TransfersByHashPrefix($input: TransfersByPrefixInput!) {
-  transfersByHashPrefix(input: $input) {
-    transfers {
-      id
-      blockId
-      blockHeight
-      timestamp
-      extrinsicHash
-      fromId
-      toId
-      amount
-      fee
-      fromHash
-      toHash
-      leafIndex
-      transferCount
-    }
+query TransfersToAddress($to: String!, $limit: Int!, $offset: Int!, $afterBlock: Int) {
+  transfers(
+    where: { to: { id_eq: $to }, block: { height_gt: $afterBlock } }
+    orderBy: [block_height_ASC]
+    limit: $limit
+    offset: $offset
+  ) {
+    id
+    block { height }
+    from { id }
+    to { id }
+    amount
+    toHash
+    leafIndex
+    transferCount
   }
 }''';
 
-    final input = <String, dynamic>{'limit': limit, 'offset': offset};
-    if (toHashPrefixes != null) input['toHashPrefixes'] = toHashPrefixes;
-    if (afterBlock != null) input['afterBlock'] = afterBlock;
+    final variables = <String, dynamic>{
+      'to': toAddress,
+      'limit': limit,
+      'offset': offset,
+      'afterBlock': afterBlock ?? 0,
+    };
 
-    final body = jsonEncode({'query': query, 'variables': {'input': input}});
+    final body = jsonEncode({'query': query, 'variables': variables});
 
-    final prettyVars = const JsonEncoder.withIndent('  ').convert({'input': input});
     _log('=== TRANSFERS QUERY ===\n'
-        '--- QUERY PANEL ---\n'
-        'query TransfersByHashPrefix(\$input: TransfersByPrefixInput!) {\n'
-        '  transfersByHashPrefix(input: \$input) {\n'
-        '    transfers { id blockHeight fromId toId amount toHash leafIndex transferCount }\n'
-        '  }\n'
-        '}\n'
-        '--- VARIABLES PANEL ---\n'
-        '$prettyVars');
+        'to=$toAddress limit=$limit offset=$offset afterBlock=${afterBlock ?? 0}');
 
     final sw = Stopwatch()..start();
     final response = await _graphQlEndpoint.post(body: body);
-    _log('transfersByHashPrefix response: ${response.statusCode} (${sw.elapsedMilliseconds}ms)');
+    final elapsed = sw.elapsedMilliseconds;
+    _log('transfers query: status=${response.statusCode} offset=$offset elapsed=${elapsed}ms');
+
     if (response.statusCode != 200) {
-      _log('transfersByHashPrefix FAILED body: ${response.body}');
+      _log('transfers query FAILED: ${response.body}');
       throw Exception('Subsquid request failed ${response.statusCode}: ${response.body}');
     }
 
     final parsed = jsonDecode(response.body) as Map<String, dynamic>;
     if (parsed['errors'] != null) {
       final msgs = (parsed['errors'] as List).map((e) => (e as Map)['message']).join('; ');
-      _log('transfersByHashPrefix GraphQL errors: $msgs');
+      _log('transfers query GraphQL errors: $msgs');
       throw Exception('GraphQL errors: $msgs');
     }
 
-    final data = parsed['data']?['transfersByHashPrefix'];
-    final transfers = data?['transfers'] as List<dynamic>?;
-    _log('transfersByHashPrefix: ${transfers?.length ?? 0} transfers (${sw.elapsedMilliseconds}ms)');
+    final transfers = parsed['data']?['transfers'] as List<dynamic>?;
+    final count = transfers?.length ?? 0;
+    _log('transfers query: received $count transfers (${elapsed}ms)');
     if (transfers == null || transfers.isEmpty) return [];
-    return transfers.map((t) => WormholeTransfer.fromJson(t as Map<String, dynamic>)).toList();
+
+    return transfers.map((t) {
+      final m = t as Map<String, dynamic>;
+      return WormholeTransfer(
+        id: m['id'] as String,
+        blockHeight: (m['block'] as Map<String, dynamic>)['height'] as int,
+        fromId: (m['from'] as Map<String, dynamic>)['id'] as String,
+        toId: (m['to'] as Map<String, dynamic>)['id'] as String,
+        amount: BigInt.parse(m['amount'] as String),
+        toHash: m['toHash'] as String? ?? '',
+        leafIndex: BigInt.parse(m['leafIndex'] as String),
+        transferCount: BigInt.parse(m['transferCount'] as String),
+      );
+    }).toList();
   }
 
   Future<List<WormholeTransfer>> _fetchAllTransfers({
-    required List<String> prefixes,
+    required String toAddress,
     int? afterBlock,
     WormholeProgressCallback? onProgress,
   }) async {
+    final totalSw = Stopwatch()..start();
     final all = <WormholeTransfer>[];
     int offset = 0;
+    int pageNum = 0;
     while (true) {
-      final page = await _queryTransfersByPrefix(
-        toHashPrefixes: prefixes,
-        limit: _pageSize,
+      pageNum++;
+      final page = await _queryTransfers(
+        toAddress: toAddress,
+        limit: _transferPageSize,
         offset: offset,
         afterBlock: afterBlock,
       );
       all.addAll(page);
       onProgress?.call(1, all.length);
-      if (page.length < _pageSize) break;
-      offset += _pageSize;
-      _log('Paginating: fetched ${all.length} so far, offset=$offset');
+      _log('Page $pageNum: got ${page.length} transfers, total so far: ${all.length} (${totalSw.elapsedMilliseconds}ms elapsed)');
+      if (page.isEmpty || page.length < _transferPageSize) break;
+      offset += _transferPageSize;
     }
-    _log('Fetched ${all.length} total transfers');
+    _log('Fetched ${all.length} total transfers in ${totalSw.elapsedMilliseconds}ms ($pageNum pages)');
     return all;
   }
 
   // --- Nullifiers ---
 
-  Future<List<Map<String, dynamic>>> _queryNullifiersByPrefix({
-    required List<String> hashPrefixes,
-    int limit = _pageSize,
-    int offset = 0,
-  }) async {
+  Future<Set<String>> _querySpentNullifierHashes(List<String> nullifierHashes) async {
     const query = r'''
-query NullifiersByPrefix($input: NullifiersByPrefixInput!) {
-  nullifiersByPrefix(input: $input) {
-    nullifiers {
-      nullifier
-      nullifierHash
-      extrinsicHash
-      blockHeight
-      timestamp
-    }
+query SpentNullifiers($hashes: [String!]!) {
+  wormholeNullifiers(where: { nullifierHash_in: $hashes }, limit: 1000) {
+    nullifierHash
   }
 }''';
 
-    final inputMap = <String, dynamic>{'hashPrefixes': hashPrefixes, 'limit': limit, 'offset': offset};
-    final body = jsonEncode({'query': query, 'variables': {'input': inputMap}});
+    final body = jsonEncode({'query': query, 'variables': {'hashes': nullifierHashes}});
 
+    _log('nullifiers query: ${nullifierHashes.length} hashes');
     final sw = Stopwatch()..start();
     final response = await _graphQlEndpoint.post(body: body);
-    _log('nullifiersByPrefix response: ${response.statusCode} (${sw.elapsedMilliseconds}ms)');
+    final elapsed = sw.elapsedMilliseconds;
+    _log('nullifiers query: status=${response.statusCode} elapsed=${elapsed}ms');
+
     if (response.statusCode != 200) {
-      _log('nullifiersByPrefix FAILED body: ${response.body}');
+      _log('nullifiers query FAILED: ${response.body}');
       throw Exception('Subsquid nullifiers request failed ${response.statusCode}: ${response.body}');
     }
 
     final parsed = jsonDecode(response.body) as Map<String, dynamic>;
     if (parsed['errors'] != null) {
       final msgs = (parsed['errors'] as List).map((e) => (e as Map)['message']).join('; ');
-      _log('nullifiersByPrefix GraphQL errors: $msgs');
+      _log('nullifiers query GraphQL errors: $msgs');
       throw Exception('GraphQL errors: $msgs');
     }
 
-    final results = parsed['data']?['nullifiersByPrefix']?['nullifiers'] as List<dynamic>?;
-    _log('nullifiersByPrefix: ${results?.length ?? 0} results (${sw.elapsedMilliseconds}ms)');
-    return results?.cast<Map<String, dynamic>>() ?? [];
+    final results = parsed['data']?['wormholeNullifiers'] as List<dynamic>?;
+    final found = (results ?? []).map((r) => (r as Map<String, dynamic>)['nullifierHash'] as String).toSet();
+    _log('nullifiers query: ${found.length} spent out of ${nullifierHashes.length} queried (${elapsed}ms)');
+    return found;
   }
 
   Future<Set<String>> _checkNullifiersSpent(
@@ -269,31 +270,30 @@ query NullifiersByPrefix($input: NullifiersByPrefixInput!) {
   }) async {
     if (nullifiers.isEmpty) return {};
 
+    final totalSw = Stopwatch()..start();
     final hashToNullifier = <String, String>{};
-    final prefixes = <String>{};
     for (final (nulHex, nulHash) in nullifiers) {
       hashToNullifier[nulHash] = nulHex;
-      prefixes.add(_hashPrefix(nulHash));
     }
 
-    final prefixList = prefixes.toList();
+    final allHashes = hashToNullifier.keys.toList();
     final spent = <String>{};
-    int offset = 0;
     onProgress?.call(3, 0, total: nullifiers.length);
-    while (true) {
-      final page = await _queryNullifiersByPrefix(hashPrefixes: prefixList, limit: _pageSize, offset: offset);
-      for (final r in page) {
-        final nulHex = hashToNullifier[r['nullifierHash'] as String];
+
+    for (int i = 0; i < allHashes.length; i += _nullifierBatchSize) {
+      final batch = allHashes.sublist(i, (i + _nullifierBatchSize).clamp(0, allHashes.length));
+      final batchNum = (i ~/ _nullifierBatchSize) + 1;
+      final spentHashes = await _querySpentNullifierHashes(batch);
+      for (final hash in spentHashes) {
+        final nulHex = hashToNullifier[hash];
         if (nulHex != null) spent.add(nulHex);
       }
-      if (page.length < _pageSize) break;
-      offset += _pageSize;
-      onProgress?.call(3, offset.clamp(0, nullifiers.length), total: nullifiers.length);
-      _log('Nullifiers paginating: offset=$offset');
+      final checked = (i + batch.length).clamp(0, nullifiers.length);
+      onProgress?.call(3, checked, total: nullifiers.length);
+      _log('Nullifier batch $batchNum: checked ${batch.length}, total checked: $checked (${totalSw.elapsedMilliseconds}ms elapsed)');
     }
-    onProgress?.call(3, nullifiers.length, total: nullifiers.length);
 
-    _log('Nullifiers: ${spent.length} spent out of ${nullifiers.length}');
+    _log('Nullifiers: ${spent.length} spent out of ${nullifiers.length} (${totalSw.elapsedMilliseconds}ms total)');
     return spent;
   }
 
@@ -308,11 +308,10 @@ query NullifiersByPrefix($input: NullifiersByPrefixInput!) {
 
     final raw = Uint8List.fromList(getAccountId32(wormholeAddress));
     final fullHash = _addressHash(raw);
-    final prefix = _hashPrefix(fullHash);
 
     final chainHeight = await _getChainHeight();
     final safeCutoff = (chainHeight - _reorgDepth).clamp(0, chainHeight);
-    _log('chainHeight=$chainHeight safeCutoff=$safeCutoff prefix=$prefix');
+    _log('chainHeight=$chainHeight safeCutoff=$safeCutoff');
 
     final cache = await _loadCache(fullHash);
     _log('Cache: ${cache.transfers.length} transfers up to block ${cache.cachedUpToBlock}');
@@ -326,16 +325,15 @@ query NullifiersByPrefix($input: NullifiersByPrefixInput!) {
       newTransfers = [];
     } else {
       _log('Querying transfers after block $queryFrom');
-      final fetchedRaw = await _fetchAllTransfers(
-        prefixes: [prefix],
+      newTransfers = await _fetchAllTransfers(
+        toAddress: wormholeAddress,
         afterBlock: queryFrom,
         onProgress: onProgress != null
             ? (phase, completed, {int? total}) =>
                 onProgress(phase, cache.transfers.length + completed, total: total)
             : null,
       );
-      newTransfers = fetchedRaw.where((t) => t.toHash == fullHash).toList();
-      _log('New transfers after filtering: ${newTransfers.length}');
+      _log('New transfers: ${newTransfers.length}');
     }
 
     final allTransfers = [...cache.transfers, ...newTransfers];
