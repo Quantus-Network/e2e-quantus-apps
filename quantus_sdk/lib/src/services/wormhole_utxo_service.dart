@@ -59,6 +59,8 @@ class WormholeTransfer {
       'leafIndex: $leafIndex, transferCount: $transferCount}';
 }
 
+typedef WormholeProgressCallback = void Function(int phase, int completed, {int? total});
+
 class WormholeUtxoService {
   static const int _prefixLen = 8;
   static const int _pageSize = 1000;
@@ -197,6 +199,7 @@ query TransfersByHashPrefix($input: TransfersByPrefixInput!) {
   Future<List<WormholeTransfer>> _fetchAllTransfers({
     required List<String> prefixes,
     int? afterBlock,
+    WormholeProgressCallback? onProgress,
   }) async {
     final all = <WormholeTransfer>[];
     int offset = 0;
@@ -208,6 +211,7 @@ query TransfersByHashPrefix($input: TransfersByPrefixInput!) {
         afterBlock: afterBlock,
       );
       all.addAll(page);
+      onProgress?.call(1, all.length);
       if (page.length < _pageSize) break;
       offset += _pageSize;
       _log('Paginating: fetched ${all.length} so far, offset=$offset');
@@ -259,7 +263,10 @@ query NullifiersByPrefix($input: NullifiersByPrefixInput!) {
     return results?.cast<Map<String, dynamic>>() ?? [];
   }
 
-  Future<Set<String>> _checkNullifiersSpent(List<(String nullifierHex, String nullifierHash)> nullifiers) async {
+  Future<Set<String>> _checkNullifiersSpent(
+    List<(String nullifierHex, String nullifierHash)> nullifiers, {
+    WormholeProgressCallback? onProgress,
+  }) async {
     if (nullifiers.isEmpty) return {};
 
     final hashToNullifier = <String, String>{};
@@ -272,6 +279,7 @@ query NullifiersByPrefix($input: NullifiersByPrefixInput!) {
     final prefixList = prefixes.toList();
     final spent = <String>{};
     int offset = 0;
+    onProgress?.call(3, 0, total: nullifiers.length);
     while (true) {
       final page = await _queryNullifiersByPrefix(hashPrefixes: prefixList, limit: _pageSize, offset: offset);
       for (final r in page) {
@@ -280,8 +288,10 @@ query NullifiersByPrefix($input: NullifiersByPrefixInput!) {
       }
       if (page.length < _pageSize) break;
       offset += _pageSize;
+      onProgress?.call(3, offset.clamp(0, nullifiers.length), total: nullifiers.length);
       _log('Nullifiers paginating: offset=$offset');
     }
+    onProgress?.call(3, nullifiers.length, total: nullifiers.length);
 
     _log('Nullifiers: ${spent.length} spent out of ${nullifiers.length}');
     return spent;
@@ -289,7 +299,10 @@ query NullifiersByPrefix($input: NullifiersByPrefixInput!) {
 
   // --- Public API ---
 
-  Future<List<WormholeTransfer>> getTransfersTo(String wormholeAddress) async {
+  Future<List<WormholeTransfer>> getTransfersTo(
+    String wormholeAddress, {
+    WormholeProgressCallback? onProgress,
+  }) async {
     final sw = Stopwatch()..start();
     _log('getTransfersTo START ($wormholeAddress)');
 
@@ -303,6 +316,7 @@ query NullifiersByPrefix($input: NullifiersByPrefixInput!) {
 
     final cache = await _loadCache(fullHash);
     _log('Cache: ${cache.transfers.length} transfers up to block ${cache.cachedUpToBlock}');
+    if (cache.transfers.isNotEmpty) onProgress?.call(1, cache.transfers.length);
 
     final queryFrom = cache.cachedUpToBlock > 0 ? cache.cachedUpToBlock + 1 : 0;
     List<WormholeTransfer> newTransfers;
@@ -312,12 +326,20 @@ query NullifiersByPrefix($input: NullifiersByPrefixInput!) {
       newTransfers = [];
     } else {
       _log('Querying transfers after block $queryFrom');
-      final raw = await _fetchAllTransfers(prefixes: [prefix], afterBlock: queryFrom);
-      newTransfers = raw.where((t) => t.toHash == fullHash).toList();
+      final fetchedRaw = await _fetchAllTransfers(
+        prefixes: [prefix],
+        afterBlock: queryFrom,
+        onProgress: onProgress != null
+            ? (phase, completed, {int? total}) =>
+                onProgress(phase, cache.transfers.length + completed, total: total)
+            : null,
+      );
+      newTransfers = fetchedRaw.where((t) => t.toHash == fullHash).toList();
       _log('New transfers after filtering: ${newTransfers.length}');
     }
 
     final allTransfers = [...cache.transfers, ...newTransfers];
+    onProgress?.call(1, allTransfers.length);
     _log('Total transfers: ${allTransfers.length} (${cache.transfers.length} cached + ${newTransfers.length} new)');
 
     final safeTransfers = allTransfers.where((t) => t.blockHeight <= safeCutoff).toList();
@@ -331,9 +353,10 @@ query NullifiersByPrefix($input: NullifiersByPrefixInput!) {
   Future<List<WormholeTransfer>> getUnspentTransfers({
     required String wormholeAddress,
     required String secretHex,
+    WormholeProgressCallback? onProgress,
   }) async {
     _log('getUnspentTransfers($wormholeAddress)');
-    final transfers = await getTransfersTo(wormholeAddress);
+    final transfers = await getTransfersTo(wormholeAddress, onProgress: onProgress);
     if (transfers.isEmpty) {
       _log('getUnspentTransfers: no transfers found');
       return [];
@@ -343,7 +366,8 @@ query NullifiersByPrefix($input: NullifiersByPrefixInput!) {
     final nullifierPairs = <(String, String)>[];
     final nullifierToTransfer = <String, WormholeTransfer>{};
 
-    for (final transfer in transfers) {
+    for (int i = 0; i < transfers.length; i++) {
+      final transfer = transfers[i];
       final nullifierHex = hdWalletService.computeNullifier(
         secretHex: secretHex,
         transferCount: transfer.transferCount,
@@ -352,10 +376,13 @@ query NullifiersByPrefix($input: NullifiersByPrefixInput!) {
       final nullifierHash = _addressHash(Uint8List.fromList(nullifierBytes));
       nullifierPairs.add((nullifierHex, nullifierHash));
       nullifierToTransfer[nullifierHex] = transfer;
+      if (i == 0 || (i + 1) % 10 == 0 || i == transfers.length - 1) {
+        onProgress?.call(2, i + 1, total: transfers.length);
+      }
     }
     _log('Computed ${nullifierPairs.length} nullifier pairs');
 
-    final spent = await _checkNullifiersSpent(nullifierPairs);
+    final spent = await _checkNullifiersSpent(nullifierPairs, onProgress: onProgress);
     final unspent = nullifierToTransfer.entries
         .where((e) => !spent.contains(e.key))
         .map((e) => e.value)

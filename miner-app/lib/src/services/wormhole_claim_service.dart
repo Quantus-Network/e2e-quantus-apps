@@ -9,9 +9,21 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 final _log = log.withTag('WormholeClaim');
 
-enum ClaimStep { ensureCircuits, queryTransfers, fetchBlock, generateProofs, aggregate, submit, done }
+class ClaimProgressItem {
+  final int step;
+  final String title;
+  final int completed;
+  final int? total;
 
-typedef ClaimProgressCallback = void Function(ClaimStep step, String detail, {int? current, int? total});
+  const ClaimProgressItem({
+    required this.step,
+    required this.title,
+    required this.completed,
+    this.total,
+  });
+}
+
+typedef ClaimProgressCallback = void Function(ClaimProgressItem progress);
 
 class ClaimResult {
   final BigInt totalWithdrawn;
@@ -29,6 +41,14 @@ class ClaimResult {
 
 class WormholeClaimService {
   static const int _maxProofsPerBatch = 16;
+  static const _stepTitles = {
+    1: 'Preparing circuits',
+    2: 'Fetching transfers',
+    3: 'Computing nullifiers',
+    4: 'Checking nullifiers',
+    5: 'Generating ZK proofs',
+    6: 'Submitting to chain',
+  };
 
   final WormholeUtxoService _utxoService = WormholeUtxoService();
 
@@ -61,6 +81,16 @@ class WormholeClaimService {
     }
   }
 
+  void _reportProgress(ClaimProgressCallback onProgress, int step, int completed, {int? total}) {
+    print('[WormholeClaim] Step $step: ${_stepTitles[step]} $completed${total != null ? '/$total' : ''}');
+    onProgress(ClaimProgressItem(
+      step: step,
+      title: _stepTitles[step]!,
+      completed: completed,
+      total: total,
+    ));
+  }
+
   Future<ClaimResult> _runClaimFlow({
     required ChainRpcClient rpc,
     required String wormholeAddress,
@@ -71,32 +101,32 @@ class WormholeClaimService {
   }) async {
     _checkCancelled();
 
-    onProgress(ClaimStep.ensureCircuits, 'Checking ZK circuit binaries...');
+    _reportProgress(onProgress, 1, 0);
     _log.i('Ensuring circuit binaries at: $circuitBinsDir');
     await ensureCircuitBinaries(binsDir: circuitBinsDir);
     _log.i('Circuit binaries ready');
-    onProgress(ClaimStep.ensureCircuits, 'Circuit binaries ready');
+    _reportProgress(onProgress, 1, 1);
     _checkCancelled();
 
-    onProgress(ClaimStep.queryTransfers, 'Querying unspent transfers from indexer...');
+    _reportProgress(onProgress, 2, 0);
     final unspent = await _utxoService.getUnspentTransfers(
       wormholeAddress: wormholeAddress,
       secretHex: secretHex,
+      onProgress: (phase, completed, {int? total}) {
+        _reportProgress(onProgress, phase + 1, completed, total: total);
+      },
     );
+
     if (unspent.isEmpty) {
-      onProgress(ClaimStep.done, 'No unspent transfers found');
       return ClaimResult(totalWithdrawn: BigInt.zero, transfersProcessed: 0, batchesSubmitted: 0, txHashes: const []);
     }
     unspent.sort((a, b) => b.amount.compareTo(a.amount));
     final totalAmount = unspent.fold<BigInt>(BigInt.zero, (sum, t) => sum + t.amount);
-    onProgress(
-      ClaimStep.queryTransfers,
-      'Found ${unspent.length} unspent transfers totaling ${_formatAmount(totalAmount)} QUAN',
-    );
     _log.i('Found ${unspent.length} unspent transfers, total: $totalAmount planck');
     _checkCancelled();
 
-    onProgress(ClaimStep.fetchBlock, 'Fetching latest block header...');
+    _reportProgress(onProgress, 5, 0, total: unspent.length);
+
     final blockHash = await rpc.getFinalizedHead();
     if (blockHash == null) throw StateError('Failed to get finalized block hash');
     final header = await rpc.getBlockHeader(blockHash: blockHash);
@@ -106,7 +136,6 @@ class WormholeClaimService {
     final stateRoot = _hexToBytes(header['stateRoot'] as String);
     final extrinsicsRoot = _hexToBytes(header['extrinsicsRoot'] as String);
     final digest = _encodeDigest(header['digest'] as Map<String, dynamic>);
-    onProgress(ClaimStep.fetchBlock, 'Using block #$blockNumber for proofs');
     _log.i('Proof block: #$blockNumber ($blockHash)');
     _checkCancelled();
 
@@ -119,7 +148,6 @@ class WormholeClaimService {
     for (int i = 0; i < numTransfers; i++) {
       _checkCancelled();
       final transfer = unspent[i];
-      onProgress(ClaimStep.generateProofs, 'Generating proof ${i + 1}/$numTransfers...', current: i + 1, total: numTransfers);
       _log.i('Generating proof ${i + 1}/$numTransfers for leaf ${transfer.leafIndex}');
 
       final zkProof = await rpc.getZkMerkleProof(transfer.leafIndex, blockHash);
@@ -167,9 +195,9 @@ class WormholeClaimService {
         commonBinPath: '$circuitBinsDir/common.bin',
       );
       proofBytesList.add(proof.proofBytes);
+      _reportProgress(onProgress, 5, i + 1, total: numTransfers);
       _log.i('Proof ${i + 1}/$numTransfers generated (${proof.proofBytes.length} bytes)');
     }
-    onProgress(ClaimStep.generateProofs, 'All $numTransfers proofs generated');
 
     final batches = <List<Uint8List>>[];
     for (int i = 0; i < proofBytesList.length; i += _maxProofsPerBatch) {
@@ -180,26 +208,22 @@ class WormholeClaimService {
     BigInt totalWithdrawn = BigInt.zero;
     final txHashes = <String>[];
 
+    _reportProgress(onProgress, 6, 0, total: batches.length);
     for (int b = 0; b < batches.length; b++) {
       _checkCancelled();
       final batch = batches[b];
-      onProgress(ClaimStep.aggregate, 'Aggregating batch ${b + 1}/${batches.length} (${batch.length} proofs)...');
       _log.i('Aggregating batch ${b + 1}/${batches.length}');
 
       final aggregated = await aggregateProofs(proofBytesList: batch, binsDir: circuitBinsDir);
       _log.i('Batch ${b + 1} aggregated (${aggregated.length} bytes)');
 
-      onProgress(ClaimStep.submit, 'Submitting batch ${b + 1}/${batches.length} to chain...');
       final txHash = await _submitUnsignedProof(rpc, aggregated);
       txHashes.add(txHash);
-
       _log.i('Batch ${b + 1} submitted: $txHash');
-      onProgress(ClaimStep.submit, 'Batch ${b + 1}/${batches.length} submitted: ${txHash.substring(0, 18)}...');
+      _reportProgress(onProgress, 6, b + 1, total: batches.length);
     }
 
     totalWithdrawn = totalAmount;
-    onProgress(ClaimStep.done, 'Claimed ${_formatAmount(totalWithdrawn)} QUAN in ${batches.length} batch(es)');
-
     return ClaimResult(
       totalWithdrawn: totalWithdrawn,
       transfersProcessed: numTransfers,
@@ -233,12 +257,6 @@ class WormholeClaimService {
 
   void _checkCancelled() {
     if (_cancelled) throw StateError('Claim cancelled by user');
-  }
-
-  static String _formatAmount(BigInt planck) {
-    final whole = planck ~/ BigInt.from(10).pow(12);
-    final frac = (planck % BigInt.from(10).pow(12)).toString().padLeft(12, '0').substring(0, 4);
-    return '$whole.$frac';
   }
 
   static int _hexToInt(String hexStr) {

@@ -35,17 +35,16 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
 
   _Screen _screen = _Screen.input;
   String? _addressError;
-  final List<String> _progressLogs = [];
   bool _running = false;
   bool _done = false;
   String? _errorMessage;
-
-  final _scrollController = ScrollController();
+  int _currentStep = 0;
+  final Map<int, ClaimProgressItem> _stepProgress = {};
+  String? _resultMessage;
 
   @override
   void dispose() {
     _addressController.dispose();
-    _scrollController.dispose();
     super.dispose();
   }
 
@@ -86,7 +85,9 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
       _running = true;
       _done = false;
       _errorMessage = null;
-      _progressLogs.clear();
+      _currentStep = 0;
+      _stepProgress.clear();
+      _resultMessage = null;
     });
 
     try {
@@ -100,11 +101,7 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
       await Directory(binsDir).create(recursive: true);
 
       final rpcUrl = chainConfig.rpcUrl;
-
-      _addLog('Starting claim for ${keyPair.address}');
-      _addLog('Destination: ${_addressController.text.trim()}');
-      _addLog('RPC: $rpcUrl');
-      _addLog('');
+      _log.i('Starting claim for ${keyPair.address} to ${_addressController.text.trim()}');
 
       final result = await _claimService.claimRewards(
         wormholeAddress: keyPair.address,
@@ -112,9 +109,12 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
         destinationAddress: _addressController.text.trim(),
         rpcUrl: rpcUrl,
         circuitBinsDir: binsDir,
-        onProgress: (step, detail, {int? current, int? total}) {
+        onProgress: (progress) {
           if (!mounted) return;
-          _addLog(detail);
+          setState(() {
+            _currentStep = progress.step;
+            _stepProgress[progress.step] = progress;
+          });
         },
       );
 
@@ -122,22 +122,18 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
       setState(() {
         _done = true;
         _running = false;
+        _resultMessage = '${result.transfersProcessed} transfers claimed in ${result.batchesSubmitted} batch(es)';
       });
-      _addLog('');
-      _addLog('Done! ${result.transfersProcessed} transfers claimed in ${result.batchesSubmitted} batch(es)');
     } on StateError catch (e) {
       if (e.message.contains('cancelled')) {
-        _addLog('');
-        _addLog('Cancelled by user');
         if (!mounted) return;
         setState(() {
           _running = false;
           _done = true;
+          _resultMessage = 'Cancelled by user';
         });
       } else {
         _log.e('Claim failed', error: e);
-        _addLog('');
-        _addLog('ERROR: ${e.message}');
         if (!mounted) return;
         setState(() {
           _running = false;
@@ -146,8 +142,6 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
       }
     } catch (e) {
       _log.e('Claim failed', error: e);
-      _addLog('');
-      _addLog('ERROR: $e');
       if (!mounted) return;
       setState(() {
         _running = false;
@@ -156,23 +150,8 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
     }
   }
 
-  void _addLog(String line) {
-    if (!mounted) return;
-    setState(() => _progressLogs.add(line));
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 100),
-          curve: Curves.easeOut,
-        );
-      }
-    });
-  }
-
   void _cancelClaim() {
     _claimService.cancel();
-    _addLog('Cancelling...');
   }
 
   @override
@@ -404,38 +383,61 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           Container(
-            height: 280,
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
             decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+              color: Colors.white.withValues(alpha: 0.03),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
             ),
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(12),
-              itemCount: _progressLogs.length,
-              itemBuilder: (context, index) {
-                final line = _progressLogs[index];
-                final isError = line.startsWith('ERROR');
-                final isEmpty = line.isEmpty;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 2),
-                  child: Text(
-                    isEmpty ? '' : line,
-                    style: TextStyle(
-                      color: isError ? Colors.red.shade300 : const Color(0xFF7CE38B),
-                      fontFamily: 'Courier',
-                      fontSize: 12,
-                      height: 1.5,
-                    ),
-                  ),
-                );
-              },
+            child: Column(
+              children: [
+                _buildStepRow(1, 'Preparing circuits'),
+                _buildStepConnector(1),
+                _buildStepRow(2, 'Fetching transfers'),
+                _buildStepConnector(2),
+                _buildStepRow(3, 'Computing nullifiers'),
+                _buildStepConnector(3),
+                _buildStepRow(4, 'Checking nullifiers'),
+                _buildStepConnector(4),
+                _buildStepRow(5, 'Generating ZK proofs'),
+                _buildStepConnector(5),
+                _buildStepRow(6, 'Submitting to chain'),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
+          if ((_done && _resultMessage != null) || _errorMessage != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: (_errorMessage != null ? Colors.red : const Color(0xFF10B981)).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: (_errorMessage != null ? Colors.red : const Color(0xFF10B981)).withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    _errorMessage != null ? Icons.error_outline : Icons.check_circle_outline,
+                    color: _errorMessage != null ? Colors.red : const Color(0xFF10B981),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _errorMessage ?? _resultMessage ?? '',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: _errorMessage != null ? Colors.red.shade300 : Colors.white.withValues(alpha: 0.9),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -470,6 +472,150 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStepRow(int step, String title) {
+    final isCompleted = _done ? true : _currentStep > step;
+    final isActive = !_done && _currentStep == step && _errorMessage == null;
+    final isError = !_done && _currentStep == step && _errorMessage != null;
+    final progress = _stepProgress[step];
+
+    Widget icon;
+    if (isCompleted) {
+      icon = Container(
+        width: 28,
+        height: 28,
+        decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle),
+        child: const Icon(Icons.check, color: Colors.white, size: 16),
+      );
+    } else if (isError) {
+      icon = Container(
+        width: 28,
+        height: 28,
+        decoration: BoxDecoration(
+          color: Colors.red.withValues(alpha: 0.15),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.red, width: 2),
+        ),
+        child: const Icon(Icons.close, color: Colors.red, size: 14),
+      );
+    } else if (isActive) {
+      icon = Container(
+        width: 28,
+        height: 28,
+        decoration: BoxDecoration(
+          color: const Color(0xFF10B981).withValues(alpha: 0.12),
+          shape: BoxShape.circle,
+          border: Border.all(color: const Color(0xFF10B981), width: 2),
+        ),
+        child: const Padding(
+          padding: EdgeInsets.all(5),
+          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF10B981)),
+        ),
+      );
+    } else {
+      icon = Container(
+        width: 28,
+        height: 28,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withValues(alpha: 0.12), width: 1.5),
+        ),
+        child: Center(
+          child: Text(
+            '$step',
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.2), fontSize: 12, fontWeight: FontWeight.w600),
+          ),
+        ),
+      );
+    }
+
+    String progressText = '';
+    if (progress != null && (progress.completed > 0 || isCompleted)) {
+      if (step == 2) {
+        progressText = '${progress.completed} fetched';
+      } else if (progress.total != null) {
+        progressText = '${progress.completed} / ${progress.total}';
+      }
+    }
+
+    final titleColor = isCompleted
+        ? const Color(0xFF10B981)
+        : isActive
+            ? Colors.white
+            : isError
+                ? Colors.red.shade300
+                : Colors.white.withValues(alpha: 0.28);
+
+    final progressColor = isCompleted
+        ? const Color(0xFF10B981).withValues(alpha: 0.7)
+        : isActive
+            ? Colors.white.withValues(alpha: 0.85)
+            : Colors.white.withValues(alpha: 0.3);
+
+    double? progressFraction;
+    if (isActive && progress != null && progress.total != null && progress.total! > 0) {
+      progressFraction = (progress.completed / progress.total!).clamp(0.0, 1.0);
+    }
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            icon,
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(title, style: TextStyle(color: titleColor, fontSize: 14, fontWeight: FontWeight.w500)),
+            ),
+            if (progressText.isNotEmpty)
+              Text(
+                progressText,
+                style: TextStyle(
+                  color: progressColor,
+                  fontSize: 13,
+                  fontFamily: 'Fira Code',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+          ],
+        ),
+        if (progressFraction != null) ...[
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.only(left: 42),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(
+                value: progressFraction,
+                backgroundColor: Colors.white.withValues(alpha: 0.06),
+                valueColor: const AlwaysStoppedAnimation(Color(0xFF10B981)),
+                minHeight: 4,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildStepConnector(int afterStep) {
+    final isCompleted = _done ? true : _currentStep > afterStep;
+    return Padding(
+      padding: const EdgeInsets.only(left: 13),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          width: 2,
+          height: 24,
+          decoration: BoxDecoration(
+            color: isCompleted
+                ? const Color(0xFF10B981).withValues(alpha: 0.4)
+                : Colors.white.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(1),
+          ),
+        ),
       ),
     );
   }
