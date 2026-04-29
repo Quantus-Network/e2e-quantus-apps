@@ -140,69 +140,80 @@ class WormholeClaimService {
     _checkCancelled();
 
     final numTransfers = unspent.length;
-    final proofBytesList = <Uint8List>[];
+    final proofBytesList = List<Uint8List?>.filled(numTransfers, null);
     final secretBytes = Uint8List.fromList(hex.decode(secretHex.replaceFirst('0x', '')));
     final destinationBytes = Uint8List.fromList(getAccountId32(destinationAddress));
     final blockHashBytes = Uint8List.fromList(_hexToBytes(blockHash));
+    int completedProofs = 0;
 
-    for (int i = 0; i < numTransfers; i++) {
+    const concurrency = 16;
+    for (int chunk = 0; chunk < numTransfers; chunk += concurrency) {
       _checkCancelled();
-      final transfer = unspent[i];
-      _log.i('Generating proof ${i + 1}/$numTransfers for leaf ${transfer.leafIndex}');
+      final end = (chunk + concurrency).clamp(0, numTransfers);
+      final futures = <Future<void>>[];
 
-      final zkProof = await rpc.getZkMerkleProof(transfer.leafIndex, blockHash);
-      if (zkProof == null) throw StateError('No ZK Merkle proof for leaf ${transfer.leafIndex}');
+      for (int i = chunk; i < end; i++) {
+        futures.add(() async {
+          final transfer = unspent[i];
+          final zkProof = await rpc.getZkMerkleProof(transfer.leafIndex, blockHash);
+          if (zkProof == null) throw StateError('No ZK Merkle proof for leaf ${transfer.leafIndex}');
 
-      final leafData = Uint8List.fromList(_hexToBytes(zkProof['leaf_data'] as String));
-      final leafHash = Uint8List.fromList(_hexToBytes(zkProof['leaf_hash'] as String));
-      final zkRoot = Uint8List.fromList(_hexToBytes(zkProof['root'] as String));
-      final depth = zkProof['depth'] as int;
-      final rawSiblings = zkProof['siblings'] as List<dynamic>;
+          final leafData = _toBytes(zkProof['leaf_data']);
+          final leafHash = _toBytes(zkProof['leaf_hash']);
+          final zkRoot = _toBytes(zkProof['root']);
+          final depth = zkProof['depth'] as int;
+          final rawSiblings = zkProof['siblings'] as List<dynamic>;
 
-      final siblingsFlat = _flattenSiblings(rawSiblings);
+          final siblingsFlat = _flattenSiblings(rawSiblings);
+          final merkle = computeMerklePositions(
+            unsortedSiblingsFlat: siblingsFlat,
+            leafHash: leafHash,
+            depth: depth,
+          );
 
-      final merkle = computeMerklePositions(
-        unsortedSiblingsFlat: siblingsFlat,
-        leafHash: leafHash,
-        depth: depth,
-      );
+          final inputAmount = decodeLeafAmount(leafData: leafData);
+          final outputAmount = wormholeComputeOutputAmount(inputAmount: inputAmount, feeBps: 10);
+          final wormholeAddressBytes = decodeLeafToAccount(leafData: leafData);
 
-      final inputAmount = decodeLeafAmount(leafData: leafData);
-      final outputAmount = wormholeComputeOutputAmount(inputAmount: inputAmount, feeBps: 10);
-      final wormholeAddressBytes = decodeLeafToAccount(leafData: leafData);
+          final proof = await generateProof(
+            input: ProofInput(
+              secret: secretBytes,
+              transferCount: transfer.transferCount,
+              wormholeAddress: wormholeAddressBytes,
+              inputAmount: inputAmount,
+              blockHash: blockHashBytes,
+              blockNumber: blockNumber,
+              parentHash: Uint8List.fromList(parentHash),
+              stateRoot: Uint8List.fromList(stateRoot),
+              extrinsicsRoot: Uint8List.fromList(extrinsicsRoot),
+              digest: Uint8List.fromList(digest),
+              zkTreeRoot: zkRoot,
+              sortedSiblingsFlat: merkle.sortedSiblingsFlat,
+              positions: merkle.positions,
+              exitAccount1: destinationBytes,
+              outputAmount1: outputAmount,
+              volumeFeeBps: 10,
+              assetId: 0,
+            ),
+            proverBinPath: '$circuitBinsDir/prover.bin',
+            commonBinPath: '$circuitBinsDir/common.bin',
+          );
+          proofBytesList[i] = proof.proofBytes;
+        }());
+      }
 
-      final proof = await generateProof(
-        input: ProofInput(
-          secret: secretBytes,
-          transferCount: transfer.transferCount,
-          wormholeAddress: wormholeAddressBytes,
-          inputAmount: inputAmount,
-          blockHash: blockHashBytes,
-          blockNumber: blockNumber,
-          parentHash: Uint8List.fromList(parentHash),
-          stateRoot: Uint8List.fromList(stateRoot),
-          extrinsicsRoot: Uint8List.fromList(extrinsicsRoot),
-          digest: Uint8List.fromList(digest),
-          zkTreeRoot: zkRoot,
-          sortedSiblingsFlat: merkle.sortedSiblingsFlat,
-          positions: merkle.positions,
-          exitAccount1: destinationBytes,
-          outputAmount1: outputAmount,
-          volumeFeeBps: 10,
-          assetId: 0,
-        ),
-        proverBinPath: '$circuitBinsDir/prover.bin',
-        commonBinPath: '$circuitBinsDir/common.bin',
-      );
-      proofBytesList.add(proof.proofBytes);
-      _reportProgress(onProgress, 5, i + 1, total: numTransfers);
-      _log.i('Proof ${i + 1}/$numTransfers generated (${proof.proofBytes.length} bytes)');
+      await Future.wait(futures);
+      completedProofs = end;
+      _reportProgress(onProgress, 5, completedProofs, total: numTransfers);
+      _log.i('Proofs $completedProofs/$numTransfers generated');
     }
 
+    final finalProofs = proofBytesList.cast<Uint8List>();
+
     final batches = <List<Uint8List>>[];
-    for (int i = 0; i < proofBytesList.length; i += _maxProofsPerBatch) {
-      final end = (i + _maxProofsPerBatch).clamp(0, proofBytesList.length);
-      batches.add(proofBytesList.sublist(i, end));
+    for (int i = 0; i < finalProofs.length; i += _maxProofsPerBatch) {
+      final end = (i + _maxProofsPerBatch).clamp(0, finalProofs.length);
+      batches.add(finalProofs.sublist(i, end));
     }
 
     BigInt totalWithdrawn = BigInt.zero;
@@ -267,6 +278,12 @@ class WormholeClaimService {
   static List<int> _hexToBytes(String hexStr) {
     final clean = hexStr.startsWith('0x') ? hexStr.substring(2) : hexStr;
     return hex.decode(clean);
+  }
+
+  static Uint8List _toBytes(dynamic value) {
+    if (value is String) return Uint8List.fromList(_hexToBytes(value));
+    if (value is List) return Uint8List.fromList(value.cast<int>());
+    throw ArgumentError('Expected hex string or byte array, got ${value.runtimeType}');
   }
 
   static Uint8List _flattenSiblings(List<dynamic> rawSiblings) {

@@ -76,30 +76,59 @@ class WormholeUtxoService {
 
   // --- Cache ---
 
-  static Future<File> _cacheFile(String addressHash) async {
+  static String _cachePrefix(String addressHash) => addressHash.substring(0, 16);
+
+  static Future<File> _transferCacheFile(String addressHash) async {
     final dir = await getApplicationSupportDirectory();
-    return File('${dir.path}/wormhole_cache_${addressHash.substring(0, 16)}.json');
+    return File('${dir.path}/wormhole_cache_${_cachePrefix(addressHash)}.json');
   }
 
-  static Future<_TransferCache> _loadCache(String addressHash) async {
+  static Future<File> _nullifierCacheFile(String addressHash) async {
+    final dir = await getApplicationSupportDirectory();
+    return File('${dir.path}/wormhole_nullifiers_${_cachePrefix(addressHash)}.json');
+  }
+
+  static Future<_TransferCache> _loadTransferCache(String addressHash) async {
     try {
-      final file = await _cacheFile(addressHash);
+      final file = await _transferCacheFile(addressHash);
       if (!await file.exists()) return _TransferCache.empty();
       final json = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
       return _TransferCache.fromJson(json);
     } catch (e) {
-      _log('Cache load failed: $e');
+      _log('Transfer cache load failed: $e');
       return _TransferCache.empty();
     }
   }
 
-  static Future<void> _saveCache(String addressHash, _TransferCache cache) async {
+  static Future<void> _saveTransferCache(String addressHash, _TransferCache cache) async {
     try {
-      final file = await _cacheFile(addressHash);
+      final file = await _transferCacheFile(addressHash);
       await file.writeAsString(jsonEncode(cache.toJson()));
-      _log('Cache saved: ${cache.transfers.length} transfers up to block ${cache.cachedUpToBlock}');
+      _log('Transfer cache saved: ${cache.transfers.length} transfers up to block ${cache.cachedUpToBlock}');
     } catch (e) {
-      _log('Cache save failed: $e');
+      _log('Transfer cache save failed: $e');
+    }
+  }
+
+  static Future<Set<String>> _loadSpentNullifiers(String addressHash) async {
+    try {
+      final file = await _nullifierCacheFile(addressHash);
+      if (!await file.exists()) return {};
+      final list = jsonDecode(await file.readAsString()) as List<dynamic>;
+      return list.cast<String>().toSet();
+    } catch (e) {
+      _log('Nullifier cache load failed: $e');
+      return {};
+    }
+  }
+
+  static Future<void> _saveSpentNullifiers(String addressHash, Set<String> spent) async {
+    try {
+      final file = await _nullifierCacheFile(addressHash);
+      await file.writeAsString(jsonEncode(spent.toList()));
+      _log('Nullifier cache saved: ${spent.length} spent nullifiers');
+    } catch (e) {
+      _log('Nullifier cache save failed: $e');
     }
   }
 
@@ -313,7 +342,7 @@ query SpentNullifiers($hashes: [String!]!) {
     final safeCutoff = (chainHeight - _reorgDepth).clamp(0, chainHeight);
     _log('chainHeight=$chainHeight safeCutoff=$safeCutoff');
 
-    final cache = await _loadCache(fullHash);
+    final cache = await _loadTransferCache(fullHash);
     _log('Cache: ${cache.transfers.length} transfers up to block ${cache.cachedUpToBlock}');
     if (cache.transfers.isNotEmpty) onProgress?.call(1, cache.transfers.length);
 
@@ -342,7 +371,7 @@ query SpentNullifiers($hashes: [String!]!) {
 
     final safeTransfers = allTransfers.where((t) => t.blockHeight <= safeCutoff).toList();
     final updatedCache = _TransferCache(cachedUpToBlock: safeCutoff, transfers: safeTransfers);
-    await _saveCache(fullHash, updatedCache);
+    await _saveTransferCache(fullHash, updatedCache);
 
     _log('getTransfersTo DONE: ${allTransfers.length} transfers (${sw.elapsedMilliseconds}ms)');
     return allTransfers;
@@ -360,9 +389,16 @@ query SpentNullifiers($hashes: [String!]!) {
       return [];
     }
 
+    final raw = Uint8List.fromList(getAccountId32(wormholeAddress));
+    final fullHash = _addressHash(raw);
+    final cachedSpent = await _loadSpentNullifiers(fullHash);
+    _log('Nullifier cache: ${cachedSpent.length} known spent');
+
     final hdWalletService = HdWalletService();
-    final nullifierPairs = <(String, String)>[];
+    final uncheckedPairs = <(String, String)>[];
     final nullifierToTransfer = <String, WormholeTransfer>{};
+    final allSpent = <String>{...cachedSpent};
+    int skipped = 0;
 
     for (int i = 0; i < transfers.length; i++) {
       final transfer = transfers[i];
@@ -370,19 +406,28 @@ query SpentNullifiers($hashes: [String!]!) {
         secretHex: secretHex,
         transferCount: transfer.transferCount,
       );
-      final nullifierBytes = _hexToBytes(nullifierHex);
-      final nullifierHash = _addressHash(Uint8List.fromList(nullifierBytes));
-      nullifierPairs.add((nullifierHex, nullifierHash));
       nullifierToTransfer[nullifierHex] = transfer;
+      if (cachedSpent.contains(nullifierHex)) {
+        skipped++;
+      } else {
+        final nullifierBytes = _hexToBytes(nullifierHex);
+        final nullifierHash = _addressHash(Uint8List.fromList(nullifierBytes));
+        uncheckedPairs.add((nullifierHex, nullifierHash));
+      }
       if (i == 0 || (i + 1) % 10 == 0 || i == transfers.length - 1) {
         onProgress?.call(2, i + 1, total: transfers.length);
       }
     }
-    _log('Computed ${nullifierPairs.length} nullifier pairs');
+    _log('Computed nullifiers: $skipped cached-spent, ${uncheckedPairs.length} to check');
 
-    final spent = await _checkNullifiersSpent(nullifierPairs, onProgress: onProgress);
+    if (uncheckedPairs.isNotEmpty) {
+      final newSpent = await _checkNullifiersSpent(uncheckedPairs, onProgress: onProgress);
+      allSpent.addAll(newSpent);
+      await _saveSpentNullifiers(fullHash, allSpent);
+    }
+
     final unspent = nullifierToTransfer.entries
-        .where((e) => !spent.contains(e.key))
+        .where((e) => !allSpent.contains(e.key))
         .map((e) => e.value)
         .toList();
     _log('getUnspentTransfers: ${unspent.length} unspent out of ${transfers.length} total');
