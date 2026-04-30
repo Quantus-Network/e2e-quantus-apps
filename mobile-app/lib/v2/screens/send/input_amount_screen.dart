@@ -352,6 +352,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final display = ref.watch(txAmountDisplayProvider)(
       _amount,
       withSignPrefix: false,
+      maxDecimals: 4,
       isSend: true,
       withQuanSymbol: false,
     );
@@ -385,12 +386,6 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         ? [symbolWidget, const SizedBox(width: 8), inputField]
         : [inputField, const SizedBox(width: 8), symbolWidget];
 
-    // When showing fiat input, append the QUAN symbol to the secondary line
-    // since the provider returns a plain number without a symbol in that case.
-    final secondaryLabel = isFlipped
-        ? '≈ ${display.secondaryAmount} ${AppConstants.tokenSymbol}'
-        : '≈ ${display.secondaryAmount}';
-
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -409,7 +404,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                secondaryLabel,
+                '≈ ${display.secondaryAmount}',
                 style: text.paragraph?.copyWith(
                   color: colors.textTertiary,
                   fontFamily: AppTextTheme.fontFamilySecondary,
