@@ -84,10 +84,7 @@ class HdWalletService {
 
   String computeNullifier({required String secretHex, required BigInt transferCount}) {
     final secretBytes = hex.decode(secretHex.replaceFirst('0x', ''));
-    final nullifierBytes = wormhole_ffi.computeNullifier(
-      secret: secretBytes,
-      transferCount: transferCount,
-    );
+    final nullifierBytes = wormhole_ffi.computeNullifier(secret: secretBytes, transferCount: transferCount);
     return '0x${hex.encode(nullifierBytes)}';
   }
 }

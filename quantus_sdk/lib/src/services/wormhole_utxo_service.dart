@@ -71,8 +71,7 @@ class WormholeUtxoService {
 
   static void _log(String msg) => print('[WormholeUtxo] $msg');
 
-  static String _addressHash(Uint8List raw32) =>
-      wormhole_ffi.computeAddressHashHex(rawAddress: raw32);
+  static String _addressHash(Uint8List raw32) => wormhole_ffi.computeAddressHashHex(rawAddress: raw32);
 
   // --- Cache ---
 
@@ -190,8 +189,10 @@ query TransfersToAddress($to: String!, $limit: Int!, $offset: Int!, $afterBlock:
 
     final body = jsonEncode({'query': query, 'variables': variables});
 
-    _log('=== TRANSFERS QUERY ===\n'
-        'to=$toAddress limit=$limit offset=$offset afterBlock=${afterBlock ?? 0}');
+    _log(
+      '=== TRANSFERS QUERY ===\n'
+      'to=$toAddress limit=$limit offset=$offset afterBlock=${afterBlock ?? 0}',
+    );
 
     final sw = Stopwatch()..start();
     final response = await _graphQlEndpoint.post(body: body);
@@ -249,7 +250,9 @@ query TransfersToAddress($to: String!, $limit: Int!, $offset: Int!, $afterBlock:
       );
       all.addAll(page);
       onProgress?.call(1, all.length);
-      _log('Page $pageNum: got ${page.length} transfers, total so far: ${all.length} (${totalSw.elapsedMilliseconds}ms elapsed)');
+      _log(
+        'Page $pageNum: got ${page.length} transfers, total so far: ${all.length} (${totalSw.elapsedMilliseconds}ms elapsed)',
+      );
       if (page.isEmpty || page.length < _transferPageSize) break;
       offset += _transferPageSize;
     }
@@ -267,7 +270,10 @@ query SpentNullifiers($hashes: [String!]!) {
   }
 }''';
 
-    final body = jsonEncode({'query': query, 'variables': {'hashes': nullifierHashes}});
+    final body = jsonEncode({
+      'query': query,
+      'variables': {'hashes': nullifierHashes},
+    });
 
     _log('nullifiers query: ${nullifierHashes.length} hashes');
     final sw = Stopwatch()..start();
@@ -319,7 +325,9 @@ query SpentNullifiers($hashes: [String!]!) {
       }
       final checked = (i + batch.length).clamp(0, nullifiers.length);
       onProgress?.call(3, checked, total: nullifiers.length);
-      _log('Nullifier batch $batchNum: checked ${batch.length}, total checked: $checked (${totalSw.elapsedMilliseconds}ms elapsed)');
+      _log(
+        'Nullifier batch $batchNum: checked ${batch.length}, total checked: $checked (${totalSw.elapsedMilliseconds}ms elapsed)',
+      );
     }
 
     _log('Nullifiers: ${spent.length} spent out of ${nullifiers.length} (${totalSw.elapsedMilliseconds}ms total)');
@@ -328,10 +336,7 @@ query SpentNullifiers($hashes: [String!]!) {
 
   // --- Public API ---
 
-  Future<List<WormholeTransfer>> getTransfersTo(
-    String wormholeAddress, {
-    WormholeProgressCallback? onProgress,
-  }) async {
+  Future<List<WormholeTransfer>> getTransfersTo(String wormholeAddress, {WormholeProgressCallback? onProgress}) async {
     final sw = Stopwatch()..start();
     _log('getTransfersTo START ($wormholeAddress)');
 
@@ -358,8 +363,7 @@ query SpentNullifiers($hashes: [String!]!) {
         toAddress: wormholeAddress,
         afterBlock: queryFrom,
         onProgress: onProgress != null
-            ? (phase, completed, {int? total}) =>
-                onProgress(phase, cache.transfers.length + completed, total: total)
+            ? (phase, completed, {int? total}) => onProgress(phase, cache.transfers.length + completed, total: total)
             : null,
       );
       _log('New transfers: ${newTransfers.length}');
@@ -426,10 +430,7 @@ query SpentNullifiers($hashes: [String!]!) {
       await _saveSpentNullifiers(fullHash, allSpent);
     }
 
-    final unspent = nullifierToTransfer.entries
-        .where((e) => !allSpent.contains(e.key))
-        .map((e) => e.value)
-        .toList();
+    final unspent = nullifierToTransfer.entries.where((e) => !allSpent.contains(e.key)).map((e) => e.value).toList();
     _log('getUnspentTransfers: ${unspent.length} unspent out of ${transfers.length} total');
     return unspent;
   }
@@ -464,10 +465,7 @@ class _TransferCache {
     final transfers = (json['transfers'] as List<dynamic>)
         .map((t) => WormholeTransfer.fromJson(t as Map<String, dynamic>))
         .toList();
-    return _TransferCache(
-      cachedUpToBlock: json['cachedUpToBlock'] as int,
-      transfers: transfers,
-    );
+    return _TransferCache(cachedUpToBlock: json['cachedUpToBlock'] as int, transfers: transfers);
   }
 
   Map<String, dynamic> toJson() => {

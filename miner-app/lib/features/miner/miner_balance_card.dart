@@ -36,7 +36,9 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
     _log.i('Loading wormhole key pair...');
     final keyPair = await _walletService.getWormholeKeyPair();
     final canWithdraw = await _walletService.canWithdraw();
-    _log.i('Key pair loaded: address=${keyPair?.address}, canWithdraw=$canWithdraw, hasSecret=${keyPair?.secretHex.isNotEmpty}');
+    _log.i(
+      'Key pair loaded: address=${keyPair?.address}, canWithdraw=$canWithdraw, hasSecret=${keyPair?.secretHex.isNotEmpty}',
+    );
     if (!mounted) return;
     setState(() {
       _address = keyPair?.address;
@@ -57,10 +59,7 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
     setState(() => _balanceLoading = true);
     _log.i('Fetching unspent balance for $address ...');
     try {
-      final balance = await _utxoService.getUnspentBalance(
-        wormholeAddress: address,
-        secretHex: secretHex,
-      );
+      final balance = await _utxoService.getUnspentBalance(wormholeAddress: address, secretHex: secretHex);
       _log.i('Unspent balance: $balance planck (${_formatPlanck(balance)})');
       if (!mounted) return;
       setState(() {
@@ -261,9 +260,7 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           decoration: BoxDecoration(
-            gradient: enabled
-                ? const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)])
-                : null,
+            gradient: enabled ? const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]) : null,
             color: enabled ? null : Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
           ),
@@ -280,8 +277,8 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
                 !_canWithdraw
                     ? 'Mnemonic required to claim'
                     : !hasBalance
-                        ? 'No rewards to claim'
-                        : 'Claim All Rewards',
+                    ? 'No rewards to claim'
+                    : 'Claim All Rewards',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,

@@ -34,10 +34,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
     BigInt? balance;
     if (keyPair != null && keyPair.secretHex.isNotEmpty) {
       try {
-        balance = await _utxoService.getUnspentBalance(
-          wormholeAddress: keyPair.address,
-          secretHex: keyPair.secretHex,
-        );
+        balance = await _utxoService.getUnspentBalance(wormholeAddress: keyPair.address, secretHex: keyPair.secretHex);
       } catch (_) {}
     }
     if (!mounted) return;
@@ -101,7 +98,13 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                       ? () => showClaimRewardsDialog(context: context, balance: _balance!)
                       : null,
                   icon: const Icon(Icons.account_balance_wallet),
-                  label: Text(!_canWithdraw ? 'Mnemonic required to claim' : !hasBalance ? 'No rewards to claim' : 'Claim Rewards'),
+                  label: Text(
+                    !_canWithdraw
+                        ? 'Mnemonic required to claim'
+                        : !hasBalance
+                        ? 'No rewards to claim'
+                        : 'Claim Rewards',
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF10B981),
                     foregroundColor: Colors.white,

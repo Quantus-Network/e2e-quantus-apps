@@ -193,7 +193,10 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
                 child: const Icon(Icons.account_balance_wallet, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
-              const Text('Claim Rewards', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
+              const Text(
+                'Claim Rewards',
+                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -210,7 +213,12 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
                 Text('Claimable Balance', style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.7))),
                 Text(
                   '${_formatBalance(widget.balance)} QUAN',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF10B981), fontFamily: 'Fira Code'),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF10B981),
+                    fontFamily: 'Fira Code',
+                  ),
                 ),
               ],
             ),
@@ -276,7 +284,10 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
             children: [
               Icon(Icons.verified_outlined, color: Colors.amber.shade300, size: 24),
               const SizedBox(width: 12),
-              const Text('Confirm Withdrawal', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
+              const Text(
+                'Confirm Withdrawal',
+                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -343,11 +354,7 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
         Expanded(
           child: Text(
             value,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.white,
-              fontFamily: mono ? 'Fira Code' : null,
-            ),
+            style: TextStyle(fontSize: 13, color: Colors.white, fontFamily: mono ? 'Fira Code' : null),
             overflow: TextOverflow.ellipsis,
             maxLines: 2,
           ),
@@ -367,7 +374,11 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
           Row(
             children: [
               if (_running)
-                const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF10B981)))
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF10B981)),
+                )
               else if (_errorMessage != null)
                 const Icon(Icons.error_outline, color: Colors.red, size: 20)
               else
@@ -377,8 +388,8 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
                 _running
                     ? 'Claiming Rewards...'
                     : _errorMessage != null
-                        ? 'Claim Failed'
-                        : 'Claim Complete',
+                    ? 'Claim Failed'
+                    : 'Claim Complete',
                 style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
               ),
             ],
@@ -414,7 +425,9 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
               decoration: BoxDecoration(
                 color: (_errorMessage != null ? Colors.red : const Color(0xFF10B981)).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: (_errorMessage != null ? Colors.red : const Color(0xFF10B981)).withValues(alpha: 0.2)),
+                border: Border.all(
+                  color: (_errorMessage != null ? Colors.red : const Color(0xFF10B981)).withValues(alpha: 0.2),
+                ),
               ),
               child: Row(
                 children: [
@@ -461,7 +474,9 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
                 ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _done && _errorMessage == null ? const Color(0xFF10B981) : Colors.white.withValues(alpha: 0.1),
+                    backgroundColor: _done && _errorMessage == null
+                        ? const Color(0xFF10B981)
+                        : Colors.white.withValues(alpha: 0.1),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -544,16 +559,16 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
     final titleColor = isCompleted
         ? const Color(0xFF10B981)
         : isActive
-            ? Colors.white
-            : isError
-                ? Colors.red.shade300
-                : Colors.white.withValues(alpha: 0.28);
+        ? Colors.white
+        : isError
+        ? Colors.red.shade300
+        : Colors.white.withValues(alpha: 0.28);
 
     final progressColor = isCompleted
         ? const Color(0xFF10B981).withValues(alpha: 0.7)
         : isActive
-            ? Colors.white.withValues(alpha: 0.85)
-            : Colors.white.withValues(alpha: 0.3);
+        ? Colors.white.withValues(alpha: 0.85)
+        : Colors.white.withValues(alpha: 0.3);
 
     double? progressFraction;
     if (isActive && progress != null && progress.total != null && progress.total! > 0) {
@@ -567,7 +582,10 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
             icon,
             const SizedBox(width: 14),
             Expanded(
-              child: Text(title, style: TextStyle(color: titleColor, fontSize: 14, fontWeight: FontWeight.w500)),
+              child: Text(
+                title,
+                style: TextStyle(color: titleColor, fontSize: 14, fontWeight: FontWeight.w500),
+              ),
             ),
             if (progressText.isNotEmpty)
               Text(
@@ -610,9 +628,7 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
           width: 2,
           height: 24,
           decoration: BoxDecoration(
-            color: isCompleted
-                ? const Color(0xFF10B981).withValues(alpha: 0.4)
-                : Colors.white.withValues(alpha: 0.06),
+            color: isCompleted ? const Color(0xFF10B981).withValues(alpha: 0.4) : Colors.white.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(1),
           ),
         ),

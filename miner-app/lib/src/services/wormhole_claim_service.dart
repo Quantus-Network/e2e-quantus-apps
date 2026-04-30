@@ -15,12 +15,7 @@ class ClaimProgressItem {
   final int completed;
   final int? total;
 
-  const ClaimProgressItem({
-    required this.step,
-    required this.title,
-    required this.completed,
-    this.total,
-  });
+  const ClaimProgressItem({required this.step, required this.title, required this.completed, this.total});
 }
 
 typedef ClaimProgressCallback = void Function(ClaimProgressItem progress);
@@ -83,12 +78,7 @@ class WormholeClaimService {
 
   void _reportProgress(ClaimProgressCallback onProgress, int step, int completed, {int? total}) {
     print('[WormholeClaim] Step $step: ${_stepTitles[step]} $completed${total != null ? '/$total' : ''}');
-    onProgress(ClaimProgressItem(
-      step: step,
-      title: _stepTitles[step]!,
-      completed: completed,
-      total: total,
-    ));
+    onProgress(ClaimProgressItem(step: step, title: _stepTitles[step]!, completed: completed, total: total));
   }
 
   Future<ClaimResult> _runClaimFlow({
@@ -165,11 +155,7 @@ class WormholeClaimService {
           final rawSiblings = zkProof['siblings'] as List<dynamic>;
 
           final siblingsFlat = _flattenSiblings(rawSiblings);
-          final merkle = computeMerklePositions(
-            unsortedSiblingsFlat: siblingsFlat,
-            leafHash: leafHash,
-            depth: depth,
-          );
+          final merkle = computeMerklePositions(unsortedSiblingsFlat: siblingsFlat, leafHash: leafHash, depth: depth);
 
           final inputAmount = decodeLeafAmount(leafData: leafData);
           final outputAmount = wormholeComputeOutputAmount(inputAmount: inputAmount, feeBps: 10);
