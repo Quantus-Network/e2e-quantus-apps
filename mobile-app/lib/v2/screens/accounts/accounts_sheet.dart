@@ -39,9 +39,10 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
   }
 
   void _openAddAccountMenu() {
-    Navigator.of(context, rootNavigator: true).push<void>(
-      MaterialPageRoute<void>(builder: (_) => const AddAccountMenuScreen()),
-    );
+    Navigator.of(
+      context,
+      rootNavigator: true,
+    ).push<void>(MaterialPageRoute<void>(builder: (_) => const AddAccountMenuScreen()));
   }
 
   Future<void> _switchAccount(Account account) async {
@@ -136,11 +137,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
                 ),
         ),
         const SizedBox(height: 24),
-        QuantusButton.simple(
-          label: 'Add Account',
-          onTap: _openAddAccountMenu,
-          variant: ButtonVariant.primary,
-        ),
+        QuantusButton.simple(label: 'Add Account', onTap: _openAddAccountMenu, variant: ButtonVariant.primary),
       ],
     );
   }

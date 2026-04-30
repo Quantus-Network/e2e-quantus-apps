@@ -73,7 +73,7 @@ final exchangeRatesProvider = FutureProvider<Map<String, Decimal>>((ref) async {
     final rawRates = await TaskmasterService().getExchangeRates();
     final rates = rawRates.map((k, v) => MapEntry(k, Decimal.parse(v.toString())));
     await _writeRatesCache(settings, rates);
-    
+
     return rates;
   } catch (_) {
     return _readRatesCacheAnyAge(settings);

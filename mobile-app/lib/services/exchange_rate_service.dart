@@ -21,7 +21,7 @@ class ExchangeRateService {
   Decimal getRate(FiatCurrency fiat) {
     final rate = _rates[fiat.code];
     if (rate == null) throw Exception('Exchange rate not found for ${fiat.code}!');
-    
+
     return rate;
   }
 

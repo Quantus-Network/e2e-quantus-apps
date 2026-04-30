@@ -66,7 +66,6 @@ class AmountDisplayWithConversion extends StatelessWidget {
                       fontFamily: AppTextTheme.fontFamilySecondary,
                       color: primaryAmountColor,
                       fontWeight: FontWeight.w400,
-                      
                     ),
                   ),
                   if (!useQuanLogo && !amountDisplay.isFlipped) ...[

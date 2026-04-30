@@ -60,12 +60,7 @@ void main() {
       final deps = _FakeDeps();
       final service = WalletCreationService(dependencies: deps);
 
-      const existing = Account(
-        walletIndex: 0,
-        index: 0,
-        name: 'Existing',
-        accountId: 'existing_addr',
-      );
+      const existing = Account(walletIndex: 0, index: 0, name: 'Existing', accountId: 'existing_addr');
 
       final created = await service.createNewWallet(
         name: 'Account 1',

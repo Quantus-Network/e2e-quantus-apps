@@ -505,7 +505,10 @@ class TaskmasterService {
   }
 
   Future<RemoteConfigModel> getRemoteConfig() async {
-    final http.Response response = await http.get(_remoteConfigsEndpoint, headers: {'Content-Type': 'application/json'});
+    final http.Response response = await http.get(
+      _remoteConfigsEndpoint,
+      headers: {'Content-Type': 'application/json'},
+    );
     if (response.statusCode != 200) {
       throw Exception('Configs request failed with status: ${response.statusCode}. Body: ${response.body}');
     }
@@ -520,8 +523,11 @@ class TaskmasterService {
     return RemoteConfigModel.fromJson(data);
   }
 
-    Future<Map<String, double>> getExchangeRates() async {
-    final http.Response response = await http.get(_exchangeRatesEndpoint, headers: {'Content-Type': 'application/json'});
+  Future<Map<String, double>> getExchangeRates() async {
+    final http.Response response = await http.get(
+      _exchangeRatesEndpoint,
+      headers: {'Content-Type': 'application/json'},
+    );
     if (response.statusCode != 200) {
       throw Exception('Exchange rates request failed with status: ${response.statusCode}. Body: ${response.body}');
     }

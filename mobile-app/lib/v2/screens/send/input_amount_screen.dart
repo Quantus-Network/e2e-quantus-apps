@@ -186,7 +186,11 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final max = SendScreenLogic.calculateMaxSendableAmount(balance: balance, networkFee: _networkFee);
     final isFlipped = ref.read(isCurrencyFlippedProvider);
     if (!isFlipped) {
-      _amountController.text = _fmt.formatBalance(max, maxDecimals: AppConstants.decimals, addThousandsSeparators: false);
+      _amountController.text = _fmt.formatBalance(
+        max,
+        maxDecimals: AppConstants.decimals,
+        addThousandsSeparators: false,
+      );
     } else {
       _isUpdatingProgrammatically = true;
       try {
@@ -373,10 +377,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       ),
     );
 
-    final symbolWidget = Text(
-      isFlipped ? selectedFiat.symbol : AppConstants.tokenSymbol,
-      style: symbolStyle,
-    );
+    final symbolWidget = Text(isFlipped ? selectedFiat.symbol : AppConstants.tokenSymbol, style: symbolStyle);
 
     // For prefix fiat currencies (e.g. $, Rp) place symbol before the field;
     // for suffix currencies and QUAN keep it after.
