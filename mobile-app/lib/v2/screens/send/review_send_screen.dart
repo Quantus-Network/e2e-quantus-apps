@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/providers/currency_display_provider.dar
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
+import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
@@ -42,6 +43,10 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
 
   bool _submitting = false;
   String? _errorMessage;
+
+  Future<void> _toggleFlip() async {
+    await ref.read(isCurrencyFlippedProvider.notifier).toggle();
+  }
 
   Future<void> _confirmSend() async {
     setState(() {
@@ -109,6 +114,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       isSend: true,
       withSignPrefix: false,
       withQuanSymbol: false,
+      maxDecimals: 4,
     );
     final totalRaw = widget.amount + widget.networkFee;
 
@@ -144,10 +150,6 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
   }
 
   Widget _heroCard(AppColorsV2 colors, AppTextTheme text, CurrencyDisplayState approxDisplay) {
-    final approxStyle = text.paragraph?.copyWith(
-      color: colors.textTertiary,
-      fontFamily: AppTextTheme.fontFamilySecondary,
-    );
     final sectionLabelStyle = text.receiveLabel?.copyWith(color: colors.textLabel);
 
     return SplitCard(
@@ -156,18 +158,11 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
         children: [
           Text('SENDING', style: sectionLabelStyle),
           const SizedBox(height: 16),
-          Text(
-            '${_fmt.formatBalance(widget.amount, maxDecimals: 4)} ${AppConstants.tokenSymbol}',
-            style: TextStyle(
-              fontFamily: AppTextTheme.fontFamilySecondary,
-              fontSize: 40,
-              fontWeight: FontWeight.w400,
-              height: 1,
-              color: colors.textPrimary,
-            ),
+          AmountDisplayWithConversion(
+            amountDisplay: approxDisplay,
+            alignment: CrossAxisAlignment.start,
+            onFlip: _toggleFlip,
           ),
-          const SizedBox(height: 8),
-          Text('≈ ${approxDisplay.secondaryAmount}', style: approxStyle),
         ],
       ),
       bottomChild: Column(
@@ -194,7 +189,10 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
         const SizedBox(height: 7),
         _summaryRow(label: 'TO', value: shortAddr),
         const SizedBox(height: 7),
-        _summaryRow(label: 'AMOUNT', value: '${_fmt.formatBalance(widget.amount)} ${AppConstants.tokenSymbol}'),
+        _summaryRow(
+          label: 'AMOUNT',
+          value: '${_fmt.formatBalance(widget.amount, maxDecimals: shownDecimals)} ${AppConstants.tokenSymbol}',
+        ),
         const SizedBox(height: 7),
         _summaryRow(
           label: 'NETWORK FEE',

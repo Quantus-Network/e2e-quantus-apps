@@ -138,6 +138,7 @@ final balanceDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref) 
         xRate,
         fmt,
         _hiddenAmountText,
+        maxDecimals: 3,
         isFlipped: isFlipped,
         isHidden: isHidden,
         withQuanSymbol: false,
@@ -156,6 +157,7 @@ final txAmountDisplayProvider =
       CurrencyDisplayState Function(
         BigInt, {
         required bool isSend,
+        int maxDecimals,
         bool withQuanSymbol,
         bool withSignPrefix,
         String? customHiddenText,
@@ -172,6 +174,7 @@ final txAmountDisplayProvider =
         required bool isSend,
         bool withQuanSymbol = true,
         bool withSignPrefix = true,
+        int maxDecimals = 2,
         String? customHiddenText,
       }) {
         final hiddenText = customHiddenText ?? _hiddenAmountText;
@@ -183,6 +186,7 @@ final txAmountDisplayProvider =
           xRate,
           fmt,
           hiddenText,
+          maxDecimals: maxDecimals,
           isHidden: isHidden,
           withQuanSymbol: withQuanSymbol,
           isFlipped: isFlipped,
@@ -192,8 +196,8 @@ final txAmountDisplayProvider =
           data = data.copyWith(primaryAmount: withSignPrefix ? '$prefix${data.primaryAmount}' : data.primaryAmount);
         }
 
-        if (withQuanSymbol && !isFlipped) {
-          data = data.copyWith(primaryAmount: '${data.primaryAmount} ${AppConstants.tokenSymbol}');
+        if (!withQuanSymbol && isFlipped) {
+          data = data.copyWith(secondaryAmount: '${data.secondaryAmount} ${AppConstants.tokenSymbol}');
         }
 
         return data;
@@ -204,12 +208,12 @@ final txAmountDisplayProvider =
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-String _toFiatNumeric(BigInt rawBalance, FiatCurrency fiat, ExchangeRateService xRate) {
+String _toFiatNumeric(BigInt rawBalance, FiatCurrency fiat, ExchangeRateService xRate, int maxDecimals) {
   final scaleFactor = BigInt.from(10).pow(AppConstants.decimals);
   final quantity = (Decimal.fromBigInt(rawBalance) / Decimal.fromBigInt(scaleFactor)).toDecimal();
   final fiatValue = xRate.convert(quantity, fiat);
 
-  return fiatValue.toStringAsFixed(2);
+  return fiatValue.toStringAsFixed(maxDecimals);
 }
 
 CurrencyDisplayState _toFiatDisplayState(
@@ -218,12 +222,13 @@ CurrencyDisplayState _toFiatDisplayState(
   ExchangeRateService xRate,
   NumberFormattingService fmt,
   String hiddenText, {
+  required int maxDecimals,
   required bool isFlipped,
   required bool isHidden,
   required bool withQuanSymbol,
 }) {
-  final quanFormatted = fmt.formatBalance(amount, addSymbol: withQuanSymbol);
-  final fiatFormatted = selectedFiat.format(_toFiatNumeric(amount, selectedFiat, xRate));
+  final quanFormatted = fmt.formatBalance(amount, maxDecimals: maxDecimals, addSymbol: withQuanSymbol);
+  final fiatFormatted = selectedFiat.format(_toFiatNumeric(amount, selectedFiat, xRate, maxDecimals));
 
   CurrencyDisplayState data = CurrencyDisplayState(
     primaryAmount: isFlipped ? fiatFormatted : quanFormatted,

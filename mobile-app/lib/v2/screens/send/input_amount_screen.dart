@@ -1,6 +1,8 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/models/fiat_currency.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -15,6 +17,7 @@ import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 
 class InputAmountScreen extends ConsumerStatefulWidget {
   final String recipientAddress;
@@ -45,6 +48,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   BigInt _networkFee = BigInt.zero;
   int _blockHeight = 0;
   bool _isFetchingFee = true;
+  bool _isUpdatingProgrammatically = false;
 
   @override
   void initState() {
@@ -52,7 +56,18 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     assert(widget.recipientAddress.trim().isNotEmpty, 'InputAmountScreen requires a recipient');
     _amountController.addListener(_onAmountChanged);
     if (widget.initialAmount != null) {
-      _amountController.text = widget.initialAmount!;
+      final isFlipped = ref.read(isCurrencyFlippedProvider);
+      if (!isFlipped) {
+        _amountController.text = widget.initialAmount!;
+      } else {
+        final parsed = _fmt.parseAmount(widget.initialAmount!);
+        if (parsed != null && parsed > BigInt.zero) {
+          _amount = parsed;
+          _isUpdatingProgrammatically = true;
+          _amountController.text = _quanToFiatString(parsed);
+          _isUpdatingProgrammatically = false;
+        }
+      }
     }
     if (widget.recipientChecksum != null) {
       _recipientChecksum = widget.recipientChecksum;
@@ -76,8 +91,14 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   }
 
   void _onAmountChanged() {
-    final parsed = _fmt.parseAmount(_amountController.text);
-    setState(() => _amount = parsed ?? BigInt.zero);
+    if (_isUpdatingProgrammatically) return;
+    final isFlipped = ref.read(isCurrencyFlippedProvider);
+    if (isFlipped) {
+      setState(() => _amount = _fiatStringToQuan(_amountController.text));
+    } else {
+      final parsed = _fmt.parseAmount(_amountController.text);
+      setState(() => _amount = parsed ?? BigInt.zero);
+    }
     if (_amount > BigInt.zero) _fetchFee();
   }
 
@@ -128,10 +149,75 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     }
   }
 
+  /// Converts a raw QUAN [BigInt] to a fiat decimal string (4 d.p.) using the
+  /// current exchange rate and selected fiat currency.
+  String _quanToFiatString(BigInt quanAmount) {
+    final xRate = ref.read(exchangeRateServiceProvider);
+    final selectedFiat = ref.read(selectedFiatCurrencyProvider);
+
+    final scaleFactor = BigInt.from(10).pow(AppConstants.decimals);
+    final quanDecimal = (Decimal.fromBigInt(quanAmount) / Decimal.fromBigInt(scaleFactor)).toDecimal();
+    final fiatValue = xRate.convert(quanDecimal, selectedFiat);
+
+    return fiatValue.toStringAsFixed(4);
+  }
+
+  /// Parses a fiat-denominated input string and returns the equivalent raw
+  /// QUAN [BigInt] scaled by [AppConstants.decimals].
+  BigInt _fiatStringToQuan(String fiatText) {
+    if (fiatText.isEmpty) return BigInt.zero;
+    final sanitized = fiatText.replaceAll(',', '.');
+    final fiatDecimal = Decimal.tryParse(sanitized);
+
+    if (fiatDecimal == null) return BigInt.zero;
+    final xRate = ref.read(exchangeRateServiceProvider);
+    final selectedFiat = ref.read(selectedFiatCurrencyProvider);
+    final rate = xRate.getRate(selectedFiat);
+
+    if (rate == Decimal.zero) return BigInt.zero;
+    final scaleFactor = Decimal.fromBigInt(BigInt.from(10).pow(AppConstants.decimals));
+    final quanDecimal = (fiatDecimal / rate).toDecimal(scaleOnInfinitePrecision: AppConstants.decimals);
+
+    return (quanDecimal * scaleFactor).toBigInt();
+  }
+
   void _setMax() {
     final balance = ref.read(effectiveMaxBalanceProvider).value ?? BigInt.zero;
     final max = SendScreenLogic.calculateMaxSendableAmount(balance: balance, networkFee: _networkFee);
-    _amountController.text = _fmt.formatBalance(max, maxDecimals: AppConstants.decimals, addThousandsSeparators: false);
+    final isFlipped = ref.read(isCurrencyFlippedProvider);
+    if (!isFlipped) {
+      _amountController.text = _fmt.formatBalance(max, maxDecimals: AppConstants.decimals, addThousandsSeparators: false);
+    } else {
+      _isUpdatingProgrammatically = true;
+      try {
+        _amountController.text = _quanToFiatString(max);
+      } finally {
+        _isUpdatingProgrammatically = false;
+      }
+      setState(() => _amount = max);
+      if (max > BigInt.zero) _fetchFee();
+    }
+  }
+
+  Future<void> _toggleFlip() async {
+    final wasFlipped = ref.read(isCurrencyFlippedProvider);
+    await ref.read(isCurrencyFlippedProvider.notifier).toggle();
+    // Update the text field to reflect the new currency mode.
+    // _amount (BigInt QUAN) is always the source of truth and does not change.
+    _isUpdatingProgrammatically = true;
+    try {
+      if (!wasFlipped) {
+        // Switched QUAN → fiat
+        _amountController.text = _amount == BigInt.zero ? '' : _quanToFiatString(_amount);
+      } else {
+        // Switched fiat → QUAN
+        _amountController.text = _amount == BigInt.zero
+            ? ''
+            : _fmt.formatBalance(_amount, maxDecimals: AppConstants.decimals, addThousandsSeparators: false);
+      }
+    } finally {
+      _isUpdatingProgrammatically = false;
+    }
   }
 
   Future<void> _openReview() async {
@@ -202,10 +288,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-      decoration: BoxDecoration(
-        color: colors.surfaceDeep,
-        borderRadius: BorderRadius.circular(14),
-      ),
+      decoration: BoxDecoration(color: colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -260,12 +343,52 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   }
 
   Widget _amountCenter(AppColorsV2 colors, AppTextTheme text) {
+    final isFlipped = ref.watch(isCurrencyFlippedProvider);
+    final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
     final display = ref.watch(txAmountDisplayProvider)(
       _amount,
       withSignPrefix: false,
       isSend: true,
       withQuanSymbol: false,
     );
+
+    final symbolStyle = text.transactionDetailAmountSymbol?.copyWith(color: colors.textPrimary);
+    final isPrefixFiat = isFlipped && selectedFiat.symbolPosition == SymbolPosition.prefix;
+
+    final inputField = IntrinsicWidth(
+      child: TextField(
+        controller: _amountController,
+        focusNode: _amountFocus,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        textAlign: isPrefixFiat ? TextAlign.left : TextAlign.right,
+        inputFormatters: [DecimalInputFilter()],
+        style: text.transactionDetailAmountPrimary?.copyWith(
+          color: _amount == BigInt.zero ? colors.textTertiary : colors.textPrimary,
+        ),
+        decoration: InputDecoration(
+          isDense: true,
+          hintText: '0',
+          hintStyle: text.transactionDetailAmountPrimary?.copyWith(color: colors.textTertiary),
+        ),
+      ),
+    );
+
+    final symbolWidget = Text(
+      isFlipped ? selectedFiat.symbol : AppConstants.tokenSymbol,
+      style: symbolStyle,
+    );
+
+    // For prefix fiat currencies (e.g. $, Rp) place symbol before the field;
+    // for suffix currencies and QUAN keep it after.
+    final List<Widget> primaryRowChildren = isPrefixFiat
+        ? [symbolWidget, const SizedBox(width: 8), inputField]
+        : [inputField, const SizedBox(width: 8), symbolWidget];
+
+    // When showing fiat input, append the QUAN symbol to the secondary line
+    // since the provider returns a plain number without a symbol in that case.
+    final secondaryLabel = isFlipped
+        ? '≈ ${display.secondaryAmount} ${AppConstants.tokenSymbol}'
+        : '≈ ${display.secondaryAmount}';
 
     return Center(
       child: Column(
@@ -277,36 +400,28 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                IntrinsicWidth(
-                  child: TextField(
-                    controller: _amountController,
-                    focusNode: _amountFocus,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    textAlign: TextAlign.right,
-                    inputFormatters: [DecimalInputFilter()],
-                    style: text.transactionDetailAmountPrimary?.copyWith(
-                      color: _amount == BigInt.zero ? colors.textTertiary : colors.textPrimary,
-                    ),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      hintText: '0',
-                      hintStyle: text.transactionDetailAmountPrimary?.copyWith(color: colors.textTertiary),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  AppConstants.tokenSymbol,
-                  style: text.transactionDetailAmountSymbol?.copyWith(color: colors.textPrimary),
-                ),
-              ],
+              children: primaryRowChildren,
             ),
           ),
           const SizedBox(height: 16),
-          Text(
-            '≈ ${display.secondaryAmount}',
-            style: text.paragraph?.copyWith(color: colors.textTertiary, fontFamily: AppTextTheme.fontFamilySecondary),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                secondaryLabel,
+                style: text.paragraph?.copyWith(
+                  color: colors.textTertiary,
+                  fontFamily: AppTextTheme.fontFamilySecondary,
+                ),
+              ),
+              const SizedBox(width: 8),
+              QuantusIconButton.circular(
+                icon: Icons.swap_vert,
+                onTap: _toggleFlip,
+                isActive: display.isFlipped,
+                size: IconButtonSize.small,
+              ),
+            ],
           ),
         ],
       ),
