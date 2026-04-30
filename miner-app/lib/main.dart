@@ -165,10 +165,7 @@ Future<void> main() async {
   }
 
   Telemetrydecksdk.start(
-    const TelemetryManagerConfiguration(
-      appID: '22C2FABE-0070-4BCA-B774-AB4380607EB2',
-      salt: 'QDay',
-    ),
+    const TelemetryManagerConfiguration(appID: '22C2FABE-0070-4BCA-B774-AB4380607EB2', salt: 'QDay'),
   );
 
   runApp(const MinerApp());
