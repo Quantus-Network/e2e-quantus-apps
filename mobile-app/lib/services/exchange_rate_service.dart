@@ -3,33 +3,28 @@ import 'package:resonance_network_wallet/models/fiat_currency.dart';
 
 /// Provides QUAN → fiat exchange rates.
 ///
-/// All rates are currently fixed at 1:1 against USD (and approximate
-/// cross-rates for other currencies). Replace [_rates] with a real API
-/// response when live pricing is available.
+/// Constructed with a live [rates] map (ISO-4217 code → value in that currency
+/// per 1 USD). Falls back to [fallbackRates] for any code not present.
+///
+/// [quanToUsdRate] defaults to `1` (1 QUAN = 1 USD). Wire a dedicated QUAN
+/// price feed into this field when one becomes available.
 class ExchangeRateService {
-  static final ExchangeRateService _instance = ExchangeRateService._internal();
-  factory ExchangeRateService() => _instance;
-  ExchangeRateService._internal();
+  final Map<String, Decimal> _rates;
+  final Decimal quanToUsdRate;
 
-  /// Fixed rates: 1 QUAN in each fiat currency.
-  /// When a live price feed is integrated, populate this map from the API.
-  static final Map<FiatCurrency, Decimal> _rates = {
-    FiatCurrency.usd: Decimal.fromInt(1),
-    FiatCurrency.myr: Decimal.parse('3.96'),
-    FiatCurrency.idr: Decimal.parse('17138.90'),
-    FiatCurrency.jpy: Decimal.parse('158.99'),
-    FiatCurrency.eur: Decimal.parse('0.85'),
-    FiatCurrency.gbp: Decimal.parse('0.74'),
-  };
+  ExchangeRateService({required Map<String, Decimal> rates, Decimal? quanToUsdRate})
+    : _rates = rates,
+      quanToUsdRate = quanToUsdRate ?? Decimal.one;
 
-  /// Returns the current QUAN price in [fiat].
+  /// Returns the exchange rate for [fiat] (units per 1 USD).
+  /// Falls back to [fallbackRates] if [fiat] is absent from the live map.
   Decimal getRate(FiatCurrency fiat) {
-    final rate = _rates[fiat];
-    if (rate == null) throw StateError('No rate for ${fiat.code}');
+    final rate = _rates[fiat.code];
+    if (rate == null) throw Exception('Exchange rate not found for ${fiat.code}!');
+    
     return rate;
   }
 
-  /// Converts a [quanAmount] (precise Decimal)
-  /// to the given [fiat] currency using the current rate.
-  Decimal convert(Decimal quanAmount, FiatCurrency fiat) => quanAmount * getRate(fiat);
+  /// Converts [quanAmount] to [fiat] using the current rates.
+  Decimal convert(Decimal quanAmount, FiatCurrency fiat) => quanAmount * quanToUsdRate * getRate(fiat);
 }

@@ -130,7 +130,8 @@ class TaskmasterService {
   final _referralEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/referrals');
   final _ethAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/associations/eth');
   final _xAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/associations/x');
-  final remoteConfigsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/configs/wallet');
+  final _remoteConfigsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/configs/wallet');
+  final _exchangeRatesEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/exchange-rate');
 
   final String _minerStatsQuery = r'''
     query MinerStats($ids: [String!]!) {
@@ -504,7 +505,7 @@ class TaskmasterService {
   }
 
   Future<RemoteConfigModel> getRemoteConfig() async {
-    final http.Response response = await http.get(remoteConfigsEndpoint, headers: {'Content-Type': 'application/json'});
+    final http.Response response = await http.get(_remoteConfigsEndpoint, headers: {'Content-Type': 'application/json'});
     if (response.statusCode != 200) {
       throw Exception('Configs request failed with status: ${response.statusCode}. Body: ${response.body}');
     }
@@ -517,6 +518,22 @@ class TaskmasterService {
     }
 
     return RemoteConfigModel.fromJson(data);
+  }
+
+    Future<Map<String, double>> getExchangeRates() async {
+    final http.Response response = await http.get(_exchangeRatesEndpoint, headers: {'Content-Type': 'application/json'});
+    if (response.statusCode != 200) {
+      throw Exception('Exchange rates request failed with status: ${response.statusCode}. Body: ${response.body}');
+    }
+
+    final Map<String, dynamic>? responseBody = jsonDecode(response.body);
+    final Map<String, dynamic>? data = responseBody?['data'];
+
+    if (data == null) {
+      throw Exception('Exchange rates not found!');
+    }
+
+    return data.cast<String, double>();
   }
 
   Future<MinerStats> getMinerStats() async {
