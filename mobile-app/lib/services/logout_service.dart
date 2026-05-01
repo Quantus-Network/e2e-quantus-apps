@@ -7,7 +7,7 @@ import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart'
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
-import 'package:resonance_network_wallet/v2/screens/welcome/onboarding_loading.dart';
+import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart';
 
 final logoutServiceProvider = Provider<LogoutService>((ref) => LogoutService(ref));
 
@@ -31,7 +31,7 @@ class LogoutService {
 
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => const OnboardingLoadingScreenV2()),
+      MaterialPageRoute(builder: (_) => const WelcomeScreenV2()),
       (r) => false,
     );
   }
