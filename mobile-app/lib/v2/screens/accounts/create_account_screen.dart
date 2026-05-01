@@ -79,7 +79,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
             context,
             MaterialPageRoute(
               builder: (context) => AccountReadyScreen(
-                origin: AccountReadyOverviewOrigin.created,
+                origin: AccountReadyOverviewOrigin.accountCreated,
                 accountName: accountToSave.name,
                 checksumPhrase: checksum,
                 accountId: accountToSave.accountId,

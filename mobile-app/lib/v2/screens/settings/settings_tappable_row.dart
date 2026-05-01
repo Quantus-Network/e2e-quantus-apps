@@ -22,15 +22,22 @@ abstract final class SettingsTappableRowUtils {
 
   static const Widget titleGap = SizedBox(height: 2);
 
-  static Widget titleAndSubtitle(String title, String subtitle, AppTextTheme text, AppColorsV2 colors) {
+  static Widget titleAndSubtitle(
+    String title,
+    String subtitle, {
+    required AppTextTheme text,
+    required AppColorsV2 colors,
+    Color? titleColor,
+    Color? subtitleColor,
+  }) {
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(title, style: SettingsTappableRowUtils.title(text, colors)),
+          Text(title, style: SettingsTappableRowUtils.title(text, colors, color: titleColor)),
           SettingsTappableRowUtils.titleGap,
-          Text(subtitle, style: SettingsTappableRowUtils.subtitle(text, colors)),
+          Text(subtitle, style: SettingsTappableRowUtils.subtitle(text, colors, color: subtitleColor)),
         ],
       ),
     );
@@ -71,7 +78,14 @@ class SettingsTappableRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         if (leading != null) ...[leading!, const SizedBox(width: 12)],
-        SettingsTappableRowUtils.titleAndSubtitle(title, subtitle, text, colors),
+        SettingsTappableRowUtils.titleAndSubtitle(
+          title,
+          subtitle,
+          text: text,
+          colors: colors,
+          titleColor: titleColor,
+          subtitleColor: subtitleColor,
+        ),
         trailing,
       ],
     );
@@ -110,7 +124,12 @@ class SettingsSwitchRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SettingsTappableRowUtils.titleAndSubtitle(title, subtitle, text, colors),
+        SettingsTappableRowUtils.titleAndSubtitle(
+          title,
+          subtitle,
+          text: text,
+          colors: colors,
+        ),
         CupertinoSwitch(value: value, onChanged: onChanged, activeTrackColor: colors.accentGreen),
       ],
     );

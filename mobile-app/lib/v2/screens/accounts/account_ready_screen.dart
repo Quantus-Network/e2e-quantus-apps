@@ -9,7 +9,7 @@ import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
-enum AccountReadyOverviewOrigin { created, imported }
+enum AccountReadyOverviewOrigin { accountCreated, walletCreated, walletImported }
 
 class AccountReadyScreen extends StatelessWidget {
   const AccountReadyScreen({
@@ -35,9 +35,13 @@ class AccountReadyScreen extends StatelessWidget {
   }
 
   String get _appBarTitle => switch (origin) {
-    AccountReadyOverviewOrigin.created => 'Account Created',
-    AccountReadyOverviewOrigin.imported => 'Wallet Imported',
+    AccountReadyOverviewOrigin.accountCreated => 'Account Created',
+    AccountReadyOverviewOrigin.walletCreated => 'Wallet Created',
+    AccountReadyOverviewOrigin.walletImported => 'Wallet Imported',
   };
+
+  bool get isWalletRelated =>
+      origin == AccountReadyOverviewOrigin.walletCreated || origin == AccountReadyOverviewOrigin.walletImported;
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +53,7 @@ class AccountReadyScreen extends StatelessWidget {
       ellipses: '.......',
       postFix: 10,
     );
+    final headline = isWalletRelated ? _appBarTitle : accountName;
 
     return PopScope(
       canPop: false,
@@ -85,18 +90,21 @@ class AccountReadyScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            accountName,
+                            headline,
                             textAlign: TextAlign.center,
-                            style: text.paragraph?.copyWith(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w400,
-                              color: _galleryLargeTitle,
-                              height: 1.0,
-                            ),
+                            style: text.paragraph?.copyWith(fontSize: 32, color: _galleryLargeTitle, height: 1.0),
                           ),
                         ],
                       ),
                       const SizedBox(height: 32),
+                      if (isWalletRelated) ...[
+                        Text(
+                          accountName,
+                          textAlign: TextAlign.center,
+                          style: text.transactionDetailRowLabel?.copyWith(color: colors.textTertiary),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: Column(
@@ -110,12 +118,7 @@ class AccountReadyScreen extends StatelessWidget {
                             Text(
                               formattedAddress.toLowerCase(),
                               textAlign: TextAlign.center,
-                              style: text.smallParagraph?.copyWith(
-                                color: colors.textPrimary,
-                                fontWeight: FontWeight.w500,
-                                fontFamily: AppTextTheme.fontFamilySecondary,
-                                height: 1.35,
-                              ),
+                              style: text.transactionDetailRowValue?.copyWith(fontSize: 14),
                             ),
                           ],
                         ),

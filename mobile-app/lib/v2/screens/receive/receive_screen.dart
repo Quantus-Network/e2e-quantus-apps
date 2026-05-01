@@ -161,7 +161,7 @@ class QrCodeTab extends StatelessWidget {
             child: QrImageView(
               data: accountId,
               errorCorrectionLevel: QrErrorCorrectLevel.M,
-              embeddedImage: const AssetImage('assets/v2/uppercase_q.png'),
+              embeddedImage: const AssetImage('assets/v2/uppercase_q_black_bg.png'),
               embeddedImageStyle: QrEmbeddedImageStyle(size: Size(qrLogoSize, qrLogoSize)),
               version: QrVersions.auto,
               size: qrSize,
