@@ -114,7 +114,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       isSend: true,
       withSignPrefix: false,
       withQuanSymbol: false,
-      maxDecimals: 4,
+      quanDecimals: 4,
     );
     final totalRaw = widget.amount + widget.networkFee;
 

@@ -16,6 +16,7 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_cont
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
+import 'package:resonance_network_wallet/shared/utils/debouncer.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 
@@ -42,6 +43,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   final _amountFocus = FocusNode();
   final _fmt = NumberFormattingService();
   final _checksumService = HumanReadableChecksumService();
+
+  final _feeDebouncer = Debouncer(delay: const Duration(milliseconds: 500));
 
   String? _recipientChecksum;
   BigInt _amount = BigInt.zero;
@@ -84,6 +87,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
 
   @override
   void dispose() {
+    _feeDebouncer.cancel();
     _amountController.removeListener(_onAmountChanged);
     _amountController.dispose();
     _amountFocus.dispose();
@@ -99,7 +103,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       final parsed = _fmt.parseAmount(_amountController.text);
       setState(() => _amount = parsed ?? BigInt.zero);
     }
-    if (_amount > BigInt.zero) _fetchFee();
+    if (_amount > BigInt.zero) _feeDebouncer.run(_fetchFee);
   }
 
   Future<void> _fetchEstimatedFee() async {
@@ -149,17 +153,15 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     }
   }
 
-  /// Converts a raw QUAN [BigInt] to a fiat decimal string (4 d.p.) using the
-  /// current exchange rate and selected fiat currency.
+  /// Converts a raw QUAN [BigInt] to a fiat input string using the current
+  /// exchange rate and selected fiat currency.
+  ///
+  /// Uses [FiatCurrency.decimals] so that e.g. USD shows 2 d.p. and JPY 0 d.p.
   String _quanToFiatString(BigInt quanAmount) {
     final xRate = ref.read(exchangeRateServiceProvider);
     final selectedFiat = ref.read(selectedFiatCurrencyProvider);
-
-    final scaleFactor = BigInt.from(10).pow(AppConstants.decimals);
-    final quanDecimal = (Decimal.fromBigInt(quanAmount) / Decimal.fromBigInt(scaleFactor)).toDecimal();
-    final fiatValue = xRate.convert(quanDecimal, selectedFiat);
-
-    return fiatValue.toStringAsFixed(4);
+    final fiatValue = xRate.quanRawToFiat(quanAmount, selectedFiat, AppConstants.decimals);
+    return fiatValue.toStringAsFixed(selectedFiat.decimals);
   }
 
   /// Parses a fiat-denominated input string and returns the equivalent raw
@@ -168,39 +170,27 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     if (fiatText.isEmpty) return BigInt.zero;
     final sanitized = fiatText.replaceAll(',', '.');
     final fiatDecimal = Decimal.tryParse(sanitized);
-
     if (fiatDecimal == null) return BigInt.zero;
+
     final xRate = ref.read(exchangeRateServiceProvider);
     final selectedFiat = ref.read(selectedFiatCurrencyProvider);
-    final rate = xRate.getRate(selectedFiat);
-
-    if (rate == Decimal.zero) return BigInt.zero;
-    final scaleFactor = Decimal.fromBigInt(BigInt.from(10).pow(AppConstants.decimals));
-    final quanDecimal = (fiatDecimal / rate).toDecimal(scaleOnInfinitePrecision: AppConstants.decimals);
-
-    return (quanDecimal * scaleFactor).toBigInt();
+    return xRate.fiatToQuanRaw(fiatDecimal, selectedFiat, AppConstants.decimals);
   }
 
   void _setMax() {
     final balance = ref.read(effectiveMaxBalanceProvider).value ?? BigInt.zero;
     final max = SendScreenLogic.calculateMaxSendableAmount(balance: balance, networkFee: _networkFee);
     final isFlipped = ref.read(isCurrencyFlippedProvider);
-    if (!isFlipped) {
-      _amountController.text = _fmt.formatBalance(
-        max,
-        maxDecimals: AppConstants.decimals,
-        addThousandsSeparators: false,
-      );
-    } else {
-      _isUpdatingProgrammatically = true;
-      try {
-        _amountController.text = _quanToFiatString(max);
-      } finally {
-        _isUpdatingProgrammatically = false;
-      }
-      setState(() => _amount = max);
-      if (max > BigInt.zero) _fetchFee();
+    _isUpdatingProgrammatically = true;
+    try {
+      _amountController.text = isFlipped
+          ? _quanToFiatString(max)
+          : _fmt.formatBalance(max, maxDecimals: AppConstants.decimals, addThousandsSeparators: false);
+    } finally {
+      _isUpdatingProgrammatically = false;
     }
+    setState(() => _amount = max);
+    if (max > BigInt.zero) _fetchFee();
   }
 
   Future<void> _toggleFlip() async {
@@ -352,7 +342,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final display = ref.watch(txAmountDisplayProvider)(
       _amount,
       withSignPrefix: false,
-      maxDecimals: 4,
+      quanDecimals: 4,
       isSend: true,
       withQuanSymbol: false,
     );

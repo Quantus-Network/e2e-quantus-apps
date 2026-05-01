@@ -131,7 +131,7 @@ class TaskmasterService {
   final _ethAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/associations/eth');
   final _xAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/associations/x');
   final _remoteConfigsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/configs/wallet');
-  final _exchangeRatesEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/exchange-rate');
+  final _exchangeRatesEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/exchange-rates');
 
   final String _minerStatsQuery = r'''
     query MinerStats($ids: [String!]!) {
@@ -539,7 +539,7 @@ class TaskmasterService {
       throw Exception('Exchange rates not found!');
     }
 
-    return data.cast<String, double>();
+    return data.map((k, v) => MapEntry(k, (v as num).toDouble()));
   }
 
   Future<MinerStats> getMinerStats() async {

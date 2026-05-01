@@ -65,7 +65,7 @@ void main() {
       verify(settings.setMnemonic('word ' * 12, 0)).called(1);
       verifyNever(accounts.addAccount(any));
       verifyNever(referral.submitAddressToBackend());
-      
+
       expect(created, same(existing));
     });
   });

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:decimal/decimal.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/fiat_currency.dart';
@@ -12,7 +13,12 @@ import 'package:resonance_network_wallet/services/exchange_rate_service.dart';
 // ---------------------------------------------------------------------------
 
 const _kRatesCacheKey = 'exchange_rates_cache';
-const _kCacheTtlSeconds = 86400; // 24 hours
+const _kCacheTtlDuration = Duration(hours: 24);
+
+/// Parses the inner `rates` object from a decoded cache payload into a
+/// `Map<String, Decimal>`. Shared by [_readRatesCache] and [_readRatesCacheAnyAge].
+Map<String, Decimal> _parseRatesMap(Map<String, dynamic> ratesJson) =>
+    ratesJson.map((k, v) => MapEntry(k, Decimal.parse(v as String)));
 
 /// Reads persisted rates from [settings] and returns them only when the cache
 /// has not yet expired. Returns `null` on a cache miss, parse error, or expiry.
@@ -24,30 +30,33 @@ Map<String, Decimal>? _readRatesCache(SettingsService settings) {
     final expiryUnix = decoded['expiry'] as int;
     final nowUnix = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     if (nowUnix >= expiryUnix) return null;
-    final ratesJson = decoded['rates'] as Map<String, dynamic>;
-    return ratesJson.map((k, v) => MapEntry(k, Decimal.parse(v as String)));
-  } catch (_) {
+    return _parseRatesMap(decoded['rates'] as Map<String, dynamic>);
+  } catch (e) {
+    debugPrint('Failed parsing exchange rates: $e');
     return null;
   }
 }
 
 /// Like [_readRatesCache] but ignores expiry — used as a last-resort fallback
 /// while a network fetch is in progress or has failed.
+///
+/// Returns [ExchangeRateService.fallbackRates] when SharedPreferences has no
+/// entry (fresh install) or when the stored data cannot be parsed, so callers
+/// always get a usable map and never throw.
 Map<String, Decimal> _readRatesCacheAnyAge(SettingsService settings) {
   final raw = settings.getString(_kRatesCacheKey);
-  if (raw == null) throw Exception('No existing cached exchange rates!');
+  if (raw == null) return ExchangeRateService.fallbackRates;
 
   try {
     final decoded = jsonDecode(raw) as Map<String, dynamic>;
-    final ratesJson = decoded['rates'] as Map<String, dynamic>;
-    return ratesJson.map((k, v) => MapEntry(k, Decimal.parse(v as String)));
+    return _parseRatesMap(decoded['rates'] as Map<String, dynamic>);
   } catch (_) {
-    throw Exception('Failed parsing exchange rates!');
+    return ExchangeRateService.fallbackRates;
   }
 }
 
 Future<void> _writeRatesCache(SettingsService settings, Map<String, Decimal> rates) async {
-  final expiryUnix = DateTime.now().millisecondsSinceEpoch ~/ 1000 + _kCacheTtlSeconds;
+  final expiryUnix = DateTime.now().millisecondsSinceEpoch ~/ 1000 + _kCacheTtlDuration.inSeconds;
   final payload = {'expiry': expiryUnix, 'rates': rates.map((k, v) => MapEntry(k, v.toString()))};
   await settings.setString(_kRatesCacheKey, jsonEncode(payload));
 }
@@ -225,7 +234,7 @@ final balanceDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref) 
         xRate,
         fmt,
         _hiddenAmountText,
-        maxDecimals: 3,
+        quanDecimals: 3,
         isFlipped: isFlipped,
         isHidden: isHidden,
         withQuanSymbol: false,
@@ -244,7 +253,7 @@ final txAmountDisplayProvider =
       CurrencyDisplayState Function(
         BigInt, {
         required bool isSend,
-        int maxDecimals,
+        int quanDecimals,
         bool withQuanSymbol,
         bool withSignPrefix,
         String? customHiddenText,
@@ -261,7 +270,7 @@ final txAmountDisplayProvider =
         required bool isSend,
         bool withQuanSymbol = true,
         bool withSignPrefix = true,
-        int maxDecimals = 2,
+        int quanDecimals = 2,
         String? customHiddenText,
       }) {
         final hiddenText = customHiddenText ?? _hiddenAmountText;
@@ -273,7 +282,7 @@ final txAmountDisplayProvider =
           xRate,
           fmt,
           hiddenText,
-          maxDecimals: maxDecimals,
+          quanDecimals: quanDecimals,
           isHidden: isHidden,
           withQuanSymbol: withQuanSymbol,
           isFlipped: isFlipped,
@@ -283,7 +292,7 @@ final txAmountDisplayProvider =
           data = data.copyWith(primaryAmount: withSignPrefix ? '$prefix${data.primaryAmount}' : data.primaryAmount);
         }
 
-        if (!withQuanSymbol && isFlipped) {
+        if (!withQuanSymbol && isFlipped && !isHidden) {
           data = data.copyWith(secondaryAmount: '${data.secondaryAmount} ${AppConstants.tokenSymbol}');
         }
 
@@ -295,12 +304,11 @@ final txAmountDisplayProvider =
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-String _toFiatNumeric(BigInt rawBalance, FiatCurrency fiat, ExchangeRateService xRate, int maxDecimals) {
-  final scaleFactor = BigInt.from(10).pow(AppConstants.decimals);
-  final quantity = (Decimal.fromBigInt(rawBalance) / Decimal.fromBigInt(scaleFactor)).toDecimal();
-  final fiatValue = xRate.convert(quantity, fiat);
-
-  return fiatValue.toStringAsFixed(maxDecimals);
+/// Converts [rawBalance] to a fiat numeric string with the number of decimal
+/// places prescribed by [fiat] (e.g. 2 for USD, 0 for JPY/IDR).
+String _toFiatNumeric(BigInt rawBalance, FiatCurrency fiat, ExchangeRateService xRate) {
+  final fiatValue = xRate.quanRawToFiat(rawBalance, fiat, AppConstants.decimals);
+  return fiatValue.toStringAsFixed(fiat.decimals);
 }
 
 CurrencyDisplayState _toFiatDisplayState(
@@ -309,13 +317,13 @@ CurrencyDisplayState _toFiatDisplayState(
   ExchangeRateService xRate,
   NumberFormattingService fmt,
   String hiddenText, {
-  required int maxDecimals,
+  required int quanDecimals,
   required bool isFlipped,
   required bool isHidden,
   required bool withQuanSymbol,
 }) {
-  final quanFormatted = fmt.formatBalance(amount, maxDecimals: maxDecimals, addSymbol: withQuanSymbol);
-  final fiatFormatted = selectedFiat.format(_toFiatNumeric(amount, selectedFiat, xRate, maxDecimals));
+  final quanFormatted = fmt.formatBalance(amount, maxDecimals: quanDecimals, addSymbol: withQuanSymbol);
+  final fiatFormatted = selectedFiat.format(_toFiatNumeric(amount, selectedFiat, xRate));
 
   CurrencyDisplayState data = CurrencyDisplayState(
     primaryAmount: isFlipped ? fiatFormatted : quanFormatted,
