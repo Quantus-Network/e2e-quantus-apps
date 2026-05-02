@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:convert/convert.dart' as convert_hex;
 import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/models/exchange_rates_result.dart';
 import 'package:quantus_sdk/src/models/oauth_link.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
@@ -523,7 +524,7 @@ class TaskmasterService {
     return RemoteConfigModel.fromJson(data);
   }
 
-  Future<Map<String, double>> getExchangeRates() async {
+  Future<ExchangeRatesResult> getExchangeRates() async {
     final http.Response response = await http.get(
       _exchangeRatesEndpoint,
       headers: {'Content-Type': 'application/json'},
@@ -539,7 +540,7 @@ class TaskmasterService {
       throw Exception('Exchange rates not found!');
     }
 
-    return data.map((k, v) => MapEntry(k, (v as num).toDouble()));
+    return ExchangeRatesResult.fromJson(data);
   }
 
   Future<MinerStats> getMinerStats() async {

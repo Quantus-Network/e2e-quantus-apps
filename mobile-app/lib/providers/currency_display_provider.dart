@@ -13,7 +13,6 @@ import 'package:resonance_network_wallet/services/exchange_rate_service.dart';
 // ---------------------------------------------------------------------------
 
 const _kRatesCacheKey = 'exchange_rates_cache';
-const _kCacheTtlDuration = Duration(hours: 24);
 
 /// Parses the inner `rates` object from a decoded cache payload into a
 /// `Map<String, Decimal>`. Shared by [_readRatesCache] and [_readRatesCacheAnyAge].
@@ -57,14 +56,21 @@ Map<String, Decimal> _readRatesCacheAnyAge(SettingsService settings) {
   }
 }
 
-Future<void> _writeRatesCache(SettingsService settings, Map<String, Decimal> rates) async {
-  final expiryUnix = DateTime.now().millisecondsSinceEpoch ~/ 1000 + _kCacheTtlDuration.inSeconds;
-  final payload = {'expiry': expiryUnix, 'rates': rates.map((k, v) => MapEntry(k, v.toString()))};
+Future<void> _writeRatesCache(
+  SettingsService settings,
+  Map<String, Decimal> rates,
+  int timeNextUpdateUnix,
+) async {
+  final payload = {
+    'expiry': timeNextUpdateUnix,
+    'rates': rates.map((k, v) => MapEntry(k, v.toString())),
+  };
+  print('writing exchange rates cache: $payload');
   await settings.setString(_kRatesCacheKey, jsonEncode(payload));
 }
 
 // ---------------------------------------------------------------------------
-// Exchange rates provider (async fetch + 24-hour cache)
+// Exchange rates provider (async fetch + server-driven cache)
 // ---------------------------------------------------------------------------
 
 /// Resolves the live USD-based exchange rates.
@@ -72,6 +78,9 @@ Future<void> _writeRatesCache(SettingsService settings, Map<String, Decimal> rat
 /// Strategy (in order):
 ///   1. Return valid (non-expired) cached rates from the previous fetch.
 ///   2. Fetch fresh rates from the Taskmaster endpoint and persist them.
+///      The cache expiry is set to [time_next_update_unix] from the API
+///      response, so the cache is busted exactly when the upstream provider
+///      publishes new rates rather than after an arbitrary local TTL.
 ///   3. On fetch error, return the last persisted rates (even if expired).
 ///   4. Ultimate fallback: [ExchangeRateService.fallbackRates].
 final exchangeRatesProvider = FutureProvider<Map<String, Decimal>>((ref) async {
@@ -81,9 +90,9 @@ final exchangeRatesProvider = FutureProvider<Map<String, Decimal>>((ref) async {
   if (cached != null) return cached;
 
   try {
-    final rawRates = await TaskmasterService().getExchangeRates();
-    final rates = rawRates.map((k, v) => MapEntry(k, Decimal.parse(v.toString())));
-    await _writeRatesCache(settings, rates);
+    final result = await TaskmasterService().getExchangeRates();
+    final rates = result.rates.map((k, v) => MapEntry(k, Decimal.parse(v.toString())));
+    await _writeRatesCache(settings, rates, result.timeNextUpdateUnix);
 
     return rates;
   } catch (e) {
