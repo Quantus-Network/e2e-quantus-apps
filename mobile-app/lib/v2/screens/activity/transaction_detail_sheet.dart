@@ -109,11 +109,10 @@ class _DetailsSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final formattingService = ref.watch(numberFormattingServiceProvider);
-    
+
     final counterparty = isSend ? tx.to : tx.from;
     final address = AddressFormattingService.formatAddress(counterparty, prefix: 7, ellipses: '.......', postFix: 6);
     final dateTime = DatetimeFormattingService.formatTxDateTime(tx.timestamp);
-    
 
     BigInt? fee;
     if (tx is TransferEvent) fee = (tx as TransferEvent).fee;

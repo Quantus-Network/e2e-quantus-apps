@@ -27,7 +27,7 @@ final localeNumberConfigProvider = Provider<LocaleNumberConfig>((ref) {
 
 final numberFormattingServiceProvider = Provider<NumberFormattingService>((ref) {
   final localeConfig = ref.watch(localeNumberConfigProvider);
-  
+
   return NumberFormattingService(localeConfig: localeConfig);
 });
 

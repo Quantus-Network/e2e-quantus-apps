@@ -8,25 +8,13 @@ class LocaleNumberConfig {
   final String groupingSeparator;
   final String locale;
 
-  const LocaleNumberConfig({
-    required this.decimalSeparator,
-    required this.groupingSeparator,
-    required this.locale,
-  });
+  const LocaleNumberConfig({required this.decimalSeparator, required this.groupingSeparator, required this.locale});
 
   /// Standard US/UK config: dot decimal, comma thousands.
-  static const dotDecimal = LocaleNumberConfig(
-    decimalSeparator: '.',
-    groupingSeparator: ',',
-    locale: 'en_US',
-  );
+  static const dotDecimal = LocaleNumberConfig(decimalSeparator: '.', groupingSeparator: ',', locale: 'en_US');
 
   /// European/Indonesian config: comma decimal, dot thousands.
-  static const commaDecimal = LocaleNumberConfig(
-    decimalSeparator: ',',
-    groupingSeparator: '.',
-    locale: 'id_ID',
-  );
+  static const commaDecimal = LocaleNumberConfig(decimalSeparator: ',', groupingSeparator: '.', locale: 'id_ID');
 
   /// Creates a [LocaleNumberConfig] from the device locale string (e.g. 'en_US', 'id_ID').
   factory LocaleNumberConfig.fromLocale(String locale) {

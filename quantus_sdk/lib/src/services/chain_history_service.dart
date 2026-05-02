@@ -462,7 +462,12 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
     int offset = 0,
     required TransactionFilter filter,
   }) async {
-    final page = await _fetchScheduledReversibleTransfersPage(accountIds: accountIds, limit: limit, offset: offset, filter: filter);
+    final page = await _fetchScheduledReversibleTransfersPage(
+      accountIds: accountIds,
+      limit: limit,
+      offset: offset,
+      filter: filter,
+    );
     return page.items;
   }
 

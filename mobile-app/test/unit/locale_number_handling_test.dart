@@ -214,19 +214,13 @@ void main() {
       });
 
       test('respects maxDecimalPlaces', () {
-        final filter2dp = DecimalInputFilter(
-          localeConfig: LocaleNumberConfig.dotDecimal,
-          maxDecimalPlaces: 2,
-        );
+        final filter2dp = DecimalInputFilter(localeConfig: LocaleNumberConfig.dotDecimal, maxDecimalPlaces: 2);
         expect(typeChar(filter2dp, '1.2', '3').text, '1.23');
         expect(typeChar(filter2dp, '1.23', '4').text, '1.23');
       });
 
       test('blocks decimal when maxDecimalPlaces is 0', () {
-        final filter0dp = DecimalInputFilter(
-          localeConfig: LocaleNumberConfig.dotDecimal,
-          maxDecimalPlaces: 0,
-        );
+        final filter0dp = DecimalInputFilter(localeConfig: LocaleNumberConfig.dotDecimal, maxDecimalPlaces: 0);
         expect(typeChar(filter0dp, '1', '.').text, '1');
         expect(typeChar(filter0dp, '', '.').text, '');
         expect(typeChar(filter0dp, '12', '3').text, '123');
@@ -276,19 +270,13 @@ void main() {
       });
 
       test('respects maxDecimalPlaces', () {
-        final filter2dp = DecimalInputFilter(
-          localeConfig: LocaleNumberConfig.commaDecimal,
-          maxDecimalPlaces: 2,
-        );
+        final filter2dp = DecimalInputFilter(localeConfig: LocaleNumberConfig.commaDecimal, maxDecimalPlaces: 2);
         expect(typeChar(filter2dp, '1,2', '3').text, '1,23');
         expect(typeChar(filter2dp, '1,23', '4').text, '1,23');
       });
 
       test('blocks decimal when maxDecimalPlaces is 0 (IDR)', () {
-        final filter0dp = DecimalInputFilter(
-          localeConfig: LocaleNumberConfig.commaDecimal,
-          maxDecimalPlaces: 0,
-        );
+        final filter0dp = DecimalInputFilter(localeConfig: LocaleNumberConfig.commaDecimal, maxDecimalPlaces: 0);
         expect(typeChar(filter0dp, '1', ',').text, '1');
         expect(typeChar(filter0dp, '1', '.').text, '1');
         expect(typeChar(filter0dp, '', ',').text, '');
@@ -400,93 +388,57 @@ void main() {
     group('formatBalance with locale', () {
       test('US locale: formats with dot decimal and comma thousands', () {
         final balance = BigInt.parse('1234500000000000'); // 1234.5
-        expect(
-          usService.formatBalance(balance, maxDecimals: 2),
-          '1,234.5',
-        );
+        expect(usService.formatBalance(balance, maxDecimals: 2), '1,234.5');
       });
 
       test('Indonesian locale: formats with comma decimal and dot thousands', () {
         final balance = BigInt.parse('1234500000000000'); // 1234.5
-        expect(
-          idService.formatBalance(balance, maxDecimals: 2),
-          '1.234,5',
-        );
+        expect(idService.formatBalance(balance, maxDecimals: 2), '1.234,5');
       });
 
       test('US locale: no thousands separators', () {
         final balance = BigInt.parse('1234500000000000');
-        expect(
-          usService.formatBalance(balance, maxDecimals: 4, addThousandsSeparators: false),
-          '1234.5',
-        );
+        expect(usService.formatBalance(balance, maxDecimals: 4, addThousandsSeparators: false), '1234.5');
       });
 
       test('Indonesian locale: no thousands separators', () {
         final balance = BigInt.parse('1234500000000000');
-        expect(
-          idService.formatBalance(balance, maxDecimals: 4, addThousandsSeparators: false),
-          '1234,5',
-        );
+        expect(idService.formatBalance(balance, maxDecimals: 4, addThousandsSeparators: false), '1234,5');
       });
 
       test('zero balance is always 0', () {
-        expect(
-          idService.formatBalance(BigInt.zero),
-          '0',
-        );
+        expect(idService.formatBalance(BigInt.zero), '0');
       });
 
       test('Indonesian locale: large balance', () {
         final balance = BigInt.parse('1234567890123000000000'); // 1,234,567,890.123
-        expect(
-          idService.formatBalance(balance, maxDecimals: 3),
-          '1.234.567.890,123',
-        );
+        expect(idService.formatBalance(balance, maxDecimals: 3), '1.234.567.890,123');
       });
     });
 
     group('parseAmount with locale', () {
       test('US locale: parses dot decimal', () {
-        expect(
-          usService.parseAmount('1.5'),
-          scaleFactor * BigInt.from(15) ~/ BigInt.from(10),
-        );
+        expect(usService.parseAmount('1.5'), scaleFactor * BigInt.from(15) ~/ BigInt.from(10));
       });
 
       test('US locale: strips comma thousands before parsing', () {
-        expect(
-          usService.parseAmount('1,000.5'),
-          BigInt.parse('1000500000000000'),
-        );
+        expect(usService.parseAmount('1,000.5'), BigInt.parse('1000500000000000'));
       });
 
       test('Indonesian locale: parses comma decimal', () {
-        expect(
-          idService.parseAmount('1,5'),
-          scaleFactor * BigInt.from(15) ~/ BigInt.from(10),
-        );
+        expect(idService.parseAmount('1,5'), scaleFactor * BigInt.from(15) ~/ BigInt.from(10));
       });
 
       test('Indonesian locale: strips dot thousands before parsing', () {
-        expect(
-          idService.parseAmount('1.000,5'),
-          BigInt.parse('1000500000000000'),
-        );
+        expect(idService.parseAmount('1.000,5'), BigInt.parse('1000500000000000'));
       });
 
       test('Indonesian locale: 1.000 means 1000 (not 1.000)', () {
-        expect(
-          idService.parseAmount('1.000'),
-          scaleFactor * BigInt.from(1000),
-        );
+        expect(idService.parseAmount('1.000'), scaleFactor * BigInt.from(1000));
       });
 
       test('US locale: 1.000 means 1.000 (one with three decimal places)', () {
-        expect(
-          usService.parseAmount('1.000'),
-          scaleFactor * BigInt.one,
-        );
+        expect(usService.parseAmount('1.000'), scaleFactor * BigInt.one);
       });
 
       test('empty string returns zero', () {
@@ -498,10 +450,7 @@ void main() {
       });
 
       test('Indonesian locale: integer without separators', () {
-        expect(
-          idService.parseAmount('1500'),
-          scaleFactor * BigInt.from(1500),
-        );
+        expect(idService.parseAmount('1500'), scaleFactor * BigInt.from(1500));
       });
     });
 
@@ -580,54 +529,27 @@ void main() {
     });
 
     test('DecimalInputFilter blocks IDR decimal input (0 decimal places)', () {
-      final filter = DecimalInputFilter(
-        localeConfig: LocaleNumberConfig.commaDecimal,
-        maxDecimalPlaces: 0,
-      );
-      final oldValue = const TextEditingValue(
-        text: '1000',
-        selection: TextSelection.collapsed(offset: 4),
-      );
+      final filter = DecimalInputFilter(localeConfig: LocaleNumberConfig.commaDecimal, maxDecimalPlaces: 0);
+      final oldValue = const TextEditingValue(text: '1000', selection: TextSelection.collapsed(offset: 4));
       // Try comma
-      var newValue = const TextEditingValue(
-        text: '1000,',
-        selection: TextSelection.collapsed(offset: 5),
-      );
+      var newValue = const TextEditingValue(text: '1000,', selection: TextSelection.collapsed(offset: 5));
       expect(filter.formatEditUpdate(oldValue, newValue).text, '1000');
       // Try dot
-      newValue = const TextEditingValue(
-        text: '1000.',
-        selection: TextSelection.collapsed(offset: 5),
-      );
+      newValue = const TextEditingValue(text: '1000.', selection: TextSelection.collapsed(offset: 5));
       expect(filter.formatEditUpdate(oldValue, newValue).text, '1000');
     });
 
     test('DecimalInputFilter blocks JPY decimal input (0 decimal places, dot locale)', () {
-      final filter = DecimalInputFilter(
-        localeConfig: LocaleNumberConfig.dotDecimal,
-        maxDecimalPlaces: 0,
-      );
-      final oldValue = const TextEditingValue(
-        text: '1000',
-        selection: TextSelection.collapsed(offset: 4),
-      );
-      var newValue = const TextEditingValue(
-        text: '1000.',
-        selection: TextSelection.collapsed(offset: 5),
-      );
+      final filter = DecimalInputFilter(localeConfig: LocaleNumberConfig.dotDecimal, maxDecimalPlaces: 0);
+      final oldValue = const TextEditingValue(text: '1000', selection: TextSelection.collapsed(offset: 4));
+      var newValue = const TextEditingValue(text: '1000.', selection: TextSelection.collapsed(offset: 5));
       expect(filter.formatEditUpdate(oldValue, newValue).text, '1000');
-      newValue = const TextEditingValue(
-        text: '1000,',
-        selection: TextSelection.collapsed(offset: 5),
-      );
+      newValue = const TextEditingValue(text: '1000,', selection: TextSelection.collapsed(offset: 5));
       expect(filter.formatEditUpdate(oldValue, newValue).text, '1000');
     });
 
     test('USD allows 2 decimal places', () {
-      final filter = DecimalInputFilter(
-        localeConfig: LocaleNumberConfig.dotDecimal,
-        maxDecimalPlaces: 2,
-      );
+      final filter = DecimalInputFilter(localeConfig: LocaleNumberConfig.dotDecimal, maxDecimalPlaces: 2);
       final result = filter.formatEditUpdate(
         const TextEditingValue(text: '10.9', selection: TextSelection.collapsed(offset: 4)),
         const TextEditingValue(text: '10.99', selection: TextSelection.collapsed(offset: 5)),
@@ -642,10 +564,7 @@ void main() {
     });
 
     test('EUR with comma decimal allows 2 decimal places', () {
-      final filter = DecimalInputFilter(
-        localeConfig: LocaleNumberConfig.commaDecimal,
-        maxDecimalPlaces: 2,
-      );
+      final filter = DecimalInputFilter(localeConfig: LocaleNumberConfig.commaDecimal, maxDecimalPlaces: 2);
       final result = filter.formatEditUpdate(
         const TextEditingValue(text: '10,9', selection: TextSelection.collapsed(offset: 4)),
         const TextEditingValue(text: '10,99', selection: TextSelection.collapsed(offset: 5)),
@@ -669,37 +588,55 @@ void main() {
       expect(result.text, '1');
       // Type 5
       result = filter.formatEditUpdate(
-        TextEditingValue(text: result.text, selection: TextSelection.collapsed(offset: result.text.length)),
+        TextEditingValue(
+          text: result.text,
+          selection: TextSelection.collapsed(offset: result.text.length),
+        ),
         const TextEditingValue(text: '15', selection: TextSelection.collapsed(offset: 2)),
       );
       expect(result.text, '15');
       // Type 0
       result = filter.formatEditUpdate(
-        TextEditingValue(text: result.text, selection: TextSelection.collapsed(offset: result.text.length)),
+        TextEditingValue(
+          text: result.text,
+          selection: TextSelection.collapsed(offset: result.text.length),
+        ),
         const TextEditingValue(text: '150', selection: TextSelection.collapsed(offset: 3)),
       );
       expect(result.text, '150');
       // Type 0
       result = filter.formatEditUpdate(
-        TextEditingValue(text: result.text, selection: TextSelection.collapsed(offset: result.text.length)),
+        TextEditingValue(
+          text: result.text,
+          selection: TextSelection.collapsed(offset: result.text.length),
+        ),
         const TextEditingValue(text: '1500', selection: TextSelection.collapsed(offset: 4)),
       );
       expect(result.text, '1500');
       // Type , (decimal)
       result = filter.formatEditUpdate(
-        TextEditingValue(text: result.text, selection: TextSelection.collapsed(offset: result.text.length)),
+        TextEditingValue(
+          text: result.text,
+          selection: TextSelection.collapsed(offset: result.text.length),
+        ),
         const TextEditingValue(text: '1500,', selection: TextSelection.collapsed(offset: 5)),
       );
       expect(result.text, '1500,');
       // Type 7
       result = filter.formatEditUpdate(
-        TextEditingValue(text: result.text, selection: TextSelection.collapsed(offset: result.text.length)),
+        TextEditingValue(
+          text: result.text,
+          selection: TextSelection.collapsed(offset: result.text.length),
+        ),
         const TextEditingValue(text: '1500,7', selection: TextSelection.collapsed(offset: 6)),
       );
       expect(result.text, '1500,7');
       // Type 5
       result = filter.formatEditUpdate(
-        TextEditingValue(text: result.text, selection: TextSelection.collapsed(offset: result.text.length)),
+        TextEditingValue(
+          text: result.text,
+          selection: TextSelection.collapsed(offset: result.text.length),
+        ),
         const TextEditingValue(text: '1500,75', selection: TextSelection.collapsed(offset: 7)),
       );
       expect(result.text, '1500,75');
@@ -715,19 +652,28 @@ void main() {
       expect(result.text, '1');
       // Type 5
       result = filter.formatEditUpdate(
-        TextEditingValue(text: result.text, selection: TextSelection.collapsed(offset: result.text.length)),
+        TextEditingValue(
+          text: result.text,
+          selection: TextSelection.collapsed(offset: result.text.length),
+        ),
         const TextEditingValue(text: '15', selection: TextSelection.collapsed(offset: 2)),
       );
       expect(result.text, '15');
       // Type . on iOS keyboard (should become ,)
       result = filter.formatEditUpdate(
-        TextEditingValue(text: result.text, selection: TextSelection.collapsed(offset: result.text.length)),
+        TextEditingValue(
+          text: result.text,
+          selection: TextSelection.collapsed(offset: result.text.length),
+        ),
         const TextEditingValue(text: '15.', selection: TextSelection.collapsed(offset: 3)),
       );
       expect(result.text, '15,');
       // Type 5
       result = filter.formatEditUpdate(
-        TextEditingValue(text: result.text, selection: TextSelection.collapsed(offset: result.text.length)),
+        TextEditingValue(
+          text: result.text,
+          selection: TextSelection.collapsed(offset: result.text.length),
+        ),
         const TextEditingValue(text: '15,5', selection: TextSelection.collapsed(offset: 4)),
       );
       expect(result.text, '15,5');

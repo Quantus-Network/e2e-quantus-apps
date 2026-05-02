@@ -21,16 +21,11 @@ class DecimalInputFilter extends TextInputFormatter {
   /// [maxDecimalPlaces] restricts how many digits after the decimal separator
   /// are allowed. Pass `0` to block decimal input entirely (e.g. for IDR/JPY).
   /// Pass `null` for the default maximum of 12 digits.
-  DecimalInputFilter({
-    LocaleNumberConfig? localeConfig,
-    this.maxDecimalPlaces,
-  }) : localeConfig = localeConfig ?? LocaleNumberConfig.dotDecimal;
+  DecimalInputFilter({LocaleNumberConfig? localeConfig, this.maxDecimalPlaces})
+    : localeConfig = localeConfig ?? LocaleNumberConfig.dotDecimal;
 
   @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
     if (newValue.text.isEmpty) return newValue;
 
     final sep = localeConfig.decimalSeparator;
@@ -64,10 +59,7 @@ class DecimalInputFilter extends TextInputFormatter {
     // Handle lone decimal separator → "0," or "0."
     if (text == sep || text == '.' || text == ',') {
       if (maxDecimalPlaces == 0) return oldValue;
-      return TextEditingValue(
-        text: '0$sep',
-        selection: const TextSelection.collapsed(offset: 2),
-      );
+      return TextEditingValue(text: '0$sep', selection: const TextSelection.collapsed(offset: 2));
     }
 
     // Handle leading decimal separator (e.g., ",5" → "0,5" or ".5" → "0.5")
@@ -89,7 +81,10 @@ class DecimalInputFilter extends TextInputFormatter {
       decimalRegexPart = '';
     } else {
       final maxDp = maxDecimalPlaces ?? 12;
-      decimalRegexPart = r'(\.\d{0,' '$maxDp' r'})?';
+      decimalRegexPart =
+          r'(\.\d{0,'
+          '$maxDp'
+          r'})?';
     }
     final regex = RegExp('^(0|([1-9]\\d*))$decimalRegexPart\$');
 

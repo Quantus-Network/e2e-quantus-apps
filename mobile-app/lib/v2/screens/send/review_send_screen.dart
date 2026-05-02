@@ -191,12 +191,14 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
         const SizedBox(height: 7),
         _summaryRow(
           label: 'AMOUNT',
-          value: '${formattingService.formatBalance(widget.amount, maxDecimals: shownDecimals)} ${AppConstants.tokenSymbol}',
+          value:
+              '${formattingService.formatBalance(widget.amount, maxDecimals: shownDecimals)} ${AppConstants.tokenSymbol}',
         ),
         const SizedBox(height: 7),
         _summaryRow(
           label: 'NETWORK FEE',
-          value: '${formattingService.formatBalance(widget.networkFee, maxDecimals: shownDecimals)} ${AppConstants.tokenSymbol}',
+          value:
+              '${formattingService.formatBalance(widget.networkFee, maxDecimals: shownDecimals)} ${AppConstants.tokenSymbol}',
         ),
         const SizedBox(height: 7),
         _summaryRow(
