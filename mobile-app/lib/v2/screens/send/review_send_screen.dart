@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
@@ -39,8 +40,6 @@ class ReviewSendScreen extends ConsumerStatefulWidget {
 }
 
 class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
-  final _fmt = NumberFormattingService();
-
   bool _submitting = false;
   String? _errorMessage;
 
@@ -182,6 +181,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
   Widget _summarySection(String addr, BigInt totalRaw) {
     final shownDecimals = AppConstants.decimals;
     final shortAddr = AddressFormattingService.formatAddress(addr);
+    final formattingService = ref.watch(numberFormattingServiceProvider);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -191,17 +191,17 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
         const SizedBox(height: 7),
         _summaryRow(
           label: 'AMOUNT',
-          value: '${_fmt.formatBalance(widget.amount, maxDecimals: shownDecimals)} ${AppConstants.tokenSymbol}',
+          value: '${formattingService.formatBalance(widget.amount, maxDecimals: shownDecimals)} ${AppConstants.tokenSymbol}',
         ),
         const SizedBox(height: 7),
         _summaryRow(
           label: 'NETWORK FEE',
-          value: '${_fmt.formatBalance(widget.networkFee, maxDecimals: shownDecimals)} ${AppConstants.tokenSymbol}',
+          value: '${formattingService.formatBalance(widget.networkFee, maxDecimals: shownDecimals)} ${AppConstants.tokenSymbol}',
         ),
         const SizedBox(height: 7),
         _summaryRow(
           label: 'YOU PAY',
-          value: '${_fmt.formatBalance(totalRaw, maxDecimals: shownDecimals)} ${AppConstants.tokenSymbol}',
+          value: '${formattingService.formatBalance(totalRaw, maxDecimals: shownDecimals)} ${AppConstants.tokenSymbol}',
         ),
         const SizedBox(height: 7),
       ],

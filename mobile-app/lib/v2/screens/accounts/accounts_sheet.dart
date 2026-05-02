@@ -26,8 +26,6 @@ class AccountsSheet extends ConsumerStatefulWidget {
 }
 
 class _AccountsScreenState extends ConsumerState<AccountsSheet> {
-  final NumberFormattingService _formattingService = NumberFormattingService();
-
   List<Account> _displayAccounts(List<Account> accounts) {
     final sorted = [...accounts];
     sorted.sort((a, b) {
@@ -144,10 +142,11 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
 
   Widget _buildAccountRow(Account account, bool isActive) {
     final balanceAsync = ref.watch(balanceProviderFamily(account.accountId));
+    final formattingService = ref.watch(numberFormattingServiceProvider);
     final balanceText = balanceAsync.when(
       loading: () => 'Loading...',
       error: (_, _) => 'Balance unavailable',
-      data: (balance) => '${_formattingService.formatBalance(balance)} ${AppConstants.tokenSymbol}',
+      data: (balance) => '${formattingService.formatBalance(balance)} ${AppConstants.tokenSymbol}',
     );
     final colors = context.colors;
 

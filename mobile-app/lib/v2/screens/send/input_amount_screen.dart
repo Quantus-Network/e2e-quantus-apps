@@ -41,7 +41,8 @@ class InputAmountScreen extends ConsumerStatefulWidget {
 class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   final _amountController = TextEditingController();
   final _amountFocus = FocusNode();
-  final _fmt = NumberFormattingService();
+  final _scrollController = ScrollController();
+  final _amountCenterKey = GlobalKey();
   final _checksumService = HumanReadableChecksumService();
 
   final _feeDebouncer = Debouncer(delay: const Duration(milliseconds: 500));
@@ -53,17 +54,21 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   bool _isFetchingFee = true;
   bool _isUpdatingProgrammatically = false;
 
+  LocaleNumberConfig get _localeConfig => ref.read(localeNumberConfigProvider);
+
   @override
   void initState() {
     super.initState();
     assert(widget.recipientAddress.trim().isNotEmpty, 'InputAmountScreen requires a recipient');
     _amountController.addListener(_onAmountChanged);
+    _amountFocus.addListener(_onAmountFocusChanged);
     if (widget.initialAmount != null) {
       final isFlipped = ref.read(isCurrencyFlippedProvider);
       if (!isFlipped) {
         _amountController.text = widget.initialAmount!;
       } else {
-        final parsed = _fmt.parseAmount(widget.initialAmount!);
+        final formattingService = ref.read(numberFormattingServiceProvider);
+        final parsed = formattingService.parseAmount(widget.initialAmount!);
         if (parsed != null && parsed > BigInt.zero) {
           _amount = parsed;
           _isUpdatingProgrammatically = true;
@@ -90,8 +95,29 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     _feeDebouncer.cancel();
     _amountController.removeListener(_onAmountChanged);
     _amountController.dispose();
+    _amountFocus.removeListener(_onAmountFocusChanged);
     _amountFocus.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onAmountFocusChanged() {
+    if (!_amountFocus.hasFocus) return;
+    // Wait for the keyboard animation to finish before scrolling so that the
+    // viewport has already shrunk and ensureVisible can compute the correct offset.
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      final ctx = _amountCenterKey.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(
+          // ignore: use_build_context_synchronously
+          ctx,
+          alignment: 0.5,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   void _onAmountChanged() {
@@ -100,7 +126,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     if (isFlipped) {
       setState(() => _amount = _fiatStringToQuan(_amountController.text));
     } else {
-      final parsed = _fmt.parseAmount(_amountController.text);
+      final formattingService = ref.read(numberFormattingServiceProvider);
+      final parsed = formattingService.parseAmount(_amountController.text);
       setState(() => _amount = parsed ?? BigInt.zero);
     }
     if (_amount > BigInt.zero) _feeDebouncer.run(_fetchFee);
@@ -112,10 +139,11 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final account = displayAccount.account;
     try {
       final balancesService = ref.read(balancesServiceProvider);
+      final formattingService = ref.read(numberFormattingServiceProvider);
       final feeData = await balancesService.getBalanceTransferFee(
         account,
         account.accountId,
-        _fmt.parseAmount('1000') ?? BigInt.zero,
+        formattingService.parseAmount('1000') ?? BigInt.zero,
       );
       if (!mounted) return;
       setState(() {
@@ -154,22 +182,21 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   }
 
   /// Converts a raw QUAN [BigInt] to a fiat input string using the current
-  /// exchange rate and selected fiat currency.
-  ///
-  /// Uses [FiatCurrency.decimals] so that e.g. USD shows 2 d.p. and JPY 0 d.p.
+  /// exchange rate and selected fiat currency, formatted for the user's locale.
   String _quanToFiatString(BigInt quanAmount) {
     final xRate = ref.read(exchangeRateServiceProvider);
     final selectedFiat = ref.read(selectedFiatCurrencyProvider);
     final fiatValue = xRate.quanRawToFiat(quanAmount, selectedFiat, AppConstants.decimals);
-    return fiatValue.toStringAsFixed(selectedFiat.decimals);
+    final canonical = fiatValue.toStringAsFixed(selectedFiat.decimals);
+    return _localeConfig.localize(canonical, addGroupingSeparators: false);
   }
 
-  /// Parses a fiat-denominated input string and returns the equivalent raw
-  /// QUAN [BigInt] scaled by [AppConstants.decimals].
+  /// Parses a locale-formatted fiat input string and returns the equivalent
+  /// raw QUAN [BigInt] scaled by [AppConstants.decimals].
   BigInt _fiatStringToQuan(String fiatText) {
     if (fiatText.isEmpty) return BigInt.zero;
-    final sanitized = fiatText.replaceAll(',', '.');
-    final fiatDecimal = Decimal.tryParse(sanitized);
+    final normalized = _localeConfig.normalize(fiatText);
+    final fiatDecimal = Decimal.tryParse(normalized);
     if (fiatDecimal == null) return BigInt.zero;
 
     final xRate = ref.read(exchangeRateServiceProvider);
@@ -181,11 +208,12 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final balance = ref.read(effectiveMaxBalanceProvider).value ?? BigInt.zero;
     final max = SendScreenLogic.calculateMaxSendableAmount(balance: balance, networkFee: _networkFee);
     final isFlipped = ref.read(isCurrencyFlippedProvider);
+    final formattingService = ref.read(numberFormattingServiceProvider);
     _isUpdatingProgrammatically = true;
     try {
       _amountController.text = isFlipped
           ? _quanToFiatString(max)
-          : _fmt.formatBalance(max, maxDecimals: AppConstants.decimals, addThousandsSeparators: false);
+          : formattingService.formatBalance(max, maxDecimals: AppConstants.decimals, addThousandsSeparators: false);
     } finally {
       _isUpdatingProgrammatically = false;
     }
@@ -196,18 +224,19 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   Future<void> _toggleFlip() async {
     final wasFlipped = ref.read(isCurrencyFlippedProvider);
     await ref.read(isCurrencyFlippedProvider.notifier).toggle();
-    // Update the text field to reflect the new currency mode.
-    // _amount (BigInt QUAN) is always the source of truth and does not change.
+    final formattingService = ref.read(numberFormattingServiceProvider);
     _isUpdatingProgrammatically = true;
     try {
       if (!wasFlipped) {
-        // Switched QUAN → fiat
         _amountController.text = _amount == BigInt.zero ? '' : _quanToFiatString(_amount);
       } else {
-        // Switched fiat → QUAN
         _amountController.text = _amount == BigInt.zero
             ? ''
-            : _fmt.formatBalance(_amount, maxDecimals: AppConstants.decimals, addThousandsSeparators: false);
+            : formattingService.formatBalance(
+                _amount,
+                maxDecimals: AppConstants.decimals,
+                addThousandsSeparators: false,
+              );
       }
     } finally {
       _isUpdatingProgrammatically = false;
@@ -244,6 +273,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final balance = ref.watch(effectiveMaxBalanceProvider);
     final activeId = ref.watch(activeAccountProvider).value?.account.accountId ?? '';
     final recipient = widget.recipientAddress.trim();
+    final formattingService = ref.read(numberFormattingServiceProvider);
 
     final amountStatus = SendScreenLogic.getAmountStatus(_amount, balance.value ?? BigInt.zero, _networkFee);
     final btnDisabled =
@@ -260,17 +290,29 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       recipientText: recipient,
       amount: _amount,
       activeAccountId: activeId,
-      formattingService: _fmt,
+      formattingService: formattingService,
     );
 
     return ScaffoldBase(
       appBar: V2AppBar(title: widget.isPayMode ? 'Pay' : 'Send'),
-      mainContent: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _recipientCard(colors, text),
-          Expanded(child: _amountCenter(colors, text)),
-        ],
+      mainContent: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          controller: _scrollController,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _recipientCard(colors, text),
+                const SizedBox(height: 32),
+                _amountCenter(colors, text),
+                const SizedBox(height: 32),
+                const SizedBox.shrink(),
+              ],
+            ),
+          ),
+        ),
       ),
       bottomContent: _bottomSection(colors, text, btnText, balance, btnDisabled),
     );
@@ -339,6 +381,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   Widget _amountCenter(AppColorsV2 colors, AppTextTheme text) {
     final isFlipped = ref.watch(isCurrencyFlippedProvider);
     final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
+    final localeConfig = ref.watch(localeNumberConfigProvider);
     final display = ref.watch(txAmountDisplayProvider)(
       _amount,
       withSignPrefix: false,
@@ -350,13 +393,14 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final symbolStyle = text.transactionDetailAmountSymbol?.copyWith(color: colors.textPrimary);
     final isPrefixFiat = isFlipped && selectedFiat.symbolPosition == SymbolPosition.prefix;
 
+    final maxDecimals = isFlipped ? selectedFiat.decimals : null;
     final inputField = IntrinsicWidth(
       child: TextField(
         controller: _amountController,
         focusNode: _amountFocus,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         textAlign: isPrefixFiat ? TextAlign.left : TextAlign.right,
-        inputFormatters: [DecimalInputFilter()],
+        inputFormatters: [DecimalInputFilter(localeConfig: localeConfig, maxDecimalPlaces: maxDecimals)],
         style: text.transactionDetailAmountPrimary?.copyWith(
           color: _amount == BigInt.zero ? colors.textTertiary : colors.textPrimary,
         ),
@@ -377,6 +421,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         : [inputField, const SizedBox(width: 8), symbolWidget];
 
     return Center(
+      key: _amountCenterKey,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
@@ -421,6 +466,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     AsyncValue<BigInt> balance,
     bool btnDisabled,
   ) {
+    final formattingService = ref.read(numberFormattingServiceProvider);
+
     return ScaffoldBaseBottomContent(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -441,7 +488,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                         const SizedBox(height: 4),
                         balance.when(
                           data: (b) => Text(
-                            '${_fmt.formatBalance(b)} ${AppConstants.tokenSymbol}',
+                            '${formattingService.formatBalance(b)} ${AppConstants.tokenSymbol}',
                             style: text.smallParagraph?.copyWith(color: colors.textTertiary),
                           ),
                           loading: () => Text('...', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
@@ -458,7 +505,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                         const SizedBox(height: 4),
                         if (!_isFetchingFee)
                           Text(
-                            '${_fmt.formatBalance(_networkFee, maxDecimals: 5)} ${AppConstants.tokenSymbol}',
+                            '${formattingService.formatBalance(_networkFee, maxDecimals: 5)} ${AppConstants.tokenSymbol}',
                             style: text.smallParagraph?.copyWith(color: colors.textTertiary),
                           )
                         else

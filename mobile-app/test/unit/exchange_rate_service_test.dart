@@ -4,8 +4,8 @@ import 'package:resonance_network_wallet/models/fiat_currency.dart';
 import 'package:resonance_network_wallet/services/exchange_rate_service.dart';
 
 void main() {
-  // 1 QUAN = 1 USD; 1 USD = 4 MYR, 15000 IDR (zero-decimal currency).
-  final rates = {'USD': Decimal.parse('1'), 'MYR': Decimal.parse('4'), 'IDR': Decimal.parse('15000')};
+  // 1 QUAN = 1 USD; 1 USD = 3.97 MYR, 17334 IDR (zero-decimal currency).
+  final rates = {'USD': Decimal.parse('1'), 'MYR': Decimal.parse('3.97'), 'IDR': Decimal.parse('17334')};
 
   late ExchangeRateService service;
 
@@ -16,19 +16,12 @@ void main() {
   group('ExchangeRateService.getRate', () {
     test('returns the rate for a known currency', () {
       expect(service.getRate(FiatCurrency.usd), Decimal.one);
-      expect(service.getRate(FiatCurrency.myr), Decimal.parse('4'));
+      expect(service.getRate(FiatCurrency.myr), Decimal.parse('3.97'));
     });
 
     test('falls back to fallbackRates for a missing live rate', () {
       final serviceWithEmpty = ExchangeRateService(rates: {});
       expect(serviceWithEmpty.getRate(FiatCurrency.usd), ExchangeRateService.fallbackRates['USD']);
-    });
-
-    test('throws when the currency is absent from both live and fallback rates', () {
-      final serviceWithEmpty = ExchangeRateService(rates: {});
-      // JPY is in fallbackRates, so we expect no throw for standard currencies.
-      // A made-up code should throw.
-      expect(() => serviceWithEmpty.getRate(FiatCurrency.values.firstWhere((c) => c.code == 'USD')), returnsNormally);
     });
   });
 
@@ -38,17 +31,17 @@ void main() {
     });
 
     test('converts 1 QUAN to MYR (1 QUAN = 4 MYR)', () {
-      expect(service.convert(Decimal.one, FiatCurrency.myr), Decimal.parse('4'));
+      expect(service.convert(Decimal.one, FiatCurrency.myr), Decimal.parse('3.97'));
     });
 
-    test('converts 0.5 QUAN to MYR (0.5 × 4 = 2)', () {
-      expect(service.convert(Decimal.parse('0.5'), FiatCurrency.myr), Decimal.parse('2'));
+    test('converts 0.5 QUAN to MYR (0.5 × 3.97 = 1.985)', () {
+      expect(service.convert(Decimal.parse('0.5'), FiatCurrency.myr), Decimal.parse('1.985'));
     });
 
     test('applies quanToUsdRate when set', () {
       final serviceWith2xRate = ExchangeRateService(rates: rates, quanToUsdRate: Decimal.parse('2'));
-      // 1 QUAN × 2 USD/QUAN × 4 MYR/USD = 8 MYR
-      expect(serviceWith2xRate.convert(Decimal.one, FiatCurrency.myr), Decimal.parse('8'));
+      // 1 QUAN × 2 USD/QUAN × 3.97 MYR/USD = 7.94 MYR
+      expect(serviceWith2xRate.convert(Decimal.one, FiatCurrency.myr), Decimal.parse('7.94'));
     });
   });
 
@@ -61,13 +54,13 @@ void main() {
       expect(service.quanRawToFiat(oneQuan, FiatCurrency.usd, quanDecimals), Decimal.one);
     });
 
-    test('1 QUAN raw → 4 MYR', () {
-      expect(service.quanRawToFiat(oneQuan, FiatCurrency.myr, quanDecimals), Decimal.parse('4'));
+    test('1 QUAN raw → 3.97 MYR', () {
+      expect(service.quanRawToFiat(oneQuan, FiatCurrency.myr, quanDecimals), Decimal.parse('3.97'));
     });
 
-    test('0.5 QUAN raw → 2 MYR', () {
+    test('0.5 QUAN raw → 1.985 MYR', () {
       final halfQuan = BigInt.from(5) * BigInt.from(10).pow(quanDecimals - 1);
-      expect(service.quanRawToFiat(halfQuan, FiatCurrency.myr, quanDecimals), Decimal.parse('2'));
+      expect(service.quanRawToFiat(halfQuan, FiatCurrency.myr, quanDecimals), Decimal.parse('1.985'));
     });
 
     test('zero QUAN raw → zero fiat', () {
@@ -83,13 +76,13 @@ void main() {
       expect(service.fiatToQuanRaw(Decimal.one, FiatCurrency.usd, quanDecimals), oneQuan);
     });
 
-    test('4 MYR → 1 QUAN raw', () {
-      expect(service.fiatToQuanRaw(Decimal.parse('4'), FiatCurrency.myr, quanDecimals), oneQuan);
+    test('3.97 MYR → 1 QUAN raw', () {
+      expect(service.fiatToQuanRaw(Decimal.parse('3.97'), FiatCurrency.myr, quanDecimals), oneQuan);
     });
 
-    test('2 MYR → 0.5 QUAN raw', () {
+    test('1.985 MYR → 0.5 QUAN raw', () {
       final halfQuan = BigInt.from(5) * BigInt.from(10).pow(quanDecimals - 1);
-      expect(service.fiatToQuanRaw(Decimal.parse('2'), FiatCurrency.myr, quanDecimals), halfQuan);
+      expect(service.fiatToQuanRaw(Decimal.parse('1.985'), FiatCurrency.myr, quanDecimals), halfQuan);
     });
 
     test('zero fiat → zero QUAN raw', () {

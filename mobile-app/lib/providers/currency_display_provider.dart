@@ -50,7 +50,9 @@ Map<String, Decimal> _readRatesCacheAnyAge(SettingsService settings) {
   try {
     final decoded = jsonDecode(raw) as Map<String, dynamic>;
     return _parseRatesMap(decoded['rates'] as Map<String, dynamic>);
-  } catch (_) {
+  } catch (e) {
+    debugPrint('Failed parsing exchange rates cache: $e');
+
     return ExchangeRateService.fallbackRates;
   }
 }
@@ -84,7 +86,9 @@ final exchangeRatesProvider = FutureProvider<Map<String, Decimal>>((ref) async {
     await _writeRatesCache(settings, rates);
 
     return rates;
-  } catch (_) {
+  } catch (e) {
+    debugPrint('Failed fetching exchange rates: $e');
+
     return _readRatesCacheAnyAge(settings);
   }
 });
@@ -223,6 +227,7 @@ final balanceDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref) 
   final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
   final xRate = ref.watch(exchangeRateServiceProvider);
   final fmt = ref.watch(numberFormattingServiceProvider);
+  final localeConfig = ref.watch(localeNumberConfigProvider);
 
   return balanceAsync.when(
     loading: () => const AsyncValue.loading(),
@@ -238,6 +243,7 @@ final balanceDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref) 
         isFlipped: isFlipped,
         isHidden: isHidden,
         withQuanSymbol: false,
+        localeConfig: localeConfig,
       );
       return AsyncValue.data(data);
     },
@@ -264,6 +270,7 @@ final txAmountDisplayProvider =
       final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
       final xRate = ref.watch(exchangeRateServiceProvider);
       final fmt = ref.watch(numberFormattingServiceProvider);
+      final localeConfig = ref.watch(localeNumberConfigProvider);
 
       return (
         BigInt amount, {
@@ -286,6 +293,7 @@ final txAmountDisplayProvider =
           isHidden: isHidden,
           withQuanSymbol: withQuanSymbol,
           isFlipped: isFlipped,
+          localeConfig: localeConfig,
         );
 
         if (!isHidden) {
@@ -306,9 +314,17 @@ final txAmountDisplayProvider =
 
 /// Converts [rawBalance] to a fiat numeric string with the number of decimal
 /// places prescribed by [fiat] (e.g. 2 for USD, 0 for JPY/IDR).
-String _toFiatNumeric(BigInt rawBalance, FiatCurrency fiat, ExchangeRateService xRate) {
+/// When [localeConfig] is provided, the output uses locale-appropriate separators.
+String _toFiatNumeric(
+  BigInt rawBalance,
+  FiatCurrency fiat,
+  ExchangeRateService xRate, {
+  required LocaleNumberConfig localeConfig,
+}) {
   final fiatValue = xRate.quanRawToFiat(rawBalance, fiat, AppConstants.decimals);
-  return fiatValue.toStringAsFixed(fiat.decimals);
+  final canonical = fiatValue.toStringAsFixed(fiat.decimals);
+
+  return localeConfig.localize(canonical);
 }
 
 CurrencyDisplayState _toFiatDisplayState(
@@ -321,9 +337,10 @@ CurrencyDisplayState _toFiatDisplayState(
   required bool isFlipped,
   required bool isHidden,
   required bool withQuanSymbol,
+  required LocaleNumberConfig localeConfig,
 }) {
   final quanFormatted = fmt.formatBalance(amount, maxDecimals: quanDecimals, addSymbol: withQuanSymbol);
-  final fiatFormatted = selectedFiat.format(_toFiatNumeric(amount, selectedFiat, xRate));
+  final fiatFormatted = selectedFiat.format(_toFiatNumeric(amount, selectedFiat, xRate, localeConfig: localeConfig));
 
   CurrencyDisplayState data = CurrencyDisplayState(
     primaryAmount: isFlipped ? fiatFormatted : quanFormatted,
