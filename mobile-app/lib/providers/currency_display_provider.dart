@@ -56,16 +56,21 @@ Map<String, Decimal> _readRatesCacheAnyAge(SettingsService settings) {
   }
 }
 
-Future<void> _writeRatesCache(
-  SettingsService settings,
-  Map<String, Decimal> rates,
-  int timeNextUpdateUnix,
-) async {
-  final payload = {
-    'expiry': timeNextUpdateUnix,
-    'rates': rates.map((k, v) => MapEntry(k, v.toString())),
-  };
-  
+/// Minimum acceptable cache window. Guards against an upstream returning a
+/// stale or zero `time_next_update_unix`, which would otherwise cause every
+/// cold start to re-hit the network.
+const _kMinCacheTtlSeconds = 60;
+
+Future<void> _writeRatesCache(SettingsService settings, Map<String, Decimal> rates, int timeNextUpdateUnix) async {
+  final nowUnix = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+  if (timeNextUpdateUnix <= nowUnix + _kMinCacheTtlSeconds) {
+    debugPrint(
+      'Skipping exchange rates cache write: timeNextUpdateUnix=$timeNextUpdateUnix '
+      'is not at least ${_kMinCacheTtlSeconds}s in the future (now=$nowUnix).',
+    );
+    return;
+  }
+  final payload = {'expiry': timeNextUpdateUnix, 'rates': rates.map((k, v) => MapEntry(k, v.toString()))};
   await settings.setString(_kRatesCacheKey, jsonEncode(payload));
 }
 

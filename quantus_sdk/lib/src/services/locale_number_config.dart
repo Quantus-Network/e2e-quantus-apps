@@ -1,4 +1,18 @@
+import 'package:decimal/decimal.dart';
 import 'package:intl/intl.dart';
+
+/// Thrown by [LocaleNumberConfig.parseDecimal] when the input cannot be parsed
+/// as a decimal number after locale normalization. Callers should catch this
+/// at the UI boundary and present a user-friendly message.
+class InvalidNumberInputException implements Exception {
+  final String rawInput;
+  final String normalized;
+
+  const InvalidNumberInputException({required this.rawInput, required this.normalized});
+
+  @override
+  String toString() => 'InvalidNumberInputException(raw: "$rawInput", normalized: "$normalized")';
+}
 
 /// Encapsulates locale-specific number formatting rules (decimal and grouping
 /// separators) so that input parsing, validation, and display are consistent
@@ -53,16 +67,31 @@ class LocaleNumberConfig {
 
     String result = input;
 
-    // Remove all grouping separators.
-    if (groupingSeparator.isNotEmpty) {
+    // Remove grouping separators. Skip when grouping equals decimal — under any
+    // sensible locale this never holds, but guarding keeps the helper safe if
+    // it's ever fed a hand-rolled config.
+    if (groupingSeparator.isNotEmpty && groupingSeparator != decimalSeparator) {
       result = result.replaceAll(groupingSeparator, '');
     }
 
-    // Replace locale decimal separator with canonical dot.
     if (decimalSeparator != '.') {
       result = result.replaceAll(decimalSeparator, '.');
     }
 
+    return result;
+  }
+
+  /// Parses a locale-formatted numeric string into a [Decimal].
+  ///
+  /// Throws [InvalidNumberInputException] when the input cannot be parsed.
+  /// Empty input also throws — callers that want to treat empty as zero should
+  /// short-circuit before calling.
+  Decimal parseDecimal(String input) {
+    final normalized = normalize(input);
+    final result = Decimal.tryParse(normalized);
+    if (result == null) {
+      throw InvalidNumberInputException(rawInput: input, normalized: normalized);
+    }
     return result;
   }
 

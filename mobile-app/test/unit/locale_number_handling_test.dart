@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -82,6 +83,48 @@ void main() {
 
         const configId = LocaleNumberConfig.commaDecimal;
         expect(configId.normalize('12345'), '12345');
+      });
+
+      test('hand-rolled config with grouping == decimal does not strip the decimal', () {
+        // Defensive: if anyone constructs a config where grouping equals decimal
+        // (no real locale does this), normalize must not eat the decimal mark.
+        const config = LocaleNumberConfig(decimalSeparator: ',', groupingSeparator: ',', locale: 'broken');
+        expect(config.normalize('1,5'), '1.5');
+      });
+    });
+
+    group('parseDecimal', () {
+      test('US locale: parses thousands-grouped fiat input', () {
+        const config = LocaleNumberConfig.dotDecimal;
+        expect(config.parseDecimal('1,000'), Decimal.parse('1000'));
+        expect(config.parseDecimal('1,000.50'), Decimal.parse('1000.50'));
+        expect(config.parseDecimal('0.5'), Decimal.parse('0.5'));
+      });
+
+      test('Indonesian locale: parses thousands-grouped fiat input', () {
+        const config = LocaleNumberConfig.commaDecimal;
+        expect(config.parseDecimal('1.000'), Decimal.parse('1000'));
+        expect(config.parseDecimal('1.000,50'), Decimal.parse('1000.50'));
+        expect(config.parseDecimal('0,5'), Decimal.parse('0.5'));
+      });
+
+      test('throws InvalidNumberInputException on garbage input', () {
+        const config = LocaleNumberConfig.dotDecimal;
+        expect(() => config.parseDecimal('abc'), throwsA(isA<InvalidNumberInputException>()));
+        expect(() => config.parseDecimal('1.2.3'), throwsA(isA<InvalidNumberInputException>()));
+        expect(() => config.parseDecimal('.'), throwsA(isA<InvalidNumberInputException>()));
+        expect(() => config.parseDecimal(''), throwsA(isA<InvalidNumberInputException>()));
+      });
+
+      test('exception carries raw and normalized strings', () {
+        const config = LocaleNumberConfig.commaDecimal;
+        try {
+          config.parseDecimal('1.2.3,nope');
+          fail('expected InvalidNumberInputException');
+        } on InvalidNumberInputException catch (e) {
+          expect(e.rawInput, '1.2.3,nope');
+          expect(e.normalized, '123.nope');
+        }
       });
     });
 

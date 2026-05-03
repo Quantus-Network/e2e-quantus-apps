@@ -62,11 +62,7 @@ class AmountDisplayWithConversion extends StatelessWidget {
                 children: [
                   TextSpan(
                     text: amountDisplay.primaryAmount,
-                    style: text.extraLargeTitle?.copyWith(
-                      fontFamily: AppTextTheme.fontFamilySecondary,
-                      color: primaryAmountColor,
-                      fontWeight: FontWeight.w400,
-                    ),
+                    style: text.conversionAmountPrimary?.copyWith(color: primaryAmountColor),
                   ),
                   if (!useQuanLogo && !amountDisplay.isFlipped) ...[
                     const TextSpan(text: '     '),

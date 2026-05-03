@@ -89,12 +89,24 @@ void main() {
       expect(service.fiatToQuanRaw(Decimal.zero, FiatCurrency.usd, quanDecimals), BigInt.zero);
     });
 
-    test('quanRawToFiat and fiatToQuanRaw are inverses of each other', () {
+    test('quanRawToFiat and fiatToQuanRaw are inverses for clean-divisor rates', () {
       const quanDecimals = 12;
       final original = BigInt.from(1_500_000_000_000); // 1.5 QUAN
       final fiatValue = service.quanRawToFiat(original, FiatCurrency.myr, quanDecimals);
       final roundTripped = service.fiatToQuanRaw(fiatValue, FiatCurrency.myr, quanDecimals);
       expect(roundTripped, original);
+    });
+
+    test('round-trip is lossy for non-clean-divisor rates (documents expected drift)', () {
+      // 3.971 doesn't cleanly divide 1.5 QUAN's fiat value, so the inverse
+      // truncates to fit quanDecimals. Lock the expected ≤ 1-raw-unit drift in.
+      const quanDecimals = 12;
+      final lossyService = ExchangeRateService(rates: {'MYR': Decimal.parse('3.971')});
+      final original = BigInt.from(1_500_000_000_000); // 1.5 QUAN
+      final fiatValue = lossyService.quanRawToFiat(original, FiatCurrency.myr, quanDecimals);
+      final roundTripped = lossyService.fiatToQuanRaw(fiatValue, FiatCurrency.myr, quanDecimals);
+      final drift = (roundTripped - original).abs();
+      expect(drift, lessThanOrEqualTo(BigInt.one), reason: 'round-trip drift should be at most 1 raw unit');
     });
   });
 

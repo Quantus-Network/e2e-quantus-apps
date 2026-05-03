@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -127,8 +126,9 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       try {
         final convertedAmount = _fiatStringToQuan(_amountController.text);
         setState(() => _amount = convertedAmount);
-      } catch (e) {
-        context.showErrorToaster(message: e.toString());
+      } on InvalidNumberInputException catch (e, stack) {
+        debugPrint('Fiat→QUAN parse failed: $e\n$stack');
+        context.showErrorToaster(message: 'Please enter a valid amount');
         return;
       }
     } else {
@@ -199,14 +199,11 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
 
   /// Parses a locale-formatted fiat input string and returns the equivalent
   /// raw QUAN [BigInt] scaled by [AppConstants.decimals].
+  ///
+  /// Throws [InvalidNumberInputException] when [fiatText] cannot be parsed.
   BigInt _fiatStringToQuan(String fiatText) {
     if (fiatText.isEmpty) return BigInt.zero;
-    final normalized = _localeConfig.normalize(fiatText);
-    final fiatDecimal = Decimal.tryParse(normalized);
-    if (fiatDecimal == null) {
-      throw Exception('Invalid fiat input: $fiatText');
-    }
-
+    final fiatDecimal = _localeConfig.parseDecimal(fiatText);
     final xRate = ref.read(exchangeRateServiceProvider);
     final selectedFiat = ref.read(selectedFiatCurrencyProvider);
     return xRate.fiatToQuanRaw(fiatDecimal, selectedFiat, AppConstants.decimals);

@@ -60,21 +60,16 @@ class NumberFormattingService {
   /// Parses a user-entered formatted string amount into a raw BigInt amount
   /// scaled by the chain's decimals.
   ///
-  /// When [localeConfig] is provided, the input is interpreted using the
-  /// locale's decimal and grouping separators. Otherwise falls back to
-  /// treating both `.` and `,` as potential decimal separators (legacy behavior).
-  ///
-  /// Returns null if the input string is invalid.
+  /// The input is interpreted using the [LocaleNumberConfig] supplied at
+  /// construction (decimal/grouping separators come from the user's locale).
+  /// Returns [BigInt.zero] for an empty string and `null` for unparseable input.
   BigInt? parseAmount(String formattedAmount) {
     if (formattedAmount.isEmpty) {
       return BigInt.zero;
     }
 
     try {
-      final String sanitizedText;
-      sanitizedText = _localeConfig.normalize(formattedAmount);
-
-      final decimalAmount = Decimal.parse(sanitizedText);
+      final decimalAmount = _localeConfig.parseDecimal(formattedAmount);
       if (decimalAmount.scale > decimals) {
         debugPrint('Warning: Input amount $formattedAmount exceeds $decimals decimals, will be truncated.');
       }
