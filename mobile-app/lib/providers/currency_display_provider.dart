@@ -65,7 +65,7 @@ Future<void> _writeRatesCache(
     'expiry': timeNextUpdateUnix,
     'rates': rates.map((k, v) => MapEntry(k, v.toString())),
   };
-  print('writing exchange rates cache: $payload');
+  
   await settings.setString(_kRatesCacheKey, jsonEncode(payload));
 }
 

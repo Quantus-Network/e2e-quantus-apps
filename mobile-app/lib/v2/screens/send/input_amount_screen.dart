@@ -124,7 +124,13 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     if (_isUpdatingProgrammatically) return;
     final isFlipped = ref.read(isCurrencyFlippedProvider);
     if (isFlipped) {
-      setState(() => _amount = _fiatStringToQuan(_amountController.text));
+      try {
+        final convertedAmount = _fiatStringToQuan(_amountController.text);
+        setState(() => _amount = convertedAmount);
+      } catch (e) {
+        context.showErrorToaster(message: e.toString());
+        return;
+      }
     } else {
       final formattingService = ref.read(numberFormattingServiceProvider);
       final parsed = formattingService.parseAmount(_amountController.text);
@@ -197,7 +203,9 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     if (fiatText.isEmpty) return BigInt.zero;
     final normalized = _localeConfig.normalize(fiatText);
     final fiatDecimal = Decimal.tryParse(normalized);
-    if (fiatDecimal == null) return BigInt.zero;
+    if (fiatDecimal == null) {
+      throw Exception('Invalid fiat input: $fiatText');
+    }
 
     final xRate = ref.read(exchangeRateServiceProvider);
     final selectedFiat = ref.read(selectedFiatCurrencyProvider);
