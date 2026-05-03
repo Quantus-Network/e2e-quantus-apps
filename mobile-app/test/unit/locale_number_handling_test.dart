@@ -116,6 +116,25 @@ void main() {
         expect(() => config.parseDecimal(''), throwsA(isA<InvalidNumberInputException>()));
       });
 
+      test('US locale: tolerates trailing decimal separator (mid-typing)', () {
+        const config = LocaleNumberConfig.dotDecimal;
+        expect(config.parseDecimal('1.'), Decimal.one);
+        expect(config.parseDecimal('100.'), Decimal.parse('100'));
+        expect(config.parseDecimal('1,000.'), Decimal.parse('1000'));
+      });
+
+      test('Indonesian locale: tolerates trailing decimal separator (mid-typing)', () {
+        const config = LocaleNumberConfig.commaDecimal;
+        expect(config.parseDecimal('1,'), Decimal.one);
+        expect(config.parseDecimal('100,'), Decimal.parse('100'));
+        expect(config.parseDecimal('1.000,'), Decimal.parse('1000'));
+      });
+
+      test('still throws on multiple decimal marks even with trailing separator', () {
+        const config = LocaleNumberConfig.dotDecimal;
+        expect(() => config.parseDecimal('1.2.'), throwsA(isA<InvalidNumberInputException>()));
+      });
+
       test('exception carries raw and normalized strings', () {
         const config = LocaleNumberConfig.commaDecimal;
         try {

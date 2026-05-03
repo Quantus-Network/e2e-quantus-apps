@@ -83,12 +83,20 @@ class LocaleNumberConfig {
 
   /// Parses a locale-formatted numeric string into a [Decimal].
   ///
+  /// Tolerates a single trailing decimal separator with no fractional digits
+  /// (e.g. `"1."` in en_US or `"1,"` in id_ID) so mid-typing keystrokes don't
+  /// look like garbage to callers — `"1."` parses as `Decimal.one`. Strings
+  /// with more than one decimal mark (e.g. `"1.2."`) still throw.
+  ///
   /// Throws [InvalidNumberInputException] when the input cannot be parsed.
   /// Empty input also throws — callers that want to treat empty as zero should
   /// short-circuit before calling.
   Decimal parseDecimal(String input) {
     final normalized = normalize(input);
-    final result = Decimal.tryParse(normalized);
+    final canonical = (normalized.endsWith('.') && '.'.allMatches(normalized).length == 1)
+        ? normalized.substring(0, normalized.length - 1)
+        : normalized;
+    final result = Decimal.tryParse(canonical);
     if (result == null) {
       throw InvalidNumberInputException(rawInput: input, normalized: normalized);
     }
