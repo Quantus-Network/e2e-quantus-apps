@@ -164,14 +164,22 @@ class ChainRpcClient {
     }
   }
 
-  /// Get block hash by block number.
-  Future<String?> getBlockHash(int blockNumber) async {
-    try {
-      final result = await rpcCall('chain_getBlockHash', ['0x${blockNumber.toRadixString(16)}']);
-      return result as String?;
-    } catch (e) {
-      return null;
+  /// Get block hash by block number. Throws if the RPC call fails.
+  Future<String> getBlockHash(int blockNumber) async {
+    final result = await rpcCall('chain_getBlockHash', ['0x${blockNumber.toRadixString(16)}']);
+    if (result is! String) {
+      throw StateError('chain_getBlockHash($blockNumber) returned ${result.runtimeType}: $result');
     }
+    return result;
+  }
+
+  /// Get the best (current head) block hash. Throws if the RPC call fails.
+  Future<String> getBestBlockHash() async {
+    final result = await rpcCall('chain_getBlockHash');
+    if (result is! String) {
+      throw StateError('chain_getBlockHash returned ${result.runtimeType}: $result');
+    }
+    return result;
   }
 
   /// Get account balance (free balance) for an address.
@@ -377,38 +385,33 @@ class ChainRpcClient {
     return bytes;
   }
 
-  /// Get block header by block hash.
-  Future<Map<String, dynamic>?> getBlockHeader({String? blockHash}) async {
-    try {
-      final params = blockHash != null ? [blockHash] : null;
-      final result = await rpcCall('chain_getHeader', params);
-      return result as Map<String, dynamic>?;
-    } catch (e) {
-      _log.e('getBlockHeader error', error: e);
-      return null;
+  /// Get block header by block hash. Throws if the RPC call fails.
+  Future<Map<String, dynamic>> getBlockHeader({String? blockHash}) async {
+    final params = blockHash != null ? [blockHash] : null;
+    final result = await rpcCall('chain_getHeader', params);
+    if (result is! Map<String, dynamic>) {
+      throw StateError('chain_getHeader returned ${result.runtimeType}: $result');
     }
+    return result;
   }
 
-  /// Get the latest finalized block hash.
-  Future<String?> getFinalizedHead() async {
-    try {
-      final result = await rpcCall('chain_getFinalizedHead');
-      return result as String?;
-    } catch (e) {
-      _log.e('getFinalizedHead error', error: e);
-      return null;
+  /// Get the latest finalized block hash. Throws if the RPC call fails.
+  Future<String> getFinalizedHead() async {
+    final result = await rpcCall('chain_getFinalizedHead');
+    if (result is! String) {
+      throw StateError('chain_getFinalizedHead returned ${result.runtimeType}: $result');
     }
+    return result;
   }
 
-  /// Get ZK Merkle proof for a leaf at a given block.
-  Future<Map<String, dynamic>?> getZkMerkleProof(BigInt leafIndex, String blockHash) async {
-    try {
-      final result = await rpcCall('zkTree_getMerkleProof', [leafIndex.toInt(), blockHash]);
-      return result as Map<String, dynamic>?;
-    } catch (e) {
-      _log.e('getZkMerkleProof error for leaf $leafIndex', error: e);
-      return null;
+  /// Get ZK Merkle proof for a leaf at a given block. Throws if the RPC call fails
+  /// or no proof is returned (no silent skip — claim flows must surface this).
+  Future<Map<String, dynamic>> getZkMerkleProof(BigInt leafIndex, String blockHash) async {
+    final result = await rpcCall('zkTree_getMerkleProof', [leafIndex.toInt(), blockHash]);
+    if (result is! Map<String, dynamic>) {
+      throw StateError('zkTree_getMerkleProof for leaf $leafIndex returned ${result.runtimeType}: $result');
     }
+    return result;
   }
 
   /// Get sync state information

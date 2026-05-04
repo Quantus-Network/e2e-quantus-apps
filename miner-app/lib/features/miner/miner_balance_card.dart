@@ -54,13 +54,15 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
     }
   }
 
+  static final _formatter = NumberFormattingService();
+
   Future<void> _loadBalance(String address, String secretHex) async {
     if (!mounted) return;
     setState(() => _balanceLoading = true);
     _log.i('Fetching unspent balance for $address ...');
     try {
       final balance = await _utxoService.getUnspentBalance(wormholeAddress: address, secretHex: secretHex);
-      _log.i('Unspent balance: $balance planck (${_formatPlanck(balance)})');
+      _log.i('Unspent balance: $balance planck (${_formatter.formatBalance(balance, addSymbol: true)})');
       if (!mounted) return;
       setState(() {
         _balance = balance;
@@ -81,12 +83,6 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
       _log.i('Manual refresh triggered');
       _loadBalance(address, secret);
     }
-  }
-
-  static String _formatPlanck(BigInt planck) {
-    final whole = planck ~/ BigInt.from(10).pow(12);
-    final frac = (planck % BigInt.from(10).pow(12)).toString().padLeft(12, '0').substring(0, 4);
-    return '$whole.$frac QUAN';
   }
 
   void _onClaimTap() {
@@ -233,11 +229,8 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
     final bal = _balance;
     if (bal == null) return const SizedBox.shrink();
 
-    final whole = bal ~/ BigInt.from(10).pow(12);
-    final frac = (bal % BigInt.from(10).pow(12)).toString().padLeft(12, '0').substring(0, 2);
-
     return Text(
-      '$whole.$frac QUAN',
+      _formatter.formatBalance(bal, maxDecimals: 2, addSymbol: true),
       style: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w700,

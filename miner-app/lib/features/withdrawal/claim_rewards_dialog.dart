@@ -6,6 +6,7 @@ import 'package:quantus_miner/src/services/miner_settings_service.dart';
 import 'package:quantus_miner/src/services/miner_wallet_service.dart';
 import 'package:quantus_miner/src/services/wormhole_claim_service.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 final _log = log.withTag('ClaimDialog');
 
@@ -37,10 +38,13 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
   String? _addressError;
   bool _running = false;
   bool _done = false;
+  bool _cancelledTerminal = false;
   String? _errorMessage;
   int _currentStep = 0;
   final Map<int, ClaimProgressItem> _stepProgress = {};
   String? _resultMessage;
+
+  static final _balanceFormatter = NumberFormattingService();
 
   @override
   void dispose() {
@@ -48,18 +52,18 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
     super.dispose();
   }
 
-  String _formatBalance(BigInt planck) {
-    final whole = planck ~/ BigInt.from(10).pow(12);
-    final frac = (planck % BigInt.from(10).pow(12)).toString().padLeft(12, '0').substring(0, 4);
-    return '$whole.$frac';
-  }
+  String _formatBalance(BigInt planck) =>
+      _balanceFormatter.formatBalance(planck, maxDecimals: 4, addThousandsSeparators: false);
 
   bool _validateAddress(String address) {
-    if (address.trim().isEmpty) {
+    final trimmed = address.trim();
+    if (trimmed.isEmpty) {
       setState(() => _addressError = 'Please enter a destination address');
       return false;
     }
-    if (address.trim().length < 40) {
+    try {
+      getAccountId32(trimmed);
+    } catch (e) {
       setState(() => _addressError = 'Invalid address format');
       return false;
     }
@@ -84,6 +88,7 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
       _screen = _Screen.progress;
       _running = true;
       _done = false;
+      _cancelledTerminal = false;
       _errorMessage = null;
       _currentStep = 0;
       _stepProgress.clear();
@@ -124,22 +129,13 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
         _running = false;
         _resultMessage = '${result.transfersProcessed} transfers claimed in ${result.batchesSubmitted} batch(es)';
       });
-    } on StateError catch (e) {
-      if (e.message.contains('cancelled')) {
-        if (!mounted) return;
-        setState(() {
-          _running = false;
-          _done = true;
-          _resultMessage = 'Cancelled by user';
-        });
-      } else {
-        _log.e('Claim failed', error: e);
-        if (!mounted) return;
-        setState(() {
-          _running = false;
-          _errorMessage = e.message;
-        });
-      }
+    } on ClaimCancelled {
+      if (!mounted) return;
+      setState(() {
+        _running = false;
+        _cancelledTerminal = true;
+        _resultMessage = 'Cancelled by user';
+      });
     } catch (e) {
       _log.e('Claim failed', error: e);
       if (!mounted) return;
@@ -381,6 +377,8 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
                 )
               else if (_errorMessage != null)
                 const Icon(Icons.error_outline, color: Colors.red, size: 20)
+              else if (_cancelledTerminal)
+                Icon(Icons.cancel_outlined, color: Colors.white.withValues(alpha: 0.6), size: 20)
               else
                 const Icon(Icons.check_circle, color: Color(0xFF10B981), size: 20),
               const SizedBox(width: 12),
@@ -389,6 +387,8 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
                     ? 'Claiming Rewards...'
                     : _errorMessage != null
                     ? 'Claim Failed'
+                    : _cancelledTerminal
+                    ? 'Claim Cancelled'
                     : 'Claim Complete',
                 style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
               ),
@@ -418,36 +418,44 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
               ],
             ),
           ),
-          if ((_done && _resultMessage != null) || _errorMessage != null) ...[
+          if ((_done && _resultMessage != null) || _cancelledTerminal || _errorMessage != null) ...[
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: (_errorMessage != null ? Colors.red : const Color(0xFF10B981)).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: (_errorMessage != null ? Colors.red : const Color(0xFF10B981)).withValues(alpha: 0.2),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    _errorMessage != null ? Icons.error_outline : Icons.check_circle_outline,
-                    color: _errorMessage != null ? Colors.red : const Color(0xFF10B981),
-                    size: 16,
+            Builder(
+              builder: (_) {
+                final Color bannerColor = _errorMessage != null
+                    ? Colors.red
+                    : _cancelledTerminal
+                    ? Colors.white
+                    : const Color(0xFF10B981);
+                final IconData bannerIcon = _errorMessage != null
+                    ? Icons.error_outline
+                    : _cancelledTerminal
+                    ? Icons.info_outline
+                    : Icons.check_circle_outline;
+                final Color bannerTextColor = _errorMessage != null
+                    ? Colors.red.shade300
+                    : Colors.white.withValues(alpha: 0.9);
+                return Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: bannerColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: bannerColor.withValues(alpha: 0.2)),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _errorMessage ?? _resultMessage ?? '',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: _errorMessage != null ? Colors.red.shade300 : Colors.white.withValues(alpha: 0.9),
+                  child: Row(
+                    children: [
+                      Icon(bannerIcon, color: bannerColor, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _errorMessage ?? _resultMessage ?? '',
+                          style: TextStyle(fontSize: 13, color: bannerTextColor),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             ),
           ],
           const SizedBox(height: 20),
@@ -492,8 +500,11 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
   }
 
   Widget _buildStepRow(int step, String title) {
+    // Cancellation is a neutral terminal state: only the steps the flow actually
+    // finished should be marked green. Done-without-cancel = fully complete →
+    // every step is green.
     final isCompleted = _done ? true : _currentStep > step;
-    final isActive = !_done && _currentStep == step && _errorMessage == null;
+    final isActive = !_done && !_cancelledTerminal && _currentStep == step && _errorMessage == null;
     final isError = !_done && _currentStep == step && _errorMessage != null;
     final progress = _stepProgress[step];
 

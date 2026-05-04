@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:convert/convert.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:quantus_sdk/src/rust/api/wormhole.dart' as wormhole_ffi;
 import 'package:quantus_sdk/src/services/hd_wallet_service.dart';
@@ -61,6 +62,16 @@ class WormholeTransfer {
 
 typedef WormholeProgressCallback = void Function(int phase, int completed, {int? total});
 
+/// Returns true if the caller wants the in-progress operation to abort.
+typedef IsCancelledCallback = bool Function();
+
+/// Thrown when an [IsCancelledCallback] returns true mid-flight.
+class WormholeOperationCancelled implements Exception {
+  const WormholeOperationCancelled();
+  @override
+  String toString() => 'Wormhole operation cancelled by caller';
+}
+
 class WormholeUtxoService {
   static const int _transferPageSize = 300;
   static const int _nullifierBatchSize = 300;
@@ -72,6 +83,10 @@ class WormholeUtxoService {
   static void _log(String msg) => print('[WormholeUtxo] $msg');
 
   static String _addressHash(Uint8List raw32) => wormhole_ffi.computeAddressHashHex(rawAddress: raw32);
+
+  static void _throwIfCancelled(IsCancelledCallback? isCancelled) {
+    if (isCancelled?.call() == true) throw const WormholeOperationCancelled();
+  }
 
   // --- Cache ---
 
@@ -133,24 +148,25 @@ class WormholeUtxoService {
 
   // --- Block height ---
 
+  /// Current chain head (best block) height. Throws if RPC fails — callers must
+  /// not advance the cache from a fabricated value.
   Future<int> _getChainHeight() async {
-    try {
-      final body = jsonEncode({'jsonrpc': '2.0', 'id': 1, 'method': 'chain_getHeader', 'params': []});
-      final response = await _rpcEndpoint.post(body: body);
-      if (response.statusCode == 200) {
-        final parsed = jsonDecode(response.body) as Map<String, dynamic>;
-        final numberHex = parsed['result']?['number'] as String?;
-        if (numberHex != null) {
-          final height = int.parse(numberHex.replaceFirst('0x', ''), radix: 16);
-          _log('Chain height from RPC: $height');
-          return height;
-        }
-      }
-    } catch (e) {
-      _log('RPC chain_getHeader failed: $e');
+    final body = jsonEncode({'jsonrpc': '2.0', 'id': 1, 'method': 'chain_getHeader', 'params': []});
+    final response = await _rpcEndpoint.post(body: body);
+    if (response.statusCode != 200) {
+      throw Exception('chain_getHeader HTTP ${response.statusCode}: ${response.body}');
     }
-    _log('Chain height: fallback to 5000000');
-    return 5000000;
+    final parsed = jsonDecode(response.body) as Map<String, dynamic>;
+    if (parsed['error'] != null) {
+      throw Exception('chain_getHeader RPC error: ${parsed['error']}');
+    }
+    final numberHex = parsed['result']?['number'] as String?;
+    if (numberHex == null) {
+      throw Exception('chain_getHeader returned no number: ${response.body}');
+    }
+    final height = int.parse(numberHex.replaceFirst('0x', ''), radix: 16);
+    _log('Chain height from RPC: $height');
+    return height;
   }
 
   // --- GraphQL queries ---
@@ -235,12 +251,14 @@ query TransfersToAddress($to: String!, $limit: Int!, $offset: Int!, $afterBlock:
     required String toAddress,
     int? afterBlock,
     WormholeProgressCallback? onProgress,
+    IsCancelledCallback? isCancelled,
   }) async {
     final totalSw = Stopwatch()..start();
     final all = <WormholeTransfer>[];
     int offset = 0;
     int pageNum = 0;
     while (true) {
+      _throwIfCancelled(isCancelled);
       pageNum++;
       final page = await _queryTransfers(
         toAddress: toAddress,
@@ -302,6 +320,7 @@ query SpentNullifiers($hashes: [String!]!) {
   Future<Set<String>> _checkNullifiersSpent(
     List<(String nullifierHex, String nullifierHash)> nullifiers, {
     WormholeProgressCallback? onProgress,
+    IsCancelledCallback? isCancelled,
   }) async {
     if (nullifiers.isEmpty) return {};
 
@@ -316,6 +335,7 @@ query SpentNullifiers($hashes: [String!]!) {
     onProgress?.call(3, 0, total: nullifiers.length);
 
     for (int i = 0; i < allHashes.length; i += _nullifierBatchSize) {
+      _throwIfCancelled(isCancelled);
       final batch = allHashes.sublist(i, (i + _nullifierBatchSize).clamp(0, allHashes.length));
       final batchNum = (i ~/ _nullifierBatchSize) + 1;
       final spentHashes = await _querySpentNullifierHashes(batch);
@@ -336,7 +356,17 @@ query SpentNullifiers($hashes: [String!]!) {
 
   // --- Public API ---
 
-  Future<List<WormholeTransfer>> getTransfersTo(String wormholeAddress, {WormholeProgressCallback? onProgress}) async {
+  /// Fetches every wormhole transfer ever sent to [wormholeAddress].
+  ///
+  /// Returns transfers up to the current chain head. The on-disk cache only
+  /// advances to `currentHeight - reorgDepth` so we never have to rewrite
+  /// already-persisted entries on a reorg, but callers always see the latest
+  /// transfers (recent ones simply aren't reused on the next call).
+  Future<List<WormholeTransfer>> getTransfersTo(
+    String wormholeAddress, {
+    WormholeProgressCallback? onProgress,
+    IsCancelledCallback? isCancelled,
+  }) async {
     final sw = Stopwatch()..start();
     _log('getTransfersTo START ($wormholeAddress)');
 
@@ -351,20 +381,25 @@ query SpentNullifiers($hashes: [String!]!) {
     _log('Cache: ${cache.transfers.length} transfers up to block ${cache.cachedUpToBlock}');
     if (cache.transfers.isNotEmpty) onProgress?.call(1, cache.transfers.length);
 
-    final queryFrom = cache.cachedUpToBlock > 0 ? cache.cachedUpToBlock + 1 : 0;
-    List<WormholeTransfer> newTransfers;
+    _throwIfCancelled(isCancelled);
 
-    if (queryFrom > chainHeight) {
+    // Cache invariant: every entry has blockHeight <= cachedUpToBlock, so a
+    // GraphQL filter of `height_gt: cachedUpToBlock` correctly fetches only
+    // what we don't already have. Previous code added +1 here, which combined
+    // with `height_gt` skipped block `cachedUpToBlock + 1` entirely.
+    final List<WormholeTransfer> newTransfers;
+    if (cache.cachedUpToBlock >= chainHeight) {
       _log('Cache is current, no new blocks to query');
-      newTransfers = [];
+      newTransfers = const [];
     } else {
-      _log('Querying transfers after block $queryFrom');
+      _log('Querying transfers after block ${cache.cachedUpToBlock}');
       newTransfers = await _fetchAllTransfers(
         toAddress: wormholeAddress,
-        afterBlock: queryFrom,
+        afterBlock: cache.cachedUpToBlock,
         onProgress: onProgress != null
             ? (phase, completed, {int? total}) => onProgress(phase, cache.transfers.length + completed, total: total)
             : null,
+        isCancelled: isCancelled,
       );
       _log('New transfers: ${newTransfers.length}');
     }
@@ -373,9 +408,10 @@ query SpentNullifiers($hashes: [String!]!) {
     onProgress?.call(1, allTransfers.length);
     _log('Total transfers: ${allTransfers.length} (${cache.transfers.length} cached + ${newTransfers.length} new)');
 
+    // Cache only the reorg-safe slice; the caller still sees recent (above-cutoff)
+    // transfers so balances / claims include them.
     final safeTransfers = allTransfers.where((t) => t.blockHeight <= safeCutoff).toList();
-    final updatedCache = _TransferCache(cachedUpToBlock: safeCutoff, transfers: safeTransfers);
-    await _saveTransferCache(fullHash, updatedCache);
+    await _saveTransferCache(fullHash, _TransferCache(cachedUpToBlock: safeCutoff, transfers: safeTransfers));
 
     _log('getTransfersTo DONE: ${allTransfers.length} transfers (${sw.elapsedMilliseconds}ms)');
     return allTransfers;
@@ -385,9 +421,10 @@ query SpentNullifiers($hashes: [String!]!) {
     required String wormholeAddress,
     required String secretHex,
     WormholeProgressCallback? onProgress,
+    IsCancelledCallback? isCancelled,
   }) async {
     _log('getUnspentTransfers($wormholeAddress)');
-    final transfers = await getTransfersTo(wormholeAddress, onProgress: onProgress);
+    final transfers = await getTransfersTo(wormholeAddress, onProgress: onProgress, isCancelled: isCancelled);
     if (transfers.isEmpty) {
       _log('getUnspentTransfers: no transfers found');
       return [];
@@ -405,6 +442,7 @@ query SpentNullifiers($hashes: [String!]!) {
     int skipped = 0;
 
     for (int i = 0; i < transfers.length; i++) {
+      _throwIfCancelled(isCancelled);
       final transfer = transfers[i];
       final nullifierHex = hdWalletService.computeNullifier(
         secretHex: secretHex,
@@ -414,7 +452,7 @@ query SpentNullifiers($hashes: [String!]!) {
       if (cachedSpent.contains(nullifierHex)) {
         skipped++;
       } else {
-        final nullifierBytes = _hexToBytes(nullifierHex);
+        final nullifierBytes = hex.decode(nullifierHex.replaceFirst('0x', ''));
         final nullifierHash = _addressHash(Uint8List.fromList(nullifierBytes));
         uncheckedPairs.add((nullifierHex, nullifierHash));
       }
@@ -425,7 +463,7 @@ query SpentNullifiers($hashes: [String!]!) {
     _log('Computed nullifiers: $skipped cached-spent, ${uncheckedPairs.length} to check');
 
     if (uncheckedPairs.isNotEmpty) {
-      final newSpent = await _checkNullifiersSpent(uncheckedPairs, onProgress: onProgress);
+      final newSpent = await _checkNullifiersSpent(uncheckedPairs, onProgress: onProgress, isCancelled: isCancelled);
       allSpent.addAll(newSpent);
       await _saveSpentNullifiers(fullHash, allSpent);
     }
@@ -435,21 +473,20 @@ query SpentNullifiers($hashes: [String!]!) {
     return unspent;
   }
 
-  Future<BigInt> getUnspentBalance({required String wormholeAddress, required String secretHex}) async {
+  Future<BigInt> getUnspentBalance({
+    required String wormholeAddress,
+    required String secretHex,
+    IsCancelledCallback? isCancelled,
+  }) async {
     _log('getUnspentBalance($wormholeAddress)');
-    final unspent = await getUnspentTransfers(wormholeAddress: wormholeAddress, secretHex: secretHex);
+    final unspent = await getUnspentTransfers(
+      wormholeAddress: wormholeAddress,
+      secretHex: secretHex,
+      isCancelled: isCancelled,
+    );
     final balance = unspent.fold<BigInt>(BigInt.zero, (sum, t) => sum + t.amount);
     _log('getUnspentBalance: $balance planck (${unspent.length} unspent transfers)');
     return balance;
-  }
-
-  static List<int> _hexToBytes(String hexStr) {
-    final clean = hexStr.startsWith('0x') ? hexStr.substring(2) : hexStr;
-    final bytes = <int>[];
-    for (int i = 0; i < clean.length; i += 2) {
-      bytes.add(int.parse(clean.substring(i, i + 2), radix: 16));
-    }
-    return bytes;
   }
 }
 
