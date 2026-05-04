@@ -4,7 +4,8 @@ import 'package:convert/convert.dart';
 import 'package:polkadart/scale_codec.dart' as scale;
 import 'package:quantus_miner/src/services/chain_rpc_client.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
-import 'package:quantus_sdk/generated/planck/pallets/wormhole.dart' as wormhole_pallet;
+import 'package:quantus_sdk/generated/planck/pallets/wormhole.dart'
+    as wormhole_pallet;
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 final _log = log.withTag('WormholeClaim');
@@ -15,7 +16,12 @@ class ClaimProgressItem {
   final int completed;
   final int? total;
 
-  const ClaimProgressItem({required this.step, required this.title, required this.completed, this.total});
+  const ClaimProgressItem({
+    required this.step,
+    required this.title,
+    required this.completed,
+    this.total,
+  });
 }
 
 typedef ClaimProgressCallback = void Function(ClaimProgressItem progress);
@@ -75,7 +81,10 @@ class WormholeClaimService {
   }) async {
     _cancelled = false;
 
-    final rpc = ChainRpcClient(rpcUrl: rpcUrl, timeout: const Duration(seconds: 30));
+    final rpc = ChainRpcClient(
+      rpcUrl: rpcUrl,
+      timeout: const Duration(seconds: 30),
+    );
     try {
       return await _runClaimFlow(
         rpc: rpc,
@@ -92,9 +101,23 @@ class WormholeClaimService {
     }
   }
 
-  void _reportProgress(ClaimProgressCallback onProgress, int step, int completed, {int? total}) {
-    _log.i('Step $step: ${_stepTitles[step]} $completed${total != null ? '/$total' : ''}');
-    onProgress(ClaimProgressItem(step: step, title: _stepTitles[step]!, completed: completed, total: total));
+  void _reportProgress(
+    ClaimProgressCallback onProgress,
+    int step,
+    int completed, {
+    int? total,
+  }) {
+    _log.i(
+      'Step $step: ${_stepTitles[step]} $completed${total != null ? '/$total' : ''}',
+    );
+    onProgress(
+      ClaimProgressItem(
+        step: step,
+        title: _stepTitles[step]!,
+        completed: completed,
+        total: total,
+      ),
+    );
   }
 
   void _checkCancelled() {
@@ -129,7 +152,12 @@ class WormholeClaimService {
     );
 
     if (unspent.isEmpty) {
-      return ClaimResult(totalWithdrawn: BigInt.zero, transfersProcessed: 0, batchesSubmitted: 0, txHashes: const []);
+      return ClaimResult(
+        totalWithdrawn: BigInt.zero,
+        transfersProcessed: 0,
+        batchesSubmitted: 0,
+        txHashes: const [],
+      );
     }
     unspent.sort((a, b) => b.amount.compareTo(a.amount));
     _log.i('Found ${unspent.length} unspent transfers');
@@ -154,11 +182,17 @@ class WormholeClaimService {
 
     final numTransfers = unspent.length;
     final proofBytesList = List<Uint8List?>.filled(numTransfers, null);
-    final secretBytes = Uint8List.fromList(hex.decode(secretHex.replaceFirst('0x', '')));
-    final destinationBytes = Uint8List.fromList(getAccountId32(destinationAddress));
+    final secretBytes = Uint8List.fromList(
+      hex.decode(secretHex.replaceFirst('0x', '')),
+    );
+    final destinationBytes = Uint8List.fromList(
+      getAccountId32(destinationAddress),
+    );
     final blockHashBytes = Uint8List.fromList(_hexBytes(blockHash));
 
     BigInt netTotal = BigInt.zero;
+    int completed = 0;
+    final genSw = Stopwatch()..start();
 
     for (int chunk = 0; chunk < numTransfers; chunk += _proofConcurrency) {
       _checkCancelled();
@@ -166,10 +200,11 @@ class WormholeClaimService {
       final futures = <Future<BigInt>>[];
 
       for (int i = chunk; i < end; i++) {
+        final transfer = unspent[i];
         futures.add(
           _generateLeafProof(
             rpc: rpc,
-            transfer: unspent[i],
+            transfer: transfer,
             blockHash: blockHash,
             blockNumber: blockNumber,
             parentHash: parentHash,
@@ -182,6 +217,17 @@ class WormholeClaimService {
             circuitBinsDir: circuitBinsDir,
             outputBuffer: proofBytesList,
             outputIndex: i,
+            onComplete: () {
+              completed++;
+              // Plain stdout print (not debugPrint) so it survives in release
+              // builds and is visible from the launching terminal.
+              // ignore: avoid_print
+              print(
+                '[WormholeClaim] Proof $completed/$numTransfers '
+                'leaf=${transfer.leafIndex} (${genSw.elapsedMilliseconds}ms elapsed)',
+              );
+              _reportProgress(onProgress, 5, completed, total: numTransfers);
+            },
           ),
         );
       }
@@ -191,8 +237,6 @@ class WormholeClaimService {
         netTotal += out;
       }
       _checkCancelled();
-      _reportProgress(onProgress, 5, end, total: numTransfers);
-      _log.i('Proofs $end/$numTransfers generated');
     }
 
     final finalProofs = proofBytesList.cast<Uint8List>();
@@ -207,7 +251,10 @@ class WormholeClaimService {
     for (int b = 0; b < batches.length; b++) {
       _checkCancelled();
       _log.i('Aggregating batch ${b + 1}/${batches.length}');
-      final aggregated = await aggregateProofs(proofBytesList: batches[b], binsDir: circuitBinsDir);
+      final aggregated = await aggregateProofs(
+        proofBytesList: batches[b],
+        binsDir: circuitBinsDir,
+      );
       _log.i('Batch ${b + 1} aggregated (${aggregated.length} bytes)');
       _checkCancelled();
 
@@ -226,7 +273,8 @@ class WormholeClaimService {
   }
 
   /// Generates a single leaf proof and writes it to [outputBuffer]. Returns the
-  /// net (post-fee) output amount this leaf contributes.
+  /// net (post-fee) output amount this leaf contributes. [onComplete] fires
+  /// once the proof is written so callers can update progress per-leaf.
   Future<BigInt> _generateLeafProof({
     required ChainRpcClient rpc,
     required WormholeTransfer transfer,
@@ -242,6 +290,7 @@ class WormholeClaimService {
     required String circuitBinsDir,
     required List<Uint8List?> outputBuffer,
     required int outputIndex,
+    void Function()? onComplete,
   }) async {
     final zkProof = await rpc.getZkMerkleProof(transfer.leafIndex, blockHash);
 
@@ -252,10 +301,17 @@ class WormholeClaimService {
     final rawSiblings = zkProof['siblings'] as List<dynamic>;
 
     final siblingsFlat = _flattenSiblings(rawSiblings);
-    final merkle = computeMerklePositions(unsortedSiblingsFlat: siblingsFlat, leafHash: leafHash, depth: depth);
+    final merkle = computeMerklePositions(
+      unsortedSiblingsFlat: siblingsFlat,
+      leafHash: leafHash,
+      depth: depth,
+    );
 
     final inputAmount = decodeLeafAmount(leafData: leafData);
-    final outputAmount = wormholeComputeOutputAmount(inputAmount: inputAmount, feeBps: _volumeFeeBps);
+    final outputAmount = wormholeComputeOutputAmount(
+      inputAmount: inputAmount,
+      feeBps: _volumeFeeBps,
+    );
     final wormholeAddressBytes = decodeLeafToAccount(leafData: leafData);
 
     final proof = await generateProof(
@@ -282,6 +338,7 @@ class WormholeClaimService {
       commonBinPath: '$circuitBinsDir/common.bin',
     );
     outputBuffer[outputIndex] = proof.proofBytes;
+    onComplete?.call();
     // On-chain dispatch transfers `outputAmount * scaleDownFactor` planck to
     // the destination, so this is the exact net contribution per leaf.
     return BigInt.from(outputAmount) * _scaleDownFactor;
@@ -292,20 +349,27 @@ class WormholeClaimService {
   /// well-formed unsigned extrinsic is a strong signal it will land, and any
   /// rejection (validation, insufficient priority, etc.) surfaces here as a
   /// JSON-RPC error from [ChainRpcClient.rpcCall].
-  Future<String> _submitExtrinsic(ChainRpcClient rpc, Uint8List aggregatedProofBytes) async {
+  Future<String> _submitExtrinsic(
+    ChainRpcClient rpc,
+    Uint8List aggregatedProofBytes,
+  ) async {
     final fullExtrinsic = _wrapUnsignedExtrinsic(aggregatedProofBytes);
     final hexExtrinsic = '0x${hex.encode(fullExtrinsic)}';
     _log.i('Submitting unsigned extrinsic (${fullExtrinsic.length} bytes)');
 
     final result = await rpc.rpcCall('author_submitExtrinsic', [hexExtrinsic]);
     if (result is! String) {
-      throw StateError('author_submitExtrinsic returned ${result.runtimeType}: $result');
+      throw StateError(
+        'author_submitExtrinsic returned ${result.runtimeType}: $result',
+      );
     }
     return result;
   }
 
   Uint8List _wrapUnsignedExtrinsic(Uint8List callBytes) {
-    final runtimeCall = const wormhole_pallet.Txs().verifyAggregatedProof(proofBytes: callBytes);
+    final runtimeCall = const wormhole_pallet.Txs().verifyAggregatedProof(
+      proofBytes: callBytes,
+    );
     final callEncoded = runtimeCall.encode();
 
     // Unsigned extrinsic body: [version_byte=0x04][call_data]
@@ -321,14 +385,18 @@ class WormholeClaimService {
     return full;
   }
 
-  static int _hexToInt(String hexStr) => int.parse(hexStr.replaceFirst('0x', ''), radix: 16);
+  static int _hexToInt(String hexStr) =>
+      int.parse(hexStr.replaceFirst('0x', ''), radix: 16);
 
-  static List<int> _hexBytes(String hexStr) => hex.decode(hexStr.replaceFirst('0x', ''));
+  static List<int> _hexBytes(String hexStr) =>
+      hex.decode(hexStr.replaceFirst('0x', ''));
 
   static Uint8List _toBytes(dynamic value) {
     if (value is String) return Uint8List.fromList(_hexBytes(value));
     if (value is List) return Uint8List.fromList(value.cast<int>());
-    throw ArgumentError('Expected hex string or byte array, got ${value.runtimeType}');
+    throw ArgumentError(
+      'Expected hex string or byte array, got ${value.runtimeType}',
+    );
   }
 
   static Uint8List _flattenSiblings(List<dynamic> rawSiblings) {
