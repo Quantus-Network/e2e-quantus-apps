@@ -60,8 +60,7 @@ class WormholeTransfer {
       'leafIndex: $leafIndex, transferCount: $transferCount}';
 }
 
-typedef WormholeProgressCallback =
-    void Function(int phase, int completed, {int? total});
+typedef WormholeProgressCallback = void Function(int phase, int completed, {int? total});
 
 /// Returns true if the caller wants the in-progress operation to abort.
 typedef IsCancelledCallback = bool Function();
@@ -83,8 +82,7 @@ class WormholeUtxoService {
 
   static void _log(String msg) => print('[WormholeUtxo] $msg');
 
-  static String _addressHash(Uint8List raw32) =>
-      wormhole_ffi.computeAddressHashHex(rawAddress: raw32);
+  static String _addressHash(Uint8List raw32) => wormhole_ffi.computeAddressHashHex(rawAddress: raw32);
 
   static void _throwIfCancelled(IsCancelledCallback? isCancelled) {
     if (isCancelled?.call() == true) throw const WormholeOperationCancelled();
@@ -92,8 +90,7 @@ class WormholeUtxoService {
 
   // --- Cache ---
 
-  static String _cachePrefix(String addressHash) =>
-      addressHash.substring(0, 16);
+  static String _cachePrefix(String addressHash) => addressHash.substring(0, 16);
 
   static Future<File> _transferCacheFile(String addressHash) async {
     final dir = await getApplicationSupportDirectory();
@@ -102,17 +99,14 @@ class WormholeUtxoService {
 
   static Future<File> _nullifierCacheFile(String addressHash) async {
     final dir = await getApplicationSupportDirectory();
-    return File(
-      '${dir.path}/wormhole_nullifiers_${_cachePrefix(addressHash)}.json',
-    );
+    return File('${dir.path}/wormhole_nullifiers_${_cachePrefix(addressHash)}.json');
   }
 
   static Future<_TransferCache> _loadTransferCache(String addressHash) async {
     try {
       final file = await _transferCacheFile(addressHash);
       if (!await file.exists()) return _TransferCache.empty();
-      final json =
-          jsonDecode(await file.readAsString()) as Map<String, dynamic>;
+      final json = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
       return _TransferCache.fromJson(json);
     } catch (e) {
       _log('Transfer cache load failed: $e');
@@ -120,16 +114,11 @@ class WormholeUtxoService {
     }
   }
 
-  static Future<void> _saveTransferCache(
-    String addressHash,
-    _TransferCache cache,
-  ) async {
+  static Future<void> _saveTransferCache(String addressHash, _TransferCache cache) async {
     try {
       final file = await _transferCacheFile(addressHash);
       await file.writeAsString(jsonEncode(cache.toJson()));
-      _log(
-        'Transfer cache saved: ${cache.transfers.length} transfers up to block ${cache.cachedUpToBlock}',
-      );
+      _log('Transfer cache saved: ${cache.transfers.length} transfers up to block ${cache.cachedUpToBlock}');
     } catch (e) {
       _log('Transfer cache save failed: $e');
     }
@@ -147,10 +136,7 @@ class WormholeUtxoService {
     }
   }
 
-  static Future<void> _saveSpentNullifiers(
-    String addressHash,
-    Set<String> spent,
-  ) async {
+  static Future<void> _saveSpentNullifiers(String addressHash, Set<String> spent) async {
     try {
       final file = await _nullifierCacheFile(addressHash);
       await file.writeAsString(jsonEncode(spent.toList()));
@@ -165,17 +151,10 @@ class WormholeUtxoService {
   /// Current chain head (best block) height. Throws if RPC fails — callers must
   /// not advance the cache from a fabricated value.
   Future<int> _getChainHeight() async {
-    final body = jsonEncode({
-      'jsonrpc': '2.0',
-      'id': 1,
-      'method': 'chain_getHeader',
-      'params': [],
-    });
+    final body = jsonEncode({'jsonrpc': '2.0', 'id': 1, 'method': 'chain_getHeader', 'params': []});
     final response = await _rpcEndpoint.post(body: body);
     if (response.statusCode != 200) {
-      throw Exception(
-        'chain_getHeader HTTP ${response.statusCode}: ${response.body}',
-      );
+      throw Exception('chain_getHeader HTTP ${response.statusCode}: ${response.body}');
     }
     final parsed = jsonDecode(response.body) as Map<String, dynamic>;
     if (parsed['error'] != null) {
@@ -234,22 +213,16 @@ query TransfersToAddress($to: String!, $limit: Int!, $offset: Int!, $afterBlock:
     final sw = Stopwatch()..start();
     final response = await _graphQlEndpoint.post(body: body);
     final elapsed = sw.elapsedMilliseconds;
-    _log(
-      'transfers query: status=${response.statusCode} offset=$offset elapsed=${elapsed}ms',
-    );
+    _log('transfers query: status=${response.statusCode} offset=$offset elapsed=${elapsed}ms');
 
     if (response.statusCode != 200) {
       _log('transfers query FAILED: ${response.body}');
-      throw Exception(
-        'Subsquid request failed ${response.statusCode}: ${response.body}',
-      );
+      throw Exception('Subsquid request failed ${response.statusCode}: ${response.body}');
     }
 
     final parsed = jsonDecode(response.body) as Map<String, dynamic>;
     if (parsed['errors'] != null) {
-      final msgs = (parsed['errors'] as List)
-          .map((e) => (e as Map)['message'])
-          .join('; ');
+      final msgs = (parsed['errors'] as List).map((e) => (e as Map)['message']).join('; ');
       _log('transfers query GraphQL errors: $msgs');
       throw Exception('GraphQL errors: $msgs');
     }
@@ -301,17 +274,13 @@ query TransfersToAddress($to: String!, $limit: Int!, $offset: Int!, $afterBlock:
       if (page.isEmpty || page.length < _transferPageSize) break;
       offset += _transferPageSize;
     }
-    _log(
-      'Fetched ${all.length} total transfers in ${totalSw.elapsedMilliseconds}ms ($pageNum pages)',
-    );
+    _log('Fetched ${all.length} total transfers in ${totalSw.elapsedMilliseconds}ms ($pageNum pages)');
     return all;
   }
 
   // --- Nullifiers ---
 
-  Future<Set<String>> _querySpentNullifierHashes(
-    List<String> nullifierHashes,
-  ) async {
+  Future<Set<String>> _querySpentNullifierHashes(List<String> nullifierHashes) async {
     const query = r'''
 query SpentNullifiers($hashes: [String!]!) {
   wormholeNullifiers(where: { nullifierHash_in: $hashes }, limit: 1000) {
@@ -328,33 +297,23 @@ query SpentNullifiers($hashes: [String!]!) {
     final sw = Stopwatch()..start();
     final response = await _graphQlEndpoint.post(body: body);
     final elapsed = sw.elapsedMilliseconds;
-    _log(
-      'nullifiers query: status=${response.statusCode} elapsed=${elapsed}ms',
-    );
+    _log('nullifiers query: status=${response.statusCode} elapsed=${elapsed}ms');
 
     if (response.statusCode != 200) {
       _log('nullifiers query FAILED: ${response.body}');
-      throw Exception(
-        'Subsquid nullifiers request failed ${response.statusCode}: ${response.body}',
-      );
+      throw Exception('Subsquid nullifiers request failed ${response.statusCode}: ${response.body}');
     }
 
     final parsed = jsonDecode(response.body) as Map<String, dynamic>;
     if (parsed['errors'] != null) {
-      final msgs = (parsed['errors'] as List)
-          .map((e) => (e as Map)['message'])
-          .join('; ');
+      final msgs = (parsed['errors'] as List).map((e) => (e as Map)['message']).join('; ');
       _log('nullifiers query GraphQL errors: $msgs');
       throw Exception('GraphQL errors: $msgs');
     }
 
     final results = parsed['data']?['wormholeNullifiers'] as List<dynamic>?;
-    final found = (results ?? [])
-        .map((r) => (r as Map<String, dynamic>)['nullifierHash'] as String)
-        .toSet();
-    _log(
-      'nullifiers query: ${found.length} spent out of ${nullifierHashes.length} queried (${elapsed}ms)',
-    );
+    final found = (results ?? []).map((r) => (r as Map<String, dynamic>)['nullifierHash'] as String).toSet();
+    _log('nullifiers query: ${found.length} spent out of ${nullifierHashes.length} queried (${elapsed}ms)');
     return found;
   }
 
@@ -377,10 +336,7 @@ query SpentNullifiers($hashes: [String!]!) {
 
     for (int i = 0; i < allHashes.length; i += _nullifierBatchSize) {
       _throwIfCancelled(isCancelled);
-      final batch = allHashes.sublist(
-        i,
-        (i + _nullifierBatchSize).clamp(0, allHashes.length),
-      );
+      final batch = allHashes.sublist(i, (i + _nullifierBatchSize).clamp(0, allHashes.length));
       final batchNum = (i ~/ _nullifierBatchSize) + 1;
       final spentHashes = await _querySpentNullifierHashes(batch);
       for (final hash in spentHashes) {
@@ -394,9 +350,7 @@ query SpentNullifiers($hashes: [String!]!) {
       );
     }
 
-    _log(
-      'Nullifiers: ${spent.length} spent out of ${nullifiers.length} (${totalSw.elapsedMilliseconds}ms total)',
-    );
+    _log('Nullifiers: ${spent.length} spent out of ${nullifiers.length} (${totalSw.elapsedMilliseconds}ms total)');
     return spent;
   }
 
@@ -424,9 +378,7 @@ query SpentNullifiers($hashes: [String!]!) {
     _log('chainHeight=$chainHeight safeCutoff=$safeCutoff');
 
     final cache = await _loadTransferCache(fullHash);
-    _log(
-      'Cache: ${cache.transfers.length} transfers up to block ${cache.cachedUpToBlock}',
-    );
+    _log('Cache: ${cache.transfers.length} transfers up to block ${cache.cachedUpToBlock}');
     if (cache.transfers.isNotEmpty) onProgress?.call(1, cache.transfers.length);
 
     _throwIfCancelled(isCancelled);
@@ -445,11 +397,7 @@ query SpentNullifiers($hashes: [String!]!) {
         toAddress: wormholeAddress,
         afterBlock: cache.cachedUpToBlock,
         onProgress: onProgress != null
-            ? (phase, completed, {int? total}) => onProgress(
-                phase,
-                cache.transfers.length + completed,
-                total: total,
-              )
+            ? (phase, completed, {int? total}) => onProgress(phase, cache.transfers.length + completed, total: total)
             : null,
         isCancelled: isCancelled,
       );
@@ -458,23 +406,14 @@ query SpentNullifiers($hashes: [String!]!) {
 
     final allTransfers = [...cache.transfers, ...newTransfers];
     onProgress?.call(1, allTransfers.length);
-    _log(
-      'Total transfers: ${allTransfers.length} (${cache.transfers.length} cached + ${newTransfers.length} new)',
-    );
+    _log('Total transfers: ${allTransfers.length} (${cache.transfers.length} cached + ${newTransfers.length} new)');
 
     // Cache only the reorg-safe slice; the caller still sees recent (above-cutoff)
     // transfers so balances / claims include them.
-    final safeTransfers = allTransfers
-        .where((t) => t.blockHeight <= safeCutoff)
-        .toList();
-    await _saveTransferCache(
-      fullHash,
-      _TransferCache(cachedUpToBlock: safeCutoff, transfers: safeTransfers),
-    );
+    final safeTransfers = allTransfers.where((t) => t.blockHeight <= safeCutoff).toList();
+    await _saveTransferCache(fullHash, _TransferCache(cachedUpToBlock: safeCutoff, transfers: safeTransfers));
 
-    _log(
-      'getTransfersTo DONE: ${allTransfers.length} transfers (${sw.elapsedMilliseconds}ms)',
-    );
+    _log('getTransfersTo DONE: ${allTransfers.length} transfers (${sw.elapsedMilliseconds}ms)');
     return allTransfers;
   }
 
@@ -485,11 +424,7 @@ query SpentNullifiers($hashes: [String!]!) {
     IsCancelledCallback? isCancelled,
   }) async {
     _log('getUnspentTransfers($wormholeAddress)');
-    final transfers = await getTransfersTo(
-      wormholeAddress,
-      onProgress: onProgress,
-      isCancelled: isCancelled,
-    );
+    final transfers = await getTransfersTo(wormholeAddress, onProgress: onProgress, isCancelled: isCancelled);
     if (transfers.isEmpty) {
       _log('getUnspentTransfers: no transfers found');
       return [];
@@ -523,27 +458,16 @@ query SpentNullifiers($hashes: [String!]!) {
       }
       onProgress?.call(2, i + 1, total: transfers.length);
     }
-    _log(
-      'Computed nullifiers: $skipped cached-spent, ${uncheckedPairs.length} to check',
-    );
+    _log('Computed nullifiers: $skipped cached-spent, ${uncheckedPairs.length} to check');
 
     if (uncheckedPairs.isNotEmpty) {
-      final newSpent = await _checkNullifiersSpent(
-        uncheckedPairs,
-        onProgress: onProgress,
-        isCancelled: isCancelled,
-      );
+      final newSpent = await _checkNullifiersSpent(uncheckedPairs, onProgress: onProgress, isCancelled: isCancelled);
       allSpent.addAll(newSpent);
       await _saveSpentNullifiers(fullHash, allSpent);
     }
 
-    final unspent = nullifierToTransfer.entries
-        .where((e) => !allSpent.contains(e.key))
-        .map((e) => e.value)
-        .toList();
-    _log(
-      'getUnspentTransfers: ${unspent.length} unspent out of ${transfers.length} total',
-    );
+    final unspent = nullifierToTransfer.entries.where((e) => !allSpent.contains(e.key)).map((e) => e.value).toList();
+    _log('getUnspentTransfers: ${unspent.length} unspent out of ${transfers.length} total');
     return unspent;
   }
 
@@ -558,13 +482,8 @@ query SpentNullifiers($hashes: [String!]!) {
       secretHex: secretHex,
       isCancelled: isCancelled,
     );
-    final balance = unspent.fold<BigInt>(
-      BigInt.zero,
-      (sum, t) => sum + t.amount,
-    );
-    _log(
-      'getUnspentBalance: $balance planck (${unspent.length} unspent transfers)',
-    );
+    final balance = unspent.fold<BigInt>(BigInt.zero, (sum, t) => sum + t.amount);
+    _log('getUnspentBalance: $balance planck (${unspent.length} unspent transfers)');
     return balance;
   }
 }
@@ -575,17 +494,13 @@ class _TransferCache {
 
   _TransferCache({required this.cachedUpToBlock, required this.transfers});
 
-  factory _TransferCache.empty() =>
-      _TransferCache(cachedUpToBlock: 0, transfers: []);
+  factory _TransferCache.empty() => _TransferCache(cachedUpToBlock: 0, transfers: []);
 
   factory _TransferCache.fromJson(Map<String, dynamic> json) {
     final transfers = (json['transfers'] as List<dynamic>)
         .map((t) => WormholeTransfer.fromJson(t as Map<String, dynamic>))
         .toList();
-    return _TransferCache(
-      cachedUpToBlock: json['cachedUpToBlock'] as int,
-      transfers: transfers,
-    );
+    return _TransferCache(cachedUpToBlock: json['cachedUpToBlock'] as int, transfers: transfers);
   }
 
   Map<String, dynamic> toJson() => {
