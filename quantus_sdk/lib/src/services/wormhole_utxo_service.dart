@@ -97,9 +97,25 @@ class WormholeUtxoService {
     return File('${dir.path}/wormhole_cache_${_cachePrefix(addressHash)}.json');
   }
 
+  /// Bumped to v2 to drop any pre-finalization-filter caches that may contain
+  /// nullifiers from reorged-out blocks. Old `wormhole_nullifiers_<prefix>.json`
+  /// files are best-effort deleted on first read.
   static Future<File> _nullifierCacheFile(String addressHash) async {
     final dir = await getApplicationSupportDirectory();
-    return File('${dir.path}/wormhole_nullifiers_${_cachePrefix(addressHash)}.json');
+    return File('${dir.path}/wormhole_nullifiers_v2_${_cachePrefix(addressHash)}.json');
+  }
+
+  static Future<void> _deleteLegacyNullifierCache(String addressHash) async {
+    try {
+      final dir = await getApplicationSupportDirectory();
+      final legacy = File('${dir.path}/wormhole_nullifiers_${_cachePrefix(addressHash)}.json');
+      if (await legacy.exists()) {
+        await legacy.delete();
+        _log('Deleted legacy nullifier cache: ${legacy.path}');
+      }
+    } catch (e) {
+      _log('Legacy nullifier cache delete failed (non-fatal): $e');
+    }
   }
 
   static Future<_TransferCache> _loadTransferCache(String addressHash) async {
@@ -125,6 +141,7 @@ class WormholeUtxoService {
   }
 
   static Future<Set<String>> _loadSpentNullifiers(String addressHash) async {
+    await _deleteLegacyNullifierCache(addressHash);
     try {
       final file = await _nullifierCacheFile(addressHash);
       if (!await file.exists()) return {};
@@ -280,11 +297,15 @@ query TransfersToAddress($to: String!, $limit: Int!, $offset: Int!, $afterBlock:
 
   // --- Nullifiers ---
 
-  Future<Set<String>> _querySpentNullifierHashes(List<String> nullifierHashes) async {
+  /// Looks up which of [nullifierHashes] are already spent on-chain. Returns a
+  /// map from nullifier hash to the block height the nullifier was recorded in,
+  /// so callers can decide whether the entry is reorg-safe to persist.
+  Future<Map<String, int>> _querySpentNullifierHashes(List<String> nullifierHashes) async {
     const query = r'''
 query SpentNullifiers($hashes: [String!]!) {
   wormholeNullifiers(where: { nullifierHash_in: $hashes }, limit: 1000) {
     nullifierHash
+    block { height }
   }
 }''';
 
@@ -312,12 +333,21 @@ query SpentNullifiers($hashes: [String!]!) {
     }
 
     final results = parsed['data']?['wormholeNullifiers'] as List<dynamic>?;
-    final found = (results ?? []).map((r) => (r as Map<String, dynamic>)['nullifierHash'] as String).toSet();
+    final found = <String, int>{};
+    for (final r in results ?? const []) {
+      final m = r as Map<String, dynamic>;
+      final hash = m['nullifierHash'] as String;
+      final height = (m['block'] as Map<String, dynamic>)['height'] as int;
+      found[hash] = height;
+    }
     _log('nullifiers query: ${found.length} spent out of ${nullifierHashes.length} queried (${elapsed}ms)');
     return found;
   }
 
-  Future<Set<String>> _checkNullifiersSpent(
+  /// Returns a map from nullifier hex to the block height where it was spent.
+  /// Callers are responsible for deciding which entries are reorg-safe to
+  /// persist (see `getUnspentTransfers`).
+  Future<Map<String, int>> _checkNullifiersSpent(
     List<(String nullifierHex, String nullifierHash)> nullifiers, {
     WormholeProgressCallback? onProgress,
     IsCancelledCallback? isCancelled,
@@ -331,17 +361,17 @@ query SpentNullifiers($hashes: [String!]!) {
     }
 
     final allHashes = hashToNullifier.keys.toList();
-    final spent = <String>{};
+    final spent = <String, int>{};
     onProgress?.call(3, 0, total: nullifiers.length);
 
     for (int i = 0; i < allHashes.length; i += _nullifierBatchSize) {
       _throwIfCancelled(isCancelled);
       final batch = allHashes.sublist(i, (i + _nullifierBatchSize).clamp(0, allHashes.length));
       final batchNum = (i ~/ _nullifierBatchSize) + 1;
-      final spentHashes = await _querySpentNullifierHashes(batch);
-      for (final hash in spentHashes) {
-        final nulHex = hashToNullifier[hash];
-        if (nulHex != null) spent.add(nulHex);
+      final spentBatch = await _querySpentNullifierHashes(batch);
+      for (final entry in spentBatch.entries) {
+        final nulHex = hashToNullifier[entry.key];
+        if (nulHex != null) spent[nulHex] = entry.value;
       }
       final checked = (i + batch.length).clamp(0, nullifiers.length);
       onProgress?.call(3, checked, total: nullifiers.length);
@@ -356,13 +386,14 @@ query SpentNullifiers($hashes: [String!]!) {
 
   // --- Public API ---
 
-  /// Fetches every wormhole transfer ever sent to [wormholeAddress].
+  /// Fetches every wormhole transfer ever sent to [wormholeAddress] and
+  /// returns them along with the reorg-safe block cutoff used for caching.
   ///
-  /// Returns transfers up to the current chain head. The on-disk cache only
-  /// advances to `currentHeight - reorgDepth` so we never have to rewrite
-  /// already-persisted entries on a reorg, but callers always see the latest
-  /// transfers (recent ones simply aren't reused on the next call).
-  Future<List<WormholeTransfer>> getTransfersTo(
+  /// `transfers` includes everything up to the current chain head. The on-disk
+  /// cache only advances to `safeCutoff = currentHeight - reorgDepth` so we
+  /// never have to rewrite already-persisted entries on a reorg; callers above
+  /// `safeCutoff` simply aren't cached and are re-queried next time.
+  Future<({List<WormholeTransfer> transfers, int safeCutoff})> getTransfersTo(
     String wormholeAddress, {
     WormholeProgressCallback? onProgress,
     IsCancelledCallback? isCancelled,
@@ -414,7 +445,7 @@ query SpentNullifiers($hashes: [String!]!) {
     await _saveTransferCache(fullHash, _TransferCache(cachedUpToBlock: safeCutoff, transfers: safeTransfers));
 
     _log('getTransfersTo DONE: ${allTransfers.length} transfers (${sw.elapsedMilliseconds}ms)');
-    return allTransfers;
+    return (transfers: allTransfers, safeCutoff: safeCutoff);
   }
 
   Future<List<WormholeTransfer>> getUnspentTransfers({
@@ -424,7 +455,9 @@ query SpentNullifiers($hashes: [String!]!) {
     IsCancelledCallback? isCancelled,
   }) async {
     _log('getUnspentTransfers($wormholeAddress)');
-    final transfers = await getTransfersTo(wormholeAddress, onProgress: onProgress, isCancelled: isCancelled);
+    final fetched = await getTransfersTo(wormholeAddress, onProgress: onProgress, isCancelled: isCancelled);
+    final transfers = fetched.transfers;
+    final safeCutoff = fetched.safeCutoff;
     if (transfers.isEmpty) {
       _log('getUnspentTransfers: no transfers found');
       return [];
@@ -462,8 +495,19 @@ query SpentNullifiers($hashes: [String!]!) {
 
     if (uncheckedPairs.isNotEmpty) {
       final newSpent = await _checkNullifiersSpent(uncheckedPairs, onProgress: onProgress, isCancelled: isCancelled);
-      allSpent.addAll(newSpent);
-      await _saveSpentNullifiers(fullHash, allSpent);
+      // In-memory: every spent nullifier we've seen, including ones in
+      // unfinalized blocks — must not be re-claimed in this call.
+      allSpent.addAll(newSpent.keys);
+      // Persist: only entries from finalized blocks (height <= safeCutoff).
+      // Unfinalized ones get re-queried next call so a reorg can correct them.
+      final newSafe = newSpent.entries.where((e) => e.value <= safeCutoff).map((e) => e.key);
+      final unfinalizedCount = newSpent.length - newSafe.length;
+      final toPersist = <String>{...cachedSpent, ...newSafe};
+      await _saveSpentNullifiers(fullHash, toPersist);
+      _log(
+        'Nullifier persistence: kept ${toPersist.length} finalized '
+        '(skipped $unfinalizedCount above cutoff $safeCutoff)',
+      );
     }
 
     final unspent = nullifierToTransfer.entries.where((e) => !allSpent.contains(e.key)).map((e) => e.value).toList();
