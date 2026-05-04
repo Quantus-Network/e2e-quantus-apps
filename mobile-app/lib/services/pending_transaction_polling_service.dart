@@ -2,12 +2,11 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
-import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/shared/utils/tx_filter_family_provider.dart';
 
 class PendingTransactionPollingService {
   final Ref _ref;
@@ -122,24 +121,28 @@ void triggerSilentHistoryRefresh(Ref ref, {required Set<String> affectedAccountI
     if (newTransaction != null) mainController.addTransactionToHistory(newTransaction);
     mainController.silentRefresh();
 
-    final targets = <String>{...affectedAccountIds};
+    final targets = affectedAccountIds.map((id) => [id]).toList();
     final active = ref.read(activeAccountProvider).value;
-    if (active != null) targets.add(active.account.accountId);
-
-    for (final accountId in targets) {
-      final controller = ref.read(
-        filteredPaginationControllerProviderFamily(AccountIdListCache.get([accountId])).notifier,
-      );
-      if (newTransaction != null) controller.addTransactionToHistory(newTransaction);
-      controller.silentRefresh();
-    }
+    if (active != null) targets.add([active.account.accountId]);
 
     final accountIds = ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
-    final allController = ref.read(
-      filteredPaginationControllerProviderFamily(AccountIdListCache.get(accountIds)).notifier,
-    );
-    if (newTransaction != null) allController.addTransactionToHistory(newTransaction);
-    allController.silentRefresh();
+    if (accountIds.isNotEmpty) {
+      targets.add(accountIds);
+    }
+
+    for (final targetIds in targets) {
+      if (newTransaction != null) {
+        updatePaginationFiltersFor(ref.read, targetIds, (notifier, filter) {
+          if (filter != TransactionFilter.receive) {
+            notifier.addTransactionToHistory(newTransaction);
+          }
+        });
+      }
+
+      updatePaginationFiltersFor(ref.read, targetIds, (notifier, _) {
+        notifier.silentRefresh();
+      });
+    }
   } catch (e) {
     print('[SilentHistoryRefresh] Error: $e');
   }

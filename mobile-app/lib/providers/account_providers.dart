@@ -34,7 +34,7 @@ class AccountsNotifier extends StateNotifier<AsyncValue<List<Account>>> {
     state.whenData((accounts) async {
       try {
         await _accountsService.removeAccount(account);
-        final newAccounts = accounts.where((a) => a.index != account.index).toList();
+        final newAccounts = accounts.where((a) => a.accountId != account.accountId).toList();
         state = AsyncValue.data(newAccounts);
       } catch (e, st) {
         print('remove account error $e $st');

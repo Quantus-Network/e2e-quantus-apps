@@ -26,6 +26,8 @@ class SettingsService {
   static const String _activeAccountIdKey = 'active_account_id';
   static const String _activeDisplayAccountKey = 'active_display_account';
   static const String _balanceHiddenKey = 'balance_hidden';
+  static const String _currencyFlippedKey = 'currency_flipped';
+  static const String _selectedFiatCurrencyKey = 'selected_fiat_currency';
 
   static const String _lastPausedTimeKey = 'last_paused_time';
 
@@ -286,6 +288,26 @@ class SettingsService {
 
   bool isBalanceHidden() {
     return _prefs.getBool(_balanceHiddenKey) ?? false;
+  }
+
+  // Currency Flip Settings (whether fiat is shown as the primary display)
+  Future<void> setCurrencyFlipped(bool flipped) async {
+    await _prefs.setBool(_currencyFlippedKey, flipped);
+  }
+
+  bool isCurrencyFlipped() {
+    return _prefs.getBool(_currencyFlippedKey) ?? false;
+  }
+
+  // Selected Fiat Currency Settings
+  Future<void> setSelectedFiatCurrency(String currencyCode) async {
+    await _prefs.setString(_selectedFiatCurrencyKey, currencyCode);
+  }
+
+  /// Returns the persisted fiat currency code (e.g. "USD"), or null when no
+  /// preference has been saved yet (caller should fall back to the default).
+  String? getSelectedFiatCurrency() {
+    return _prefs.getString(_selectedFiatCurrencyKey);
   }
 
   // POS Mode Settings

@@ -98,7 +98,7 @@ class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScr
     final title = widget.isNewWallet ? 'Add Hardware Wallet' : 'Add Hardware Account';
     return ScaffoldBase(
       appBar: WalletAppBar(title: title),
-      child: Column(
+      mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 20),

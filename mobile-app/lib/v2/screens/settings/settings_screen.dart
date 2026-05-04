@@ -1,321 +1,104 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/generated/version.g.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart';
-import 'package:resonance_network_wallet/providers/notification_config_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/services/logout_service.dart';
-import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/reset_confirmation_sheet.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/select_wallet_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/testnet_rewards_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/about_quantus_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/account_type_settings_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/help_and_support_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/preferences_settings_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/settings_tappable_row.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/wallet_settings_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-class SettingsScreenV2 extends ConsumerStatefulWidget {
+class SettingsScreenV2 extends StatelessWidget {
   const SettingsScreenV2({super.key});
-
-  @override
-  ConsumerState<SettingsScreenV2> createState() => _SettingsScreenV2State();
-}
-
-class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
-  final _settingsService = SettingsService();
-  int _reversibleTimeSeconds = 600;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSettings();
-  }
-
-  Future<void> _loadSettings() async {
-    final revTime = await _settingsService.getReversibleTimeSeconds() ?? 600;
-    if (!mounted) return;
-    setState(() => _reversibleTimeSeconds = revTime);
-  }
-
-  void _toggleNotifications(bool enable) {
-    final current = ref.read(notificationConfigProvider);
-    ref.read(notificationConfigProvider.notifier).updateConfig(current.copyWith(enabled: enable));
-  }
-
-  void _navigateToRecoveryPhrase() {
-    final accountsAsync = ref.read(accountsProvider);
-    accountsAsync.whenData((accounts) {
-      final walletIndices = getNonHardwareWalletIndices(accounts);
-      if (walletIndices.isEmpty) return;
-      if (walletIndices.length == 1) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => RecoveryPhraseScreen(walletIndex: walletIndices.first)),
-        );
-      } else {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const SelectWalletScreen()));
-      }
-    });
-  }
-
-  Future<void> _resetAndClearData() async {
-    if (mounted) ref.read(logoutServiceProvider).logout(context);
-  }
-
-  void _showResetConfirmation() {
-    showResetConfirmationSheetV2(context, _resetAndClearData);
-  }
-
-  String _timeLimitLabel() {
-    if (_reversibleTimeSeconds <= 0) return 'Disabled';
-    final mins = _reversibleTimeSeconds ~/ 60;
-    if (mins < 60) return '$mins minutes';
-    final hours = mins ~/ 60;
-    final remMins = mins % 60;
-    return remMins > 0 ? '${hours}h ${remMins}m' : '$hours hours';
-  }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final text = context.themeText;
-    final notifConfig = ref.watch(notificationConfigProvider);
-    final posMode = ref.watch(posModeProvider);
+    final trailing = SettingsTappableRowUtils.chevron(colors);
+    final entries = _settingsHubItems(colors);
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Settings'),
-      child: ListView(
-        padding: EdgeInsets.zero,
+      mainContent: ListView(
         children: [
-          _section('Wallet', colors, text, [
-            _chevronItem('Recovery Phase', 'View Backup', colors, text, onTap: _navigateToRecoveryPhrase),
-            _divider(colors),
-            _miningRewardsItem(colors, text),
-          ]),
-          const SizedBox(height: 40),
-          _section('Reversible Transactions', colors, text, [
-            _comingSoonItem('Reversible Transactions', null, colors, text),
-            // _toggleItem(
-            //   'Reversible Transactions',
-            //   'Coming Soon', //_reversibleEnabled ? 'Enabled' : 'Disabled',
-            //   _reversibleEnabled,
-            //   null,
-            //   colors,
-            //   text,
-            // ),
-            _divider(colors),
-            _chevronItem('Time Limit', _timeLimitLabel(), colors, text, onTap: () {}),
-            _divider(colors),
-            _chevronItem('Amount Limit', 'No Limit', colors, text, onTap: () {}),
-          ]),
-          const SizedBox(height: 40),
-          _section('Account Type', colors, text, [
-            _comingSoonItem('High Security Account', 'Guardian Approval', colors, text),
-            _divider(colors),
-            _comingSoonItem('Multi-Signature', 'Multiple Accounts', colors, text),
-            _divider(colors),
-            _comingSoonItem('Hardware Wallet', 'Pair Device', colors, text),
-          ]),
-          const SizedBox(height: 40),
-          _section('Preferences', colors, text, [
-            _toggleItem(
-              'POS Mode',
-              posMode ? 'Point of Sale Enabled' : 'Disabled',
-              posMode,
-              (v) => ref.read(posModeProvider.notifier).setPosMode(v),
-              colors,
-              text,
+          for (final e in entries.asMap().entries) ...[
+            SettingsTappableRow(
+              leading: e.value.leading,
+              title: e.value.title,
+              subtitle: e.value.subtitle,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => e.value.page)),
+              trailing: trailing,
             ),
-            _divider(colors),
-            _toggleItem(
-              'Notifications',
-              notifConfig.enabled ? 'Transaction Alerts Enabled' : 'Alerts Disabled',
-              notifConfig.enabled,
-              _toggleNotifications,
-              colors,
-              text,
-            ),
-          ]),
-          const SizedBox(height: 40),
-          _section('About & Support', colors, text, [
-            _externalItem(
-              'Help & Support',
-              null,
-              colors,
-              text,
-              onTap: () => launchUrl(Uri.parse(AppConstants.techSupportUrl)),
-            ),
-            _divider(colors),
-            _externalItem(
-              'Privacy & Terms of Service',
-              null,
-              colors,
-              text,
-              onTap: () => launchUrl(Uri.parse(AppConstants.termsOfServiceUrl)),
-            ),
-          ]),
-          const SizedBox(height: 40),
-          _resetButton(colors, text),
-          const SizedBox(height: 24),
-          Center(
-            child: Text(
-              'Version: $appVersion ($appBuildNumber)',
-              style: text.detail?.copyWith(color: colors.textTertiary),
-            ),
-          ),
-          const SizedBox(height: 48),
+            if (e.key < entries.length - 1) const SettingsDivider(),
+          ],
         ],
       ),
     );
   }
+}
 
-  Widget _miningRewardsItem(AppColorsV2 colors, AppTextTheme text) {
-    final miningAsync = ref.watch(miningRewardsProvider);
-    final subtitle = miningAsync.when(
-      skipLoadingOnRefresh: false,
-      data: (data) =>
-          Text('Total: ${data.totalBlocks} blocks', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
-      loading: () =>
-          const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
-      error: (_, _) => Text('Tap to retry', style: text.smallParagraph?.copyWith(color: colors.textError)),
-    );
-    return GestureDetector(
-      onTap: () {
-        if (miningAsync.hasError) {
-          ref.invalidate(miningRewardsProvider);
-        } else {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const TestnetRewardsScreen()));
-        }
-      },
-      behavior: HitTestBehavior.opaque,
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Testnet Rewards', style: text.paragraph?.copyWith(color: colors.textPrimary)),
-                const SizedBox(height: 4),
-                subtitle,
-              ],
-            ),
-          ),
-          Icon(Icons.chevron_right, color: colors.textSecondary, size: 20),
-        ],
-      ),
-    );
+class _SettingsHubItem {
+  const _SettingsHubItem({required this.leading, required this.title, required this.subtitle, required this.page});
+
+  final Widget leading;
+  final String title;
+  final String subtitle;
+  final Widget page;
+}
+
+List<_SettingsHubItem> _settingsHubItems(AppColorsV2 colors) {
+  return [
+    _SettingsHubItem(
+      leading: _settingsHubIcon(colors, icon: Icons.account_balance_wallet_outlined),
+      title: 'Wallet',
+      subtitle: 'Recovery Phrase, Reset Wallet',
+      page: const WalletSettingsScreenV2(),
+    ),
+    _SettingsHubItem(
+      leading: _settingsHubIcon(colors, icon: Icons.tune),
+      title: 'Preferences',
+      subtitle: 'Currency, POS mode, notifications',
+      page: const PreferencesSettingsScreenV2(),
+    ),
+    _SettingsHubItem(
+      leading: _settingsHubIcon(colors, icon: Icons.shield_outlined),
+      title: 'Account Type',
+      subtitle: 'Advanced Account Features',
+      page: const AccountTypeSettingsScreenV2(),
+    ),
+    _SettingsHubItem(
+      leading: _settingsHubIcon(colors, icon: Icons.help_outline),
+      title: 'Help & Support',
+      subtitle: 'FAQs, Contact the team',
+      page: const HelpAndSupportScreenV2(),
+    ),
+    _SettingsHubItem(
+      leading: _settingsHubIcon(colors, svg: SvgPicture.asset('assets/v2/uppercase_q.svg', width: 18, height: 18)),
+      title: 'About Quantus',
+      subtitle: 'Version $appVersion ($appBuildNumber)',
+      page: const AboutQuantusScreenV2(),
+    ),
+  ];
+}
+
+/// 40×40 leading slot: [icon] in accent orange, or a custom [svg].
+Widget _settingsHubIcon(AppColorsV2 colors, {IconData? icon, SvgPicture? svg}) {
+  const double iconSlot = 40;
+  Widget? child;
+
+  if (icon != null) {
+    child = Icon(icon, color: colors.accentOrange, size: 22);
+  } else if (svg != null) {
+    child = svg;
   }
 
-  Widget _section(String title, AppColorsV2 colors, AppTextTheme text, List<Widget> children) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(color: colors.surfaceCard, borderRadius: BorderRadius.circular(14)),
-          child: Column(children: children),
-        ),
-      ],
-    );
-  }
-
-  Column _itemContent(String title, AppTextTheme text, AppColorsV2 colors, String? subtitle) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: text.paragraph?.copyWith(color: colors.textPrimary)),
-        if (subtitle != null) const SizedBox(height: 4),
-        if (subtitle != null) Text(subtitle, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
-      ],
-    );
-  }
-
-  Widget _toggleItem(
-    String title,
-    String subtitle,
-    bool value,
-    ValueChanged<bool>? onChanged,
-    AppColorsV2 colors,
-    AppTextTheme text,
-  ) {
-    return Row(
-      children: [
-        Expanded(child: _itemContent(title, text, colors, subtitle)),
-        CupertinoSwitch(value: value, onChanged: onChanged, activeTrackColor: colors.accentGreen),
-      ],
-    );
-  }
-
-  Widget _chevronItem(
-    String title,
-    String subtitle,
-    AppColorsV2 colors,
-    AppTextTheme text, {
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Row(
-        children: [
-          Expanded(child: _itemContent(title, text, colors, subtitle)),
-          Icon(Icons.chevron_right, color: colors.textSecondary, size: 20),
-        ],
-      ),
-    );
-  }
-
-  Widget _externalItem(
-    String title,
-    String? subtitle,
-    AppColorsV2 colors,
-    AppTextTheme text, {
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Row(
-        children: [
-          Expanded(
-            child: subtitle != null
-                ? _itemContent(title, text, colors, subtitle)
-                : Text(title, style: text.paragraph?.copyWith(color: colors.textPrimary)),
-          ),
-          Icon(Icons.north_east, color: colors.textSecondary, size: 20),
-        ],
-      ),
-    );
-  }
-
-  Widget _comingSoonItem(String title, String? subtitle, AppColorsV2 colors, AppTextTheme text) {
-    return Row(
-      children: [
-        Expanded(child: _itemContent(title, text, colors, subtitle)),
-        Text('Coming Soon', style: text.detail?.copyWith(color: colors.textTertiary)),
-      ],
-    );
-  }
-
-  Widget _divider(AppColorsV2 colors) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Divider(color: colors.separator, height: 1),
-    );
-  }
-
-  Widget _resetButton(AppColorsV2 colors, AppTextTheme text) {
-    return GlassButton.simple(label: 'Reset Quantus', onTap: _showResetConfirmation, variant: ButtonVariant.danger);
-  }
+  return SizedBox(
+    width: iconSlot,
+    height: iconSlot,
+    child: Center(child: child),
+  );
 }
