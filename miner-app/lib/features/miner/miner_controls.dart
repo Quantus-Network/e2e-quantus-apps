@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:quantus_miner/src/config/miner_config.dart';
 import 'package:quantus_miner/src/services/miner_wallet_service.dart';
 import 'package:quantus_miner/src/services/mining_orchestrator.dart';
 import 'package:quantus_miner/src/services/mining_stats_service.dart';
@@ -38,7 +37,6 @@ class _MinerControlsState extends State<MinerControls> {
   int _cpuWorkers = 8;
   int _gpuDevices = 0;
   int _detectedGpuCount = 0;
-  String _chainId = MinerConfig.defaultChainId;
   final _settingsService = MinerSettingsService();
 
   @override
@@ -51,13 +49,11 @@ class _MinerControlsState extends State<MinerControls> {
   Future<void> _loadSettings() async {
     final savedCpuWorkers = await _settingsService.getCpuWorkers();
     final savedGpuDevices = await _settingsService.getGpuDevices();
-    final savedChainId = await _settingsService.getChainId();
 
     if (mounted) {
       setState(() {
         _cpuWorkers = savedCpuWorkers ?? (Platform.numberOfProcessors > 0 ? Platform.numberOfProcessors : 8);
         _gpuDevices = savedGpuDevices ?? 0;
-        _chainId = savedChainId;
       });
     }
   }
@@ -93,13 +89,6 @@ class _MinerControlsState extends State<MinerControls> {
   Future<void> _startNode() async {
     _log.i('Starting node');
 
-    // Reload chain ID in case it was changed in settings
-    final chainId = await _settingsService.getChainId();
-    if (mounted) {
-      setState(() => _chainId = chainId);
-    }
-
-    // Get rewards preimage directly from the wallet (not from file)
     final walletService = MinerWalletService();
     final wormholeKeyPair = await walletService.getWormholeKeyPair();
     if (wormholeKeyPair == null) {
@@ -110,7 +99,6 @@ class _MinerControlsState extends State<MinerControls> {
       return;
     }
 
-    // Check for required files
     final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
     final identityFile = File('$quantusHome/node_key.p2p');
     final nodeBinPath = await BinaryManager.getNodeBinaryFilePath();
@@ -126,7 +114,6 @@ class _MinerControlsState extends State<MinerControls> {
       return;
     }
 
-    // Create new orchestrator
     final orchestrator = MiningOrchestrator();
     widget.onOrchestratorChanged(orchestrator);
 
@@ -138,7 +125,6 @@ class _MinerControlsState extends State<MinerControls> {
           identityFile: identityFile,
           rewardsInnerHash: wormholeKeyPair.rewardsPreimageHex,
           wormholeAddress: wormholeKeyPair.address,
-          chainId: _chainId,
           cpuWorkers: _cpuWorkers,
           gpuDevices: _gpuDevices,
           detectedGpuCount: _detectedGpuCount,

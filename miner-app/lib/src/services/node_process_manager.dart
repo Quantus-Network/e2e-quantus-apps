@@ -24,9 +24,6 @@ class NodeConfig {
   /// Must be hex-encoded with 0x prefix.
   final String rewardsInnerHash;
 
-  /// Chain ID to connect to ('dev' or 'dirac').
-  final String chainId;
-
   /// Port for the QUIC miner connection.
   final int minerListenPort;
 
@@ -43,7 +40,6 @@ class NodeConfig {
     required this.binary,
     required this.identityFile,
     required this.rewardsInnerHash,
-    this.chainId = 'dev',
     this.minerListenPort = 9833,
     this.rpcPort = 9933,
     this.prometheusPort = 9616,
@@ -136,19 +132,25 @@ class NodeProcessManager extends BaseProcessManager {
 
   List<String> _buildArgs(NodeConfig config, String basePath) {
     return [
-      // Only use --base-path for non-dev chains (dev uses temp storage for fresh state)
-      if (config.chainId != 'dev') ...['--base-path', basePath],
-      '--node-key-file', config.identityFile.path,
-      '--rewards-inner-hash', config.rewardsInnerHash,
+      '--base-path',
+      basePath,
+      '--node-key-file',
+      config.identityFile.path,
+      '--rewards-inner-hash',
+      config.rewardsInnerHash,
       '--validator',
-      // Chain selection
-      if (config.chainId == 'dev') '--dev' else ...['--chain', config.chainId],
-      '--port', config.p2pPort.toString(),
-      '--prometheus-port', config.prometheusPort.toString(),
+      '--chain',
+      MinerConfig.chainId,
+      '--port',
+      config.p2pPort.toString(),
+      '--prometheus-port',
+      config.prometheusPort.toString(),
       '--experimental-rpc-endpoint',
       'listen-addr=${MinerConfig.localhost}:${config.rpcPort},methods=unsafe,cors=all',
-      '--name', 'QuantusMinerGUI',
-      '--miner-listen-port', config.minerListenPort.toString(),
+      '--name',
+      'QuantusMinerGUI',
+      '--miner-listen-port',
+      config.minerListenPort.toString(),
       '--enable-peer-sharing',
     ];
   }

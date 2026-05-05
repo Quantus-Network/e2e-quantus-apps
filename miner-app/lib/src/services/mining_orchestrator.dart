@@ -64,9 +64,6 @@ class MiningSessionConfig {
   /// Used for transfer tracking.
   final String? wormholeAddress;
 
-  /// Chain ID to connect to.
-  final String chainId;
-
   /// Number of CPU worker threads.
   final int cpuWorkers;
 
@@ -85,7 +82,6 @@ class MiningSessionConfig {
     required this.identityFile,
     required this.rewardsInnerHash,
     this.wormholeAddress,
-    this.chainId = 'dev',
     this.cpuWorkers = 8,
     this.gpuDevices = 0,
     this.detectedGpuCount = 0,
@@ -221,11 +217,9 @@ class MiningOrchestrator {
       _statsService.updateGpuCapacity(config.detectedGpuCount);
       _emitStats();
 
-      // Perform pre-start cleanup
       _setState(MiningState.startingNode);
-      await ProcessCleanupService.performPreStartCleanup(config.chainId);
+      await ProcessCleanupService.performPreStartCleanup();
 
-      // Ensure ports are available
       final ports = await ProcessCleanupService.ensurePortsAvailable(
         quicPort: config.minerListenPort,
         metricsPort: MinerConfig.defaultMinerMetricsPort,
@@ -233,13 +227,11 @@ class MiningOrchestrator {
       _actualMetricsPort = ports['metrics']!;
       _updateMetricsClient();
 
-      // Start node with rewards inner hash directly from config
       await _nodeManager.start(
         NodeConfig(
           binary: config.nodeBinary,
           identityFile: config.identityFile,
           rewardsInnerHash: config.rewardsInnerHash,
-          chainId: config.chainId,
           minerListenPort: config.minerListenPort,
         ),
       );
@@ -278,7 +270,6 @@ class MiningOrchestrator {
       minerBinary: _currentConfig!.minerBinary,
       identityFile: _currentConfig!.identityFile,
       rewardsInnerHash: _currentConfig!.rewardsInnerHash,
-      chainId: _currentConfig!.chainId,
       cpuWorkers: cpuWorkers ?? _currentConfig!.cpuWorkers,
       gpuDevices: gpuDevices ?? _currentConfig!.gpuDevices,
       detectedGpuCount: _currentConfig!.detectedGpuCount,

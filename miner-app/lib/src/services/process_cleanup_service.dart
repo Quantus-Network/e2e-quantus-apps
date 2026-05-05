@@ -307,10 +307,10 @@ class ProcessCleanupService {
   // ============================================================
 
   /// Cleanup database lock files that may prevent node startup.
-  static Future<void> cleanupDatabaseLocks(String chainId) async {
+  static Future<void> cleanupDatabaseLocks() async {
     try {
       final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
-      final lockFilePath = '$quantusHome/node_data/chains/$chainId/db/full/LOCK';
+      final lockFilePath = '$quantusHome/node_data/chains/${MinerConfig.chainId}/db/full/LOCK';
       final lockFile = File(lockFilePath);
 
       if (await lockFile.exists()) {
@@ -318,8 +318,7 @@ class ProcessCleanupService {
         _log.d(' Deleted lock file: $lockFilePath');
       }
 
-      // Also check for other potential lock files
-      final dbDir = Directory('$quantusHome/node_data/chains/$chainId/db/full');
+      final dbDir = Directory('$quantusHome/node_data/chains/${MinerConfig.chainId}/db/full');
       if (await dbDir.exists()) {
         await for (final entity in dbDir.list()) {
           if (entity is File && entity.path.contains('LOCK')) {
@@ -338,10 +337,10 @@ class ProcessCleanupService {
   }
 
   /// Check and fix database directory permissions.
-  static Future<void> ensureDatabaseDirectoryAccess(String chainId) async {
+  static Future<void> ensureDatabaseDirectoryAccess() async {
     try {
       final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
-      final dbPath = '$quantusHome/node_data/chains/$chainId/db';
+      final dbPath = '$quantusHome/node_data/chains/${MinerConfig.chainId}/db';
       final dbDir = Directory(dbPath);
 
       // Create the directory if it doesn't exist
@@ -380,11 +379,11 @@ class ProcessCleanupService {
   /// - Existing miner processes
   /// - Database locks
   /// - Ensures directory access
-  static Future<void> performPreStartCleanup(String chainId) async {
+  static Future<void> performPreStartCleanup() async {
     await cleanupExistingNodeProcesses();
     await cleanupExistingMinerProcesses();
-    await cleanupDatabaseLocks(chainId);
-    await ensureDatabaseDirectoryAccess(chainId);
+    await cleanupDatabaseLocks();
+    await ensureDatabaseDirectoryAccess();
   }
 
   /// Kill all quantus processes by name.

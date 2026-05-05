@@ -1,10 +1,8 @@
 import 'dart:io';
 
-import 'package:quantus_miner/src/config/miner_config.dart';
 import 'package:quantus_miner/src/services/binary_manager.dart';
 import 'package:quantus_miner/src/services/miner_wallet_service.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final _log = log.withTag('Settings');
@@ -13,14 +11,12 @@ final _log = log.withTag('Settings');
 ///
 /// This is a singleton - use `MinerSettingsService()` to get the instance.
 class MinerSettingsService {
-  // Singleton
   static final MinerSettingsService _instance = MinerSettingsService._internal();
   factory MinerSettingsService() => _instance;
   MinerSettingsService._internal();
 
   static const String _keyCpuWorkers = 'cpu_workers';
   static const String _keyGpuDevices = 'gpu_devices';
-  static const String _keyChainId = 'chain_id';
 
   Future<void> saveCpuWorkers(int cpuWorkers) async {
     final prefs = await SharedPreferences.getInstance();
@@ -40,64 +36,6 @@ class MinerSettingsService {
   Future<int?> getGpuDevices() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt(_keyGpuDevices);
-  }
-
-  /// Save the selected chain ID and configure endpoints accordingly.
-  Future<void> saveChainId(String chainId) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keyChainId, chainId);
-    // Update GraphQL endpoint for the selected chain
-    _configureEndpointsForChain(chainId);
-  }
-
-  /// Configure RPC and GraphQL endpoints based on chain ID.
-  void _configureEndpointsForChain(String chainId) {
-    final chain = MinerConfig.getChainById(chainId);
-    _log.i('Configuring endpoints for chain $chainId:');
-    _log.i('  RPC: ${chain.rpcUrl}');
-    _log.i('  GraphQL: ${chain.subsquidUrl ?? 'not configured'}');
-
-    // Configure RPC endpoint for SubstrateService
-    final rpcService = RpcEndpointService();
-    _log.i('  RPC endpoints before: ${rpcService.endpoints.length}');
-    // rpcService.setEndpoints([chain.rpcUrl]);
-    // _log.i('  RPC endpoints after: ${rpcService.endpoints.length}');
-    // _log.i('  Best RPC endpoint: ${rpcService.bestEndpointUrl}');
-
-    // Configure GraphQL endpoint (for any remaining Subsquid usage)
-    // if (chain.subsquidUrl != null) {
-    //   GraphQlEndpointService().setEndpoints([chain.subsquidUrl!]);
-    // } else {
-    //   GraphQlEndpointService().setEndpoints([]);
-    // }
-  }
-
-  /// Get the saved chain ID, returns default if not set.
-  /// Also configures GraphQL endpoints for the chain.
-  Future<String> getChainId() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedChainId = prefs.getString(_keyChainId);
-    String chainId;
-    if (savedChainId == null) {
-      chainId = MinerConfig.defaultChainId;
-    } else {
-      // Validate that the chain ID is still valid
-      final validIds = MinerConfig.availableChains.map((c) => c.id).toList();
-      if (!validIds.contains(savedChainId)) {
-        chainId = MinerConfig.defaultChainId;
-      } else {
-        chainId = savedChainId;
-      }
-    }
-    // Configure endpoints for this chain
-    _configureEndpointsForChain(chainId);
-    return chainId;
-  }
-
-  /// Get the ChainConfig for the saved chain ID.
-  Future<ChainConfig> getChainConfig() async {
-    final chainId = await getChainId();
-    return MinerConfig.getChainById(chainId);
   }
 
   Future<void> logout() async {

@@ -79,14 +79,13 @@ class WormholeClaimService {
     required String wormholeAddress,
     required String secretHex,
     required String destinationAddress,
-    required String rpcUrl,
     required String circuitBinsDir,
     required ClaimProgressCallback onProgress,
   }) async {
     final cancelCompleter = Completer<void>();
     _cancelCompleter = cancelCompleter;
 
-    final rpc = ChainRpcClient(rpcUrl: rpcUrl, timeout: const Duration(seconds: 30));
+    final rpc = ChainRpcClient(rpcUrl: AppConstants.rpcEndpoints.first, timeout: const Duration(seconds: 30));
     try {
       final flow = _runClaimFlow(
         rpc: rpc,
