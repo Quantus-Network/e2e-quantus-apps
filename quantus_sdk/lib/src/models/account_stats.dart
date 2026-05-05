@@ -22,7 +22,7 @@ class AccountStats {
       sendCount: json['data']['immediate_txs'] as int,
       reversalCount: json['data']['reversible_txs'] as int,
       miningCount: json['data']['mining_events'] as int,
-      miningRewards: BigInt.parse(json['data']['mining_rewards'] as String),
+      miningRewards: BigInt.from(json['data']['mining_rewards']),
     );
   }
 }

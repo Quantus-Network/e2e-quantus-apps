@@ -34,9 +34,9 @@ class WormholeTransfer {
       id: json['id'] as String,
       wormholeAddress: json['to']?['id'] as String? ?? '',
       fromAddress: json['from']?['id'] as String? ?? '',
-      amount: BigInt.parse(json['amount'] as String),
-      transferCount: BigInt.parse(json['transferCount'] as String),
-      leafIndex: BigInt.parse(json['leafIndex'] as String),
+      amount: BigInt.from(json['amount']),
+      transferCount: BigInt.from(json['transferCount']),
+      leafIndex: BigInt.from(json['leafIndex']),
       blockNumber: block?['height'] as int? ?? 0,
       blockHash: block?['hash'] as String? ?? '',
       timestamp: DateTime.parse(json['timestamp'] as String),
@@ -55,20 +55,20 @@ class WormholeUtxoService {
 
   static const String _transfersToWormholeQuery = r'''
 query WormholeTransfers($wormholeAddress: String!, $limit: Int!, $offset: Int!) {
-  transfers(
+  transfers: transfer(
     limit: $limit
     offset: $offset
     where: {
-      to: { id_eq: $wormholeAddress }
+      to: { id: {_eq: $wormholeAddress } }
     }
-    orderBy: timestamp_DESC
+    order_by: {timestamp: desc}
   ) {
     id
     from { id }
     to { id }
     amount
-    leafIndex
-    transferCount
+    leafIndex: leaf_index
+    transferCount: transfer_count
     timestamp
     block {
       height
@@ -79,20 +79,20 @@ query WormholeTransfers($wormholeAddress: String!, $limit: Int!, $offset: Int!) 
 
   static const String _transfersToMultipleQuery = r'''
 query WormholeTransfersMultiple($wormholeAddresses: [String!]!, $limit: Int!, $offset: Int!) {
-  transfers(
+  transfers: transfer(
     limit: $limit
     offset: $offset
     where: {
-      to: { id_in: $wormholeAddresses }
+      to: { id: {_in: $wormholeAddresses } }
     }
-    orderBy: timestamp_DESC
+    order_by: {timestamp: desc}
   ) {
     id
     from { id }
     to { id }
     amount
-    leafIndex
-    transferCount
+    leafIndex: leaf_index
+    transferCount: transfer_count
     timestamp
     block {
       height
@@ -103,8 +103,8 @@ query WormholeTransfersMultiple($wormholeAddresses: [String!]!, $limit: Int!, $o
 
   static const String _nullifiersQuery = r'''
 query CheckNullifiers($nullifiers: [String!]!) {
-  wormholeNullifiers(
-    where: { nullifier_in: $nullifiers }
+  wormholeNullifiers: wormhole_nullifier(
+    where: { nullifier: {_in: $nullifiers } }
   ) {
     nullifier
   }

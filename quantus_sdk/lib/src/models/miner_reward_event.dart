@@ -29,7 +29,7 @@ class MinerRewardEvent extends TransactionEvent {
     return MinerRewardEvent(
       id: json['id'] as String,
       miner: json['miner']?['id'] as String? ?? '',
-      reward: BigInt.parse(json['reward'] as String),
+      reward: BigInt.from(json['reward']),
       timestamp: DateTime.parse(json['timestamp'] as String),
       blockNumber: blockHeight,
       blockHash: blockHash,
