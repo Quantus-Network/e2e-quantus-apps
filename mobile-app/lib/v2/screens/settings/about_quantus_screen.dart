@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/generated/version.g.dart';
+import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_tappable_row.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class AboutQuantusScreenV2 extends StatelessWidget {
   const AboutQuantusScreenV2({super.key});
@@ -49,7 +49,7 @@ class AboutQuantusScreenV2 extends StatelessWidget {
                   SettingsTappableRow(
                     title: entry.value.title,
                     subtitle: entry.value.subtitle,
-                    onTap: () => launchUrl(_uriForAboutLink(entry.value)),
+                    onTap: () => openUrl(_uriForAboutLink(entry.value).toString()),
                     trailing: SettingsTappableRowUtils.externalLink(colors),
                   ),
                   if (entry.key < _externalLinks.length - 1) const SettingsDivider(),

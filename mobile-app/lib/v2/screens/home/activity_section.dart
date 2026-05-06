@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/models/combined_transactions_list.dart'
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
+import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
 import 'package:resonance_network_wallet/utils/url_utils.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/activity_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
@@ -14,7 +15,6 @@ import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/testnet_rewards_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class ActivitySection extends ConsumerStatefulWidget {
   final AsyncValue<CombinedTransactionsList> txAsync;
@@ -179,7 +179,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
                       behavior: HitTestBehavior.opaque,
                       onTap: () => links[i].$2 == AppConstants.faucetUrl
                           ? launchXPost(links[i].$2)
-                          : launchUrl(Uri.parse(links[i].$2)),
+                          : openUrl(links[i].$2),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [

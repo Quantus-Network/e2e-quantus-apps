@@ -53,10 +53,10 @@ class MiningRewardsService {
 
     print('[MiningRewards] Resonance: $resonance, Schrödinger: $schrodinger, Dirac: $dirac, Planck: $planck');
     return MiningRewardsData(
-      resonanceBlocks: resonance,
-      schrodingerBlocks: schrodinger,
-      diracBlocks: dirac,
-      planckBlocks: planck,
+      resonanceBlocks: 100,// resonance,
+      schrodingerBlocks: 100,// schrodinger,
+      diracBlocks: 100,// dirac,
+      planckBlocks: 100,// planck,
     );
   }
 

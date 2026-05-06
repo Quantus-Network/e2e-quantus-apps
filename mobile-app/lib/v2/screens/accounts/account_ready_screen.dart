@@ -25,7 +25,6 @@ class AccountReadyScreen extends StatelessWidget {
   final String checksumPhrase;
   final String accountId;
 
-  static const _galleryLargeTitle = Color(0xFFEBEBEB);
   static const _successRingSize = 78.0;
   static const _checkIconSize = 32.0;
   static const _borderWidth = 2.0;
@@ -92,7 +91,7 @@ class AccountReadyScreen extends StatelessWidget {
                           Text(
                             headline,
                             textAlign: TextAlign.center,
-                            style: text.paragraph?.copyWith(fontSize: 32, color: _galleryLargeTitle, height: 1.0),
+                            style: text.paragraph?.copyWith(fontSize: 32, color: colors.textLightGray, height: 1.0),
                           ),
                         ],
                       ),

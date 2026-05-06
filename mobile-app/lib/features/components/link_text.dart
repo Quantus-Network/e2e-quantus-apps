@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
 
 class LinkText extends StatelessWidget {
   final String label;
@@ -19,7 +19,7 @@ class LinkText extends StatelessWidget {
       child: Text(label, style: effectiveTextStyle),
       onTap: () {
         final Uri uri = Uri.parse(url);
-        launchUrl(uri);
+        openUrl(uri.toString());
       },
     );
   }
