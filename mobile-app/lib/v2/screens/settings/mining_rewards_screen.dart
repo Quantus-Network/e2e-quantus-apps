@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart';
 import 'package:resonance_network_wallet/services/mining_rewards_service.dart';
 import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
-import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/split_card.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
@@ -25,9 +25,8 @@ class MiningRewardsScreen extends ConsumerWidget {
       onRefresh: () async => ref.invalidate(miningRewardsProvider),
       slivers: [
         miningAsync.when(
-          skipLoadingOnRefresh: false,
           data: (data) => data.totalBlocks > 0 ? _WithRewards(data: data) : const _NoRewards(),
-          loading: () => const SizedBox(height: 200, child: Center(child: Loader(size: 32))),
+          loading: () => const _NoRewards(isLoading: true),
           error: (err, _) =>
               _ErrorState(colors: colors, text: text, onRetry: () => ref.invalidate(miningRewardsProvider)),
         ),
@@ -106,7 +105,9 @@ class _WithRewards extends StatelessWidget {
 }
 
 class _NoRewards extends StatelessWidget {
-  const _NoRewards();
+  final bool isLoading;
+
+  const _NoRewards({this.isLoading = false});
 
   @override
   Widget build(BuildContext context) {
@@ -122,27 +123,59 @@ class _NoRewards extends StatelessWidget {
             totalBlocksColor: colors.textTertiary,
             statusLabel: 'Pending',
             statusColor: colors.textTertiary,
+            isLoading: isLoading,
           ),
-          bottomChild: _StatColumn(label: 'QUAN EARNED', value: '0.00', valueColor: colors.textTertiary),
+          bottomChild: _StatColumn(
+            label: 'QUAN EARNED',
+            value: '0.00',
+            valueColor: colors.textTertiary,
+            isLoading: isLoading,
+          ),
         ),
-        const SizedBox(height: 64),
-        Text(
-          'No mining data yet',
-          style: text.mediumTitle?.copyWith(fontWeight: FontWeight.w400, color: colors.textMuted),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Set up a Quantus mining node to start earning rewards.',
-          textAlign: TextAlign.center,
-          style: text.smallParagraph?.copyWith(color: colors.txItemIconDefault, height: 1.35),
-        ),
-        const SizedBox(height: 64),
-        _OrangeLinkButton(
-          label: 'Mining Setup Guide ↗',
-          text: text,
-          onTap: () => openUrl(AppConstants.miningSetupGuideUrl),
-        ),
-        const SizedBox(height: 24),
+        if (isLoading) ...[
+          const SizedBox(height: 32),
+          for (var i = 0; i < 4; i++) ...[
+            const Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [Skeleton(width: 100), SizedBox(height: 8), Skeleton(width: 72)],
+                  ),
+                ),
+                Spacer(),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [Skeleton(width: 72), SizedBox(height: 8), Skeleton(width: 56)],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (i < 3) Divider(color: colors.toasterBackground, height: 1, thickness: 1),
+            const SizedBox(height: 24),
+          ],
+        ] else ...[
+          const SizedBox(height: 64),
+          Text(
+            'No mining data yet',
+            style: text.mediumTitle?.copyWith(fontWeight: FontWeight.w400, color: colors.textMuted),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Set up a Quantus mining node to start earning rewards.',
+            textAlign: TextAlign.center,
+            style: text.smallParagraph?.copyWith(color: colors.txItemIconDefault, height: 1.35),
+          ),
+          const SizedBox(height: 64),
+          _OrangeLinkButton(
+            label: 'Mining Setup Guide ↗',
+            text: text,
+            onTap: () => openUrl(AppConstants.miningSetupGuideUrl),
+          ),
+          const SizedBox(height: 24),
+        ],
       ],
     );
   }
@@ -153,19 +186,20 @@ class _CardTopSection extends StatelessWidget {
   final Color totalBlocksColor;
   final String statusLabel;
   final Color statusColor;
+  final bool isLoading;
 
   const _CardTopSection({
     required this.totalBlocks,
     required this.totalBlocksColor,
     required this.statusLabel,
     required this.statusColor,
+    this.isLoading = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final text = context.themeText;
-
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -182,13 +216,19 @@ class _CardTopSection extends StatelessWidget {
                   decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
                 ),
                 const SizedBox(width: 4),
-                Text(statusLabel, style: text.smallParagraph?.copyWith(color: statusColor)),
+                if (isLoading)
+                  const Skeleton(width: 100, height: 24)
+                else
+                  Text(statusLabel, style: text.smallParagraph?.copyWith(color: statusColor)),
               ],
             ),
           ],
         ),
         const SizedBox(height: 8),
-        Text('$totalBlocks', style: text.totalMinedBlocks?.copyWith(color: totalBlocksColor)),
+        if (isLoading)
+          const Skeleton(width: 100, height: 24)
+        else
+          Text('$totalBlocks', style: text.totalMinedBlocks?.copyWith(color: totalBlocksColor)),
         const SizedBox(height: 4),
         Text('blocks across all testnets', style: text.detail?.copyWith(color: colors.textMuted)),
       ],
@@ -200,8 +240,9 @@ class _StatColumn extends StatelessWidget {
   final String label;
   final String value;
   final Color valueColor;
+  final bool isLoading;
 
-  const _StatColumn({required this.label, required this.value, required this.valueColor});
+  const _StatColumn({required this.label, required this.value, required this.valueColor, this.isLoading = false});
 
   @override
   Widget build(BuildContext context) {
@@ -213,7 +254,10 @@ class _StatColumn extends StatelessWidget {
       children: [
         Text(label, style: text.receiveLabel?.copyWith(color: colors.textLabel)),
         const SizedBox(height: 8),
-        Text(value, style: text.sendSectionLabel?.copyWith(color: valueColor)),
+        if (isLoading)
+          const Skeleton(width: 100, height: 24)
+        else
+          Text(value, style: text.sendSectionLabel?.copyWith(color: valueColor)),
       ],
     );
   }
