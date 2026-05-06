@@ -22,7 +22,7 @@ class ChainHistoryService {
 
   ChainHistoryService();
 
-String _buildScheduledReversibleTransfersQuery(TransactionFilter filter) {
+  String _buildScheduledReversibleTransfersQuery(TransactionFilter filter) {
     final String whereClause;
 
     switch (filter) {
@@ -89,7 +89,8 @@ query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: In
 
     // Transfer extrinsic guard — only include on-chain transfers.
     // Using direct `transfer_id` and `extrinsic_id` relation fields.
-    const String transferGuard = '{_or: [{transfer_id: {_is_null: true}}, {transfer: {extrinsic_id: {_is_null: false}}}]}';
+    const String transferGuard =
+        '{_or: [{transfer_id: {_is_null: true}}, {transfer: {extrinsic_id: {_is_null: false}}}]}';
 
     // Whether to include the minerReward field in the response
     final bool includeMinerReward = filter != TransactionFilter.send;
@@ -198,7 +199,7 @@ query AccountEvents(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!) {
   }
 }
 ''';
-}
+  }
 
   // GraphQL query to fetch transactions by their hash
   final String _executedTransactionByTxId = r'''
