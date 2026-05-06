@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/utils/env_utils.dart';
+import 'package:resonance_network_wallet/shared/utils/env_utils.dart';
 
 class MiningRewardsData {
   final int resonanceBlocks;

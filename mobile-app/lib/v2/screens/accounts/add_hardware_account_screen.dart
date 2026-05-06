@@ -2,14 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 
 class AddHardwareAccountScreen extends ConsumerStatefulWidget {
   const AddHardwareAccountScreen({super.key, required this.walletIndex, this.isNewWallet = false});
@@ -97,7 +97,7 @@ class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScr
   Widget build(BuildContext context) {
     final title = widget.isNewWallet ? 'Add Hardware Wallet' : 'Add Hardware Account';
     return ScaffoldBase(
-      appBar: WalletAppBar(title: title),
+      appBar: V2AppBar(title: title),
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -125,12 +125,20 @@ class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScr
           Row(
             children: [
               Expanded(
-                child: Button(variant: ButtonVariant.neutral, label: 'Scan QR Code', onPressed: _scanQRCode),
+                child: QuantusButton.simple(
+                  label: 'Scan QR Code',
+                  variant: ButtonVariant.secondary,
+                  onTap: _scanQRCode,
+                ),
               ),
               if (kDebugMode) ...[
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Button(variant: ButtonVariant.neutral, label: 'Debug Fill', onPressed: _fillDebugAddress),
+                  child: QuantusButton.simple(
+                    label: 'Debug Fill',
+                    variant: ButtonVariant.secondary,
+                    onTap: _fillDebugAddress,
+                  ),
                 ),
               ],
             ],
@@ -140,10 +148,9 @@ class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScr
             Text(_error!, style: context.themeText.tiny?.copyWith(color: Colors.red)),
           ],
           const Spacer(),
-          Button(
-            variant: ButtonVariant.primary,
+          QuantusButton.simple(
             label: widget.isNewWallet ? 'Add Hardware Wallet' : 'Add Hardware Account',
-            onPressed: _isSaving ? null : _save,
+            onTap: _isSaving ? null : _save,
             isLoading: _isSaving,
           ),
           SizedBox(height: context.themeSize.bottomButtonSpacing),

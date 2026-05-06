@@ -2,13 +2,11 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/button.dart';
-import 'package:resonance_network_wallet/features/components/copy_icon.dart';
-import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
 
 class SharedAddressActionSheet extends StatefulWidget {
@@ -65,6 +63,10 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
     Navigator.of(context).pop();
   }
 
+  Widget _copyIcon() {
+    return const Icon(Icons.copy, size: 20, color: Colors.white);
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -77,13 +79,6 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
         ),
         child: Stack(
           children: [
-            Positioned(
-              left: context.getHorizontalCenterPosition(
-                230 + (24 * 2),
-              ), // We add 24 * 2 because of the padding horizontal
-              bottom: -100,
-              child: const Sphere(variant: 7, size: 230),
-            ),
             Column(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.start,
@@ -174,7 +169,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
                                   textAlign: TextAlign.center,
                                 ),
                               ),
-                              InkWell(onTap: _copyChecksum, child: const CopyIcon()),
+                              InkWell(onTap: _copyChecksum, child: _copyIcon()),
                             ],
                           );
                         }
@@ -198,7 +193,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
                             style: context.themeText.smallParagraph,
                           ),
                         ),
-                        InkWell(onTap: _copyAddress, child: const CopyIcon()),
+                        InkWell(onTap: _copyAddress, child: _copyIcon()),
                       ],
                     ),
                   ],
@@ -206,10 +201,9 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
                 const SizedBox(height: 26),
                 SizedBox(
                   width: context.isTablet ? 465 : 305,
-                  child: Button(
+                  child: QuantusButton.simple(
                     label: 'Send To This Account',
-                    variant: ButtonVariant.neutral,
-                    onPressed: _sendToAddress,
+                    onTap: _sendToAddress,
                   ),
                 ),
                 const SizedBox(height: 80),
