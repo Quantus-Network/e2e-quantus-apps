@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -18,17 +19,17 @@ class PosAmountScreen extends ConsumerStatefulWidget {
 
 class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
   String _input = '0';
-  LocaleNumberConfig get _localeConfig => ref.read(localeNumberConfigProvider);
+  NumberFormat get _numberFormat => ref.read(localeNumberFormatProvider);
 
   void _onDigit(String digit) {
-    final sep = _localeConfig.decimalSeparator;
+    final sep = _numberFormat.symbols.DECIMAL_SEP;
     final oldText = _input == '0' && digit != sep ? '' : _input;
     final newText = oldText + digit;
 
     final oldValue = TextEditingValue(text: oldText);
     final newValue = TextEditingValue(text: newText);
 
-    final filter = DecimalInputFilter(localeConfig: _localeConfig);
+    final filter = DecimalInputFilter(numberFormat: _numberFormat);
     final formatted = filter.formatEditUpdate(oldValue, newValue);
 
     setState(() {
@@ -95,7 +96,7 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
   }
 
   Widget _buildKeypad(AppColorsV2 colors, AppTextTheme text) {
-    final decimalSeparator = _localeConfig.decimalSeparator;
+    final decimalSeparator = _numberFormat.symbols.DECIMAL_SEP;
     final keys = [
       ['1', '2', '3'],
       ['4', '5', '6'],

@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
@@ -27,14 +28,14 @@ final recentAddressesServiceProvider = Provider<RecentAddressesService>((ref) {
 
 /// Caveat: snapshots [Platform.localeName] at provider creation time.
 /// A mid-session locale change (rare) won't be picked up until app restart.
-final localeNumberConfigProvider = Provider<LocaleNumberConfig>((ref) {
-  return LocaleNumberConfig.fromLocale(Platform.localeName);
+final localeNumberFormatProvider = Provider<NumberFormat>((ref) {
+  return NumberFormat.decimalPattern(Platform.localeName);
 });
 
 final numberFormattingServiceProvider = Provider<NumberFormattingService>((ref) {
-  final localeConfig = ref.watch(localeNumberConfigProvider);
+  final fmt = ref.watch(localeNumberFormatProvider);
 
-  return NumberFormattingService(localeConfig: localeConfig);
+  return NumberFormattingService(locale: fmt.locale);
 });
 
 final humanReadableChecksumServiceProvider = Provider<HumanReadableChecksumService>((ref) {

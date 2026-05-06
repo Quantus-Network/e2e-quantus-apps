@@ -1,8 +1,10 @@
 import 'dart:convert';
 
 import 'package:decimal/decimal.dart';
+import 'package:decimal/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/fiat_currency.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -241,7 +243,7 @@ final balanceDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref) 
   final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
   final xRate = ref.watch(exchangeRateServiceProvider);
   final fmt = ref.watch(numberFormattingServiceProvider);
-  final localeConfig = ref.watch(localeNumberConfigProvider);
+  final numberFormat = ref.watch(localeNumberFormatProvider);
 
   return balanceAsync.when(
     loading: () => const AsyncValue.loading(),
@@ -257,7 +259,7 @@ final balanceDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref) 
         isFlipped: isFlipped,
         isHidden: isHidden,
         withQuanSymbol: false,
-        localeConfig: localeConfig,
+        numberFormat: numberFormat,
       );
       return AsyncValue.data(data);
     },
@@ -284,7 +286,7 @@ final txAmountDisplayProvider =
       final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
       final xRate = ref.watch(exchangeRateServiceProvider);
       final fmt = ref.watch(numberFormattingServiceProvider);
-      final localeConfig = ref.watch(localeNumberConfigProvider);
+      final numberFormat = ref.watch(localeNumberFormatProvider);
 
       return (
         BigInt amount, {
@@ -307,7 +309,7 @@ final txAmountDisplayProvider =
           isHidden: isHidden,
           withQuanSymbol: withQuanSymbol,
           isFlipped: isFlipped,
-          localeConfig: localeConfig,
+          numberFormat: numberFormat,
         );
 
         if (!isHidden) {
@@ -326,19 +328,19 @@ final txAmountDisplayProvider =
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-/// Converts [rawBalance] to a fiat numeric string with the number of decimal
-/// places prescribed by [fiat] (e.g. 2 for USD, 0 for JPY/IDR).
-/// When [localeConfig] is provided, the output uses locale-appropriate separators.
+/// Converts [rawBalance] to a locale-formatted fiat numeric string with the
+/// number of decimal places prescribed by [fiat] (e.g. 2 for USD, 0 for JPY/IDR).
 String _toFiatNumeric(
   BigInt rawBalance,
   FiatCurrency fiat,
   ExchangeRateService xRate, {
-  required LocaleNumberConfig localeConfig,
+  required NumberFormat numberFormat,
 }) {
   final fiatValue = xRate.quanRawToFiat(rawBalance, fiat, AppConstants.decimals);
-  final canonical = fiatValue.toStringAsFixed(fiat.decimals);
-
-  return localeConfig.localize(canonical);
+  final fmt = NumberFormat.decimalPattern(numberFormat.locale)
+    ..maximumFractionDigits = fiat.decimals
+    ..minimumFractionDigits = fiat.decimals;
+  return DecimalFormatter(fmt).format(fiatValue);
 }
 
 CurrencyDisplayState _toFiatDisplayState(
@@ -351,10 +353,10 @@ CurrencyDisplayState _toFiatDisplayState(
   required bool isFlipped,
   required bool isHidden,
   required bool withQuanSymbol,
-  required LocaleNumberConfig localeConfig,
+  required NumberFormat numberFormat,
 }) {
   final quanFormatted = fmt.formatBalance(amount, maxDecimals: quanDecimals, addSymbol: withQuanSymbol);
-  final fiatFormatted = selectedFiat.format(_toFiatNumeric(amount, selectedFiat, xRate, localeConfig: localeConfig));
+  final fiatFormatted = selectedFiat.format(_toFiatNumeric(amount, selectedFiat, xRate, numberFormat: numberFormat));
 
   CurrencyDisplayState data = CurrencyDisplayState(
     primaryAmount: isFlipped ? fiatFormatted : quanFormatted,

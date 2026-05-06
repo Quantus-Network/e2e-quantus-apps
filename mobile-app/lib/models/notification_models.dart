@@ -362,8 +362,7 @@ class NotificationTemplates {
   }
 
   static String _formatAmount(BigInt amount) {
-    final localeConfig = LocaleNumberConfig.fromLocale(Platform.localeName);
-    final NumberFormattingService formattingService = NumberFormattingService(localeConfig: localeConfig);
+    final NumberFormattingService formattingService = NumberFormattingService(locale: Platform.localeName);
     return formattingService.formatBalance(amount, addSymbol: true);
   }
 

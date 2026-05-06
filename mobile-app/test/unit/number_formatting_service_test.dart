@@ -3,7 +3,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 void main() {
   group('NumberFormattingService', () {
-    final service = NumberFormattingService(localeConfig: LocaleNumberConfig.dotDecimal);
+    final service = NumberFormattingService(locale: 'en_US');
     final scaleFactor = BigInt.from(10).pow(NumberFormattingService.decimals);
 
     group('formatBalance', () {

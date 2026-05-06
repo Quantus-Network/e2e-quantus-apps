@@ -8,7 +8,7 @@ void main() {
     late NumberFormattingService formattingService;
 
     setUp(() {
-      formattingService = NumberFormattingService(localeConfig: LocaleNumberConfig.dotDecimal);
+      formattingService = NumberFormattingService(locale: 'en_US');
     });
 
     group('getAmountStatus', () {

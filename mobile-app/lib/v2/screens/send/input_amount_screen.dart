@@ -1,5 +1,7 @@
+import 'package:decimal/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/fiat_currency.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
@@ -52,7 +54,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   int _blockHeight = 0;
   bool _isFetchingFee = true;
 
-  LocaleNumberConfig get _localeConfig => ref.read(localeNumberConfigProvider);
+  NumberFormat get _numberFormat => ref.read(localeNumberFormatProvider);
 
   @override
   void initState() {
@@ -122,7 +124,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       try {
         final convertedAmount = _fiatStringToQuan(_amountController.text);
         setState(() => _amount = convertedAmount);
-      } on InvalidNumberInputException catch (e, stack) {
+      } on FormatException catch (e, stack) {
         debugPrint('Fiat→QUAN parse failed: $e\n$stack');
         context.showErrorToaster(message: 'Please enter a valid amount');
         return;
@@ -189,17 +191,20 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final xRate = ref.read(exchangeRateServiceProvider);
     final selectedFiat = ref.read(selectedFiatCurrencyProvider);
     final fiatValue = xRate.quanRawToFiat(quanAmount, selectedFiat, AppConstants.decimals);
-    final canonical = fiatValue.toStringAsFixed(selectedFiat.decimals);
-    return _localeConfig.localize(canonical, addGroupingSeparators: false);
+    final fmt = NumberFormat.decimalPattern(_numberFormat.locale)
+      ..maximumFractionDigits = selectedFiat.decimals
+      ..minimumFractionDigits = selectedFiat.decimals
+      ..turnOffGrouping();
+    return DecimalFormatter(fmt).format(fiatValue);
   }
 
   /// Parses a locale-formatted fiat input string and returns the equivalent
   /// raw QUAN [BigInt] scaled by [AppConstants.decimals].
   ///
-  /// Throws [InvalidNumberInputException] when [fiatText] cannot be parsed.
+  /// Throws [FormatException] when [fiatText] cannot be parsed.
   BigInt _fiatStringToQuan(String fiatText) {
     if (fiatText.isEmpty) return BigInt.zero;
-    final fiatDecimal = _localeConfig.parseDecimal(fiatText);
+    final fiatDecimal = DecimalFormatter(_numberFormat).parse(fiatText);
     final xRate = ref.read(exchangeRateServiceProvider);
     final selectedFiat = ref.read(selectedFiatCurrencyProvider);
     return xRate.fiatToQuanRaw(fiatDecimal, selectedFiat, AppConstants.decimals);
@@ -381,7 +386,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   Widget _amountCenter(AppColorsV2 colors, AppTextTheme text) {
     final isFlipped = ref.watch(isCurrencyFlippedProvider);
     final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
-    final localeConfig = ref.watch(localeNumberConfigProvider);
+    final numberFormat = ref.watch(localeNumberFormatProvider);
     final display = ref.watch(txAmountDisplayProvider)(
       _amount,
       withSignPrefix: false,
@@ -401,7 +406,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         onChanged: _onAmountChanged,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         textAlign: isPrefixFiat ? TextAlign.left : TextAlign.right,
-        inputFormatters: [DecimalInputFilter(localeConfig: localeConfig, maxDecimalPlaces: maxDecimals)],
+        inputFormatters: [DecimalInputFilter(numberFormat: numberFormat, maxDecimalPlaces: maxDecimals)],
         style: text.transactionDetailAmountPrimary?.copyWith(
           color: _amount == BigInt.zero ? colors.textTertiary : colors.textPrimary,
         ),
