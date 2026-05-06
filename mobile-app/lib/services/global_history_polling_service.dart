@@ -1,14 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
-import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_reconciliation_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
+import 'package:resonance_network_wallet/shared/utils/tx_filter_family_provider.dart';
 
 /// Service that handles global history polling - refreshes transaction history
 /// every minute to keep the UI up to date with the latest blockchain state.
@@ -90,12 +89,16 @@ class GlobalHistoryPollingService {
       // and active filtered
       _ref.read(paginationControllerProvider.notifier).silentRefresh();
       final accountIds = _ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
-      for (var id in accountIds) {
-        _ref.read(filteredPaginationControllerProviderFamily(AccountIdListCache.get([id])).notifier).silentRefresh();
+      final targetIds = [
+        ...accountIds.map((id) => [id]),
+        accountIds,
+      ];
+
+      for (final ids in targetIds) {
+        updatePaginationFiltersFor(_ref.read, ids, (notifier, _) {
+          notifier.silentRefresh();
+        });
       }
-      _ref
-          .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get(accountIds)).notifier)
-          .silentRefresh();
 
       // Reconcile pending transactions with confirmed transactions
       _ref.read(pendingTransactionReconciliationServiceProvider).reconcilePendingTransactions();
@@ -125,9 +128,9 @@ class GlobalHistoryPollingService {
     await _ref.read(paginationControllerProvider.notifier).loadingRefresh();
     final active = _ref.read(activeAccountProvider).value;
     if (active != null) {
-      await _ref
-          .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get([active.account.accountId])).notifier)
-          .loadingRefresh();
+      updatePaginationFiltersFor(_ref.read, [active.account.accountId], (notifier, _) {
+        notifier.loadingRefresh();
+      });
     }
 
     // Also reconcile pending transactions during manual refresh

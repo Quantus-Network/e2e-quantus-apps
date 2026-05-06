@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/migration_dialog.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart';
@@ -98,7 +98,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
           children: [
             Text('Unable to find secret phrase. Please restore your wallet.', style: ctx.themeText.smallParagraph),
             const SizedBox(height: 32),
-            GlassButton.simple(label: 'OK', onTap: () => Navigator.pop(ctx), variant: ButtonVariant.secondary),
+            QuantusButton.simple(label: 'OK', onTap: () => Navigator.pop(ctx), variant: ButtonVariant.secondary),
           ],
         ),
       ),
@@ -193,7 +193,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const ScaffoldBase(child: Center(child: CircularProgressIndicator()));
+      return const ScaffoldBase(mainContent: Center(child: CircularProgressIndicator()));
     }
 
     if (_needsMigration) {

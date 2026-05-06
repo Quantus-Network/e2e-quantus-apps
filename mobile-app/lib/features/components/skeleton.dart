@@ -25,6 +25,12 @@ class Skeleton extends StatefulWidget {
       height = size,
       borderRadius = null;
 
+  /// Creates a skeleton for a transaction item
+  const Skeleton.txItem({super.key, this.duration = const Duration(milliseconds: 1500)})
+    : width = double.infinity,
+      height = 40,
+      borderRadius = null;
+
   @override
   State<Skeleton> createState() => _SkeletonState();
 }

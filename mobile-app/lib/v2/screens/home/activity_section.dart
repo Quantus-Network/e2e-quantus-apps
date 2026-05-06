@@ -5,7 +5,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/models/combined_transactions_list.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/utils/url_utils.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/activity_screen.dart';
@@ -32,7 +32,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
 
   @override
   Widget build(BuildContext context) {
-    final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
+    final formatTxAmount = ref.watch(txAmountDisplayProvider);
     final colors = context.colors;
     final text = context.themeText;
 
@@ -63,10 +63,10 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
           children: [
             const SizedBox(height: 40),
             _header(colors, text, context),
-            const SizedBox(height: 24),
+            const SizedBox(height: 28),
 
             ...recentTransactions.mapIndexed((index, tx) {
-              final data = TxItemData.from(tx, widget.activeAccount.accountId);
+              final data = TxItemData.from(tx, widget.activeAccount.accountId, colors);
               final isLastItem = index == recentTransactions.length - 1;
 
               return buildTxItem(
@@ -74,7 +74,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
                 data,
                 colors,
                 text,
-                isBalanceHidden: isBalanceHidden,
+                formattedAmount: formatTxAmount(data.amount, isSend: data.isSend).primaryAmount,
                 isLastItem: isLastItem,
                 onTap: () {
                   showTransactionDetailSheet(context, tx, widget.activeAccount.accountId);
@@ -92,7 +92,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
             _header(colors, text, context),
             const SizedBox(height: 24),
             for (var i = 0; i < 3; i++) ...[
-              const Skeleton(width: double.infinity, height: 32),
+              const Skeleton.txItem(),
               if (i < 2) Divider(color: colors.txItemSeparator, height: 24),
             ],
           ],
@@ -153,10 +153,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Get Started',
-                style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-              ),
+              Text('Get Started', style: text.smallTitle),
               Icon(
                 _getStartedExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                 color: colors.textSecondary,
@@ -224,20 +221,16 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          'Activity',
-          style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-        ),
+        Text('Activity', style: text.smallTitle),
         GestureDetector(
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivityScreen())),
           child: Text(
             'View All',
-            style: text.paragraph?.copyWith(
-              color: Colors.transparent,
-              shadows: [Shadow(color: colors.textSecondary, offset: const Offset(0, -2))],
+            style: text.smallTitle?.copyWith(
+              color: colors.textMuted,
               decoration: TextDecoration.underline,
-              decorationColor: colors.textSecondary,
-              decorationStyle: TextDecorationStyle.solid,
+              decorationColor: colors.textMuted,
+              decorationStyle: TextDecorationStyle.dotted,
               decorationThickness: 1.0,
             ),
           ),

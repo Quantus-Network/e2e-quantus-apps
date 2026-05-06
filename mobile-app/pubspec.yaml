@@ -2,7 +2,7 @@ name: resonance_network_wallet
 description: A Flutter wallet for the Quantus blockchain.
 publish_to: "none"
 
-version: 1.3.5+100
+version: 1.4.0+101
 
 environment:
   sdk: ">=3.8.0 <4.0.0"
@@ -39,7 +39,7 @@ dependencies:
   human_checksum:
     git:
       url: https://github.com/Quantus-Network/qp-human-checkphrase.git
-      ref: v2.0.1
+      ref: v2.2.0
       path: dart
   provider: ^6.1.5
   polkadart: ^0.7.1
@@ -57,12 +57,9 @@ dependencies:
   timezone: ^0.10.1
   flutter_timezone: ^5.0.1
   collection: ^1.19.1
-  glass_kit: ^4.0.2
   firebase_core: ^4.4.0
   firebase_messaging: ^16.1.1
   image_picker: ^1.2.1
-  flutter_inset_shadow: ^2.0.3
-  liquid_glass_renderer: ^0.2.0-dev.4
 
 dev_dependencies:
   flutter_test:
@@ -105,20 +102,18 @@ flutter:
     - assets/v2/green_checkmark.png
     - assets/v2/pin_number_background.png
     - assets/v2/caret_left.svg
-    - assets/v2/send_button.png
-    - assets/v2/receive_button.png
-    - assets/v2/swap_button.png
-    - assets/v2/glass_circle_icon_button_bg.png
     - assets/v2/action_receive.svg
     - assets/v2/action_send.svg
     - assets/v2/action_swap.svg
     - assets/v2/uppercase_q.svg
+    - assets/v2/uppercase_q.png
+    - assets/v2/uppercase_q_black_bg.png
     - assets/v2/swap_arrows_down_up.svg
     - assets/v2/swap_clock_counter_clockwise.svg
     - assets/v2/swap_qr_code.svg
     - assets/v2/auth_wrapper_bracket.png
-    - assets/v2/gradient_background.png
-    - assets/v2/welcome_screen_bg_image.jpg
+    - assets/v2/splash_background.jpg
+    - assets/v2/ascii_background.png
     - assets/v2/quantus_orange_logo.png
 
 
@@ -147,16 +142,41 @@ flutter:
           weight: 600
         - asset: assets/fonts/Inter-Bold.ttf
           weight: 700
+    - family: Geist
+      fonts:
+        - asset: assets/fonts/Geist-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Geist-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Geist-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Geist-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Geist-Bold.ttf
+          weight: 700
+    - family: Geist Mono
+      fonts:
+        - asset: assets/fonts/GeistMono-Light.ttf
+          weight: 300
+        - asset: assets/fonts/GeistMono-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/GeistMono-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/GeistMono-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/GeistMono-Bold.ttf
+          weight: 700
 
 flutter_native_splash:
-  background_image: assets/v2/welcome_screen_bg_image.jpg
-  image: assets/v2/quantus_orange_logo.png
+  background_image: assets/v2/splash_background.jpg
+  color: "#0E0E0E"
+  image: assets/v2/uppercase_q.png
   android: true
   ios: true
 
   android_12:
     image: assets/v2/android12_icon_empty_1152.png
-    color: "#141414"
-    icon_background_color: "#141414"
-    branding: assets/v2/android12_branding_800x320.png
+    color: "#0E0E0E"
+    icon_background_color: "#0E0E0E"
+    branding: assets/v2/uppercase_q.png
     branding_bottom_padding: 88

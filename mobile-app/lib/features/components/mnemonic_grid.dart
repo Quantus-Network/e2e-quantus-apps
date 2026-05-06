@@ -1,9 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
-import 'package:resonance_network_wallet/v2/components/liquid_glass_base.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -47,32 +45,30 @@ class MnemonicGrid extends StatelessWidget {
   }
 
   Widget _buildMnemonicWord(int index, String word, bool isRevealed, BuildContext context) {
-    final padding = const EdgeInsets.symmetric(horizontal: 12);
+    final padding = const EdgeInsets.symmetric(horizontal: 10);
     final double blur = isRevealed ? 0 : 5;
     final effectiveWord = isRevealed ? word : 'x' * word.length;
 
-    return LiquidGlassBase.rounded(
-      glassColor: context.colors.surfaceGlass,
-      child: SizedBox(
-        height: double.infinity,
-        width: double.infinity,
-        child: Padding(
-          padding: padding,
-          child: Row(
-            children: [
-              Text(
-                '$index',
-                textAlign: TextAlign.left,
-                style: context.themeText.detail?.copyWith(color: context.colors.textPrimary.useOpacity(0.5)),
-              ),
-              const SizedBox(width: 8),
-              ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-                child: Text(effectiveWord, textAlign: TextAlign.left, style: context.themeText.detail),
-              ),
-            ],
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(color: context.colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
+      child: Row(
+        children: [
+          Text(
+            '$index',
+            textAlign: TextAlign.left,
+            style: context.themeText.detail?.copyWith(color: context.colors.textTertiary),
           ),
-        ),
+          const SizedBox(width: 8),
+          ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+            child: Text(
+              effectiveWord,
+              textAlign: TextAlign.left,
+              style: context.themeText.detail?.copyWith(color: context.colors.checksum),
+            ),
+          ),
+        ],
       ),
     );
   }

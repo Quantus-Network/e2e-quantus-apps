@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart' as v1_colors;
@@ -13,6 +14,7 @@ class AppTheme {
   static ThemeData darkTheme(BuildContext context) {
     final isTablet = context.isTablet;
     final colors = const AppColorsV2.dark();
+    final text = isTablet ? const AppTextTheme.iPad() : const AppTextTheme.defaultTheme();
 
     return ThemeData(
       scaffoldBackgroundColor: colors.background,
@@ -29,16 +31,24 @@ class AppTheme {
         style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
       ),
       textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(foregroundColor: colors.textPrimary)),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: colors.accentOrange,
+        selectionColor: colors.accentOrange.useOpacity(0.2),
+        selectionHandleColor: colors.accentOrange,
+      ),
       inputDecorationTheme: InputDecorationTheme(
+        hintStyle: text.smallParagraph?.copyWith(color: colors.textLabel, fontFamily: AppTextTheme.fontFamilySecondary),
+        contentPadding: EdgeInsets.zero,
+        isDense: true,
         border: InputBorder.none,
         enabledBorder: InputBorder.none,
         focusedBorder: InputBorder.none,
         filled: true,
-        fillColor: colors.surface,
+        fillColor: Colors.transparent,
       ),
       extensions: [
         colors,
-        isTablet ? const AppTextTheme.iPad() : const AppTextTheme.defaultTheme(),
+        text,
         isTablet ? const AppSizeTheme.iPad() : const AppSizeTheme.defaultTheme(),
         // v1 compat: keeps existing screens working until migrated
         const v1_colors.AppColorsTheme.dark(),

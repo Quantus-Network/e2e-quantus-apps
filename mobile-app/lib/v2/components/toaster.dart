@@ -7,19 +7,20 @@ class Toaster extends StatelessWidget {
   final String message;
   final IconData iconData;
   final Color? iconColor;
+  final Color? textColor;
 
-  const Toaster({super.key, required this.message, required this.iconData, this.iconColor});
+  const Toaster({super.key, required this.message, required this.iconData, this.iconColor, this.textColor});
 
   @override
   Widget build(BuildContext context) {
-    final double iconSize = context.isTablet ? 20 : 16;
+    final double iconSize = context.isTablet ? 18 : 14;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 7),
       decoration: ShapeDecoration(
         color: context.colors.toasterBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14.22),
+          borderRadius: BorderRadius.circular(35),
           side: BorderSide(color: context.colors.toasterBorder),
         ),
       ),
@@ -27,8 +28,10 @@ class Toaster extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Icon(iconData, color: iconColor, size: iconSize),
-          const SizedBox(width: 12),
-          Expanded(child: Text(message, style: context.themeText.smallParagraph, softWrap: true)),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(message, style: context.themeText.detail?.copyWith(color: textColor), softWrap: true),
+          ),
         ],
       ),
     );

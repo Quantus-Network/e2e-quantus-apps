@@ -10,13 +10,13 @@ import 'package:resonance_network_wallet/features/components/reversible_timer.da
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
-import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
-import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_cancellations_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/reversible_transfer_monitoring_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
+import 'package:resonance_network_wallet/shared/utils/tx_filter_family_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 enum ReversibleTransactionMode { reversible, guardianIntercept }
@@ -46,7 +46,6 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
   late Timer _timer;
   late Duration _remainingTime;
 
-  final NumberFormattingService _formattingService = NumberFormattingService();
   final SettingsService _settingsService = SettingsService();
   final ReversibleTransfersService _reversibleTransfersService = ReversibleTransfersService();
 
@@ -96,7 +95,8 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
   }
 
   String _formatAmount(BigInt amount) {
-    return _formattingService.formatBalance(amount, addSymbol: true);
+    final numberFormattingService = ref.watch(numberFormattingServiceProvider);
+    return numberFormattingService.formatBalance(amount, addSymbol: true);
   }
 
   Widget _buildActionButton({
@@ -551,9 +551,9 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
         // Filtered controllers for involved accounts
         final affectedAccounts = <String>{widget.transaction.from, widget.transaction.to};
         for (final accountId in affectedAccounts) {
-          ref
-              .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get([accountId])).notifier)
-              .updateReversibleTransferToExecuted(extrinsicHash, ReversibleTransferStatus.CANCELLED);
+          updatePaginationFiltersFor(ref.read, [accountId], (notifier, _) {
+            notifier.updateReversibleTransferToExecuted(extrinsicHash, ReversibleTransferStatus.CANCELLED);
+          });
         }
 
         // 2) Start the aggressive poller to confirm final status promptly

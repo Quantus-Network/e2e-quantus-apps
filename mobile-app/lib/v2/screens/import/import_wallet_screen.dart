@@ -4,8 +4,9 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -51,7 +52,9 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
   bool get _hasInput => _controller.text.trim().isNotEmpty;
 
   Future<void> _import() async {
+    final accounts = ref.read(accountsProvider).value ?? <Account>[];
     final mnemonic = _controller.text.trim();
+
     setState(() {
       _isLoading = true;
       _error = null;
@@ -68,7 +71,12 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       final key = HdWalletService().keyPairAtIndex(mnemonic, 0);
       await _settingsService.setMnemonic(mnemonic, widget.walletIndex);
       await _accountsService.addAccount(
-        Account(walletIndex: widget.walletIndex, index: 0, name: 'Account 1', accountId: key.ss58Address),
+        Account(
+          walletIndex: widget.walletIndex,
+          index: 0,
+          name: 'Account ${accounts.length + 1}',
+          accountId: key.ss58Address,
+        ),
       );
 
       if (!HdWalletService.isDevAccount(mnemonic)) {
@@ -79,8 +87,10 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       _settingsService.setReferralCheckCompleted();
       _settingsService.setExistingUserSeenPromoVideo();
 
-      if (ref.read(remoteConfigProvider).enableRemoteNotifications) {
+      if (ref.read(remoteConfigProvider).enableRemoteNotifications && widget.walletIndex == 0) {
         ref.read(firebaseMessagingServiceProvider).registerDeviceIfPossible();
+      } else if (ref.read(remoteConfigProvider).enableRemoteNotifications && widget.walletIndex > 0) {
+        ref.read(firebaseMessagingServiceProvider).insertNewAddress(key.ss58Address);
       }
 
       if (!mounted) return;
@@ -110,49 +120,37 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final text = context.themeText;
+    final fieldTextStyle = text.smallTitle?.copyWith(color: colors.checksum, fontWeight: FontWeight.w400);
 
-    var textSTyleSmallTitle = text.smallTitle?.copyWith(
-      fontSize: 20,
-      color: colors.textPrimary,
-      fontWeight: FontWeight.w400,
-      height: 1.35,
-    );
     return ScaffoldBase(
-      appBar: V2AppBar(
-        title: 'Import Wallet',
-        trailing: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Icon(Icons.close, color: colors.textPrimary, size: 24),
-        ),
-      ),
-      child: GestureDetector(
+      appBar: const V2AppBar(title: 'Import Wallet'),
+      mainContent: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         behavior: HitTestBehavior.opaque,
         child: SingleChildScrollView(
           child: Column(
             children: [
-              const SizedBox(height: 20),
               Text(
-                'Restore an existing wallet with your 24 word recovery phrase',
-                textAlign: TextAlign.center,
-                style: textSTyleSmallTitle,
+                'Restore an existing wallet with your 12 or 24 words recovery phrase',
+                style: text.smallParagraph?.copyWith(color: colors.textSecondary),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               Container(
                 height: 202,
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: colors.surfaceDeep,
                   borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: colors.borderButton, width: 1),
                 ),
                 child: TextField(
                   controller: _controller,
                   focusNode: _focusNode,
                   onChanged: (_) => setState(() {}),
-                  style: textSTyleSmallTitle,
+                  style: fieldTextStyle,
                   decoration: InputDecoration.collapsed(
                     hintText: 'Type in or paste your recovery phrase. Separate words with spaces.',
-                    hintStyle: textSTyleSmallTitle?.copyWith(color: colors.textSecondary),
+                    hintStyle: fieldTextStyle?.copyWith(color: colors.textSecondary),
                   ),
                   maxLines: null,
                   keyboardType: TextInputType.multiline,
@@ -167,18 +165,17 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
                   textAlign: TextAlign.center,
                 ),
               ],
-              const SizedBox(height: 24),
-              GlassButton.simple(
-                key: _buttonKey,
-                label: 'Import Wallet',
-                onTap: _import,
-                isLoading: _isLoading,
-                variant: ButtonVariant.secondary,
-                isDisabled: !_hasInput,
-              ),
-              const SizedBox(height: 24),
             ],
           ),
+        ),
+      ),
+      bottomContent: ScaffoldBaseBottomContent(
+        child: QuantusButton.simple(
+          key: _buttonKey,
+          label: 'Import',
+          onTap: _import,
+          isLoading: _isLoading,
+          isDisabled: !_hasInput,
         ),
       ),
     );

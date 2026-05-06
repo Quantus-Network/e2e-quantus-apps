@@ -3,7 +3,8 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/loader.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
@@ -78,7 +79,7 @@ class _DepositScreenState extends State<DepositScreen> {
         title: 'Swap',
         trailing: Icon(Icons.info_outline, color: colors.textPrimary, size: 24),
       ),
-      child: Column(
+      mainContent: Column(
         children: [
           if (_order.status == SwapStatus.complete)
             _completedBody(colors, text)
@@ -182,7 +183,7 @@ class _DepositScreenState extends State<DepositScreen> {
         Row(
           children: [
             Expanded(
-              child: GlassButton.simple(
+              child: QuantusButton.simple(
                 label: 'Copy',
                 variant: ButtonVariant.transparent,
                 onTap: _copyAddress,
@@ -191,7 +192,7 @@ class _DepositScreenState extends State<DepositScreen> {
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: GlassButton.simple(
+              child: QuantusButton.simple(
                 label: 'Share QR',
                 icon: Icon(Icons.qr_code, color: colors.textPrimary, size: 20),
                 variant: ButtonVariant.transparent,
@@ -233,7 +234,7 @@ class _DepositScreenState extends State<DepositScreen> {
     return Column(
       children: [
         const SizedBox(height: 80),
-        CircularProgressIndicator(color: colors.accentGreen),
+        Loader(color: colors.accentGreen),
         const SizedBox(height: 32),
         Text('Processing Swap', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
         const SizedBox(height: 12),
@@ -267,7 +268,7 @@ class _DepositScreenState extends State<DepositScreen> {
   }
 
   Widget _sentButton(AppColorsV2 colors, AppTextTheme text) {
-    return GlassButton.simple(
+    return QuantusButton.simple(
       label: "I've sent the funds",
       onTap: _confirmSent,
       variant: ButtonVariant.secondary,
@@ -276,7 +277,7 @@ class _DepositScreenState extends State<DepositScreen> {
   }
 
   Widget _doneButton(AppColorsV2 colors, AppTextTheme text) {
-    return GlassButton.simple(
+    return QuantusButton.simple(
       label: 'Done',
       onTap: () => Navigator.popUntil(context, (r) => r.isFirst),
       variant: ButtonVariant.secondary,

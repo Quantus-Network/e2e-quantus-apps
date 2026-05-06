@@ -9,8 +9,11 @@ class TxItemData {
   final String timeLabel;
   final Color iconBg;
   final Color iconColor;
+  final Color labelColor;
+  final Color amountColor;
+  final Color borderColor;
   final bool isSend;
-  final String amount;
+  final BigInt amount;
   final String counterpartyAddr;
 
   const TxItemData({
@@ -18,44 +21,114 @@ class TxItemData {
     required this.timeLabel,
     required this.iconBg,
     required this.iconColor,
+    required this.labelColor,
+    required this.amountColor,
+    required this.borderColor,
     required this.isSend,
     required this.amount,
     required this.counterpartyAddr,
   });
 
-  factory TxItemData.from(TransactionEvent tx, String accountId) {
+  factory TxItemData.from(TransactionEvent tx, String accountId, AppColorsV2 colors) {
     final isSend = tx.from == accountId;
     final isPending = tx is PendingTransactionEvent;
     final isScheduled = tx.isReversibleScheduled;
     final isHighlighted = isPending || isScheduled;
-    final fmt = NumberFormattingService();
+
+    String getLabel() {
+      if (isPending && isSend) {
+        return 'Sending';
+      }
+      if (isPending && !isSend) {
+        return 'Receiving';
+      }
+      if (isScheduled && isSend) {
+        return 'Pending';
+      }
+      if (isScheduled && !isSend) {
+        return 'Receiving';
+      }
+      if (isSend && !isScheduled) {
+        return 'Sent';
+      }
+
+      return 'Received';
+    }
+
+    String getTimeLabel() {
+      if (isPending) {
+        return 'now';
+      }
+      if (isScheduled) {
+        return _formatDuration(tx.timeRemaining);
+      }
+      return _timeAgo(tx.timestamp);
+    }
+
+    Color getIconBg() {
+      if (isHighlighted && !isSend) {
+        return colors.txItemIncomingHighlightBg;
+      }
+      if (isHighlighted && isSend) {
+        return colors.txItemOutgoingHighlightBg;
+      }
+      return Colors.transparent;
+    }
+
+    Color getIconColor() {
+      if (isHighlighted && !isSend) {
+        return colors.success;
+      }
+      if (isHighlighted && isSend) {
+        return colors.checksum;
+      }
+      return colors.txItemIconDefault;
+    }
+
+    Color getLabelColor() {
+      if (isHighlighted && !isSend) {
+        return colors.success;
+      }
+      if (isHighlighted && isSend) {
+        return colors.checksum;
+      }
+
+      return colors.textPrimary;
+    }
+
+    Color getAmountColor() {
+      if (!isSend) {
+        return colors.success;
+      }
+
+      if (isHighlighted && isSend) {
+        return colors.checksum;
+      }
+
+      return colors.textPrimary;
+    }
+
+    Color getBorderColor() {
+      if (isHighlighted && !isSend) {
+        return colors.txItemIncomingHighlightBorder;
+      }
+      if (isHighlighted && isSend) {
+        return colors.txItemOutgoingHighlightBorder;
+      }
+      return colors.txItemBorderDefault;
+    }
 
     return TxItemData(
-      label: isPending
-          ? (isSend ? 'Sending' : 'Receiving')
-          : isScheduled
-          ? (isSend ? 'Pending' : 'Receiving')
-          : isSend
-          ? 'Sent'
-          : 'Received',
-      timeLabel: isPending
-          ? 'now'
-          : isScheduled
-          ? _formatDuration(tx.timeRemaining)
-          : _timeAgo(tx.timestamp),
-      iconBg: isHighlighted && !isSend
-          ? const Color(0x2927F027)
-          : isHighlighted && isSend
-          ? const Color(0x29FFBC42)
-          : const Color(0xFF292929),
-      iconColor: isHighlighted && !isSend
-          ? const Color(0xFF27F027)
-          : isHighlighted && isSend
-          ? const Color(0xFFFFBC42)
-          : const Color(0x80FFFFFF),
+      label: getLabel(),
+      timeLabel: getTimeLabel(),
+      iconBg: getIconBg(),
+      iconColor: getIconColor(),
+      labelColor: getLabelColor(),
+      amountColor: getAmountColor(),
+      borderColor: getBorderColor(),
       isSend: isSend,
-      amount: '${fmt.formatBalance(tx.amount)} ${AppConstants.tokenSymbol}',
-      counterpartyAddr: _shortenAddress(isSend ? tx.to : tx.from),
+      amount: tx.amount,
+      counterpartyAddr: AddressFormattingService.formatAddress(isSend ? tx.to : tx.from, prefix: 5, postFix: 3),
     );
   }
 }
@@ -65,7 +138,7 @@ Widget buildTxItem(
   TxItemData data,
   AppColorsV2 colors,
   AppTextTheme text, {
-  required bool isBalanceHidden,
+  required String formattedAmount,
   required bool isLastItem,
   VoidCallback? onTap,
 }) {
@@ -79,9 +152,13 @@ Widget buildTxItem(
           child: Row(
             children: [
               Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(color: data.iconBg, borderRadius: BorderRadius.circular(6)),
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: data.iconBg,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: data.borderColor, width: 1.5),
+                ),
                 child: Transform.rotate(
                   angle: data.isSend ? 3.14159 : 0,
                   child: Icon(Icons.arrow_downward_rounded, size: 16, color: data.iconColor),
@@ -92,28 +169,30 @@ Widget buildTxItem(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(data.label, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+                    Text(data.label, style: text.paragraph?.copyWith(color: data.labelColor)),
                     const SizedBox(height: 2),
                     Text(data.timeLabel, style: text.detail?.copyWith(color: colors.textTertiary)),
                   ],
                 ),
               ),
-              if (!isBalanceHidden)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(data.amount, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${data.isSend ? "To" : "From"}: ${data.counterpartyAddr}',
-                      style: text.detail?.copyWith(color: colors.textTertiary),
+
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    formattedAmount,
+                    style: text.paragraph?.copyWith(
+                      color: data.amountColor,
+                      fontFamily: AppTextTheme.fontFamilySecondary,
                     ),
-                  ],
-                )
-              else
-                Center(
-                  child: Text('--------', style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
-                ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${data.isSend ? "To" : "From"}: ${data.counterpartyAddr}',
+                    style: text.detail?.copyWith(color: colors.textTertiary),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -121,11 +200,6 @@ Widget buildTxItem(
       ],
     ),
   );
-}
-
-String _shortenAddress(String addr) {
-  if (addr.length <= 10) return addr;
-  return '${addr.substring(0, 5)}...${addr.substring(addr.length - 3)}';
 }
 
 String _formatDuration(Duration d) {

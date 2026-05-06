@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -76,7 +76,7 @@ class _MigrationDialogState extends State<MigrationDialog> {
               decoration: BoxDecoration(color: colors.error.useOpacity(0.15), borderRadius: BorderRadius.circular(8)),
               child: Text(_errorMessage!, style: text.smallParagraph?.copyWith(color: colors.textError)),
             ),
-          GlassButton.simple(
+          QuantusButton.simple(
             label: _errorMessage != null ? 'Retry' : 'Migrate Accounts',
             isLoading: _isMigrating,
             onTap: () async {
@@ -96,7 +96,7 @@ class _MigrationDialogState extends State<MigrationDialog> {
           ),
           if (_errorMessage != null) ...[
             const SizedBox(height: 12),
-            GlassButton.simple(
+            QuantusButton.simple(
               label: 'Try later',
               variant: ButtonVariant.transparent,
               onTap: () async {

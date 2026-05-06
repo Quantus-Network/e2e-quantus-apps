@@ -9,6 +9,7 @@ Future<void> showToaster(
   required String message,
   required IconData iconData,
   Color? iconColor,
+  Color? textColor,
   Duration duration = const Duration(seconds: 2),
   FlashBehavior behavior = FlashBehavior.floating,
 }) async {
@@ -21,21 +22,28 @@ Future<void> showToaster(
       return FlashBar(
         controller: controller,
         behavior: behavior,
+        margin: const EdgeInsets.only(bottom: 86),
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         indicatorColor: Colors.transparent,
-        position: FlashPosition.top,
+        position: FlashPosition.bottom,
         clipBehavior: Clip.none,
         shouldIconPulse: false,
-        content: Toaster(message: message, iconData: iconData, iconColor: iconColor),
+        content: Toaster(message: message, iconData: iconData, iconColor: iconColor, textColor: textColor),
       );
     },
   );
 }
 
 Future<void> showCopyToaster(BuildContext context, {required String message}) async {
-  await showToaster(context, iconData: Icons.copy, message: message);
+  await showToaster(
+    context,
+    iconData: Icons.check,
+    message: message,
+    textColor: context.colors.success,
+    iconColor: context.colors.success,
+  );
 }
 
 Future<void> showWarningToaster(BuildContext context, {required String message}) async {
@@ -57,5 +65,11 @@ Future<void> showErrorToaster(BuildContext context, {required String message}) a
 }
 
 Future<void> showSuccessToaster(BuildContext context, {required String message}) async {
-  await showToaster(context, message: message, iconData: Icons.check_circle_rounded, iconColor: context.colors.success);
+  await showToaster(
+    context,
+    message: message,
+    iconData: Icons.check_circle_rounded,
+    iconColor: context.colors.success,
+    textColor: context.colors.success,
+  );
 }
