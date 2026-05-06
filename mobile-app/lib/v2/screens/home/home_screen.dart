@@ -6,10 +6,12 @@ import 'package:resonance_network_wallet/features/components/dotted_border.dart'
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
+import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/open_accounts_management_button.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
@@ -87,6 +89,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
 
     final isPosMode = ref.watch(posModeProvider);
+    final balanceAsync = ref.watch(balanceProvider);
     final accountAsync = ref.watch(activeAccountProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider(TransactionFilter.all));
     final colors = context.colors;
@@ -110,6 +113,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
             SizedBox(height: isPosMode ? 120 : 58),
           ],
+          bottomContent: balanceAsync
+              .whenData(
+                (balance) => balance == BigInt.zero
+                    ? ScaffoldBaseBottomContent(
+                        child: QuantusButton.simple(
+                          label: 'Get Testnet Tokens ↗',
+                          onTap: () => openUrl(AppConstants.faucetUrl),
+                        ),
+                      )
+                    : null,
+              )
+              .value,
         );
       },
     );
