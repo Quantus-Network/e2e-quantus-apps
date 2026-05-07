@@ -136,9 +136,9 @@ class TaskmasterService {
 
   final String _minerStatsQuery = r'''
     query MinerStats($ids: [String!]!) {
-      minerStats(where: {id_in: $ids}) {
-        totalMinedBlocks
-        totalRewards
+      minerStats: account_stats(where: {id: {_in: $ids}}) {
+        totalMinedBlocks: total_mined_blocks  
+        totalRewards: total_rewards
         id
       }
     }
@@ -579,7 +579,7 @@ class TaskmasterService {
 
       for (final stats in minerStatsList) {
         totalMinedBlocks += stats['totalMinedBlocks'] as int;
-        totalRewards += BigInt.parse(stats['totalRewards'] as String);
+        totalRewards += BigInt.from(stats['totalRewards']);
       }
 
       return MinerStats(totalMinedBlocks: totalMinedBlocks, totalRewards: totalRewards);
