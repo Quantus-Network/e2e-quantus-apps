@@ -196,9 +196,9 @@ class WormholeUtxoService {
   }) async {
     const query = r'''
 query TransfersToAddress($to: String!, $limit: Int!, $offset: Int!, $afterBlock: Int) {
-  transfers(
-    where: { to: { id_eq: $to }, block: { height_gt: $afterBlock } }
-    orderBy: [block_height_ASC]
+  transfers: transfer(
+    where: { to: { id: {_eq: $to } }, block: { height: {_gt: $afterBlock } } }
+    order_by: {block_height: asc}
     limit: $limit
     offset: $offset
   ) {
@@ -208,8 +208,8 @@ query TransfersToAddress($to: String!, $limit: Int!, $offset: Int!, $afterBlock:
     to { id }
     amount
     toHash
-    leafIndex
-    transferCount
+    leafIndex: leaf_index
+    transferCount: transfer_count
   }
 }''';
 
@@ -303,8 +303,8 @@ query TransfersToAddress($to: String!, $limit: Int!, $offset: Int!, $afterBlock:
   Future<Map<String, int>> _querySpentNullifierHashes(List<String> nullifierHashes) async {
     const query = r'''
 query SpentNullifiers($hashes: [String!]!) {
-  wormholeNullifiers(where: { nullifierHash_in: $hashes }, limit: 1000) {
-    nullifierHash
+  wormholeNullifiers: wormhole_nullifier(where: { nullifier_hash: {_in: $hashes } }, limit: 1000) {
+    nullifierHash: nullifier_hash
     block { height }
   }
 }''';
