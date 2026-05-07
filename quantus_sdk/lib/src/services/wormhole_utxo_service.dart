@@ -207,7 +207,7 @@ query TransfersToAddress($to: String!, $limit: Int!, $offset: Int!, $afterBlock:
     from { id }
     to { id }
     amount
-    toHash
+    toHash: to_hash
     leafIndex: leaf_index
     transferCount: transfer_count
   }
