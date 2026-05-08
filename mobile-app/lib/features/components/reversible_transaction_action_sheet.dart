@@ -16,8 +16,8 @@ import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/reversible_transfer_monitoring_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
+import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
 import 'package:resonance_network_wallet/shared/utils/tx_filter_family_provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 enum ReversibleTransactionMode { reversible, guardianIntercept }
 
@@ -310,7 +310,7 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
         final Uri url = Uri.parse(
           '${AppConstants.explorerEndpoint}/reversible-transactions/${widget.transaction.extrinsicHash}',
         );
-        await launchUrl(url);
+        openUrl(url.toString());
       },
       child: SizedBox(
         width: 136,

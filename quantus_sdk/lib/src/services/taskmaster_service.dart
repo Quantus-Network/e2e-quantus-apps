@@ -136,9 +136,9 @@ class TaskmasterService {
 
   final String _minerStatsQuery = r'''
     query MinerStats($ids: [String!]!) {
-      minerStats(where: {id_in: $ids}) {
-        totalMinedBlocks
-        totalRewards
+      minerStats: account_stats(where: {id: {_in: $ids}}) {
+        totalMinedBlocks: total_mined_blocks  
+        totalRewards: total_rewards
         id
       }
     }
@@ -566,8 +566,6 @@ class TaskmasterService {
 
       final Map<String, dynamic> data = responseBody['data'];
 
-      print('data $data');
-
       final List<dynamic>? minerStatsList = data['minerStats'];
       if (minerStatsList == null || minerStatsList.isEmpty) {
         return MinerStats(totalMinedBlocks: 0, totalRewards: BigInt.zero);
@@ -579,7 +577,7 @@ class TaskmasterService {
 
       for (final stats in minerStatsList) {
         totalMinedBlocks += stats['totalMinedBlocks'] as int;
-        totalRewards += BigInt.parse(stats['totalRewards'] as String);
+        totalRewards += BigInt.from(stats['totalRewards']);
       }
 
       return MinerStats(totalMinedBlocks: totalMinedBlocks, totalRewards: totalRewards);

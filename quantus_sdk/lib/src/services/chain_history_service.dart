@@ -23,26 +23,30 @@ class ChainHistoryService {
   ChainHistoryService();
 
   String _buildScheduledReversibleTransfersQuery(TransactionFilter filter) {
-    final String directionCondition;
+    final String whereClause;
+
     switch (filter) {
       case TransactionFilter.send:
-        directionCondition =
-            'account: {id_in: \$accounts}, scheduledReversibleTransfer: {from: {id_in: \$accounts}, scheduledAt_gt: \$after}';
+        whereClause =
+            '{_and: [{account_id: {_in: \$accounts}}, {scheduled_reversible_transfer_id: {_is_null: false}}, {scheduledReversibleTransfer: {from_id: {_in: \$accounts}, scheduled_at: {_gt: \$after}}}]}';
+        break;
       case TransactionFilter.receive:
-        directionCondition =
-            'account: {id_in: \$accounts}, scheduledReversibleTransfer: {to: {id_in: \$accounts}, scheduledAt_gt: \$after}';
+        whereClause =
+            '{_and: [{account_id: {_in: \$accounts}}, {scheduled_reversible_transfer_id: {_is_null: false}}, {scheduledReversibleTransfer: {to_id: {_in: \$accounts}, scheduled_at: {_gt: \$after}}}]}';
+        break;
       case TransactionFilter.all:
-        directionCondition = 'account: {id_in: \$accounts}, scheduledReversibleTransfer: {scheduledAt_gt: \$after}';
+        whereClause =
+            '{_and: [{account_id: {_in: \$accounts}}, {scheduled_reversible_transfer_id: {_is_null: false}}, {scheduledReversibleTransfer: {scheduled_at: {_gt: \$after}}}]}';
+        break;
     }
 
     return '''
-query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!, \$after: DateTime!) {
-  accountEvents(limit: \$limit, 
+query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!, \$after: timestamptz!) {
+  accountEvents: account_event(
+    limit: \$limit, 
     offset: \$offset, 
-    where: {
-      scheduledReversibleTransfer_isNull: false,
-      $directionCondition
-    }, orderBy: timestamp_DESC
+    where: $whereClause, 
+    order_by: {timestamp: desc}
   ) {
     id
     scheduledReversibleTransfer {
@@ -55,8 +59,8 @@ query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: In
       to {
         id
       }
-      txId
-      scheduledAt
+      txId: tx_id
+      scheduledAt: scheduled_at
       block {
         height
         hash
@@ -64,7 +68,6 @@ query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: In
       extrinsic {
         id
       }
-      timestamp
     }
   }
 }
@@ -80,11 +83,14 @@ query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: In
   /// Mining rewards are always a "receive", so they are excluded when the
   /// filter is [TransactionFilter.send] and included otherwise.
   String _buildAccountEventsQuery(TransactionFilter filter) {
-    // The base condition that applies to every variant
-    const String baseCondition = 'balanceEvent_isNull: true, scheduledReversibleTransfer_isNull: true';
+    // The base condition that applies to every variant.
+    // Using Hasura's direct foreign key field is cleaner.
+    const String baseCondition = '{scheduled_reversible_transfer_id: {_is_null: true}}';
 
-    // Transfer extrinsic guard — only include on-chain transfers
-    const String transferGuard = '{OR: [{transfer_isNull: true}, {transfer: {extrinsic_isNull: false}}]}';
+    // Transfer extrinsic guard — only include on-chain transfers.
+    // Using direct `transfer_id` and `extrinsic_id` relation fields.
+    const String transferGuard =
+        '{_or: [{transfer_id: {_is_null: true}}, {transfer: {extrinsic_id: {_is_null: false}}}]}';
 
     // Whether to include the minerReward field in the response
     final bool includeMinerReward = filter != TransactionFilter.send;
@@ -109,18 +115,23 @@ query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: In
 
     switch (filter) {
       case TransactionFilter.send:
+        // Properly formatted Hasura boolean expression with colons and balanced brackets
         whereClause =
-            '{AND: [{account: {id_in: \$accounts}, $baseCondition}, $transferGuard, {OR: [{transfer: {from: {id_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {from: {id_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {from: {id_in: \$accounts}}}}]}]}';
+            '{_and: [{account_id: {_in: \$accounts}}, $baseCondition, $transferGuard, {_or: [{transfer: {from_id: {_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {from_id: {_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {from_id: {_in: \$accounts}}}}]}]}';
+        break;
       case TransactionFilter.receive:
+        // Properly formatted Hasura boolean expression with colons and balanced brackets
         whereClause =
-            '{AND: [{account: {id_in: \$accounts}, $baseCondition}, $transferGuard, {OR: [{transfer: {to: {id_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {to: {id_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {to: {id_in: \$accounts}}}}, {minerReward_isNull: false}]}]}';
+            '{_and: [{account_id: {_in: \$accounts}}, $baseCondition, $transferGuard, {_or: [{transfer: {to_id: {_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {to_id: {_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {to_id: {_in: \$accounts}}}}, {miner_reward_id: {_is_null: false}}]}]}';
+        break;
       case TransactionFilter.all:
-        whereClause = '{AND: [{account: {id_in: \$accounts}, $baseCondition}, $transferGuard]}';
+        whereClause = '{_and: [{account_id: {_in: \$accounts}}, $baseCondition, $transferGuard]}';
+        break;
     }
 
     return '''
 query AccountEvents(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!) {
-  accountEvents(limit: \$limit, offset: \$offset, where: $whereClause, orderBy: timestamp_DESC) {
+  accountEvents: account_event(limit: \$limit, offset: \$offset, where: $whereClause, order_by: {timestamp: desc}) {
     id
     transfer {
       id
@@ -139,10 +150,9 @@ query AccountEvents(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!) {
       extrinsic {
         id
       }
-      timestamp
       fee
       executedBy {
-        txId
+        txId: tx_id
       }
     }
     executedReversibleTransfer {
@@ -150,7 +160,7 @@ query AccountEvents(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!) {
         height
         hash
       }
-      txId
+      txId: tx_id
       timestamp
       id
       scheduledTransfer {
@@ -161,7 +171,7 @@ query AccountEvents(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!) {
         to {
           id
         }
-        scheduledAt
+        scheduledAt: scheduled_at
       }
     }
     cancelledReversibleTransfer {
@@ -169,7 +179,7 @@ query AccountEvents(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!) {
         height
         hash
       }
-      txId
+      txId: tx_id
       timestamp
       id
       extrinsic {
@@ -183,7 +193,7 @@ query AccountEvents(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!) {
         to {
           id
         }
-        scheduledAt
+        scheduledAt: scheduled_at
       }
     }$minerRewardField
   }
@@ -194,12 +204,12 @@ query AccountEvents(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!) {
   // GraphQL query to fetch transactions by their hash
   final String _executedTransactionByTxId = r'''
 query ExecutedReversibleTransferByTxId($txId: String!) {
-  executedReversibleTransfers(where: {txId_eq: $txId}) {
+  executedReversibleTransfers: executed_reversible_transfer(where: {tx_id: {_eq: $txId}}) {
     block {
       height
       hash
     }
-    txId
+    txId: tx_id
     timestamp
     id
     scheduledTransfer {
@@ -210,7 +220,7 @@ query ExecutedReversibleTransferByTxId($txId: String!) {
       to {
         id
       }
-      scheduledAt
+      scheduledAt: scheduled_at
     }
   }
 }
@@ -227,20 +237,20 @@ query SearchPendingTransaction(
   $amount: BigInt!,
   $blockHeightAfter: Int!,
 ) {
-  events(
+  events: event(
     limit: 1
     where: {
       transfer: {
-        from: { id_eq: $from },
-        to: { id_eq: $to },
-        amount_eq: $amount,
-        extrinsic_isNull: false,
+        from: { id: {_eq: $from } },
+        to: { id: {_eq: $to } },
+        amount: {_eq: $amount },
+        extrinsic: {id: {_is_null: false}},
         block: {
-          height_gt: $blockHeightAfter
+          height: {_gt: $blockHeightAfter}
         }
       }
     }
-    orderBy: timestamp_DESC
+    order_by: {timestamp: desc}
   ) {
     id
     timestamp
@@ -271,20 +281,20 @@ query SearchPendingTransaction(
   $amount: BigInt!,
   $blockHeightAfter: Int!,
 ) {
-  events(
+  events: event(
     limit: 1
     where: {
       scheduledReversibleTransfer: {
-        from: { id_eq: $from },
-        to: { id_eq: $to },
-        amount_eq: $amount,
-        extrinsic_isNull: false,
+        from: { id: {_eq: $from } },
+        to: { id: {_eq: $to } },
+        amount: {_eq: $amount },
+        extrinsic: {id: {_is_null: false}},
         block: {
-          height_gt: $blockHeightAfter
+          height: {_gt: $blockHeightAfter}
         }
       }
     }
-    orderBy: timestamp_DESC
+    order_by: {timestamp: desc}
   ) {
     id
     timestamp
@@ -297,8 +307,8 @@ query SearchPendingTransaction(
       timestamp
       from { id }
       to { id }
-      txId
-      scheduledAt
+      txId: tx_id
+      scheduledAt: scheduled_at
       block { height hash }
       extrinsic {
         id
@@ -311,10 +321,10 @@ query SearchPendingTransaction(
 
   final String _searchByExtrinsicHashTransferQuery = r'''
 query SearchByExtrinsicHash($extrinsicHash: String!) {
-  events(
+  events: event(
     limit: 1
-    where: { transfer: { extrinsic: { id_eq: $extrinsicHash } } }
-    orderBy: timestamp_DESC
+    where: { transfer: { extrinsic: { id: {_eq: $extrinsicHash } } } }
+    order_by: {timestamp: desc}
   ) {
     id
     timestamp
@@ -336,10 +346,10 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
 
   final String _searchByExtrinsicHashReversibleQuery = r'''
 query SearchByExtrinsicHash($extrinsicHash: String!) {
-  events(
+  events: event(
     limit: 1
-    where: { scheduledReversibleTransfer: { extrinsic: { id_eq: $extrinsicHash } } }
-    orderBy: timestamp_DESC
+    where: { scheduledReversibleTransfer: { extrinsic: { id: {_eq: $extrinsicHash } } } }
+    order_by: {timestamp: desc}
   ) {
     id
     timestamp
@@ -350,8 +360,8 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
       timestamp
       from { id }
       to { id }
-      txId
-      scheduledAt
+      txId: tx_id
+      scheduledAt: scheduled_at
       block { height hash }
       extrinsic { id }
       timestamp
@@ -526,6 +536,7 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
       }
 
       final List<dynamic>? events = responseBody['data']?['accountEvents'];
+      print('events: $events');
       final page = _pageFromEvents(events, limit, _parseOtherTransferEvent);
       return OtherTransfersResult(transfers: page.items, hasMore: page.hasMore);
     } catch (e, stackTrace) {

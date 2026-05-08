@@ -10,7 +10,7 @@ class AccountDiscoveryService {
 
   static const String _accountsQuery = r'''
     query AccountsQuery($ids: [String!]) {
-      accounts(where: {id_in: $ids}) {
+      accounts: account(where: {id: {_in: $ids}}) {
         id
       }
     }

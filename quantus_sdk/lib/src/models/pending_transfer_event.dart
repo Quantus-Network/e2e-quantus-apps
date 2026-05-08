@@ -37,7 +37,7 @@ class PendingTransactionEvent extends TransactionEvent {
       tempId: json['id'] as String,
       from: json['from'] as String,
       to: json['to'] as String,
-      amount: BigInt.parse(json['amount'].toString()),
+      amount: BigInt.parse(json['amount'] as String),
       timestamp: DateTime.parse(json['timestamp']),
       blockHash: json['blockHash'] as String?,
       transactionState: TransactionState.values.firstWhere(
@@ -52,7 +52,7 @@ class PendingTransactionEvent extends TransactionEvent {
       ),
       scheduledAtTime: json['scheduledAtTime'] != null ? DateTime.tryParse(json['scheduledAtTime']) : null,
       delaySeconds: json['delaySeconds'] ?? 0,
-      fee: json['fee'] != null ? BigInt.parse(json['fee'].toString()) : null,
+      fee: json['fee'] != null ? BigInt.parse(json['fee'] as String) : null,
       extrinsicHash: json['extrinsicHash'] as String?,
       blockNumber: json['blockNumber'] ?? 0,
       error: json['error'] as String?,

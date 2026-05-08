@@ -17,6 +17,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
   final Color textMuted;
   final Color textError;
   final Color textLabel;
+  final Color textLightGray;
 
   // Accents
   final Color accentOrange;
@@ -84,6 +85,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     required this.textMuted,
     required this.textError,
     required this.textLabel,
+    required this.textLightGray,
     required this.accentOrange,
     required this.accentGreen,
     required this.checksum,
@@ -134,6 +136,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
         textMuted: const Color(0xFF888888),
         textError: const Color(0xFFC0392B),
         textLabel: const Color(0xFF787878),
+        textLightGray: const Color(0xFFEBEBEB),
         accentOrange: const Color(0xFFFF6B35),
         accentGreen: const Color(0xFF34C759),
         checksum: const Color(0xFF95A7FB),
@@ -176,6 +179,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     Color? textMuted,
     Color? textError,
     Color? textLabel,
+    Color? textLightGray,
     Color? accentOrange,
     Color? accentGreen,
     Color? checksum,
@@ -228,6 +232,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       textMuted: textMuted ?? this.textMuted,
       textError: textError ?? this.textError,
       textLabel: textLabel ?? this.textLabel,
+      textLightGray: textLightGray ?? this.textLightGray,
       accentOrange: accentOrange ?? this.accentOrange,
       accentGreen: accentGreen ?? this.accentGreen,
       checksum: checksum ?? this.checksum,
@@ -280,6 +285,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       textMuted: Color.lerp(textMuted, other.textMuted, t) ?? textMuted,
       textError: Color.lerp(textError, other.textError, t) ?? textError,
       textLabel: Color.lerp(textLabel, other.textLabel, t) ?? textLabel,
+      textLightGray: Color.lerp(textLightGray, other.textLightGray, t) ?? textLightGray,
       accentOrange: Color.lerp(accentOrange, other.accentOrange, t) ?? accentOrange,
       accentGreen: Color.lerp(accentGreen, other.accentGreen, t) ?? accentGreen,
       checksum: Color.lerp(checksum, other.checksum, t) ?? checksum,

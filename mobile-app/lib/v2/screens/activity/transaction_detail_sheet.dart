@@ -5,11 +5,11 @@ import 'package:resonance_network_wallet/features/components/dotted_border.dart'
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
+import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 void showTransactionDetailSheet(BuildContext context, TransactionEvent tx, String activeAccountId) {
   BottomSheetContainer.show(
@@ -213,6 +213,6 @@ class _ExplorerLink extends StatelessWidget {
       path = '$transactionType/${tx.blockHash}';
     }
 
-    if (path != null) launchUrl(Uri.parse('${AppConstants.explorerEndpoint}/$path'));
+    if (path != null) openUrl('${AppConstants.explorerEndpoint}/$path');
   }
 }

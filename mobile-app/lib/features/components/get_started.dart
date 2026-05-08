@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
 import 'package:resonance_network_wallet/utils/url_utils.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class GetStarted extends StatelessWidget {
   const GetStarted({super.key});
@@ -33,26 +33,17 @@ class GetStarted extends StatelessWidget {
             ),
             const SizedBox(height: 25),
             GestureDetector(
-              onTap: () {
-                final Uri url = Uri.parse(AppConstants.tutorialsAndGuidesUrl);
-                launchUrl(url);
-              },
+              onTap: () => openUrl(AppConstants.tutorialsAndGuidesUrl),
               child: Text('Tutorials & Guides →', style: context.themeText.smallParagraph),
             ),
             const SizedBox(height: 25),
             GestureDetector(
-              onTap: () {
-                final Uri url = Uri.parse(AppConstants.communityUrl);
-                launchUrl(url);
-              },
+              onTap: () => openUrl(AppConstants.communityUrl),
               child: Text('Community →', style: context.themeText.smallParagraph),
             ),
             const SizedBox(height: 25),
             GestureDetector(
-              onTap: () {
-                final Uri url = Uri.parse(AppConstants.techSupportUrl);
-                launchUrl(url);
-              },
+              onTap: () => openUrl(AppConstants.techSupportUrl),
               child: Text('Tech Support →', style: context.themeText.smallParagraph),
             ),
           ],

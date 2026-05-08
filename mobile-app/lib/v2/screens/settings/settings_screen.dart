@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/generated/version.g.dart';
+import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/about_quantus_screen.dart';
@@ -9,14 +11,24 @@ import 'package:resonance_network_wallet/v2/screens/settings/help_and_support_sc
 import 'package:resonance_network_wallet/v2/screens/settings/preferences_settings_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_tappable_row.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/mining_rewards_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/wallet_settings_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
-class SettingsScreenV2 extends StatelessWidget {
+const _miningRewardsTitle = 'Mining Rewards';
+
+class SettingsScreenV2 extends ConsumerStatefulWidget {
   const SettingsScreenV2({super.key});
 
   @override
+  ConsumerState<SettingsScreenV2> createState() => _SettingsScreenV2State();
+}
+
+class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
+  @override
   Widget build(BuildContext context) {
+    final miningAsync = ref.watch(miningRewardsProvider);
+
     final colors = context.colors;
     final trailing = SettingsTappableRowUtils.chevron(colors);
     final entries = _settingsHubItems(colors);
@@ -26,19 +38,34 @@ class SettingsScreenV2 extends StatelessWidget {
       mainContent: ListView(
         children: [
           for (final e in entries.asMap().entries) ...[
-            SettingsTappableRow(
-              leading: e.value.leading,
-              title: e.value.title,
-              subtitle: e.value.subtitle,
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => e.value.page)),
-              trailing: trailing,
-            ),
+            if (e.value.title == _miningRewardsTitle)
+              miningAsync.when(
+                data: (data) =>
+                    _buildTappableRow(e.value, subtitle: '${data.totalBlocks} blocks mined', trailing: trailing),
+                loading: () => _buildTappableRow(e.value, subtitle: 'Loading...', trailing: trailing),
+                error: (err, st) {
+                  debugPrint('Error getting mining rewards: ${err.toString()}');
+                  debugPrint('Stack trace: ${st.toString()}');
+
+                  return _buildTappableRow(e.value, subtitle: 'Error getting mining rewards', trailing: trailing);
+                },
+              )
+            else
+              _buildTappableRow(e.value, trailing: trailing),
             if (e.key < entries.length - 1) const SettingsDivider(),
           ],
         ],
       ),
     );
   }
+
+  Widget _buildTappableRow(_SettingsHubItem item, {required Widget trailing, String? subtitle}) => SettingsTappableRow(
+    leading: item.leading,
+    title: item.title,
+    subtitle: subtitle ?? item.subtitle,
+    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => item.page)),
+    trailing: trailing,
+  );
 }
 
 class _SettingsHubItem {
@@ -63,6 +90,12 @@ List<_SettingsHubItem> _settingsHubItems(AppColorsV2 colors) {
       title: 'Preferences',
       subtitle: 'Currency, POS mode, notifications',
       page: const PreferencesSettingsScreenV2(),
+    ),
+    _SettingsHubItem(
+      leading: _settingsHubIcon(colors, svg: SvgPicture.asset('assets/v2/axe.svg', width: 18, height: 18)),
+      title: _miningRewardsTitle,
+      subtitle: 'Loading...',
+      page: const MiningRewardsScreen(),
     ),
     _SettingsHubItem(
       leading: _settingsHubIcon(colors, icon: Icons.shield_outlined),
