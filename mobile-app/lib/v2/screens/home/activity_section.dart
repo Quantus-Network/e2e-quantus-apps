@@ -7,14 +7,11 @@ import 'package:resonance_network_wallet/models/combined_transactions_list.dart'
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
-import 'package:resonance_network_wallet/utils/url_utils.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/activity_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/testnet_rewards_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class ActivitySection extends ConsumerStatefulWidget {
   final AsyncValue<CombinedTransactionsList> txAsync;
@@ -28,8 +25,6 @@ class ActivitySection extends ConsumerStatefulWidget {
 }
 
 class _ActivitySectionState extends ConsumerState<ActivitySection> {
-  bool _getStartedExpanded = true;
-
   @override
   Widget build(BuildContext context) {
     final formatTxAmount = ref.watch(txAmountDisplayProvider);
@@ -49,13 +44,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
 
         if (all.isEmpty) {
           return Column(
-            children: [
-              const SizedBox(height: 40),
-              _header(colors, text, context),
-              _emptyState(text, colors),
-              const SizedBox(height: 40),
-              _getStartedSection(text, colors),
-            ],
+            children: [const SizedBox(height: 40), _header(colors, text, context), _emptyState(text, colors)],
           );
         }
 
@@ -130,90 +119,21 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
       padding: const EdgeInsets.symmetric(vertical: 24),
       child: Column(
         children: [
-          Text('No Transactions Yet', style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
-          const SizedBox(height: 8),
-          Text('Your activity will appear here', style: text.detail?.copyWith(color: colors.textSecondary)),
-        ],
-      ),
-    );
-  }
-
-  Widget _getStartedSection(AppTextTheme text, AppColorsV2 colors) {
-    const links = [
-      ('Get Testnet Tokens', AppConstants.faucetUrl),
-      ('Community', AppConstants.communityUrl),
-      // ('Tech Support', AppConstants.techSupportUrl),
-    ];
-
-    return Column(
-      children: [
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => setState(() => _getStartedExpanded = !_getStartedExpanded),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Get Started', style: text.smallTitle),
-              Icon(
-                _getStartedExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                color: colors.textSecondary,
-                size: 16,
-              ),
-            ],
+          Text(
+            'No Transactions Yet',
+            style: text.mediumTitle?.copyWith(color: colors.textMuted, fontWeight: FontWeight.w400),
           ),
-        ),
-        AnimatedCrossFade(
-          firstChild: Padding(
-            padding: const EdgeInsets.only(top: 24),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Column(
-                children: [
-                  for (var i = 0; i < links.length; i++) ...[
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => links[i].$2 == AppConstants.faucetUrl
-                          ? launchXPost(links[i].$2)
-                          : launchUrl(Uri.parse(links[i].$2)),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(links[i].$1, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
-                          Icon(Icons.arrow_outward, color: colors.textPrimary, size: 20),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Divider(color: colors.separator, height: 0),
-                    ),
-                  ],
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () =>
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const TestnetRewardsScreen())),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Testnet Rewards', style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
-                        Icon(Icons.chevron_right, color: colors.textPrimary, size: 20),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+          const SizedBox(height: 8),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 240),
+            child: Text(
+              'Your activity will appear here once you send or receive QUAN.',
+              textAlign: TextAlign.center,
+              style: text.smallParagraph?.copyWith(color: colors.txItemIconDefault),
             ),
           ),
-          secondChild: const SizedBox.shrink(),
-          crossFadeState: _getStartedExpanded ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-          duration: const Duration(milliseconds: 200),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

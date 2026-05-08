@@ -21,7 +21,7 @@ import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
 
 class TransactionDetailsActionSheet extends ConsumerStatefulWidget {
   final TransactionEvent transaction;
@@ -311,13 +311,13 @@ class _TransactionDetailsActionSheetState extends ConsumerState<TransactionDetai
                 '${AppConstants.explorerEndpoint}/$transactionType/${widget.transaction.extrinsicHash}',
               );
               print('url: $url');
-              await launchUrl(url);
+              openUrl(url.toString());
             } else if (isMinerReward) {
               final Uri url = Uri.parse(
                 '${AppConstants.explorerEndpoint}/$transactionType/${widget.transaction.blockHash}',
               );
               print('miner url: $url');
-              await launchUrl(url);
+              openUrl(url.toString());
             }
           },
           child: Row(

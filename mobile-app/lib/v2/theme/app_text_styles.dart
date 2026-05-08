@@ -18,6 +18,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
   final TextStyle? timer;
   final TextStyle? detail;
   final TextStyle? tiny;
+  final TextStyle? totalMinedBlocks;
   final TextStyle? transactionDetailAmountPrimary;
   final TextStyle? transactionDetailAmountSymbol;
   final TextStyle? transactionDetailRowLabel;
@@ -39,6 +40,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
     this.timer,
     this.detail,
     this.tiny,
+    this.totalMinedBlocks,
     this.transactionDetailAmountPrimary,
     this.transactionDetailAmountSymbol,
     this.transactionDetailRowLabel,
@@ -62,6 +64,12 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
         timer: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600, fontFamily: fontFamily),
         detail: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400, fontFamily: fontFamily),
         tiny: const TextStyle(fontSize: 11, fontWeight: FontWeight.w400, fontFamily: fontFamily),
+        totalMinedBlocks: const TextStyle(
+          fontFamily: fontFamilySecondary,
+          fontSize: 56,
+          fontWeight: FontWeight.w400,
+          height: 1.0,
+        ),
         transactionDetailAmountPrimary: const TextStyle(
           fontFamily: fontFamilySecondary,
           fontSize: 64,
@@ -113,6 +121,12 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
         timer: const TextStyle(fontSize: 36, fontWeight: FontWeight.w600, fontFamily: fontFamily),
         detail: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400, fontFamily: fontFamily),
         tiny: const TextStyle(fontSize: 15, fontWeight: FontWeight.w400, fontFamily: fontFamily),
+        totalMinedBlocks: const TextStyle(
+          fontFamily: fontFamilySecondary,
+          fontSize: 60,
+          fontWeight: FontWeight.w400,
+          height: 1.0,
+        ),
         transactionDetailAmountPrimary: const TextStyle(
           fontFamily: fontFamilySecondary,
           fontSize: 80,
@@ -164,6 +178,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
     TextStyle? timer,
     TextStyle? detail,
     TextStyle? tiny,
+    TextStyle? totalMinedBlocks,
     TextStyle? transactionDetailAmountPrimary,
     TextStyle? transactionDetailAmountSymbol,
     TextStyle? transactionDetailRowLabel,
@@ -185,6 +200,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
       timer: timer ?? this.timer,
       detail: detail ?? this.detail,
       tiny: tiny ?? this.tiny,
+      totalMinedBlocks: totalMinedBlocks ?? this.totalMinedBlocks,
       transactionDetailAmountPrimary: transactionDetailAmountPrimary ?? this.transactionDetailAmountPrimary,
       transactionDetailAmountSymbol: transactionDetailAmountSymbol ?? this.transactionDetailAmountSymbol,
       transactionDetailRowLabel: transactionDetailRowLabel ?? this.transactionDetailRowLabel,
@@ -211,6 +227,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
       timer: TextStyle.lerp(timer, other.timer, t),
       detail: TextStyle.lerp(detail, other.detail, t),
       tiny: TextStyle.lerp(tiny, other.tiny, t),
+      totalMinedBlocks: TextStyle.lerp(totalMinedBlocks, other.totalMinedBlocks, t),
       transactionDetailAmountPrimary: TextStyle.lerp(
         transactionDetailAmountPrimary,
         other.transactionDetailAmountPrimary,

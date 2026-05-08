@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_tappable_row.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class HelpAndSupportScreenV2 extends StatelessWidget {
   const HelpAndSupportScreenV2({super.key});
@@ -22,13 +22,13 @@ class HelpAndSupportScreenV2 extends StatelessWidget {
             title: 'Email Support',
             subtitle: AppConstants.emailSupport,
             colors: colors,
-            onTap: () => launchUrl(Uri.parse('mailto:${AppConstants.emailSupport}')),
+            onTap: () => openUrl('mailto:${AppConstants.emailSupport}'),
           ),
           _contactBlock(
             title: 'Telegram',
             subtitle: AppConstants.telegramHandle,
             colors: colors,
-            onTap: () => launchUrl(Uri.parse(AppConstants.communityUrl)),
+            onTap: () => openUrl(AppConstants.communityUrl),
             showBottomDivider: false,
           ),
         ],
