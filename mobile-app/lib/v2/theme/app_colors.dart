@@ -45,7 +45,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
   final Color buttonDisabled;
   final Color buttonDanger;
   final Color skeletonBase;
-  final Color skeletonHighlight;
+  final Color skeletonHighlightA;
+  final Color skeletonHighlightB;
   final Color toasterBorder;
   final Color toasterBackground;
   final Color sheetBackground;
@@ -103,7 +104,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     required this.buttonDisabled,
     required this.buttonDanger,
     required this.skeletonBase,
-    required this.skeletonHighlight,
+    required this.skeletonHighlightA,
+    required this.skeletonHighlightB,
     required this.segmentedControlPill,
     required this.surfaceDeep,
     required this.copyButtonCopiedBg,
@@ -154,8 +156,9 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
         copyButtonCopiedBorder: const Color(0xFF1A3226),
         buttonDisabled: const Color(0xFF3D3C44),
         buttonDanger: const Color(0x1AFF0000),
-        skeletonBase: const Color(0xFF3D3C44),
-        skeletonHighlight: const Color(0xFF5A5A5A),
+        skeletonBase: const Color(0xFF161616),
+        skeletonHighlightA: const Color(0xFF000000),
+        skeletonHighlightB: const Color(0xFF666666),
         tagGuardian: const Color(0xFF9747FF),
         tagEntrusted: const Color(0xFFFFD541),
         tagHighSecurity: const Color(0xFF4CEDE7),
@@ -199,7 +202,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     Color? buttonDanger,
     Color? borderDanger,
     Color? skeletonBase,
-    Color? skeletonHighlight,
+    Color? skeletonHighlightA,
+    Color? skeletonHighlightB,
     Color? segmentedControlPill,
     Color? surfaceDeep,
     Color? copyButtonCopiedBg,
@@ -245,7 +249,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       buttonDanger: buttonDanger ?? this.buttonDanger,
       borderDanger: borderDanger ?? this.borderDanger,
       skeletonBase: skeletonBase ?? this.skeletonBase,
-      skeletonHighlight: skeletonHighlight ?? this.skeletonHighlight,
+      skeletonHighlightA: skeletonHighlightA ?? this.skeletonHighlightA,
+      skeletonHighlightB: skeletonHighlightB ?? this.skeletonHighlightB,
       segmentedControlPill: segmentedControlPill ?? this.segmentedControlPill,
       surfaceDeep: surfaceDeep ?? this.surfaceDeep,
       copyButtonCopiedBg: copyButtonCopiedBg ?? this.copyButtonCopiedBg,
@@ -302,7 +307,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       buttonDanger: Color.lerp(buttonDanger, other.buttonDanger, t) ?? buttonDanger,
       borderDanger: Color.lerp(borderDanger, other.borderDanger, t) ?? borderDanger,
       skeletonBase: Color.lerp(skeletonBase, other.skeletonBase, t) ?? skeletonBase,
-      skeletonHighlight: Color.lerp(skeletonHighlight, other.skeletonHighlight, t) ?? skeletonHighlight,
+      skeletonHighlightA: Color.lerp(skeletonHighlightA, other.skeletonHighlightA, t) ?? skeletonHighlightA,
+      skeletonHighlightB: Color.lerp(skeletonHighlightB, other.skeletonHighlightB, t) ?? skeletonHighlightB,
       segmentedControlPill: Color.lerp(segmentedControlPill, other.segmentedControlPill, t) ?? segmentedControlPill,
       surfaceDeep: Color.lerp(surfaceDeep, other.surfaceDeep, t) ?? surfaceDeep,
       copyButtonCopiedBg: Color.lerp(copyButtonCopiedBg, other.copyButtonCopiedBg, t) ?? copyButtonCopiedBg,
