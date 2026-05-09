@@ -72,7 +72,18 @@ class MinerConfig {
   static const Duration chainRpcPollingInterval = Duration(seconds: 1);
 
   /// How often to poll wallet balance (backup timer)
-  static const Duration balancePollingInterval = Duration(seconds: 30);
+  static const Duration balancePollingInterval = Duration(minutes: 5);
+
+  /// Delay between detecting a successful block submission and refreshing the
+  /// balance. Wormhole balances are read from a remote Subsquid indexer which
+  /// lags the chain head; refreshing immediately would just re-fetch the stale
+  /// pre-block snapshot.
+  static const Duration balanceRefreshDelayAfterBlock = Duration(seconds: 15);
+
+  /// Substring in node logs that signals a successful block submission.
+  /// Emitted by the node from `service.rs` on both local and external mining paths
+  /// (e.g. "🥇 Successfully mined and submitted a new block ...").
+  static const String blockSubmittedLogMarker = 'Successfully mined and submitted a new block';
 
   // ============================================================
   // Hardware Detection
