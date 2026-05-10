@@ -174,6 +174,17 @@ class MinerConfig {
   /// Initial lines to print before filtering kicks in
   static const int initialLinesToPrint = 50;
 
+  /// Subdirectory (under quantus home) where rotated log files live
+  static const String logsDirName = 'logs';
+
+  /// Maximum size of a single log file before it rotates (bytes)
+  static const int logMaxFileBytes = 2 * 1024 * 1024; // 2 MB
+
+  /// Number of rotated backup files kept per source (in addition to the active file).
+  /// Total per-source budget = logMaxFileBytes * (logMaxBackupFiles + 1).
+  /// Default: 2MB * 5 = 10MB per source.
+  static const int logMaxBackupFiles = 4;
+
   // ============================================================
   // Port Range for Finding Alternatives
   // ============================================================
