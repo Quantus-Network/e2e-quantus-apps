@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import '../styles/app_colors_theme.dart';
-
-const _defaultSkeletonBaseColor = Color(0xFF3D3C44);
-const _defaultSkeletonHighlightColor = Color(0xFF5A5A5A);
+import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
 /// A skeleton widget with shimmer animation for loading states
 class Skeleton extends StatefulWidget {
@@ -11,25 +9,15 @@ class Skeleton extends StatefulWidget {
   final BorderRadius? borderRadius;
   final Duration duration;
 
-  const Skeleton({
-    super.key,
-    this.width,
-    this.height = 16,
-    this.borderRadius,
-    this.duration = const Duration(milliseconds: 1500),
-  });
+  static const defaultDuration = Duration(milliseconds: 1200);
+
+  const Skeleton({super.key, this.width, this.height = 16, this.borderRadius, this.duration = defaultDuration});
 
   /// Creates a circular skeleton (useful for avatars)
-  const Skeleton.circular({super.key, required double size, this.duration = const Duration(milliseconds: 1500)})
+  Skeleton.circular({super.key, required double size, this.duration = defaultDuration})
     : width = size,
       height = size,
-      borderRadius = null;
-
-  /// Creates a skeleton for a transaction item
-  const Skeleton.txItem({super.key, this.duration = const Duration(milliseconds: 1500)})
-    : width = double.infinity,
-      height = 40,
-      borderRadius = null;
+      borderRadius = BorderRadius.circular(size);
 
   @override
   State<Skeleton> createState() => _SkeletonState();
@@ -58,13 +46,7 @@ class _SkeletonState extends State<Skeleton> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
-    final themeColors = Theme.of(context).extension<AppColorsTheme>();
-    final baseColor = themeColors?.skeletonBase ?? _defaultSkeletonBaseColor;
-    final highlightColor = themeColors?.skeletonHighlight ?? _defaultSkeletonHighlightColor;
-
-    final borderRadius =
-        widget.borderRadius ??
-        (widget.width == widget.height ? BorderRadius.circular(widget.width ?? 0) : BorderRadius.circular(4));
+    final borderRadius = widget.borderRadius ?? BorderRadius.circular(4);
 
     return AnimatedBuilder(
       animation: _animation,
@@ -72,14 +54,23 @@ class _SkeletonState extends State<Skeleton> with SingleTickerProviderStateMixin
         return Container(
           width: widget.width,
           height: widget.height,
-          decoration: BoxDecoration(
-            borderRadius: borderRadius,
-            gradient: LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: [baseColor, highlightColor, baseColor],
-              stops: const [0.0, 0.5, 1.0],
-              transform: _SlideGradientTransform(_animation.value),
+          decoration: BoxDecoration(borderRadius: borderRadius, color: context.colors.skeletonBase),
+          child: Container(
+            width: widget.width,
+            height: widget.height,
+            decoration: BoxDecoration(
+              borderRadius: borderRadius,
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  context.colors.skeletonHighlightA.useOpacity(0.2),
+                  context.colors.skeletonHighlightB.useOpacity(0.2),
+                  context.colors.skeletonHighlightA.useOpacity(0.2),
+                ],
+                stops: const [0.0, 0.5, 1.0],
+                transform: _SlideGradientTransform(_animation.value),
+              ),
             ),
           ),
         );
@@ -96,5 +87,39 @@ class _SlideGradientTransform extends GradientTransform {
   @override
   Matrix4? transform(Rect bounds, {TextDirection? textDirection}) {
     return Matrix4.translationValues(bounds.width * slidePercent, 0.0, 0.0);
+  }
+}
+
+class TxItemSkeleton extends StatelessWidget {
+  const TxItemSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    const double txItemHeight = 32.0;
+    const double txItemDetailHeight = 12.0;
+
+    return const Row(
+      children: [
+        Skeleton(width: txItemHeight, height: txItemHeight),
+        SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Skeleton(width: 64, height: txItemDetailHeight),
+            SizedBox(height: 6),
+            Skeleton(width: 52, height: txItemDetailHeight),
+          ],
+        ),
+        Spacer(),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Skeleton(width: 100, height: txItemDetailHeight),
+            SizedBox(height: 6),
+            Skeleton(width: 88, height: txItemDetailHeight),
+          ],
+        ),
+      ],
+    );
   }
 }
