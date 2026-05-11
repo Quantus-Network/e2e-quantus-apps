@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
+import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 
 class NotificationCard extends ConsumerStatefulWidget {
   final NotificationData notification;
@@ -140,20 +140,10 @@ class _NotificationCardState extends ConsumerState<NotificationCard> with Ticker
   void _onViewDetails() {
     final txService = ref.read(transactionServiceProvider);
     final transaction = txService.deserializeTxEventFromJsonIfPossible(widget.notification.metadata);
+    final activeAccount = ref.read(activeAccountProvider).value;
 
-    if (transaction != null) {
-      final role = txService.getTransactionRole(transaction);
-      final activeAccount = ref.read(activeAccountProvider).value;
-      showTransactionActionSheet(
-        context,
-        transaction: transaction,
-        role: role,
-        config: TransactionService.getTransactionDetailViewConfig(
-          transaction: transaction,
-          role: role,
-          activeAccount: activeAccount,
-        ),
-      );
+    if (transaction != null && activeAccount != null) {
+      showTransactionDetailSheet(context, transaction, activeAccount.account.accountId);
     }
   }
 
