@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/label.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
@@ -59,7 +58,7 @@ class CustomTextField extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // The label is now optional and will only be displayed if labelText is not null.
-          if (labelText != null) ...[Label(labelText!), const SizedBox(height: 4)],
+          if (labelText != null) ...[Text(labelText!, style: context.themeText.smallTitle), const SizedBox(height: 4)],
           // The container that forms the background of the input field
           Stack(
             alignment: AlignmentGeometry.center,

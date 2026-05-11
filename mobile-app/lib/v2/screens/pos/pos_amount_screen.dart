@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/pos/pos_qr_screen.dart';
@@ -135,11 +135,10 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
 
   Widget _buildChargeButton(AppColorsV2 colors, AppTextTheme text) {
     final disabled = !_isValid;
-    return Button(
+    return QuantusButton.simple(
       label: _isValid ? 'Charge $_input ${AppConstants.tokenSymbol}' : 'Enter Amount',
-      variant: ButtonVariant.accent,
+      onTap: _onCharge,
       isDisabled: disabled,
-      onPressed: _onCharge,
       textStyle: text.smallTitle?.copyWith(fontWeight: FontWeight.w700),
     );
   }
