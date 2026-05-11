@@ -33,7 +33,7 @@ dependencies:
   crypto:
 
   shared_preferences:
-  flutter_secure_storage:
+  flutter_secure_storage: ^10.1.0
   http:
 
   human_checksum:
