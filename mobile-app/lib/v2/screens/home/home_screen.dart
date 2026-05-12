@@ -88,14 +88,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       showSharedAddressActionSheet(context, shared);
     });
 
-    final isPosMode = ref.watch(posModeProvider);
-    final balanceAsync = ref.watch(balanceProvider);
     final accountAsync = ref.watch(activeAccountProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider(TransactionFilter.all));
     final colors = context.colors;
     final text = context.themeText;
 
-    Widget screen = accountAsync.when(
+    return accountAsync.when(
       loading: () => const ScaffoldBase(mainContent: Center(child: Loader())),
       error: (e, _) => ScaffoldBase(
         mainContent: Center(
@@ -111,45 +109,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           slivers: [
             _buildContent(active, colors, text),
             ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
-            SizedBox(height: isPosMode ? 120 : 58),
+            const SizedBox(height: 58),
           ],
-          bottomContent: balanceAsync
-              .whenData(
-                (balance) => balance == BigInt.zero
-                    ? ScaffoldBaseBottomContent(
-                        child: QuantusButton.simple(
-                          label: 'Get Testnet Tokens ↗',
-                          onTap: () => launchXPost(AppConstants.faucetUrl),
-                        ),
-                      )
-                    : null,
-              )
-              .value,
+          bottomContent: _buildBottomContent(),
         );
       },
-    );
-
-    if (!isPosMode) return screen;
-
-    return Stack(
-      children: [
-        screen,
-        Positioned(
-          left: 24,
-          right: 24,
-          bottom: MediaQuery.of(context).padding.bottom + 24,
-          child: Material(color: Colors.transparent, child: _buildPosButton(colors, text)),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPosButton(AppColorsV2 colors, AppTextTheme text) {
-    return QuantusButton.simple(
-      label: 'New Charge',
-      variant: ButtonVariant.success,
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosAmountScreen())),
-      textStyle: text.smallTitle?.copyWith(fontWeight: FontWeight.w700, fontSize: 20, decoration: TextDecoration.none),
     );
   }
 
@@ -171,6 +135,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ],
     );
+  }
+
+  Widget? _buildBottomContent() {
+    final enablePos = ref.watch(posModeProvider);
+    final balanceAsync = ref.watch(balanceProvider);
+
+    if (enablePos) {
+      return ScaffoldBaseBottomContent(
+        child: QuantusButton.simple(
+          label: 'Charge',
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosAmountScreen())),
+        ),
+      );
+    }
+
+    return balanceAsync
+        .whenData(
+          (balance) => balance == BigInt.zero
+              ? ScaffoldBaseBottomContent(
+                  child: QuantusButton.simple(
+                    label: 'Get Testnet Tokens ↗',
+                    onTap: () => launchXPost(AppConstants.faucetUrl),
+                  ),
+                )
+              : null,
+        )
+        .value;
   }
 
   Widget _buildTopBar() {
@@ -247,43 +238,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SelectRecipientScreen())),
     );
 
-    if (!enableSwap) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(width: 151, child: receiveCard),
-          const SizedBox(width: 20),
-          SizedBox(width: 151, child: sendCard),
-        ],
-      );
+    final swapCard = _actionCard(
+      iconAsset: 'assets/v2/action_swap.svg',
+      label: 'Swap',
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SwapScreen())),
+    );
+
+    final List<Widget> children = [];
+
+    children.add(receiveCard);
+    children.add(const SizedBox(width: 15));
+    children.add(sendCard);
+
+    if (enableSwap) {
+      children.add(const SizedBox(width: 15));
+      children.add(swapCard);
     }
 
-    return Row(
-      children: [
-        Expanded(child: receiveCard),
-        const SizedBox(width: 15),
-        Expanded(child: sendCard),
-        const SizedBox(width: 15),
-        Expanded(
-          child: _actionCard(
-            iconAsset: 'assets/v2/action_swap.svg',
-            label: 'Swap',
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SwapScreen())),
-          ),
-        ),
-      ],
-    );
+    return Row(children: children);
   }
 
   Widget _actionCard({required String iconAsset, required String label, required VoidCallback onTap}) {
-    return QuantusButton.simple(
-      label: label,
-      onTap: onTap,
-      icon: SvgPicture.asset(iconAsset, width: 24, height: 24),
-      iconPlacement: IconPlacement.top,
-      padding: const EdgeInsets.all(14),
-      variant: ButtonVariant.secondary,
-      textStyle: context.themeText.paragraph?.copyWith(color: context.colors.textPrimary.useOpacity(0.8)),
+    return Expanded(
+      child: QuantusButton.simple(
+        label: label,
+        onTap: onTap,
+        icon: SvgPicture.asset(iconAsset, width: 24, height: 24),
+        iconPlacement: IconPlacement.top,
+        padding: const EdgeInsets.all(14),
+        variant: ButtonVariant.secondary,
+        textStyle: context.themeText.paragraph?.copyWith(color: context.colors.textPrimary.useOpacity(0.8)),
+      ),
     );
   }
 }
