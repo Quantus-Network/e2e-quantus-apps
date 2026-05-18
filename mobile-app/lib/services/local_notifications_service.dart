@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
@@ -69,7 +70,7 @@ class LocalNotificationsService {
   }
 
   // This is for handling when app is in terminated state then launched by tapping notification.
-  Future<void> handleLaunchByNotification(GlobalKey<NavigatorState> navigatorKey) async {
+  Future<void> handleLaunchByNotification() async {
     final notificationAppLaunchDetails = await _notificationPlugin.getNotificationAppLaunchDetails();
     if (notificationAppLaunchDetails?.didNotificationLaunchApp != true) return;
 
@@ -77,9 +78,17 @@ class LocalNotificationsService {
     if (payload == null || payload.isEmpty) return;
 
     final txService = _ref.read(transactionServiceProvider);
-    final json = jsonDecode(payload);
-
-    txService.navigateToTransactionFromPayloadIfPossible(json, navigatorKey);
+    try {
+      final json = jsonDecode(payload);
+      txService.navigateToTransactionFromPayloadIfPossible(json);
+    } catch (e) {
+      debugPrint('Error decoding payload handle launch by notification: $e');
+      TelemetryService().sendError(
+        'Error decoding notification launch payload',
+        error: e.runtimeType.toString(),
+        stackTrace: StackTrace.current,
+      );
+    }
   }
 
   Future<void> _showNotification(NotificationData notification) async {
@@ -125,14 +134,23 @@ class LocalNotificationsService {
     }
   }
 
-  void setupNotificationsClickListener(GlobalKey<NavigatorState> navigatorKey) {
+  void setupNotificationsClickListener() {
     _onNotificationClick.stream.listen((payload) {
       if (payload == null || payload.isEmpty) return;
 
       final txService = _ref.read(transactionServiceProvider);
-      final json = jsonDecode(payload);
 
-      txService.navigateToTransactionFromPayloadIfPossible(json, navigatorKey);
+      try {
+        final json = jsonDecode(payload);
+        txService.navigateToTransactionFromPayloadIfPossible(json);
+      } catch (e) {
+        debugPrint('Error decoding payload setup notifications click listener: $e');
+        TelemetryService().sendError(
+          'Error decoding notification click payload',
+          error: e.runtimeType.toString(),
+          stackTrace: StackTrace.current,
+        );
+      }
     });
   }
 
