@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
@@ -150,6 +151,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     Navigator.push<bool>(
       context,
       MaterialPageRoute(
+        settings: inputAmountScreenRouteSettings,
         builder: (_) => InputAmountScreen(
           recipientAddress: address,
           recipientChecksum: _recipientChecksum,
