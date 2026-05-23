@@ -4,6 +4,8 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/routes.dart';
@@ -180,23 +182,24 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     ref.watch(activeAccountProvider);
     final colors = context.colors;
     final text = context.themeText;
 
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Send'),
+      appBar: V2AppBar(title: l10n.sendTitle),
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Send To', style: text.sendSectionLabel?.copyWith(color: colors.textPrimary)),
+              Text(l10n.sendSelectRecipientSendTo, style: text.sendSectionLabel?.copyWith(color: colors.textPrimary)),
               const SizedBox(height: 12),
-              _buildRecipientField(colors, text),
+              _buildRecipientField(colors, text, l10n),
               const SizedBox(height: 28),
-              _buildScanRow(colors, text),
+              _buildScanRow(colors, text, l10n),
               const SizedBox(height: 28),
               DottedBorder(
                 dashLength: 3,
@@ -215,7 +218,10 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
                   const SliverFillRemaining(hasScrollBody: false, child: Center(child: Loader()))
                 else if (_recents.isNotEmpty) ...[
                   SliverToBoxAdapter(
-                    child: Text('Recents', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+                    child: Text(
+                      l10n.sendSelectRecipientRecents,
+                      style: text.smallTitle?.copyWith(color: colors.textPrimary),
+                    ),
                   ),
                   const SliverToBoxAdapter(child: SizedBox(height: 32)),
                   SliverList(
@@ -243,11 +249,11 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
           ),
         ],
       ),
-      bottomContent: _buildBottomButton(),
+      bottomContent: _buildBottomButton(l10n),
     );
   }
 
-  Widget _buildRecipientField(AppColorsV2 colors, AppTextTheme text) {
+  Widget _buildRecipientField(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
     final hasValid = _recipientController.text.trim().isNotEmpty && !_hasAddressError;
 
     return SizedBox(
@@ -277,7 +283,9 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
                           textCapitalization: TextCapitalization.none,
                           scrollPadding: const EdgeInsets.only(bottom: 120),
                           style: text.smallParagraph?.copyWith(color: colors.textPrimary),
-                          decoration: const InputDecoration(hintText: 'Search ${AppConstants.tokenSymbol} Address'),
+                          decoration: InputDecoration(
+                            hintText: l10n.sendSelectRecipientSearchHint(AppConstants.tokenSymbol),
+                          ),
                         ),
                       ),
                     ],
@@ -318,7 +326,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     );
   }
 
-  Widget _buildScanRow(AppColorsV2 colors, AppTextTheme text) {
+  Widget _buildScanRow(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
     final iconContainerSize = 44.0;
     final iconSize = 24.0;
 
@@ -344,10 +352,10 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Scan QR code', style: text.paragraph?.copyWith(color: colors.textPrimary)),
+                  Text(l10n.sendSelectRecipientScanTitle, style: text.paragraph?.copyWith(color: colors.textPrimary)),
                   const SizedBox(height: 4),
                   Text(
-                    'Tap to scan a ${AppConstants.tokenSymbol} Address',
+                    l10n.sendSelectRecipientScanSubtitle(AppConstants.tokenSymbol),
                     style: text.detail?.copyWith(color: colors.textTertiary),
                   ),
                 ],
@@ -375,8 +383,8 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     );
   }
 
-  Widget _buildBottomButton() {
-    final btnText = _canContinue ? 'Continue' : 'Enter Address';
+  Widget _buildBottomButton(AppLocalizations l10n) {
+    final btnText = _canContinue ? l10n.sendSelectRecipientContinue : l10n.sendEnterAddress;
 
     return ScaffoldBaseBottomContent(
       child: QuantusButton.simple(
