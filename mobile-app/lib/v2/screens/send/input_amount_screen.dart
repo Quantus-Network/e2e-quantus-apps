@@ -49,11 +49,14 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
 
   final _feeDebouncer = Debouncer(delay: const Duration(milliseconds: 500));
 
+  static final BigInt _estimateFeeAmount = BigInt.from(1000) * NumberFormattingService.scaleFactorBigInt;
+
   String? _recipientChecksum;
   BigInt _amount = BigInt.zero;
   BigInt _networkFee = BigInt.zero;
   int _blockHeight = 0;
-  bool _isFetchingFee = true;
+  bool _isFetchingFee = false;
+  bool _hasFee = false;
 
   AmountInputLogic get _amountInputLogic => AmountInputLogic(
     exchangeRateService: ref.read(exchangeRateServiceProvider),
@@ -85,9 +88,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       });
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchEstimatedFee();
-    });
+    _refreshFee();
   }
 
   @override
@@ -129,49 +130,37 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       context.showErrorToaster(message: l10n.sendInputAmountInvalidAmount);
       return;
     }
-    if (_amount > BigInt.zero) _feeDebouncer.run(_fetchFee);
+    _feeDebouncer.run(_refreshFee);
+  }
+
+  void _refreshFee() {
+    final recipient = widget.recipientAddress.trim();
+    if (_amount > BigInt.zero && ref.read(substrateServiceProvider).isValidSS58Address(recipient)) {
+      _fetchFee(_amount, recipient);
+    } else {
+      _fetchEstimatedFee();
+    }
   }
 
   Future<void> _fetchEstimatedFee() async {
     final displayAccount = ref.read(activeAccountProvider).value;
     if (displayAccount is! RegularAccount) return;
-    final account = displayAccount.account;
-    try {
-      final balancesService = ref.read(balancesServiceProvider);
-      final formattingService = ref.read(numberFormattingServiceProvider);
-      final feeData = await balancesService.getBalanceTransferFee(
-        account,
-        account.accountId,
-        formattingService.parseAmount('1000') ?? BigInt.zero,
-      );
-      if (!mounted) return;
-      setState(() {
-        _networkFee = feeData.fee;
-        _blockHeight = feeData.blockNumber;
-      });
-    } catch (e) {
-      debugPrint('Estimated fee fetch error: $e');
-    } finally {
-      if (mounted) setState(() => _isFetchingFee = false);
-    }
+    _fetchFee(_estimateFeeAmount, displayAccount.account.accountId);
   }
 
-  Future<void> _fetchFee() async {
+  Future<void> _fetchFee(BigInt amount, String toAddress) async {
     if (_isFetchingFee) return;
-    setState(() => _isFetchingFee = true);
+    final displayAccount = ref.read(activeAccountProvider).value;
+    if (displayAccount is! RegularAccount) return;
+    _isFetchingFee = true;
     try {
-      final displayAccount = ref.read(activeAccountProvider).value;
-      if (displayAccount is! RegularAccount) return;
       final balancesService = ref.read(balancesServiceProvider);
-      final feeData = await balancesService.getBalanceTransferFee(
-        displayAccount.account,
-        widget.recipientAddress.trim(),
-        _amount,
-      );
+      final feeData = await balancesService.getBalanceTransferFee(displayAccount.account, toAddress, amount);
       if (!mounted) return;
       setState(() {
         _networkFee = feeData.fee;
         _blockHeight = feeData.blockNumber;
+        _hasFee = true;
       });
     } catch (e) {
       debugPrint('Fee fetch error: $e');
@@ -190,7 +179,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         ? _amountInputLogic.quanToFiatString(max)
         : _amountInputLogic.formatQuanAmount(max);
     setState(() => _amount = max);
-    if (max > BigInt.zero) _fetchFee();
+    _refreshFee();
   }
 
   Future<void> _toggleFlip() async {
@@ -241,7 +230,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
 
     final amountStatus = SendScreenLogic.getAmountStatus(_amount, balance.value ?? BigInt.zero, _networkFee);
     final btnDisabled =
-        _isFetchingFee ||
+        !_hasFee ||
         _recipientChecksum == null ||
         SendScreenLogic.isButtonDisabled(
           hasAddressError: false,
@@ -483,7 +472,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                           style: text.smallParagraph?.copyWith(color: colors.textTertiary),
                         ),
                         const SizedBox(height: 4),
-                        if (!_isFetchingFee)
+                        if (_hasFee)
                           Text(
                             l10n.commonAmountBalance(
                               formattingService.formatBalance(_networkFee, maxDecimals: 5),
