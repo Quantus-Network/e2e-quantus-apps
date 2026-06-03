@@ -237,7 +237,7 @@ class SubstrateService {
       }
       final senderWallet = HdWalletService().keyPairAtIndex(mnemonic, account.index);
 
-      final signature = crypto.signMessage(keypair: senderWallet, message: payload);
+      final signature = senderWallet.sign(payload);
       final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, senderWallet.publicKey);
 
       final extrinsic = ResonanceExtrinsicPayload(
