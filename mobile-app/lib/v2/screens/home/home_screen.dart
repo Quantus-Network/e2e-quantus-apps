@@ -7,7 +7,9 @@ import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/routes.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
@@ -36,6 +38,7 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/v2/screens/home/activity_section.dart';
+import 'package:resonance_network_wallet/v2/screens/home/backup_reminder_banner.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -105,7 +108,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.invalidate(balanceProviderRaw);
     ref.invalidate(activeAccountTransactionsProvider);
     if (active != null) {
-      await ref
+      final historyRefresh = ref
           .read(
             filteredPaginationControllerProviderFamily(
               FilteredTransactionsParams(
@@ -115,6 +118,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ).notifier,
           )
           .loadingRefresh();
+      try {
+        await Future.wait([ref.read(balanceProviderFamily(active.account.accountId).future), historyRefresh]);
+      } catch (e, st) {
+        quantusDebugPrint('home refresh error: $e');
+        TelemetryService().sendError('Home refresh failed', error: e, stackTrace: st);
+      }
     }
   }
 
@@ -160,6 +169,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildContent(DisplayAccount active, AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
+    final backupWalletIndex = ref.watch(backupReminderWalletIndexProvider);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -169,6 +180,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _buildBalance(colors, text, l10n),
         const SizedBox(height: 40),
         if (active is RegularAccount) ...[_buildActionButtons(l10n), const SizedBox(height: 40)],
+        if (backupWalletIndex != null) ...[
+          BackupReminderBanner(walletIndex: backupWalletIndex),
+          const SizedBox(height: 40),
+        ],
         DottedBorder(
           dashLength: 3,
           gapLength: 5,
