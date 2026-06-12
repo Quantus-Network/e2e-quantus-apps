@@ -2,16 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/migration_dialog.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
-import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
-import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/recovery/mnemonic_recovery_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/services/logout_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/utils/env_utils.dart';
 
@@ -26,6 +22,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
   bool _loading = true;
   bool _walletExists = false;
   bool _needsMigration = false;
+  bool _mnemonicLost = false;
   List<MigrationAccountData>? _migrationData;
   final SettingsService _settingsService = SettingsService();
   late final MigrationService _migrationService;
@@ -43,8 +40,15 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
     if (hasWallet) {
       final mnemonic = await _settingsService.getMnemonic(0);
       if (mnemonic == null) {
+        // CRITICAL: Do NOT call logout here - it would destroy account metadata
+        // that could help with recovery. Instead, show a non-destructive recovery
+        // screen that preserves prefs and allows the user to re-import their seed.
         TelemetryService().sendEvent('user_lost_mnemonic');
-        if (mounted) await _showMnemonicLostDialog();
+        quantusDebugPrint('MNEMONIC LOST: accounts exist but mnemonic is null - showing recovery screen');
+        setState(() {
+          _mnemonicLost = true;
+          _loading = false;
+        });
         return;
       }
     }
@@ -88,30 +92,6 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
         _loading = false;
       });
     }
-  }
-
-  Future<void> _showMnemonicLostDialog() async {
-    final l10n = ref.read(l10nProvider);
-
-    await BottomSheetContainer.show(
-      context,
-      builder: (ctx) => BottomSheetContainer(
-        title: l10n.walletInitErrorTitle,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(l10n.walletInitErrorMessage, style: ctx.themeText.smallParagraph),
-            const SizedBox(height: 32),
-            QuantusButton.simple(
-              label: l10n.walletInitErrorButtonLabel,
-              onTap: () => Navigator.pop(ctx),
-              variant: ButtonVariant.secondary,
-            ),
-          ],
-        ),
-      ),
-    );
-    if (mounted) ref.read(logoutServiceProvider).logout(context);
   }
 
   void _reloadAccounts() {
@@ -202,6 +182,11 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
   Widget build(BuildContext context) {
     if (_loading) {
       return const ScaffoldBase(mainContent: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_mnemonicLost) {
+      // Show recovery screen - preserves account metadata and allows re-import
+      return const MnemonicRecoveryScreen();
     }
 
     if (_needsMigration) {

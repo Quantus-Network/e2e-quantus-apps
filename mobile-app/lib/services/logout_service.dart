@@ -17,12 +17,22 @@ class LogoutService {
   final Ref _ref;
   LogoutService(this._ref);
 
+  /// Logs the user out by clearing all stored data and navigating to welcome.
+  ///
+  /// IMPORTANT: This is a DESTRUCTIVE operation that wipes both SharedPreferences
+  /// and secure storage (including the mnemonic). Only call this when the user
+  /// explicitly requests to reset their wallet, NOT when detecting missing data.
   Future<void> logout(BuildContext context) async {
+    // Unregister device from push notifications first (fire-and-forget is ok here)
     if (_ref.read(remoteConfigProvider).enableRemoteNotifications) {
       _ref.read(firebaseMessagingServiceProvider).unregisterDevice();
     }
 
+    // Clear all persistent storage - this calls SettingsService.clearAll() once
+    // which wipes both SharedPreferences and FlutterSecureStorage
     await SubstrateService().logout();
+
+    // Reset in-memory state
     _ref.read(pendingTransactionsProvider.notifier).clear();
     _ref.read(miningRewardsServiceProvider).clearCachedRewardsData();
     _ref.invalidate(miningRewardsProvider);
@@ -32,6 +42,7 @@ class LogoutService {
     await _ref.read(selectedAppLocaleProvider.notifier).reset();
     await _ref.read(selectedFiatCurrencyProvider.notifier).reset();
 
+    // Navigate to welcome screen
     if (context.mounted) {
       Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const WelcomeScreenV2()), (r) => false);
     }

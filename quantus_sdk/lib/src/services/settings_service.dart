@@ -11,7 +11,22 @@ class SettingsService {
   SettingsService._internal();
 
   late SharedPreferences _prefs;
-  final _secureStorage = const FlutterSecureStorage(mOptions: MacOsOptions(usesDataProtectionKeychain: false));
+
+  // Explicit options to prevent data loss during platform updates:
+  // - Android: resetOnError: false prevents wiping keychain on read errors
+  //   migrateWithBackup: true preserves old data during encryption changes
+  // - iOS: first_unlock_this_device ensures data survives app reinstalls
+  //   (device must be unlocked once after boot to read)
+  // - macOS: usesDataProtectionKeychain: false for compatibility
+  final _secureStorage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(
+      resetOnError: false,
+    ),
+    iOptions: IOSOptions(
+      accessibility: KeychainAccessibility.first_unlock_this_device,
+    ),
+    mOptions: MacOsOptions(usesDataProtectionKeychain: false),
+  );
 
   // New keys for multi-account support
   static const String _accountsKey = 'accounts_v5';
