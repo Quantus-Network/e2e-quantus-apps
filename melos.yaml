@@ -9,6 +9,12 @@ ide:
   intellij:
     enabled: false
 
+command:
+  bootstrap:
+    # Parallel pub get races on checking out shared git dependencies
+    # (human_checksum) into the cold pub cache in CI: dart-lang/pub#3404.
+    runPubGetInParallel: false
+
 # Only path-based overrides go here. Melos 6.x propagates these to each
 # package's pubspec_overrides.yaml during bootstrap. Hosted-package version
 # pins must live in each package's own pubspec.yaml (melos doesn't propagate
