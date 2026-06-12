@@ -78,7 +78,7 @@ class MinerWalletService {
     _log.i('Mnemonic saved securely via SDK settings');
 
     final keyPair = _hdWallet.deriveWormholeKeyPair(mnemonic: normalized);
-    await _saveRewardsPreimage(keyPair.rewardsPreimage);
+    await _saveRewardsPreimage(keyPair.rewardsPreimageHex);
 
     _log.i('Wormhole address derived: ${keyPair.address}');
     return keyPair;
@@ -92,44 +92,34 @@ class MinerWalletService {
   }
 
   /// Wormhole key pair derived from the stored mnemonic, or reconstructed from
-  /// stored preimage data when only mining is configured.
+  /// the stored preimage when only mining is configured.
   Future<WormholeKeyPair?> getWormholeKeyPair() async {
     final mnemonic = await getMnemonic();
     if (mnemonic != null && mnemonic.isNotEmpty) {
       return _hdWallet.deriveWormholeKeyPair(mnemonic: mnemonic);
     }
 
-    final preimage = await readRewardsPreimageFile();
-    if (preimage == null || preimage.isEmpty) return null;
-    final rewardsPreimageHex = _hdWallet.preimageSs58ToHex(preimage);
-    final address = _hdWallet.preimageToAddress(rewardsPreimageHex);
+    final preimageHex = await readRewardsPreimageFile();
+    if (preimageHex == null) return null;
     return WormholeKeyPair(
-      address: address,
+      address: _hdWallet.preimageToAddress(preimageHex),
       addressHex: '',
-      rewardsPreimage: preimage,
-      rewardsPreimageHex: rewardsPreimageHex,
+      rewardsPreimageHex: preimageHex,
       secretHex: '',
     );
   }
 
   /// Hex value for the node's `--rewards-inner-hash` flag.
-  Future<String?> getRewardsInnerHash() async {
-    final keyPair = await getWormholeKeyPair();
-    if (keyPair != null) return keyPair.rewardsPreimageHex;
-
-    final fromFile = await readRewardsPreimageFile();
-    if (fromFile == null || fromFile.isEmpty) return null;
-    return _hdWallet.preimageSs58ToHex(fromFile);
-  }
+  Future<String?> getRewardsInnerHash() async => (await getWormholeKeyPair())?.rewardsPreimageHex;
 
   /// SS58 wormhole address where rewards are sent.
-  Future<String?> getRewardsAddress() async {
-    final keyPair = await getWormholeKeyPair();
-    if (keyPair != null) return keyPair.address;
+  Future<String?> getRewardsAddress() async => (await getWormholeKeyPair())?.address;
 
-    final hexPreimage = await getRewardsInnerHash();
-    if (hexPreimage == null) return null;
-    return _hdWallet.preimageToAddress(hexPreimage);
+  /// SS58 address at the default derivation path of the stored mnemonic.
+  Future<String?> getDefaultAccountAddress() async {
+    final mnemonic = await getMnemonic();
+    if (mnemonic == null || mnemonic.isEmpty) return null;
+    return _hdWallet.keyPairAtIndex(mnemonic, _minerWalletIndex).ss58Address;
   }
 
   Future<bool> hasRewardsPreimageFile() async {
@@ -141,11 +131,24 @@ class MinerWalletService {
     }
   }
 
+  /// Read the rewards preimage file, normalized to `0x…` hex. Legacy files
+  /// containing the SS58 form are migrated to hex in place.
   Future<String?> readRewardsPreimageFile() async {
     try {
       final file = await _preimageFile();
       if (!await file.exists()) return null;
-      return (await file.readAsString()).trim();
+      final raw = (await file.readAsString()).trim();
+      if (raw.isEmpty) return null;
+      final preimageHex = _hdWallet.normalizePreimageToHex(raw);
+      if (preimageHex == null) {
+        _log.e('Unrecognized rewards preimage format in ${file.path}');
+        return null;
+      }
+      if (preimageHex != raw) {
+        await file.writeAsString(preimageHex);
+        _log.i('Migrated rewards preimage file to hex format');
+      }
+      return preimageHex;
     } catch (e) {
       _log.e('Error reading rewards preimage file', error: e);
       return null;
@@ -169,17 +172,17 @@ class MinerWalletService {
     }
   }
 
-  /// Validate a rewards preimage (SS58 base58 shape check).
+  /// Validate a rewards preimage / inner hash (hex or legacy SS58).
   bool validatePreimage(String preimage) => _hdWallet.validatePreimage(preimage);
 
   /// Save just the rewards preimage (no mnemonic). Mining only; withdrawals
   /// require the secret via another tool.
   Future<void> savePreimageOnly(String preimage) async {
-    final trimmed = preimage.trim();
-    if (!validatePreimage(trimmed)) {
-      throw ArgumentError('Invalid preimage format. Expected SS58-encoded address.');
+    final preimageHex = _hdWallet.normalizePreimageToHex(preimage);
+    if (preimageHex == null) {
+      throw ArgumentError('Invalid inner hash. Expected 64-character hex string.');
     }
-    await _saveRewardsPreimage(trimmed);
+    await _saveRewardsPreimage(preimageHex);
     _log.i('Preimage saved (without mnemonic)');
   }
 
