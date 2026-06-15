@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
+import 'package:resonance_network_wallet/shared/utils/accounts_grouping.dart';
 import 'package:resonance_network_wallet/v2/components/account_badge.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_tag.dart';
@@ -19,26 +20,31 @@ import 'package:resonance_network_wallet/v2/screens/accounts/multisig_account_me
 import 'package:resonance_network_wallet/v2/screens/accounts/add_account_menu_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
-Future<T?> showAccountsSheet<T>(BuildContext context) async {
-  return BottomSheetContainer.show<T>(context, builder: (_) => const AccountsSheet());
+Future<T?> showAccountsSheet<T>(BuildContext context, {String? highlightAccountId}) async {
+  return BottomSheetContainer.show<T>(context, builder: (_) => AccountsSheet(highlightAccountId: highlightAccountId));
 }
 
 class AccountsSheet extends ConsumerStatefulWidget {
-  const AccountsSheet({super.key});
+  const AccountsSheet({super.key, this.highlightAccountId});
+
+  final String? highlightAccountId;
 
   @override
   ConsumerState<AccountsSheet> createState() => _AccountsScreenState();
 }
 
 class _AccountsScreenState extends ConsumerState<AccountsSheet> {
-  List<Account> _sortedRegular(List<Account> accounts) {
-    final sorted = [...accounts];
-    sorted.sort((a, b) {
-      final walletCmp = a.walletIndex.compareTo(b.walletIndex);
-      if (walletCmp != 0) return walletCmp;
-      return a.index.compareTo(b.index);
+  final GlobalKey _scrollTargetKey = GlobalKey();
+  bool _scrolledToTarget = false;
+
+  void _maybeScrollToTarget() {
+    if (_scrolledToTarget) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _scrollTargetKey.currentContext;
+      if (ctx == null) return;
+      _scrolledToTarget = true;
+      Scrollable.ensureVisible(ctx, duration: const Duration(milliseconds: 300), curve: Curves.easeOut, alignment: 0.5);
     });
-    return sorted;
   }
 
   void _openAddAccountMenu() {
@@ -72,8 +78,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     final multisigAsync = ref.watch(multisigAccountsProvider);
     final activeDisplayAccountAsync = ref.watch(activeAccountProvider);
 
-    final activeDisplayAccount = activeDisplayAccountAsync.value;
-    final activeAccountId = activeDisplayAccount?.account.accountId;
+    final activeAccountId = activeDisplayAccountAsync.value?.account.accountId;
 
     final media = MediaQuery.of(context);
     final maxHeight = media.size.height - media.padding.top - 20;
@@ -121,36 +126,30 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       );
     }
 
-    final regulars = _sortedRegular(accountsAsync.value ?? []);
-    final multisigs = multisigAsync.value ?? [];
-    final items = <BaseAccount>[...regulars, ...multisigs];
+    final grouping = groupAccounts(
+      accounts: accountsAsync.value ?? [],
+      multisigs: multisigAsync.value ?? [],
+    );
 
-    return _buildAccountsListView(l10n, items, activeAccountId);
+    return _buildAccountsListView(l10n, grouping, activeAccountId);
   }
 
-  Widget _buildAccountsListView(AppLocalizations l10n, List<BaseAccount> items, String? activeAccountId) {
+  Widget _buildAccountsListView(AppLocalizations l10n, AccountsGrouping grouping, String? activeAccountId) {
+    final scrollTargetId = widget.highlightAccountId ?? activeAccountId;
+    _maybeScrollToTarget();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
-          child: items.isEmpty
+          child: grouping.items.isEmpty
               ? Center(
                   child: Text(
                     l10n.accountsSheetNoAccountsFound,
                     style: context.themeText.smallParagraph?.copyWith(color: context.colors.textSecondary),
                   ),
                 )
-              : ListView.separated(
-                  itemCount: items.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 14),
-                  itemBuilder: (_, index) {
-                    final item = items[index];
-                    final isActive = item.accountId == activeAccountId;
-                    if (item is Account) return _buildRegularRow(l10n, item, isActive);
-                    if (item is MultisigAccount) return _buildMultisigRow(l10n, item, isActive);
-                    return const SizedBox.shrink();
-                  },
-                ),
+              : ListView(children: _buildItemWidgets(l10n, grouping.items, activeAccountId, scrollTargetId)),
         ),
         const SizedBox(height: 24),
         QuantusButton.simple(
@@ -162,21 +161,96 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     );
   }
 
-  Widget _buildRegularRow(AppLocalizations l10n, Account account, bool isActive) {
-    final balanceAsync = ref.watch(balanceProviderFamily(account.accountId));
+  List<Widget> _buildItemWidgets(
+    AppLocalizations l10n,
+    List<AccountListItem> items,
+    String? activeAccountId,
+    String? scrollTargetId,
+  ) {
+    final widgets = <Widget>[];
+    AccountListItem? prev;
+    for (final item in items) {
+      final gap = _gapBefore(prev, item);
+      if (gap > 0) widgets.add(SizedBox(height: gap));
+      widgets.add(switch (item) {
+        WalletHeaderItem() => _buildWalletHeader(l10n, item),
+        SegmentHeaderItem() => _buildSegmentHeader(l10n, item),
+        AccountRowItem() => _buildRow(l10n, item.account, activeAccountId, scrollTargetId),
+      });
+      prev = item;
+    }
+    return widgets;
+  }
+
+  double _gapBefore(AccountListItem? prev, AccountListItem item) {
+    if (prev == null) return 0;
+    if (item is WalletHeaderItem) return 24;
+    if (item is SegmentHeaderItem) return 18;
+    return prev is AccountRowItem ? 14 : 12;
+  }
+
+  Widget _buildWalletHeader(AppLocalizations l10n, WalletHeaderItem item) {
+    final title = switch (item.kind) {
+      WalletKind.software => l10n.accountsSheetWallet(item.number),
+      WalletKind.keystone => l10n.accountsSheetKeystoneWallet(item.number),
+    };
+    return Text(
+      title,
+      style: context.themeText.smallParagraph?.copyWith(
+        color: context.colors.textSecondary,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+
+  Widget _buildSegmentHeader(AppLocalizations l10n, SegmentHeaderItem item) {
+    final title = switch (item.segment) {
+      AccountSegment.transparent => l10n.accountsSheetSubheaderTransparent,
+      AccountSegment.encrypted => l10n.accountsSheetSubheaderEncrypted,
+      AccountSegment.keystone => l10n.accountsSheetSubheaderKeystone,
+      AccountSegment.multisig => l10n.accountsSheetSubheaderMultisig,
+    };
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Text(
+        title,
+        style: context.themeText.smallParagraph?.copyWith(color: context.colors.textTertiary, fontSize: 12),
+      ),
+    );
+  }
+
+  Widget _buildRow(AppLocalizations l10n, BaseAccount account, String? activeAccountId, String? scrollTargetId) {
+    final isActive = account.accountId == activeAccountId;
+    final isHighlighted = account.accountId == widget.highlightAccountId;
+    final key = account.accountId == scrollTargetId ? _scrollTargetKey : null;
+
+    if (account is MultisigAccount) return _buildMultisigRow(l10n, account, isActive, isHighlighted, key);
+    if (account is Account && account.accountType == AccountType.encrypted) {
+      return _buildEncryptedRow(l10n, account, isActive, isHighlighted, key);
+    }
+    if (account is Account) return _buildRegularRow(l10n, account, isActive, isHighlighted, key);
+    return const SizedBox.shrink();
+  }
+
+  String _balanceText(AppLocalizations l10n, String accountId) {
+    final balanceAsync = ref.watch(balanceProviderFamily(accountId));
     final formattingService = ref.watch(numberFormattingServiceProvider);
-    final balanceText = balanceAsync.when(
+    return balanceAsync.when(
       loading: () => l10n.commonLoading,
       error: (_, _) => l10n.accountsSheetBalanceUnavailable,
       data: (balance) => l10n.accountsSheetBalance(formattingService.formatBalance(balance), AppConstants.tokenSymbol),
     );
+  }
 
+  Widget _buildRegularRow(AppLocalizations l10n, Account account, bool isActive, bool isHighlighted, Key? key) {
     return _AccountRowShell(
+      key: key,
       isActive: isActive,
+      isHighlighted: isHighlighted,
       onTap: () => _switchAccount(RegularAccount(account)),
       leading: AccountBadge.account(account: account, isActive: isActive),
       title: account.name,
-      subtitle: balanceText,
+      subtitle: _balanceText(l10n, account.accountId),
       trailing: QuantusIconButton.circular(
         icon: Icons.edit_outlined,
         onTap: () => _openAccountMenu(account),
@@ -185,21 +259,32 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     );
   }
 
-  Widget _buildMultisigRow(AppLocalizations l10n, MultisigAccount account, bool isActive) {
-    final balanceAsync = ref.watch(balanceProviderFamily(account.accountId));
-    final formattingService = ref.watch(numberFormattingServiceProvider);
-    final balanceText = balanceAsync.when(
-      loading: () => l10n.commonLoading,
-      error: (_, _) => l10n.accountsSheetBalanceUnavailable,
-      data: (balance) => l10n.accountsSheetBalance(formattingService.formatBalance(balance), AppConstants.tokenSymbol),
-    );
-
+  Widget _buildEncryptedRow(AppLocalizations l10n, Account account, bool isActive, bool isHighlighted, Key? key) {
     return _AccountRowShell(
+      key: key,
       isActive: isActive,
+      isHighlighted: isHighlighted,
+      onTap: () => _switchAccount(RegularAccount(account)),
+      leading: AccountBadge.icon(icon: Icons.lock_outline, isActive: isActive),
+      subtitle: _balanceText(l10n, account.accountId),
+    );
+  }
+
+  Widget _buildMultisigRow(
+    AppLocalizations l10n,
+    MultisigAccount account,
+    bool isActive,
+    bool isHighlighted,
+    Key? key,
+  ) {
+    return _AccountRowShell(
+      key: key,
+      isActive: isActive,
+      isHighlighted: isHighlighted,
       onTap: () => _switchAccount(MultisigDisplayAccount(account)),
       leading: AccountBadge(name: account.name, isActive: isActive),
       title: account.name,
-      subtitle: balanceText,
+      subtitle: _balanceText(l10n, account.accountId),
       tag: MultisigTag(label: l10n.multisigTag),
       trailing: QuantusIconButton.circular(
         icon: Icons.edit_outlined,
@@ -212,19 +297,22 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
 
 class _AccountRowShell extends StatelessWidget {
   final bool isActive;
+  final bool isHighlighted;
   final VoidCallback onTap;
   final Widget leading;
-  final String title;
+  final String? title;
   final String subtitle;
   final Widget? trailing;
   final Widget? tag;
 
   const _AccountRowShell({
+    super.key,
     required this.isActive,
     required this.onTap,
     required this.leading,
-    required this.title,
     required this.subtitle,
+    this.isHighlighted = false,
+    this.title,
     this.trailing,
     this.tag,
   });
@@ -232,15 +320,18 @@ class _AccountRowShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final border = isHighlighted
+        ? Border.all(color: colors.accentOrange, width: 2)
+        : isActive
+        ? Border.all(color: colors.borderButton)
+        : null;
+    final hasTitle = title != null && title!.isNotEmpty;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: colors.surfaceDeep,
-          borderRadius: BorderRadius.circular(14),
-          border: isActive ? Border.all(color: colors.borderButton) : null,
-        ),
+        decoration: BoxDecoration(color: colors.surfaceDeep, borderRadius: BorderRadius.circular(14), border: border),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -254,25 +345,27 @@ class _AccountRowShell extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                title,
-                                style: context.themeText.paragraph!.copyWith(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w400,
-                                  color: colors.textPrimary,
-                                  height: 1,
+                        if (hasTitle) ...[
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  title!,
+                                  style: context.themeText.paragraph!.copyWith(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w400,
+                                    color: colors.textPrimary,
+                                    height: 1,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            if (tag != null) ...[const SizedBox(width: 8), tag!],
-                          ],
-                        ),
-                        const SizedBox(height: 8),
+                              if (tag != null) ...[const SizedBox(width: 8), tag!],
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                        ],
                         Text(
                           subtitle,
                           style: context.themeText.smallParagraph!.copyWith(

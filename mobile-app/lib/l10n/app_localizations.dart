@@ -398,6 +398,42 @@ abstract class AppLocalizations {
   /// **'{balance} {symbol}'**
   String accountsSheetBalance(String balance, String symbol);
 
+  /// Software wallet segment header in accounts sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet {number}'**
+  String accountsSheetWallet(int number);
+
+  /// Keystone hardware wallet segment header in accounts sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Keystone Hardware Wallet {number}'**
+  String accountsSheetKeystoneWallet(int number);
+
+  /// Sub-segment header for transparent accounts
+  ///
+  /// In en, this message translates to:
+  /// **'Transparent Accounts'**
+  String get accountsSheetSubheaderTransparent;
+
+  /// Sub-segment header for the encrypted account
+  ///
+  /// In en, this message translates to:
+  /// **'Encrypted Account'**
+  String get accountsSheetSubheaderEncrypted;
+
+  /// Sub-segment header for keystone accounts
+  ///
+  /// In en, this message translates to:
+  /// **'Keystone Accounts'**
+  String get accountsSheetSubheaderKeystone;
+
+  /// Sub-segment header for multisig accounts
+  ///
+  /// In en, this message translates to:
+  /// **'Multisig Accounts'**
+  String get accountsSheetSubheaderMultisig;
+
   /// App bar title on add account menu
   ///
   /// In en, this message translates to:
@@ -1441,6 +1477,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Account not found'**
   String get accountMenuNotFound;
+
+  /// Done button shown on the account overview right after creating an account
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get accountMenuDone;
+
+  /// Disconnect (stop tracking) button on hardware wallet and multisig overview
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get accountMenuDisconnect;
+
+  /// Title of the hardware wallet disconnect confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect hardware wallet?'**
+  String get accountMenuDisconnectHardwareTitle;
+
+  /// Body of the hardware wallet disconnect confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'This stops tracking \"{name}\" on this device. Your hardware wallet keeps the account, so you can reconnect it anytime.'**
+  String accountMenuDisconnectHardwareMessage(String name);
+
+  /// Title of the multisig disconnect confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect multisig?'**
+  String get accountMenuDisconnectMultisigTitle;
+
+  /// Body of the multisig disconnect confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'This stops tracking \"{name}\" on this device. The multisig stays on-chain, so you can re-add it anytime.'**
+  String accountMenuDisconnectMultisigMessage(String name);
+
+  /// Error toaster shown when disconnecting an account fails
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t disconnect. Please try again.'**
+  String get accountMenuDisconnectError;
 
   /// App bar title on account details screen
   ///
@@ -3061,6 +3139,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Loading...'**
   String get commonLoading;
+
+  /// Generic cancel button label
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get commonCancel;
 
   /// Formatted balance with token symbol
   ///

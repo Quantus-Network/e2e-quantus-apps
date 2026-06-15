@@ -170,6 +170,28 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String accountsSheetWallet(int number) {
+    return 'Wallet $number';
+  }
+
+  @override
+  String accountsSheetKeystoneWallet(int number) {
+    return 'Keystone Hardware Wallet $number';
+  }
+
+  @override
+  String get accountsSheetSubheaderTransparent => 'Transparent Accounts';
+
+  @override
+  String get accountsSheetSubheaderEncrypted => 'Encrypted Account';
+
+  @override
+  String get accountsSheetSubheaderKeystone => 'Keystone Accounts';
+
+  @override
+  String get accountsSheetSubheaderMultisig => 'Multisig Accounts';
+
+  @override
   String get addAccountMenuTitle => 'Add Account';
 
   @override
@@ -729,6 +751,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountMenuNotFound => 'Account not found';
+
+  @override
+  String get accountMenuDone => 'Done';
+
+  @override
+  String get accountMenuDisconnect => 'Disconnect';
+
+  @override
+  String get accountMenuDisconnectHardwareTitle => 'Disconnect hardware wallet?';
+
+  @override
+  String accountMenuDisconnectHardwareMessage(String name) {
+    return 'This stops tracking \"$name\" on this device. Your hardware wallet keeps the account, so you can reconnect it anytime.';
+  }
+
+  @override
+  String get accountMenuDisconnectMultisigTitle => 'Disconnect multisig?';
+
+  @override
+  String accountMenuDisconnectMultisigMessage(String name) {
+    return 'This stops tracking \"$name\" on this device. The multisig stays on-chain, so you can re-add it anytime.';
+  }
+
+  @override
+  String get accountMenuDisconnectError => 'Couldn\'t disconnect. Please try again.';
 
   @override
   String get accountDetailsTitle => 'Address Details';
@@ -1606,6 +1653,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonLoading => 'Loading...';
+
+  @override
+  String get commonCancel => 'Cancel';
 
   @override
   String commonAmountBalance(String balance, String symbol) {

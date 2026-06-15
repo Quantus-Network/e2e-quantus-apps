@@ -171,6 +171,28 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String accountsSheetWallet(int number) {
+    return 'Wallet $number';
+  }
+
+  @override
+  String accountsSheetKeystoneWallet(int number) {
+    return 'Wallet Perangkat Keras Keystone $number';
+  }
+
+  @override
+  String get accountsSheetSubheaderTransparent => 'Akun Transparan';
+
+  @override
+  String get accountsSheetSubheaderEncrypted => 'Akun Terenkripsi';
+
+  @override
+  String get accountsSheetSubheaderKeystone => 'Akun Keystone';
+
+  @override
+  String get accountsSheetSubheaderMultisig => 'Akun Multisig';
+
+  @override
   String get addAccountMenuTitle => 'Tambah Akun';
 
   @override
@@ -731,6 +753,31 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get accountMenuNotFound => 'Akun tidak ditemukan';
+
+  @override
+  String get accountMenuDone => 'Selesai';
+
+  @override
+  String get accountMenuDisconnect => 'Putuskan';
+
+  @override
+  String get accountMenuDisconnectHardwareTitle => 'Putuskan dompet perangkat keras?';
+
+  @override
+  String accountMenuDisconnectHardwareMessage(String name) {
+    return 'Ini menghentikan pelacakan \"$name\" di perangkat ini. Dompet perangkat keras Anda tetap menyimpan akun, jadi Anda dapat menghubungkannya kembali kapan saja.';
+  }
+
+  @override
+  String get accountMenuDisconnectMultisigTitle => 'Putuskan multisig?';
+
+  @override
+  String accountMenuDisconnectMultisigMessage(String name) {
+    return 'Ini menghentikan pelacakan \"$name\" di perangkat ini. Multisig tetap ada di on-chain, jadi Anda dapat menambahkannya kembali kapan saja.';
+  }
+
+  @override
+  String get accountMenuDisconnectError => 'Tidak dapat memutuskan. Silakan coba lagi.';
 
   @override
   String get accountDetailsTitle => 'Detail Alamat';
@@ -1608,6 +1655,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get commonLoading => 'Memuat...';
+
+  @override
+  String get commonCancel => 'Batal';
 
   @override
   String commonAmountBalance(String balance, String symbol) {

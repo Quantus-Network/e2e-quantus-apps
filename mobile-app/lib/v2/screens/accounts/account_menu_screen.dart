@@ -1,12 +1,20 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/account_badge.dart';
+import 'package:resonance_network_wallet/v2/components/confirm_action_sheet.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_details_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/edit_account_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_confirmation_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -15,7 +23,11 @@ import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 class AccountMenuScreen extends ConsumerWidget {
   final Account initialAccount;
 
-  const AccountMenuScreen({super.key, required this.initialAccount});
+  /// When true, this screen is shown right after creating an account: it shows a
+  /// Done button (instead of a back button) that returns to the accounts list.
+  final bool isPostCreation;
+
+  const AccountMenuScreen({super.key, required this.initialAccount, this.isPostCreation = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,30 +36,74 @@ class AccountMenuScreen extends ConsumerWidget {
     final text = context.themeText;
 
     final accounts = ref.watch(accountsProvider);
-    final account = accounts.value?.firstWhere((a) => a.accountId == initialAccount.accountId);
+    final account =
+        accounts.value?.firstWhereOrNull((a) => a.accountId == initialAccount.accountId) ?? initialAccount;
+    final canShowRecoveryPhrase = account.accountType == AccountType.local;
 
     return ScaffoldBase(
-      appBar: V2AppBar(title: l10n.accountMenuTitle),
-      mainContent: account != null
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 8),
-                _ProfileHeader(account: account, colors: colors, text: text),
-                const SizedBox(height: 80),
-                _MenuRow(
-                  label: l10n.accountMenuAccountName,
-                  value: account.name,
-                  onTap: () => _openNameEditor(context, ref, account),
-                ),
-                Divider(color: colors.toasterBackground, height: 1),
-                _MenuRow(label: l10n.accountMenuAddressDetails, onTap: () => _openAddressDetails(context, account)),
-                Divider(color: colors.toasterBackground, height: 1),
-                _MenuRow(label: l10n.accountMenuShowRecoveryPhrase, onTap: () => _openRecoveryPhrase(context, account)),
-              ],
-            )
-          : Center(child: Text(l10n.accountMenuNotFound)),
+      appBar: V2AppBar(title: l10n.accountMenuTitle, showBackButton: !isPostCreation),
+      mainContent: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 8),
+          _ProfileHeader(account: account, colors: colors, text: text),
+          const SizedBox(height: 80),
+          _MenuRow(
+            label: l10n.accountMenuAccountName,
+            value: account.name,
+            onTap: () => _openNameEditor(context, ref, account),
+          ),
+          Divider(color: colors.toasterBackground, height: 1),
+          _MenuRow(label: l10n.accountMenuAddressDetails, onTap: () => _openAddressDetails(context, account)),
+          if (canShowRecoveryPhrase) ...[
+            Divider(color: colors.toasterBackground, height: 1),
+            _MenuRow(label: l10n.accountMenuShowRecoveryPhrase, onTap: () => _openRecoveryPhrase(context, account)),
+          ],
+        ],
+      ),
+      bottomContent: _buildBottomContent(context, ref, l10n, account),
     );
+  }
+
+  Widget? _buildBottomContent(BuildContext context, WidgetRef ref, AppLocalizations l10n, Account account) {
+    if (isPostCreation) {
+      return ScaffoldBaseBottomContent(
+        child: QuantusButton.simple(label: l10n.accountMenuDone, onTap: () => finishAccountAddition(context, ref)),
+      );
+    }
+    if (account.accountType == AccountType.keystone) {
+      return ScaffoldBaseBottomContent(
+        child: QuantusButton.simple(
+          label: l10n.accountMenuDisconnect,
+          variant: ButtonVariant.danger,
+          onTap: () => _onDisconnect(context, ref, account),
+        ),
+      );
+    }
+    return null;
+  }
+
+  Future<void> _onDisconnect(BuildContext context, WidgetRef ref, Account account) async {
+    final l10n = ref.read(l10nProvider);
+    final confirmed = await showConfirmActionSheet(
+      context,
+      title: l10n.accountMenuDisconnectHardwareTitle,
+      message: l10n.accountMenuDisconnectHardwareMessage(account.name),
+      confirmLabel: l10n.accountMenuDisconnect,
+      cancelLabel: l10n.commonCancel,
+      isDestructive: true,
+    );
+    if (!confirmed || !context.mounted) return;
+
+    try {
+      await AccountsService().removeAccount(account);
+      ref.invalidate(accountsProvider);
+      ref.invalidate(activeAccountProvider);
+      if (context.mounted) Navigator.of(context).pop();
+    } catch (e, st) {
+      quantusDebugPrint('[AccountMenu] disconnect error: $e\n$st');
+      if (context.mounted) context.showErrorToaster(message: l10n.accountMenuDisconnectError);
+    }
   }
 
   Future<void> _openNameEditor(BuildContext context, WidgetRef ref, Account current) async {

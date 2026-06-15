@@ -5,11 +5,16 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
+import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
+import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/add_hardware_account_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/create_account_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/import/import_wallet_screen.dart';
@@ -26,19 +31,45 @@ class AddAccountMenuScreen extends ConsumerStatefulWidget {
 }
 
 class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
+  final _accountsService = AccountsService();
+  bool _isCreatingEncrypted = false;
+
   void _onCreateNewAccount() {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CreateAccountScreen()));
   }
 
-  void _onCreateEncryptedAccount() {
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CreateAccountScreen(isEncrypted: true)));
+  Future<void> _onCreateEncryptedAccount() async {
+    if (_isCreatingEncrypted) return;
+    setState(() => _isCreatingEncrypted = true);
+    try {
+      final accounts = ref.read(accountsProvider).value ?? <Account>[];
+      final activeAccount = ref.read(activeAccountProvider).value;
+      final walletIndex = walletIndexForActiveAccount(accounts, activeAccount);
+      final account = await _accountsService.createEncryptedAccount(walletIndex: walletIndex);
+      await _accountsService.addAccount(account);
+
+      ref.invalidate(accountsProvider);
+      ref.invalidate(activeAccountProvider);
+      ref.read(firebaseMessagingServiceProvider).insertNewAddress(account.accountId);
+
+      if (mounted) finishAccountAddition(context, ref, newAccountId: account.accountId);
+    } catch (e, st) {
+      quantusDebugPrint('[AddAccountMenu] create encrypted account error: $e\n$st');
+      if (mounted) {
+        context.showErrorToaster(message: ref.read(l10nProvider).createAccountErrorCouldNotAdd);
+      }
+    } finally {
+      if (mounted) setState(() => _isCreatingEncrypted = false);
+    }
   }
 
   void _onImportWallet() {
     final accounts = ref.read(accountsProvider).value ?? <Account>[];
     final walletIndex = nextNonHardwareWalletIndex(accounts);
 
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => ImportWalletScreenV2(walletIndex: walletIndex)));
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => ImportWalletScreenV2(walletIndex: walletIndex, openAccountsOnComplete: true)),
+    );
   }
 
   void _onImportKeystone() {
@@ -115,6 +146,14 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
     final l10n = ref.watch(l10nProvider);
     final enableEncryptedAccount = ref.watch(remoteConfigProvider).enableEncryptedAccount;
 
+    final accounts = ref.watch(accountsProvider).value ?? <Account>[];
+    final activeAccount = ref.watch(activeAccountProvider).value;
+    final activeWalletIndex = walletIndexForActiveAccount(accounts, activeAccount);
+    final walletHasEncrypted = accounts.any(
+      (a) => a.walletIndex == activeWalletIndex && a.accountType == AccountType.encrypted,
+    );
+    final showEncrypted = enableEncryptedAccount && !walletHasEncrypted;
+
     return ScaffoldBase(
       appBar: V2AppBar(
         title: l10n.addAccountMenuTitle,
@@ -125,20 +164,28 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
           onTap: _showMoreMenu,
         ),
       ),
-      mainContent: _MenuList(
-        rows: [
-          _AddMenuRow(
-            icon: Icons.add,
-            title: l10n.addAccountMenuCreateTitle,
-            subtitle: l10n.addAccountMenuCreateSubtitle,
-            onTap: _onCreateNewAccount,
+      mainContent: Stack(
+        children: [
+          _MenuList(
+            rows: [
+              _AddMenuRow(
+                icon: Icons.add,
+                title: l10n.addAccountMenuCreateTitle,
+                subtitle: l10n.addAccountMenuCreateSubtitle,
+                onTap: _onCreateNewAccount,
+              ),
+              if (showEncrypted)
+                _AddMenuRow(
+                  icon: Icons.lock_outline,
+                  title: l10n.addAccountMenuCreateEncryptedTitle,
+                  subtitle: l10n.addAccountMenuCreateEncryptedSubtitle,
+                  onTap: _onCreateEncryptedAccount,
+                ),
+            ],
           ),
-          if (enableEncryptedAccount)
-            _AddMenuRow(
-              icon: Icons.lock_outline,
-              title: l10n.addAccountMenuCreateEncryptedTitle,
-              subtitle: l10n.addAccountMenuCreateEncryptedSubtitle,
-              onTap: _onCreateEncryptedAccount,
+          if (_isCreatingEncrypted)
+            const Positioned.fill(
+              child: ColoredBox(color: Color(0x99000000), child: Center(child: Loader())),
             ),
         ],
       ),

@@ -1,4 +1,18 @@
+import 'package:collection/collection.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+
+/// Wallet index the active account belongs to, used when adding a sibling
+/// account (transparent/encrypted) to the currently selected wallet.
+int walletIndexForActiveAccount(List<Account> accounts, DisplayAccount? activeDisplayAccount) {
+  if (activeDisplayAccount is RegularAccount) {
+    return activeDisplayAccount.account.walletIndex;
+  }
+  if (activeDisplayAccount is EntrustedDisplayAccount) {
+    final parent = accounts.firstWhereOrNull((a) => a.accountId == activeDisplayAccount.account.parentAccountId);
+    if (parent != null) return parent.walletIndex;
+  }
+  return accounts.isNotEmpty ? accounts.first.walletIndex : 0;
+}
 
 List<int> getNonHardwareWalletIndices(List<Account> accounts) {
   final nonHardwareWalletIndices = <int>{};

@@ -59,6 +59,12 @@
   "accountsSheetAddAccount": "Tambah Akun",
   "accountsSheetBalanceUnavailable": "Saldo tidak tersedia",
   "accountsSheetBalance": "{balance} {symbol}",
+  "accountsSheetWallet": "Wallet {number}",
+  "accountsSheetKeystoneWallet": "Wallet Perangkat Keras Keystone {number}",
+  "accountsSheetSubheaderTransparent": "Akun Transparan",
+  "accountsSheetSubheaderEncrypted": "Akun Terenkripsi",
+  "accountsSheetSubheaderKeystone": "Akun Keystone",
+  "accountsSheetSubheaderMultisig": "Akun Multisig",
 
   "addAccountMenuTitle": "Tambah Akun",
   "addAccountMenuCreateTitle": "Buat Akun Baru",
@@ -238,6 +244,13 @@
   "accountMenuAddressDetails": "Detail Alamat",
   "accountMenuShowRecoveryPhrase": "Tampilkan Recovery Phrase",
   "accountMenuNotFound": "Akun tidak ditemukan",
+  "accountMenuDone": "Selesai",
+  "accountMenuDisconnect": "Putuskan",
+  "accountMenuDisconnectHardwareTitle": "Putuskan dompet perangkat keras?",
+  "accountMenuDisconnectHardwareMessage": "Ini menghentikan pelacakan \"{name}\" di perangkat ini. Dompet perangkat keras Anda tetap menyimpan akun, jadi Anda dapat menghubungkannya kembali kapan saja.",
+  "accountMenuDisconnectMultisigTitle": "Putuskan multisig?",
+  "accountMenuDisconnectMultisigMessage": "Ini menghentikan pelacakan \"{name}\" di perangkat ini. Multisig tetap ada di on-chain, jadi Anda dapat menambahkannya kembali kapan saja.",
+  "accountMenuDisconnectError": "Tidak dapat memutuskan. Silakan coba lagi.",
 
   "accountDetailsTitle": "Detail Alamat",
 
@@ -543,6 +556,7 @@
   "componentNameFieldHint": "Masukkan nama untuk akun Anda",
 
   "commonLoading": "Memuat...",
+  "commonCancel": "Batal",
   "commonAmountBalance": "{balance} {symbol}",
   "commonContinue": "Lanjutkan"
 }

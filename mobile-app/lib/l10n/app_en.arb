@@ -230,6 +230,40 @@
         }
       }
     },
+    "accountsSheetWallet": "Wallet {number}",
+    "@accountsSheetWallet": {
+      "description": "Software wallet segment header in accounts sheet",
+      "placeholders": {
+        "number": {
+          "type": "int"
+        }
+      }
+    },
+    "accountsSheetKeystoneWallet": "Keystone Hardware Wallet {number}",
+    "@accountsSheetKeystoneWallet": {
+      "description": "Keystone hardware wallet segment header in accounts sheet",
+      "placeholders": {
+        "number": {
+          "type": "int"
+        }
+      }
+    },
+    "accountsSheetSubheaderTransparent": "Transparent Accounts",
+    "@accountsSheetSubheaderTransparent": {
+      "description": "Sub-segment header for transparent accounts"
+    },
+    "accountsSheetSubheaderEncrypted": "Encrypted Account",
+    "@accountsSheetSubheaderEncrypted": {
+      "description": "Sub-segment header for the encrypted account"
+    },
+    "accountsSheetSubheaderKeystone": "Keystone Accounts",
+    "@accountsSheetSubheaderKeystone": {
+      "description": "Sub-segment header for keystone accounts"
+    },
+    "accountsSheetSubheaderMultisig": "Multisig Accounts",
+    "@accountsSheetSubheaderMultisig": {
+      "description": "Sub-segment header for multisig accounts"
+    },
 
     "addAccountMenuTitle": "Add Account",
     "@addAccountMenuTitle": {
@@ -1022,6 +1056,44 @@
     "accountMenuNotFound": "Account not found",
     "@accountMenuNotFound": {
       "description": "When account is not found on menu screen"
+    },
+    "accountMenuDone": "Done",
+    "@accountMenuDone": {
+      "description": "Done button shown on the account overview right after creating an account"
+    },
+    "accountMenuDisconnect": "Disconnect",
+    "@accountMenuDisconnect": {
+      "description": "Disconnect (stop tracking) button on hardware wallet and multisig overview"
+    },
+    "accountMenuDisconnectHardwareTitle": "Disconnect hardware wallet?",
+    "@accountMenuDisconnectHardwareTitle": {
+      "description": "Title of the hardware wallet disconnect confirmation"
+    },
+    "accountMenuDisconnectHardwareMessage": "This stops tracking \"{name}\" on this device. Your hardware wallet keeps the account, so you can reconnect it anytime.",
+    "@accountMenuDisconnectHardwareMessage": {
+      "description": "Body of the hardware wallet disconnect confirmation",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "accountMenuDisconnectMultisigTitle": "Disconnect multisig?",
+    "@accountMenuDisconnectMultisigTitle": {
+      "description": "Title of the multisig disconnect confirmation"
+    },
+    "accountMenuDisconnectMultisigMessage": "This stops tracking \"{name}\" on this device. The multisig stays on-chain, so you can re-add it anytime.",
+    "@accountMenuDisconnectMultisigMessage": {
+      "description": "Body of the multisig disconnect confirmation",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "accountMenuDisconnectError": "Couldn't disconnect. Please try again.",
+    "@accountMenuDisconnectError": {
+      "description": "Error toaster shown when disconnecting an account fails"
     },
 
     "accountDetailsTitle": "Address Details",
@@ -2336,6 +2408,10 @@
     "commonLoading": "Loading...",
     "@commonLoading": {
       "description": "Text for generic loading state"
+    },
+    "commonCancel": "Cancel",
+    "@commonCancel": {
+      "description": "Generic cancel button label"
     },
     "commonAmountBalance": "{balance} {symbol}",
     "@commonAmountBalance": {

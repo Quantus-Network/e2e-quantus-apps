@@ -4,6 +4,17 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 final transactionIntentProvider = StateProvider<TransactionEvent?>((_) => null);
 final sharedAccountIntentProvider = StateProvider<String?>((_) => null);
 
+/// Intent to open the Accounts popup after returning Home. When
+/// [highlightAccountId] is set, that account is pre-selected (highlighted, not
+/// activated); otherwise the active account is scrolled into view. Drained by
+/// [HomeScreen].
+class OpenAccountsIntent {
+  final String? highlightAccountId;
+  const OpenAccountsIntent({this.highlightAccountId});
+}
+
+final openAccountsIntentProvider = StateProvider<OpenAccountsIntent?>((_) => null);
+
 class PaymentIntent {
   final String to;
   final String amount;
