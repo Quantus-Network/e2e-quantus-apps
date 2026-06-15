@@ -416,6 +416,36 @@ abstract class AppLocalizations {
   /// **'Generate a fresh wallet address'**
   String get addAccountMenuCreateSubtitle;
 
+  /// Create encrypted account menu row title
+  ///
+  /// In en, this message translates to:
+  /// **'Create Encrypted Account'**
+  String get addAccountMenuCreateEncryptedTitle;
+
+  /// Create encrypted account menu row subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Add a private wormhole address'**
+  String get addAccountMenuCreateEncryptedSubtitle;
+
+  /// Title of the add account more options action sheet
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get addAccountMenuMoreTitle;
+
+  /// Import keystone wallet menu row title
+  ///
+  /// In en, this message translates to:
+  /// **'Import Keystone Wallet'**
+  String get addAccountMenuImportKeystoneTitle;
+
+  /// Import keystone wallet menu row subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Scan the address QR from your Keystone device'**
+  String get addAccountMenuImportKeystoneSubtitle;
+
   /// Import wallet menu row title
   ///
   /// In en, this message translates to:
@@ -440,10 +470,10 @@ abstract class AppLocalizations {
   /// **'Set up a shared address with multiple signers'**
   String get addAccountMenuMultisigSubtitle;
 
-  /// Discover multisig menu row title
+  /// Import (discover) multisig menu row title
   ///
   /// In en, this message translates to:
-  /// **'Discover Multisig'**
+  /// **'Import Multisig'**
   String get addAccountMenuDiscoverMultisigTitle;
 
   /// Discover multisig menu row subtitle
@@ -1345,6 +1375,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not add account.'**
   String get createAccountErrorCouldNotAdd;
+
+  /// Default name for a newly created encrypted account
+  ///
+  /// In en, this message translates to:
+  /// **'Encrypted Account'**
+  String get createAccountEncryptedDefaultName;
 
   /// Default name for a new account
   ///

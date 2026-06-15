@@ -243,6 +243,26 @@
     "@addAccountMenuCreateSubtitle": {
       "description": "Create new account menu row subtitle"
     },
+    "addAccountMenuCreateEncryptedTitle": "Create Encrypted Account",
+    "@addAccountMenuCreateEncryptedTitle": {
+      "description": "Create encrypted account menu row title"
+    },
+    "addAccountMenuCreateEncryptedSubtitle": "Add a private wormhole address",
+    "@addAccountMenuCreateEncryptedSubtitle": {
+      "description": "Create encrypted account menu row subtitle"
+    },
+    "addAccountMenuMoreTitle": "More",
+    "@addAccountMenuMoreTitle": {
+      "description": "Title of the add account more options action sheet"
+    },
+    "addAccountMenuImportKeystoneTitle": "Import Keystone Wallet",
+    "@addAccountMenuImportKeystoneTitle": {
+      "description": "Import keystone wallet menu row title"
+    },
+    "addAccountMenuImportKeystoneSubtitle": "Scan the address QR from your Keystone device",
+    "@addAccountMenuImportKeystoneSubtitle": {
+      "description": "Import keystone wallet menu row subtitle"
+    },
     "addAccountMenuImportTitle": "Import Wallet",
     "@addAccountMenuImportTitle": {
       "description": "Import wallet menu row title"
@@ -259,9 +279,9 @@
     "@addAccountMenuMultisigSubtitle": {
       "description": "Add multisig menu row subtitle"
     },
-    "addAccountMenuDiscoverMultisigTitle": "Discover Multisig",
+    "addAccountMenuDiscoverMultisigTitle": "Import Multisig",
     "@addAccountMenuDiscoverMultisigTitle": {
-      "description": "Discover multisig menu row title"
+      "description": "Import (discover) multisig menu row title"
     },
     "addAccountMenuDiscoverMultisigSubtitle": "Find multisigs where your accounts are signers",
     "@addAccountMenuDiscoverMultisigSubtitle": {
@@ -951,6 +971,10 @@
     "createAccountErrorCouldNotAdd": "Could not add account.",
     "@createAccountErrorCouldNotAdd": {
       "description": "Error when account creation fails"
+    },
+    "createAccountEncryptedDefaultName": "Encrypted Account",
+    "@createAccountEncryptedDefaultName": {
+      "description": "Default name for a newly created encrypted account"
     },
     "createAccountDefaultName": "Account {number}",
     "@createAccountDefaultName": {

@@ -34,6 +34,22 @@ class AccountsService {
     return newAccount;
   }
 
+  Future<Account> createEncryptedAccount({required int walletIndex}) async {
+    final mnemonic = await _settingsService.getMnemonic(walletIndex);
+    if (mnemonic == null) {
+      throw Exception('Mnemonic not found. Cannot create encrypted account.');
+    }
+    final nextIndex = await _settingsService.getNextFreeAccountIndex(walletIndex);
+    final keyPair = HdWalletService().deriveWormholeKeyPair(mnemonic: mnemonic);
+    return Account(
+      walletIndex: walletIndex,
+      index: nextIndex,
+      name: 'Encrypted Account',
+      accountId: keyPair.address,
+      accountType: AccountType.encrypted,
+    );
+  }
+
   Future<void> updateAccountName(Account account, String name) async {
     if (name.isEmpty) {
       throw Exception("Account name can't be empty");

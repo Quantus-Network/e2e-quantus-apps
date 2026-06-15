@@ -15,7 +15,9 @@ import 'package:resonance_network_wallet/v2/screens/accounts/account_ready_scree
 import 'package:resonance_network_wallet/v2/screens/accounts/add_hardware_account_screen.dart';
 
 class CreateAccountScreen extends ConsumerStatefulWidget {
-  const CreateAccountScreen({super.key});
+  const CreateAccountScreen({super.key, this.isEncrypted = false});
+
+  final bool isEncrypted;
 
   @override
   ConsumerState<CreateAccountScreen> createState() => _CreateAccountScreenState();
@@ -52,7 +54,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
     try {
       final selectedWalletAccounts = _accounts.where((a) => a.walletIndex == _walletIndex).toList();
 
-      if (_isHardwareWallet(selectedWalletAccounts)) {
+      if (!widget.isEncrypted && _isHardwareWallet(selectedWalletAccounts)) {
         final created = await Navigator.push<bool?>(
           context,
           MaterialPageRoute(builder: (context) => AddHardwareAccountScreen(walletIndex: _walletIndex)),
@@ -63,7 +65,9 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
           if (mounted) Navigator.of(context).pop();
         }
       } else {
-        final draft = await _accountsService.createNewAccount(walletIndex: _walletIndex);
+        final draft = widget.isEncrypted
+            ? await _accountsService.createEncryptedAccount(walletIndex: _walletIndex)
+            : await _accountsService.createNewAccount(walletIndex: _walletIndex);
         final accountToSave = draft.copyWith(name: _accountName.text.trim());
         await _accountsService.addAccount(accountToSave);
 
@@ -105,7 +109,9 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
     _walletIndex = _walletIndexForActiveAccount(_accounts, activeAccount);
 
     final l10n = ref.read(l10nProvider);
-    _accountName.text = l10n.createAccountDefaultName(_accounts.length + 1);
+    _accountName.text = widget.isEncrypted
+        ? l10n.createAccountEncryptedDefaultName
+        : l10n.createAccountDefaultName(_accounts.length + 1);
     _accountName.addListener(() => setState(() {}));
   }
 

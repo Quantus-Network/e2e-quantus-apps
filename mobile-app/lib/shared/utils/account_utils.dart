@@ -21,6 +21,17 @@ int nextNonHardwareWalletIndex(List<Account> accounts) {
   return i;
 }
 
+/// Smallest non-negative index not used as [Account.walletIndex] by any account,
+/// including hardware wallets. Use when adding a distinct hardware wallet.
+int nextWalletIndex(List<Account> accounts) {
+  final used = accounts.map((a) => a.walletIndex).toSet();
+  var i = 0;
+  while (used.contains(i)) {
+    i++;
+  }
+  return i;
+}
+
 String getAccountBadgeInitials(String text, {required String separator}) {
   if (text.isEmpty) return '?';
 

@@ -179,6 +179,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addAccountMenuCreateSubtitle => 'Generate a fresh wallet address';
 
   @override
+  String get addAccountMenuCreateEncryptedTitle => 'Create Encrypted Account';
+
+  @override
+  String get addAccountMenuCreateEncryptedSubtitle => 'Add a private wormhole address';
+
+  @override
+  String get addAccountMenuMoreTitle => 'More';
+
+  @override
+  String get addAccountMenuImportKeystoneTitle => 'Import Keystone Wallet';
+
+  @override
+  String get addAccountMenuImportKeystoneSubtitle => 'Scan the address QR from your Keystone device';
+
+  @override
   String get addAccountMenuImportTitle => 'Import Wallet';
 
   @override
@@ -191,7 +206,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addAccountMenuMultisigSubtitle => 'Set up a shared address with multiple signers';
 
   @override
-  String get addAccountMenuDiscoverMultisigTitle => 'Discover Multisig';
+  String get addAccountMenuDiscoverMultisigTitle => 'Import Multisig';
 
   @override
   String get addAccountMenuDiscoverMultisigSubtitle => 'Find multisigs where your accounts are signers';
@@ -679,6 +694,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get createAccountErrorCouldNotAdd => 'Could not add account.';
+
+  @override
+  String get createAccountEncryptedDefaultName => 'Encrypted Account';
 
   @override
   String createAccountDefaultName(int number) {

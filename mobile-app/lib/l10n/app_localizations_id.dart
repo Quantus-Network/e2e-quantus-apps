@@ -180,6 +180,21 @@ class AppLocalizationsId extends AppLocalizations {
   String get addAccountMenuCreateSubtitle => 'Buat alamat wallet baru';
 
   @override
+  String get addAccountMenuCreateEncryptedTitle => 'Buat Akun Terenkripsi';
+
+  @override
+  String get addAccountMenuCreateEncryptedSubtitle => 'Tambahkan alamat wormhole pribadi';
+
+  @override
+  String get addAccountMenuMoreTitle => 'Lainnya';
+
+  @override
+  String get addAccountMenuImportKeystoneTitle => 'Impor Wallet Keystone';
+
+  @override
+  String get addAccountMenuImportKeystoneSubtitle => 'Pindai QR alamat dari perangkat Keystone Anda';
+
+  @override
   String get addAccountMenuImportTitle => 'Impor Wallet';
 
   @override
@@ -192,7 +207,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get addAccountMenuMultisigSubtitle => 'Siapkan alamat bersama dengan beberapa penandatangan';
 
   @override
-  String get addAccountMenuDiscoverMultisigTitle => 'Temukan Multisig';
+  String get addAccountMenuDiscoverMultisigTitle => 'Impor Multisig';
 
   @override
   String get addAccountMenuDiscoverMultisigSubtitle => 'Cari multisig di mana akun Anda adalah penandatangan';
@@ -681,6 +696,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get createAccountErrorCouldNotAdd => 'Gagal menambahkan akun.';
+
+  @override
+  String get createAccountEncryptedDefaultName => 'Akun Terenkripsi';
 
   @override
   String createAccountDefaultName(int number) {

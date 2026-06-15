@@ -4,6 +4,7 @@ class RemoteConfigModel {
   final bool enableHighSecurity;
   final bool enableRemoteNotifications;
   final bool enableSwap;
+  final bool enableEncryptedAccount;
 
   const RemoteConfigModel({
     required this.enableTestButtons,
@@ -11,6 +12,7 @@ class RemoteConfigModel {
     required this.enableHighSecurity,
     required this.enableRemoteNotifications,
     required this.enableSwap,
+    required this.enableEncryptedAccount,
   });
 
   R match<R>({
@@ -20,6 +22,7 @@ class RemoteConfigModel {
       bool enableHighSecurity,
       bool enableRemoteNotifications,
       bool enableSwap,
+      bool enableEncryptedAccount,
     )
     fn,
   }) {
@@ -29,6 +32,7 @@ class RemoteConfigModel {
       enableHighSecurity,
       enableRemoteNotifications,
       enableSwap,
+      enableEncryptedAccount,
     );
   }
 
@@ -38,16 +42,18 @@ class RemoteConfigModel {
     enableHighSecurity: true,
     enableRemoteNotifications: true,
     enableSwap: true,
+    enableEncryptedAccount: false,
   );
 
   Map<String, dynamic> toCacheJson() {
     return match(
-      fn: (test, keystone, security, notifications, swap) => {
+      fn: (test, keystone, security, notifications, swap, encrypted) => {
         'enableTestButtons': test,
         'enableKeystoneHardwareWallet': keystone,
         'enableHighSecurity': security,
         'enableRemoteNotifications': notifications,
         'enableSwap': swap,
+        'enableEncryptedAccount': encrypted,
       },
     );
   }
@@ -59,29 +65,40 @@ class RemoteConfigModel {
       enableHighSecurity: json['enableHighSecurity'] ?? defaults.enableHighSecurity,
       enableRemoteNotifications: json['enableRemoteNotifications'] ?? defaults.enableRemoteNotifications,
       enableSwap: json['enableSwap'] ?? defaults.enableSwap,
+      enableEncryptedAccount: json['enableEncryptedAccount'] ?? defaults.enableEncryptedAccount,
     );
   }
 
   bool compare(RemoteConfigModel other) {
     return match(
-      fn: (enableTestButtons, enableKeystoneHardwareWallet, enableHighSecurity, enableRemoteNotifications, enableSwap) {
-        return other.match(
-          fn:
-              (
-                otherEnableTestButtons,
-                otherEnableKeystoneHardwareWallet,
-                otherEnableHighSecurity,
-                otherEnableRemoteNotifications,
-                otherEnableSwap,
-              ) {
-                return enableTestButtons == otherEnableTestButtons &&
-                    enableKeystoneHardwareWallet == otherEnableKeystoneHardwareWallet &&
-                    enableHighSecurity == otherEnableHighSecurity &&
-                    enableRemoteNotifications == otherEnableRemoteNotifications &&
-                    enableSwap == otherEnableSwap;
-              },
-        );
-      },
+      fn:
+          (
+            enableTestButtons,
+            enableKeystoneHardwareWallet,
+            enableHighSecurity,
+            enableRemoteNotifications,
+            enableSwap,
+            enableEncryptedAccount,
+          ) {
+            return other.match(
+              fn:
+                  (
+                    otherEnableTestButtons,
+                    otherEnableKeystoneHardwareWallet,
+                    otherEnableHighSecurity,
+                    otherEnableRemoteNotifications,
+                    otherEnableSwap,
+                    otherEnableEncryptedAccount,
+                  ) {
+                    return enableTestButtons == otherEnableTestButtons &&
+                        enableKeystoneHardwareWallet == otherEnableKeystoneHardwareWallet &&
+                        enableHighSecurity == otherEnableHighSecurity &&
+                        enableRemoteNotifications == otherEnableRemoteNotifications &&
+                        enableSwap == otherEnableSwap &&
+                        enableEncryptedAccount == otherEnableEncryptedAccount;
+                  },
+            );
+          },
     );
   }
 }
