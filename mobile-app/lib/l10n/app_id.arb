@@ -60,7 +60,7 @@
   "accountsSheetBalanceUnavailable": "Saldo tidak tersedia",
   "accountsSheetBalance": "{balance} {symbol}",
   "accountsSheetWallet": "Wallet {number}",
-  "accountsSheetKeystoneWallet": "Wallet Perangkat Keras Keystone {number}",
+  "accountsSheetKeystoneWallet": "{number, plural, =1{Wallet Perangkat Keras Keystone} other{Wallet Perangkat Keras Keystone {number}}}",
   "accountsSheetSubheaderTransparent": "Akun Transparan",
   "accountsSheetSubheaderEncrypted": "Akun Terenkripsi",
   "accountsSheetSubheaderKeystone": "Akun Keystone",

@@ -53,7 +53,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
       ref.invalidate(activeAccountProvider);
       ref.read(firebaseMessagingServiceProvider).insertNewAddress(accountToSave.accountId);
 
-      if (mounted) finishAccountAddition(context, ref, newAccountId: accountToSave.accountId);
+      if (mounted) returnToAccountsSheet(context, ref, highlightAccountId: accountToSave.accountId);
     } catch (e, st) {
       quantusDebugPrint('[CreateAccount] create account error: $e\n$st');
       if (mounted) {

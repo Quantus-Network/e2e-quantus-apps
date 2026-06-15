@@ -17,7 +17,6 @@ import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
-import 'package:resonance_network_wallet/v2/screens/accounts/accounts_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/open_accounts_management_button.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_screen.dart';
@@ -59,7 +58,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.listenManual<TransactionEvent?>(transactionIntentProvider, _onTransactionIntent);
     ref.listenManual<PaymentIntent?>(paymentIntentProvider, _onPaymentIntent);
     ref.listenManual<String?>(sharedAccountIntentProvider, _onSharedIntent);
-    ref.listenManual<OpenAccountsIntent?>(openAccountsIntentProvider, _onOpenAccountsIntent);
     ref.listenManual<AsyncValue<DisplayAccount?>>(activeAccountProvider, (_, async) {
       if (async.value == null) return;
       _onTransactionIntent(null, ref.read(transactionIntentProvider));
@@ -73,7 +71,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _onTransactionIntent(null, ref.read(transactionIntentProvider));
     _onPaymentIntent(null, ref.read(paymentIntentProvider));
     _onSharedIntent(null, ref.read(sharedAccountIntentProvider));
-    _onOpenAccountsIntent(null, ref.read(openAccountsIntentProvider));
   }
 
   void _onTransactionIntent(TransactionEvent? _, TransactionEvent? transaction) {
@@ -106,13 +103,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.read(sharedAccountIntentProvider.notifier).state = null;
 
     showSharedAddressActionSheet(context, shared);
-  }
-
-  void _onOpenAccountsIntent(OpenAccountsIntent? _, OpenAccountsIntent? intent) {
-    if (intent == null || !mounted) return;
-    ref.read(openAccountsIntentProvider.notifier).state = null;
-
-    showAccountsSheet(context, highlightAccountId: intent.highlightAccountId);
   }
 
   Future<void> _refresh() async {

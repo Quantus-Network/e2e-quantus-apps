@@ -255,7 +255,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
       );
 
       if (!mounted) return;
-      finishAccountAddition(context, ref, newAccountId: _predictedAddress!);
+      returnToAccountsSheet(context, ref, highlightAccountId: _predictedAddress!);
     } on MultisigAlreadyExistsException {
       if (mounted) {
         context.showErrorToaster(message: l10n.multisigCreateAlreadyExists);

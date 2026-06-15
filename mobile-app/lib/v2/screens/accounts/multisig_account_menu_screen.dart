@@ -14,6 +14,7 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_details_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/edit_account_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/multisig_details_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -82,7 +83,7 @@ class MultisigAccountMenuScreen extends ConsumerWidget {
     try {
       await ref.read(multisigAccountsProvider.notifier).remove(account.accountId);
       ref.invalidate(activeAccountProvider);
-      if (context.mounted) Navigator.of(context).pop();
+      if (context.mounted) returnToAccountsSheet(context, ref);
     } catch (e, st) {
       quantusDebugPrint('[MultisigAccountMenu] disconnect error: $e\n$st');
       if (context.mounted) context.showErrorToaster(message: l10n.accountMenuDisconnectError);

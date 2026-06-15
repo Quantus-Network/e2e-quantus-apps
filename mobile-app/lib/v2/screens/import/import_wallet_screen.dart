@@ -123,7 +123,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
 
       if (!mounted) return;
       if (widget.openAccountsOnComplete) {
-        finishAccountAddition(context, ref, newAccountId: key.ss58Address);
+        returnToAccountsSheet(context, ref, highlightAccountId: key.ss58Address);
       } else {
         Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HomeScreen()), (route) => false);
       }

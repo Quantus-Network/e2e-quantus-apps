@@ -176,7 +176,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String accountsSheetKeystoneWallet(int number) {
-    return 'Keystone Hardware Wallet $number';
+    String _temp0 = intl.Intl.pluralLogic(
+      number,
+      locale: localeName,
+      other: 'Keystone Hardware Wallet $number',
+      one: 'Keystone Hardware Wallet',
+    );
+    return '$_temp0';
   }
 
   @override

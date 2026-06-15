@@ -239,9 +239,9 @@
         }
       }
     },
-    "accountsSheetKeystoneWallet": "Keystone Hardware Wallet {number}",
+    "accountsSheetKeystoneWallet": "{number, plural, =1{Keystone Hardware Wallet} other{Keystone Hardware Wallet {number}}}",
     "@accountsSheetKeystoneWallet": {
-      "description": "Keystone hardware wallet segment header in accounts sheet",
+      "description": "Keystone hardware wallet segment header in accounts sheet; the first wallet omits the number",
       "placeholders": {
         "number": {
           "type": "int"

@@ -39,9 +39,7 @@ class MultisigService {
   /// Suggested approval threshold at roughly 70% of [signerCount].
   static int defaultThreshold(int signerCount) {
     if (signerCount <= 0) return 1;
-    final threshold = (signerCount * 0.7).round();
-    final minThreshold = signerCount >= 2 ? 2 : 1;
-    return threshold.clamp(minThreshold, signerCount);
+    return (signerCount * 2 / 3).round().clamp(1, signerCount);
   }
 
   Future<List<MultisigAccount>> discoverForUser(List<String> myAccountIds) async {

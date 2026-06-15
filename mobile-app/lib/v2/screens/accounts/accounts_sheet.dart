@@ -13,21 +13,25 @@ import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_menu_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/multisig_account_menu_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/add_account_menu_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
-Future<T?> showAccountsSheet<T>(BuildContext context, {String? highlightAccountId}) async {
-  return BottomSheetContainer.show<T>(context, builder: (_) => AccountsSheet(highlightAccountId: highlightAccountId));
+Future<T?> showAccountsSheet<T>(BuildContext context) async {
+  return BottomSheetContainer.show<T>(
+    context,
+    routeSettings: const RouteSettings(name: accountsSheetRouteName),
+    builder: (_) => const AccountsSheet(),
+  );
 }
 
 class AccountsSheet extends ConsumerStatefulWidget {
-  const AccountsSheet({super.key, this.highlightAccountId});
-
-  final String? highlightAccountId;
+  const AccountsSheet({super.key});
 
   @override
   ConsumerState<AccountsSheet> createState() => _AccountsScreenState();
@@ -36,6 +40,18 @@ class AccountsSheet extends ConsumerStatefulWidget {
 class _AccountsScreenState extends ConsumerState<AccountsSheet> {
   final GlobalKey _scrollTargetKey = GlobalKey();
   bool _scrolledToTarget = false;
+  String? _highlightAccountId;
+
+  /// Reacts to an add/import flow popping back to this already-open sheet:
+  /// highlight the new account and re-run the scroll-into-view.
+  void _applyOpenAccountsIntent(OpenAccountsIntent? intent) {
+    if (intent == null) return;
+    ref.read(openAccountsIntentProvider.notifier).state = null;
+    setState(() {
+      _highlightAccountId = intent.highlightAccountId;
+      _scrolledToTarget = false;
+    });
+  }
 
   void _maybeScrollToTarget() {
     if (_scrolledToTarget) return;
@@ -73,6 +89,8 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<OpenAccountsIntent?>(openAccountsIntentProvider, (_, next) => _applyOpenAccountsIntent(next));
+
     final l10n = ref.watch(l10nProvider);
     final accountsAsync = ref.watch(accountsProvider);
     final multisigAsync = ref.watch(multisigAccountsProvider);
@@ -135,7 +153,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
   }
 
   Widget _buildAccountsListView(AppLocalizations l10n, AccountsGrouping grouping, String? activeAccountId) {
-    final scrollTargetId = widget.highlightAccountId ?? activeAccountId;
+    final scrollTargetId = _highlightAccountId ?? activeAccountId;
     _maybeScrollToTarget();
 
     return Column(
@@ -221,7 +239,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
 
   Widget _buildRow(AppLocalizations l10n, BaseAccount account, String? activeAccountId, String? scrollTargetId) {
     final isActive = account.accountId == activeAccountId;
-    final isHighlighted = account.accountId == widget.highlightAccountId;
+    final isHighlighted = account.accountId == _highlightAccountId;
     final key = account.accountId == scrollTargetId ? _scrollTargetKey : null;
 
     if (account is MultisigAccount) return _buildMultisigRow(l10n, account, isActive, isHighlighted, key);

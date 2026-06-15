@@ -404,10 +404,10 @@ abstract class AppLocalizations {
   /// **'Wallet {number}'**
   String accountsSheetWallet(int number);
 
-  /// Keystone hardware wallet segment header in accounts sheet
+  /// Keystone hardware wallet segment header in accounts sheet; the first wallet omits the number
   ///
   /// In en, this message translates to:
-  /// **'Keystone Hardware Wallet {number}'**
+  /// **'{number, plural, =1{Keystone Hardware Wallet} other{Keystone Hardware Wallet {number}}}'**
   String accountsSheetKeystoneWallet(int number);
 
   /// Sub-segment header for transparent accounts

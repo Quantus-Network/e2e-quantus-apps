@@ -52,7 +52,7 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
       ref.invalidate(activeAccountProvider);
       ref.read(firebaseMessagingServiceProvider).insertNewAddress(account.accountId);
 
-      if (mounted) finishAccountAddition(context, ref, newAccountId: account.accountId);
+      if (mounted) returnToAccountsSheet(context, ref, highlightAccountId: account.accountId);
     } catch (e, st) {
       quantusDebugPrint('[AddAccountMenu] create encrypted account error: $e\n$st');
       if (mounted) {

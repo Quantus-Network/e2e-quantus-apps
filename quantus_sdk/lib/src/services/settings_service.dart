@@ -132,7 +132,8 @@ class SettingsService {
       throw Exception('Cant remove last account!');
     }
     if (account.accountId == await _getActiveAccountId()) {
-      await setActiveAccount(RegularAccount(accounts[0]));
+      final replacement = accounts.firstWhere((a) => a.accountId != account.accountId);
+      await setActiveAccount(RegularAccount(replacement));
     }
     accounts.removeWhere((a) => a.accountId == account.accountId);
     await saveAccounts(accounts);

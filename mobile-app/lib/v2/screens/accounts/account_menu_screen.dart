@@ -68,7 +68,10 @@ class AccountMenuScreen extends ConsumerWidget {
   Widget? _buildBottomContent(BuildContext context, WidgetRef ref, AppLocalizations l10n, Account account) {
     if (isPostCreation) {
       return ScaffoldBaseBottomContent(
-        child: QuantusButton.simple(label: l10n.accountMenuDone, onTap: () => finishAccountAddition(context, ref)),
+        child: QuantusButton.simple(
+          label: l10n.accountMenuDone,
+          onTap: () => returnToAccountsSheet(context, ref, highlightAccountId: account.accountId),
+        ),
       );
     }
     if (account.accountType == AccountType.keystone) {
@@ -99,7 +102,7 @@ class AccountMenuScreen extends ConsumerWidget {
       await AccountsService().removeAccount(account);
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
-      if (context.mounted) Navigator.of(context).pop();
+      if (context.mounted) returnToAccountsSheet(context, ref);
     } catch (e, st) {
       quantusDebugPrint('[AccountMenu] disconnect error: $e\n$st');
       if (context.mounted) context.showErrorToaster(message: l10n.accountMenuDisconnectError);
