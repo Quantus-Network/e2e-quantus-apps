@@ -130,7 +130,11 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
   Widget _buildQr(AppColorsV2 colors, AppTextTheme text) {
     final error = _error;
     if (error != null) {
-      return Text(error, style: text.detail?.copyWith(color: colors.textError), textAlign: TextAlign.center);
+      return Text(
+        error,
+        style: text.detail?.copyWith(color: colors.textError),
+        textAlign: TextAlign.center,
+      );
     }
     final parts = _urParts;
     if (parts == null) return const Loader();

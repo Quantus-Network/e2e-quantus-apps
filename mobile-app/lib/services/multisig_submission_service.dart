@@ -59,7 +59,7 @@ class MultisigSubmissionService {
         .read(pendingMultisigCreationsProvider.notifier)
         .add(PendingMultisigCreationEvent.fromDraft(draft, networkFee: networkFee), draft);
 
-    // TODO: Submit should happen here, then the other stuff can happen unawaited... 
+    // TODO: Submit should happen here, then the other stuff can happen unawaited...
 
     unawaited(
       _submitAndTrackBackground(

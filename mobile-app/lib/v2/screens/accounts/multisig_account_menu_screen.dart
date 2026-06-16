@@ -32,8 +32,7 @@ class MultisigAccountMenuScreen extends ConsumerWidget {
     final text = context.themeText;
 
     final accounts = ref.watch(multisigAccountsProvider);
-    final account =
-        accounts.value?.firstWhereOrNull((a) => a.accountId == initialAccount.accountId) ?? initialAccount;
+    final account = accounts.value?.firstWhereOrNull((a) => a.accountId == initialAccount.accountId) ?? initialAccount;
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.accountMenuTitle),

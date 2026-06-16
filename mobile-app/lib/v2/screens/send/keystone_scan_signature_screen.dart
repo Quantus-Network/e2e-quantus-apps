@@ -197,7 +197,10 @@ class _KeystoneScanSignatureScreenState extends ConsumerState<KeystoneScanSignat
                     icon: const Icon(Icons.arrow_back, color: Colors.white),
                   ),
                   const Spacer(),
-                  IconButton(onPressed: _controller.toggleTorch, icon: const Icon(Icons.flash_on, color: Colors.white)),
+                  IconButton(
+                    onPressed: _controller.toggleTorch,
+                    icon: const Icon(Icons.flash_on, color: Colors.white),
+                  ),
                 ],
               ),
             ),

@@ -165,10 +165,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       );
     }
 
-    final grouping = groupAccounts(
-      accounts: accountsAsync.value ?? [],
-      multisigs: multisigAsync.value ?? [],
-    );
+    final grouping = groupAccounts(accounts: accountsAsync.value ?? [], multisigs: multisigAsync.value ?? []);
 
     return _buildAccountsListView(l10n, grouping, activeAccountId);
   }

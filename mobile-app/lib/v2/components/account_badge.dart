@@ -11,14 +11,7 @@ class AccountBadge extends StatelessWidget {
   final TextStyle? textStyle;
   final IconData? icon;
 
-  const AccountBadge({
-    super.key,
-    required this.name,
-    this.isActive = false,
-    this.size = 40,
-    this.textStyle,
-    this.icon,
-  });
+  const AccountBadge({super.key, required this.name, this.isActive = false, this.size = 40, this.textStyle, this.icon});
 
   AccountBadge.account({super.key, required Account account, this.isActive = false, this.size = 40, this.textStyle})
     : name = account.name,

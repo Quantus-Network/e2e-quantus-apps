@@ -10,7 +10,12 @@ class AnimatedUrQr extends StatefulWidget {
   final Duration interval;
   final double size;
 
-  const AnimatedUrQr({super.key, required this.parts, this.interval = const Duration(milliseconds: 200), this.size = 280});
+  const AnimatedUrQr({
+    super.key,
+    required this.parts,
+    this.interval = const Duration(milliseconds: 200),
+    this.size = 280,
+  });
 
   @override
   State<AnimatedUrQr> createState() => _AnimatedUrQrState();

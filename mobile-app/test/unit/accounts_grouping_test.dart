@@ -2,8 +2,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/utils/accounts_grouping.dart';
 
-Account _acc(int wallet, int index, {AccountType type = AccountType.local, String? id}) =>
-    Account(walletIndex: wallet, index: index, name: 'A$wallet-$index', accountId: id ?? 'addr-$wallet-$index', accountType: type);
+Account _acc(int wallet, int index, {AccountType type = AccountType.local, String? id}) => Account(
+  walletIndex: wallet,
+  index: index,
+  name: 'A$wallet-$index',
+  accountId: id ?? 'addr-$wallet-$index',
+  accountType: type,
+);
 
 MultisigAccount _msig(String id, String myMember, {String name = 'Multisig'}) => MultisigAccount(
   name: name,
@@ -31,7 +36,10 @@ void main() {
 
     test('encrypted account forces segmented layout with sub-segments', () {
       final r = groupAccounts(
-        accounts: [_acc(0, 0), _acc(0, 1, type: AccountType.encrypted, id: 'enc')],
+        accounts: [
+          _acc(0, 0),
+          _acc(0, 1, type: AccountType.encrypted, id: 'enc'),
+        ],
         multisigs: [],
       );
       expect(r.segmented, isTrue);
@@ -55,7 +63,10 @@ void main() {
 
     test('keystone wallets come after software wallets with own numbering', () {
       final r = groupAccounts(
-        accounts: [_acc(0, 0), _acc(1, 0, type: AccountType.keystone, id: 'k')],
+        accounts: [
+          _acc(0, 0),
+          _acc(1, 0, type: AccountType.keystone, id: 'k'),
+        ],
         multisigs: [],
       );
       final headers = r.items.whereType<WalletHeaderItem>().toList();
@@ -64,10 +75,7 @@ void main() {
       expect(headers[0].number, 1);
       expect(headers[1].kind, WalletKind.keystone);
       expect(headers[1].number, 1);
-      expect(
-        r.items.whereType<SegmentHeaderItem>().any((s) => s.segment == AccountSegment.keystone),
-        isTrue,
-      );
+      expect(r.items.whereType<SegmentHeaderItem>().any((s) => s.segment == AccountSegment.keystone), isTrue);
     });
 
     test('multisig is grouped under its owner wallet', () {
@@ -82,7 +90,10 @@ void main() {
     });
 
     test('unresolved multisig trails as a standalone multisig segment', () {
-      final r = groupAccounts(accounts: [_acc(0, 0, id: 'mine')], multisigs: [_msig('msigaddr', 'stranger')]);
+      final r = groupAccounts(
+        accounts: [_acc(0, 0, id: 'mine')],
+        multisigs: [_msig('msigaddr', 'stranger')],
+      );
       expect(r.segmented, isTrue);
       final last = r.items.last as AccountRowItem;
       expect(last.account.accountId, 'msigaddr');

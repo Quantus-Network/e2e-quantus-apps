@@ -36,8 +36,7 @@ class AccountMenuScreen extends ConsumerWidget {
     final text = context.themeText;
 
     final accounts = ref.watch(accountsProvider);
-    final account =
-        accounts.value?.firstWhereOrNull((a) => a.accountId == initialAccount.accountId) ?? initialAccount;
+    final account = accounts.value?.firstWhereOrNull((a) => a.accountId == initialAccount.accountId) ?? initialAccount;
     final canShowRecoveryPhrase = account.accountType == AccountType.local;
 
     return ScaffoldBase(
