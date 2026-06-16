@@ -179,5 +179,24 @@ void main() {
       // Assert
       expect(nextIndex, 3);
     });
+
+    test('getNextFreeAccountIndex ignores the reserved encrypted account index', () async {
+      // Arrange: a transparent account plus the high-index encrypted account.
+      const encrypted = Account(
+        walletIndex: 0,
+        index: AppConstants.encryptedAccountIndex,
+        name: 'Encrypted Account',
+        accountId: 'id_encrypted',
+        accountType: AccountType.encrypted,
+      );
+      await settingsService.initialize();
+      await settingsService.saveAccounts([account1, encrypted]);
+
+      // Act
+      final nextIndex = await settingsService.getNextFreeAccountIndex(0);
+
+      // Assert: transparent indices stay contiguous (1), not 1025.
+      expect(nextIndex, 1);
+    });
   });
 }

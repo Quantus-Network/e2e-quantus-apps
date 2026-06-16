@@ -269,53 +269,53 @@
     "@addAccountMenuTitle": {
       "description": "App bar title on add account menu"
     },
-    "addAccountMenuCreateTitle": "Create New Account",
+    "addAccountMenuCreateTitle": "Add Transparent Account",
     "@addAccountMenuCreateTitle": {
-      "description": "Create new account menu row title"
+      "description": "Add transparent account menu row title"
     },
-    "addAccountMenuCreateSubtitle": "Generate a fresh wallet address",
+    "addAccountMenuCreateSubtitle": "Add another public account",
     "@addAccountMenuCreateSubtitle": {
-      "description": "Create new account menu row subtitle"
-    },
-    "addAccountMenuCreateEncryptedTitle": "Create Encrypted Account",
-    "@addAccountMenuCreateEncryptedTitle": {
-      "description": "Create encrypted account menu row title"
-    },
-    "addAccountMenuCreateEncryptedSubtitle": "Add a private wormhole address",
-    "@addAccountMenuCreateEncryptedSubtitle": {
-      "description": "Create encrypted account menu row subtitle"
+      "description": "Add transparent account menu row subtitle"
     },
     "addAccountMenuMoreTitle": "More",
     "@addAccountMenuMoreTitle": {
       "description": "Title of the add account more options action sheet"
     },
-    "addAccountMenuImportKeystoneTitle": "Import Keystone Wallet",
+    "addAccountMenuMoreRowTitle": "More",
+    "@addAccountMenuMoreRowTitle": {
+      "description": "Primary menu row opening the advanced add-account options"
+    },
+    "addAccountMenuMoreRowSubtitle": "Import a wallet or use multisig",
+    "@addAccountMenuMoreRowSubtitle": {
+      "description": "Subtitle for the More menu row"
+    },
+    "addAccountMenuImportKeystoneTitle": "Add Keystone Hardware Account",
     "@addAccountMenuImportKeystoneTitle": {
-      "description": "Import keystone wallet menu row title"
+      "description": "Add keystone hardware account menu row title"
     },
     "addAccountMenuImportKeystoneSubtitle": "Scan the address QR from your Keystone device",
     "@addAccountMenuImportKeystoneSubtitle": {
-      "description": "Import keystone wallet menu row subtitle"
+      "description": "Add keystone hardware account menu row subtitle"
     },
-    "addAccountMenuImportTitle": "Import Wallet",
+    "addAccountMenuImportTitle": "Import Another Wallet",
     "@addAccountMenuImportTitle": {
-      "description": "Import wallet menu row title"
+      "description": "Import another wallet menu row title"
     },
     "addAccountMenuImportSubtitle": "Use a recovery phrase to import",
     "@addAccountMenuImportSubtitle": {
       "description": "Import wallet menu row subtitle"
     },
-    "addAccountMenuMultisigTitle": "Create Multisig",
+    "addAccountMenuMultisigTitle": "Create New Multisig",
     "@addAccountMenuMultisigTitle": {
-      "description": "Add multisig menu row title"
+      "description": "Create new multisig menu row title"
     },
     "addAccountMenuMultisigSubtitle": "Set up a shared address with multiple signers",
     "@addAccountMenuMultisigSubtitle": {
       "description": "Add multisig menu row subtitle"
     },
-    "addAccountMenuDiscoverMultisigTitle": "Import Multisig",
+    "addAccountMenuDiscoverMultisigTitle": "Add Multisig Account",
     "@addAccountMenuDiscoverMultisigTitle": {
-      "description": "Import (discover) multisig menu row title"
+      "description": "Add (discover) multisig menu row title"
     },
     "addAccountMenuDiscoverMultisigSubtitle": "Find multisigs where your accounts are signers",
     "@addAccountMenuDiscoverMultisigSubtitle": {

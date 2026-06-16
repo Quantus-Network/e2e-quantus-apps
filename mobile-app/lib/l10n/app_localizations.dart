@@ -440,29 +440,17 @@ abstract class AppLocalizations {
   /// **'Add Account'**
   String get addAccountMenuTitle;
 
-  /// Create new account menu row title
+  /// Add transparent account menu row title
   ///
   /// In en, this message translates to:
-  /// **'Create New Account'**
+  /// **'Add Transparent Account'**
   String get addAccountMenuCreateTitle;
 
-  /// Create new account menu row subtitle
+  /// Add transparent account menu row subtitle
   ///
   /// In en, this message translates to:
-  /// **'Generate a fresh wallet address'**
+  /// **'Add another public account'**
   String get addAccountMenuCreateSubtitle;
-
-  /// Create encrypted account menu row title
-  ///
-  /// In en, this message translates to:
-  /// **'Create Encrypted Account'**
-  String get addAccountMenuCreateEncryptedTitle;
-
-  /// Create encrypted account menu row subtitle
-  ///
-  /// In en, this message translates to:
-  /// **'Add a private wormhole address'**
-  String get addAccountMenuCreateEncryptedSubtitle;
 
   /// Title of the add account more options action sheet
   ///
@@ -470,22 +458,34 @@ abstract class AppLocalizations {
   /// **'More'**
   String get addAccountMenuMoreTitle;
 
-  /// Import keystone wallet menu row title
+  /// Primary menu row opening the advanced add-account options
   ///
   /// In en, this message translates to:
-  /// **'Import Keystone Wallet'**
+  /// **'More'**
+  String get addAccountMenuMoreRowTitle;
+
+  /// Subtitle for the More menu row
+  ///
+  /// In en, this message translates to:
+  /// **'Import a wallet or use multisig'**
+  String get addAccountMenuMoreRowSubtitle;
+
+  /// Add keystone hardware account menu row title
+  ///
+  /// In en, this message translates to:
+  /// **'Add Keystone Hardware Account'**
   String get addAccountMenuImportKeystoneTitle;
 
-  /// Import keystone wallet menu row subtitle
+  /// Add keystone hardware account menu row subtitle
   ///
   /// In en, this message translates to:
   /// **'Scan the address QR from your Keystone device'**
   String get addAccountMenuImportKeystoneSubtitle;
 
-  /// Import wallet menu row title
+  /// Import another wallet menu row title
   ///
   /// In en, this message translates to:
-  /// **'Import Wallet'**
+  /// **'Import Another Wallet'**
   String get addAccountMenuImportTitle;
 
   /// Import wallet menu row subtitle
@@ -494,10 +494,10 @@ abstract class AppLocalizations {
   /// **'Use a recovery phrase to import'**
   String get addAccountMenuImportSubtitle;
 
-  /// Add multisig menu row title
+  /// Create new multisig menu row title
   ///
   /// In en, this message translates to:
-  /// **'Create Multisig'**
+  /// **'Create New Multisig'**
   String get addAccountMenuMultisigTitle;
 
   /// Add multisig menu row subtitle
@@ -506,10 +506,10 @@ abstract class AppLocalizations {
   /// **'Set up a shared address with multiple signers'**
   String get addAccountMenuMultisigSubtitle;
 
-  /// Import (discover) multisig menu row title
+  /// Add (discover) multisig menu row title
   ///
   /// In en, this message translates to:
-  /// **'Import Multisig'**
+  /// **'Add Multisig Account'**
   String get addAccountMenuDiscoverMultisigTitle;
 
   /// Discover multisig menu row subtitle

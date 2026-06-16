@@ -13,8 +13,10 @@ import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_menu_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
@@ -41,6 +43,25 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
   final GlobalKey _scrollTargetKey = GlobalKey();
   bool _scrolledToTarget = false;
   String? _highlightAccountId;
+
+  @override
+  void initState() {
+    super.initState();
+    _ensureEncryptedAccounts();
+  }
+
+  /// Backfills the per-wallet encrypted (wormhole) account for every software
+  /// wallet so it shows alongside transparent accounts. Gated by the feature
+  /// flag; persists once, then no-ops on subsequent opens.
+  Future<void> _ensureEncryptedAccounts() async {
+    if (!ref.read(remoteConfigProvider).enableEncryptedAccount) return;
+    try {
+      final created = await ref.read(accountsServiceProvider).ensureEncryptedAccountsForSoftwareWallets();
+      if (created && mounted) ref.invalidate(accountsProvider);
+    } catch (e, st) {
+      quantusDebugPrint('[AccountsSheet] ensure encrypted accounts failed: $e\n$st');
+    }
+  }
 
   /// Reacts to an add/import flow popping back to this already-open sheet:
   /// highlight the new account and re-run the scroll-into-view.

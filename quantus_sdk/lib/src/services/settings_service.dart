@@ -205,7 +205,9 @@ class SettingsService {
 
   Future<int> getNextFreeAccountIndex(int walletIndex) async {
     final accounts = await getAccounts();
-    final walletAccounts = accounts.where((a) => a.walletIndex == walletIndex && a.index >= 0).toList();
+    final walletAccounts = accounts
+        .where((a) => a.walletIndex == walletIndex && a.index >= 0 && a.accountType != AccountType.encrypted)
+        .toList();
     if (walletAccounts.isEmpty) return 0;
     final maxIndex = walletAccounts.map((a) => a.index).reduce((a, b) => a > b ? a : b);
     return maxIndex + 1;

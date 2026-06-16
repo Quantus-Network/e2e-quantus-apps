@@ -202,40 +202,40 @@ class AppLocalizationsId extends AppLocalizations {
   String get addAccountMenuTitle => 'Tambah Akun';
 
   @override
-  String get addAccountMenuCreateTitle => 'Buat Akun Baru';
+  String get addAccountMenuCreateTitle => 'Tambah Akun Transparan';
 
   @override
-  String get addAccountMenuCreateSubtitle => 'Buat alamat wallet baru';
-
-  @override
-  String get addAccountMenuCreateEncryptedTitle => 'Buat Akun Terenkripsi';
-
-  @override
-  String get addAccountMenuCreateEncryptedSubtitle => 'Tambahkan alamat wormhole pribadi';
+  String get addAccountMenuCreateSubtitle => 'Tambahkan akun publik lainnya';
 
   @override
   String get addAccountMenuMoreTitle => 'Lainnya';
 
   @override
-  String get addAccountMenuImportKeystoneTitle => 'Impor Wallet Keystone';
+  String get addAccountMenuMoreRowTitle => 'Lainnya';
+
+  @override
+  String get addAccountMenuMoreRowSubtitle => 'Impor wallet atau gunakan multisig';
+
+  @override
+  String get addAccountMenuImportKeystoneTitle => 'Tambah Akun Perangkat Keras Keystone';
 
   @override
   String get addAccountMenuImportKeystoneSubtitle => 'Pindai QR alamat dari perangkat Keystone Anda';
 
   @override
-  String get addAccountMenuImportTitle => 'Impor Wallet';
+  String get addAccountMenuImportTitle => 'Impor Wallet Lain';
 
   @override
   String get addAccountMenuImportSubtitle => 'Gunakan recovery phrase untuk mengimpor';
 
   @override
-  String get addAccountMenuMultisigTitle => 'Buat Multisig';
+  String get addAccountMenuMultisigTitle => 'Buat Multisig Baru';
 
   @override
   String get addAccountMenuMultisigSubtitle => 'Siapkan alamat bersama dengan beberapa penandatangan';
 
   @override
-  String get addAccountMenuDiscoverMultisigTitle => 'Impor Multisig';
+  String get addAccountMenuDiscoverMultisigTitle => 'Tambah Akun Multisig';
 
   @override
   String get addAccountMenuDiscoverMultisigSubtitle => 'Cari multisig di mana akun Anda adalah penandatangan';

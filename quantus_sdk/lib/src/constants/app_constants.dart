@@ -58,6 +58,11 @@ class AppConstants {
   static const int decimals = 12;
   static const int ss58prefix = 189;
 
+  // Reserved account index for the per-wallet encrypted (wormhole) account.
+  // Kept high so it never collides with sequential transparent (BIP44) indices;
+  // the wormhole keypair derives independently of this value.
+  static const int encryptedAccountIndex = 1024;
+
   // Default sheet height in percentage of screen height
   static const double sendingSheetHeightFraction = 0.72;
 

@@ -201,40 +201,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addAccountMenuTitle => 'Add Account';
 
   @override
-  String get addAccountMenuCreateTitle => 'Create New Account';
+  String get addAccountMenuCreateTitle => 'Add Transparent Account';
 
   @override
-  String get addAccountMenuCreateSubtitle => 'Generate a fresh wallet address';
-
-  @override
-  String get addAccountMenuCreateEncryptedTitle => 'Create Encrypted Account';
-
-  @override
-  String get addAccountMenuCreateEncryptedSubtitle => 'Add a private wormhole address';
+  String get addAccountMenuCreateSubtitle => 'Add another public account';
 
   @override
   String get addAccountMenuMoreTitle => 'More';
 
   @override
-  String get addAccountMenuImportKeystoneTitle => 'Import Keystone Wallet';
+  String get addAccountMenuMoreRowTitle => 'More';
+
+  @override
+  String get addAccountMenuMoreRowSubtitle => 'Import a wallet or use multisig';
+
+  @override
+  String get addAccountMenuImportKeystoneTitle => 'Add Keystone Hardware Account';
 
   @override
   String get addAccountMenuImportKeystoneSubtitle => 'Scan the address QR from your Keystone device';
 
   @override
-  String get addAccountMenuImportTitle => 'Import Wallet';
+  String get addAccountMenuImportTitle => 'Import Another Wallet';
 
   @override
   String get addAccountMenuImportSubtitle => 'Use a recovery phrase to import';
 
   @override
-  String get addAccountMenuMultisigTitle => 'Create Multisig';
+  String get addAccountMenuMultisigTitle => 'Create New Multisig';
 
   @override
   String get addAccountMenuMultisigSubtitle => 'Set up a shared address with multiple signers';
 
   @override
-  String get addAccountMenuDiscoverMultisigTitle => 'Import Multisig';
+  String get addAccountMenuDiscoverMultisigTitle => 'Add Multisig Account';
 
   @override
   String get addAccountMenuDiscoverMultisigSubtitle => 'Find multisigs where your accounts are signers';
