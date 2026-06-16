@@ -1760,6 +1760,60 @@ abstract class AppLocalizations {
   /// **'Done'**
   String get sendTxSubmittedDone;
 
+  /// Title on the Keystone sign screen showing the unsigned transaction QR
+  ///
+  /// In en, this message translates to:
+  /// **'Scan with your Keystone'**
+  String get keystoneSignTitle;
+
+  /// Instruction on the Keystone sign screen
+  ///
+  /// In en, this message translates to:
+  /// **'Show this QR code to your Keystone hardware wallet to sign the transaction.'**
+  String get keystoneSignInstruction;
+
+  /// Button to advance from showing the QR to scanning the signature
+  ///
+  /// In en, this message translates to:
+  /// **'Scan signature'**
+  String get keystoneSignNext;
+
+  /// Error when building the unsigned transaction payload fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to prepare the transaction. Please try again.'**
+  String get keystoneSignError;
+
+  /// Instruction on the Keystone signature scanner screen
+  ///
+  /// In en, this message translates to:
+  /// **'Scan the signature QR from your Keystone'**
+  String get keystoneScanInstruction;
+
+  /// Progress indicator showing scanned vs total animated QR frames
+  ///
+  /// In en, this message translates to:
+  /// **'{scanned} / {total} frames'**
+  String keystoneScanProgress(int scanned, int total);
+
+  /// Progress text before the total frame count is known
+  ///
+  /// In en, this message translates to:
+  /// **'{count} frames scanned'**
+  String keystoneScanScanning(int count);
+
+  /// Overlay text while the externally signed transaction is broadcast
+  ///
+  /// In en, this message translates to:
+  /// **'Submitting transaction...'**
+  String get keystoneScanSubmitting;
+
+  /// Error when decoding or submitting the scanned signature fails
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read the signature. Please try again.'**
+  String get keystoneScanError;
+
   /// Button label when sending to own address
   ///
   /// In en, this message translates to:

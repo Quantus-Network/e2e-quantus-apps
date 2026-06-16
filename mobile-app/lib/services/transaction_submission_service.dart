@@ -60,6 +60,37 @@ class TransactionSubmissionService {
     await submitAndTrackTransaction(() => BalancesService().balanceTransfer(account, targetAddress, amount), pendingTx);
   }
 
+  /// Broadcasts a transfer whose signature was produced off-device (e.g. by a
+  /// Keystone hardware wallet). The [unsignedData] is rebuilt into an extrinsic
+  /// using the externally provided [signature] and [publicKey].
+  Future<void> submitExternallySignedTransfer({
+    required Account account,
+    required String targetAddress,
+    required BigInt amount,
+    required BigInt fee,
+    required int blockHeight,
+    required UnsignedTransactionData unsignedData,
+    required Uint8List signature,
+    required Uint8List publicKey,
+  }) async {
+    final pendingTx = createPendingTransaction(
+      from: account.accountId,
+      to: targetAddress,
+      amount: amount,
+      fee: fee,
+      blockHeight: blockHeight,
+    );
+
+    _ref.read(pendingTransactionsProvider.notifier).add(pendingTx);
+
+    TelemetryService().sendEvent('send_transfer_hardware');
+
+    await submitAndTrackTransaction(
+      () => SubstrateService().submitExtrinsicWithExternalSignature(unsignedData, signature, publicKey),
+      pendingTx,
+    );
+  }
+
   Future<void> scheduleReversibleTransferWithDelaySeconds({
     required Account account,
     required String recipientAddress,

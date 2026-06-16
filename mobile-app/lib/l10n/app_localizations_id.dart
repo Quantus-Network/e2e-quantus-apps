@@ -914,6 +914,38 @@ class AppLocalizationsId extends AppLocalizations {
   String get sendTxSubmittedDone => 'Selesai';
 
   @override
+  String get keystoneSignTitle => 'Pindai dengan Keystone Anda';
+
+  @override
+  String get keystoneSignInstruction =>
+      'Tunjukkan kode QR ini ke dompet perangkat keras Keystone Anda untuk menandatangani transaksi.';
+
+  @override
+  String get keystoneSignNext => 'Pindai tanda tangan';
+
+  @override
+  String get keystoneSignError => 'Gagal menyiapkan transaksi. Silakan coba lagi.';
+
+  @override
+  String get keystoneScanInstruction => 'Pindai QR tanda tangan dari Keystone Anda';
+
+  @override
+  String keystoneScanProgress(int scanned, int total) {
+    return '$scanned / $total bingkai';
+  }
+
+  @override
+  String keystoneScanScanning(int count) {
+    return '$count bingkai dipindai';
+  }
+
+  @override
+  String get keystoneScanSubmitting => 'Mengirim transaksi...';
+
+  @override
+  String get keystoneScanError => 'Tidak dapat membaca tanda tangan. Silakan coba lagi.';
+
+  @override
   String get sendLogicCantSelfTransfer => 'Tidak Bisa Transfer ke Diri Sendiri';
 
   @override

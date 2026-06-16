@@ -1289,6 +1289,56 @@
       "description": "Done button on transaction submitted screen"
     },
 
+    "keystoneSignTitle": "Scan with your Keystone",
+    "@keystoneSignTitle": {
+      "description": "Title on the Keystone sign screen showing the unsigned transaction QR"
+    },
+    "keystoneSignInstruction": "Show this QR code to your Keystone hardware wallet to sign the transaction.",
+    "@keystoneSignInstruction": {
+      "description": "Instruction on the Keystone sign screen"
+    },
+    "keystoneSignNext": "Scan signature",
+    "@keystoneSignNext": {
+      "description": "Button to advance from showing the QR to scanning the signature"
+    },
+    "keystoneSignError": "Failed to prepare the transaction. Please try again.",
+    "@keystoneSignError": {
+      "description": "Error when building the unsigned transaction payload fails"
+    },
+    "keystoneScanInstruction": "Scan the signature QR from your Keystone",
+    "@keystoneScanInstruction": {
+      "description": "Instruction on the Keystone signature scanner screen"
+    },
+    "keystoneScanProgress": "{scanned} / {total} frames",
+    "@keystoneScanProgress": {
+      "description": "Progress indicator showing scanned vs total animated QR frames",
+      "placeholders": {
+        "scanned": {
+          "type": "int"
+        },
+        "total": {
+          "type": "int"
+        }
+      }
+    },
+    "keystoneScanScanning": "{count} frames scanned",
+    "@keystoneScanScanning": {
+      "description": "Progress text before the total frame count is known",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "keystoneScanSubmitting": "Submitting transaction...",
+    "@keystoneScanSubmitting": {
+      "description": "Overlay text while the externally signed transaction is broadcast"
+    },
+    "keystoneScanError": "Couldn't read the signature. Please try again.",
+    "@keystoneScanError": {
+      "description": "Error when decoding or submitting the scanned signature fails"
+    },
+
     "sendLogicCantSelfTransfer": "Can't Self Transfer",
     "@sendLogicCantSelfTransfer": {
       "description": "Button label when sending to own address"

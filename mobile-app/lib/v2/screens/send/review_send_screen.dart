@@ -17,6 +17,7 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/split_card.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/tx_submitted_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -58,6 +59,31 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
     });
 
     final l10n = ref.read(l10nProvider);
+    final settings = SettingsService();
+    final account = (await settings.getActiveRegularAccount())!;
+    if (!mounted) return;
+
+    // Keystone (hardware) accounts sign off-device: hand off to the QR flow
+    // instead of signing locally. The debug flag forces this path for testing.
+    if (account.accountType == AccountType.keystone || AppConstants.debugHardwareWallet) {
+      setState(() => _submitting = false);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => KeystoneSignScreen(
+            account: account,
+            recipientAddress: widget.recipientAddress.trim(),
+            amount: widget.amount,
+            networkFee: widget.networkFee,
+            blockHeight: widget.blockHeight,
+            recipientChecksum: widget.recipientChecksum,
+            isPayMode: widget.isPayMode,
+          ),
+        ),
+      );
+      return;
+    }
+
     final authed = await LocalAuthService().authenticate(localizedReason: l10n.sendReviewAuthReason);
     if (!authed || !mounted) {
       setState(() {
@@ -68,8 +94,6 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
     }
 
     try {
-      final settings = SettingsService();
-      final account = (await settings.getActiveRegularAccount())!;
       final submissionService = ref.read(transactionSubmissionServiceProvider);
       await submissionService.balanceTransfer(
         account,

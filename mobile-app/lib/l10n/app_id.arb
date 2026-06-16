@@ -299,6 +299,16 @@
   "sendTxSubmittedToLabel": "Ke",
   "sendTxSubmittedDone": "Selesai",
 
+  "keystoneSignTitle": "Pindai dengan Keystone Anda",
+  "keystoneSignInstruction": "Tunjukkan kode QR ini ke dompet perangkat keras Keystone Anda untuk menandatangani transaksi.",
+  "keystoneSignNext": "Pindai tanda tangan",
+  "keystoneSignError": "Gagal menyiapkan transaksi. Silakan coba lagi.",
+  "keystoneScanInstruction": "Pindai QR tanda tangan dari Keystone Anda",
+  "keystoneScanProgress": "{scanned} / {total} bingkai",
+  "keystoneScanScanning": "{count} bingkai dipindai",
+  "keystoneScanSubmitting": "Mengirim transaksi...",
+  "keystoneScanError": "Tidak dapat membaca tanda tangan. Silakan coba lagi.",
+
   "sendLogicCantSelfTransfer": "Tidak Bisa Transfer ke Diri Sendiri",
   "sendLogicEnterAmount": "Masukkan Jumlah",
   "sendLogicInvalidAmount": "Jumlah Tidak Valid",

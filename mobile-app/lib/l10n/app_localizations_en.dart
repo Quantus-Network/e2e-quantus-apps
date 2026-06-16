@@ -912,6 +912,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendTxSubmittedDone => 'Done';
 
   @override
+  String get keystoneSignTitle => 'Scan with your Keystone';
+
+  @override
+  String get keystoneSignInstruction => 'Show this QR code to your Keystone hardware wallet to sign the transaction.';
+
+  @override
+  String get keystoneSignNext => 'Scan signature';
+
+  @override
+  String get keystoneSignError => 'Failed to prepare the transaction. Please try again.';
+
+  @override
+  String get keystoneScanInstruction => 'Scan the signature QR from your Keystone';
+
+  @override
+  String keystoneScanProgress(int scanned, int total) {
+    return '$scanned / $total frames';
+  }
+
+  @override
+  String keystoneScanScanning(int count) {
+    return '$count frames scanned';
+  }
+
+  @override
+  String get keystoneScanSubmitting => 'Submitting transaction...';
+
+  @override
+  String get keystoneScanError => 'Couldn\'t read the signature. Please try again.';
+
+  @override
   String get sendLogicCantSelfTransfer => 'Can\'t Self Transfer';
 
   @override
