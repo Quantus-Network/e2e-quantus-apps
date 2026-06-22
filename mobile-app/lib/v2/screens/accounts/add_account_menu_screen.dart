@@ -105,6 +105,7 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
+    final enableKeystone = ref.watch(remoteConfigProvider).enableKeystoneHardwareWallet;
 
     return ScaffoldBase(
       appBar: V2AppBar(
@@ -119,12 +120,13 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
             subtitle: l10n.addAccountMenuCreateSubtitle,
             onTap: _onCreateNewAccount,
           ),
-          _AddMenuRow(
-            icon: Icons.qr_code_scanner,
-            title: l10n.addAccountMenuImportKeystoneTitle,
-            subtitle: l10n.addAccountMenuImportKeystoneSubtitle,
-            onTap: _onImportKeystone,
-          ),
+          if (enableKeystone)
+            _AddMenuRow(
+              icon: Icons.qr_code_scanner,
+              title: l10n.addAccountMenuImportKeystoneTitle,
+              subtitle: l10n.addAccountMenuImportKeystoneSubtitle,
+              onTap: _onImportKeystone,
+            ),
         ],
       ),
     );

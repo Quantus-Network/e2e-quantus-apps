@@ -1,5 +1,6 @@
 class RemoteConfigModel {
   final bool enableTestButtons;
+  final bool enableKeystoneHardwareWallet;
   final bool enableHighSecurity;
   final bool enableRemoteNotifications;
   final bool enableSwap;
@@ -8,6 +9,7 @@ class RemoteConfigModel {
 
   const RemoteConfigModel({
     required this.enableTestButtons,
+    required this.enableKeystoneHardwareWallet,
     required this.enableHighSecurity,
     required this.enableRemoteNotifications,
     required this.enableSwap,
@@ -18,6 +20,7 @@ class RemoteConfigModel {
   R match<R>({
     required R Function(
       bool enableTestButtons,
+      bool enableKeystoneHardwareWallet,
       bool enableHighSecurity,
       bool enableRemoteNotifications,
       bool enableSwap,
@@ -28,6 +31,7 @@ class RemoteConfigModel {
   }) {
     return fn(
       enableTestButtons,
+      enableKeystoneHardwareWallet,
       enableHighSecurity,
       enableRemoteNotifications,
       enableSwap,
@@ -38,6 +42,7 @@ class RemoteConfigModel {
 
   static const RemoteConfigModel defaults = RemoteConfigModel(
     enableTestButtons: false,
+    enableKeystoneHardwareWallet: true,
     enableHighSecurity: false,
     enableRemoteNotifications: true,
     enableSwap: false,
@@ -47,8 +52,9 @@ class RemoteConfigModel {
 
   Map<String, dynamic> toCacheJson() {
     return match(
-      fn: (test, security, notifications, swap, encrypted, multisig) => {
+      fn: (test, keystone, security, notifications, swap, encrypted, multisig) => {
         'enableTestButtons': test,
+        'enableKeystoneHardwareWallet': keystone,
         'enableHighSecurity': security,
         'enableRemoteNotifications': notifications,
         'enableSwap': swap,
@@ -61,6 +67,7 @@ class RemoteConfigModel {
   factory RemoteConfigModel.fromJson(Map<String, dynamic> json) {
     return RemoteConfigModel(
       enableTestButtons: json['enableTestButtons'] ?? defaults.enableTestButtons,
+      enableKeystoneHardwareWallet: json['enableKeystoneHardwareWallet'] ?? defaults.enableKeystoneHardwareWallet,
       enableHighSecurity: json['enableHighSecurity'] ?? defaults.enableHighSecurity,
       enableRemoteNotifications: json['enableRemoteNotifications'] ?? defaults.enableRemoteNotifications,
       enableSwap: json['enableSwap'] ?? defaults.enableSwap,
@@ -74,6 +81,7 @@ class RemoteConfigModel {
       fn:
           (
             enableTestButtons,
+            enableKeystoneHardwareWallet,
             enableHighSecurity,
             enableRemoteNotifications,
             enableSwap,
@@ -84,6 +92,7 @@ class RemoteConfigModel {
               fn:
                   (
                     otherEnableTestButtons,
+                    otherEnableKeystoneHardwareWallet,
                     otherEnableHighSecurity,
                     otherEnableRemoteNotifications,
                     otherEnableSwap,
@@ -91,6 +100,7 @@ class RemoteConfigModel {
                     otherEnableMultisig,
                   ) {
                     return enableTestButtons == otherEnableTestButtons &&
+                        enableKeystoneHardwareWallet == otherEnableKeystoneHardwareWallet &&
                         enableHighSecurity == otherEnableHighSecurity &&
                         enableRemoteNotifications == otherEnableRemoteNotifications &&
                         enableSwap == otherEnableSwap &&
