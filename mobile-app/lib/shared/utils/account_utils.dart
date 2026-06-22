@@ -24,19 +24,9 @@ List<int> getNonHardwareWalletIndices(List<Account> accounts) {
   return nonHardwareWalletIndices.toList()..sort();
 }
 
-/// Smallest non-negative index not used as [Account.walletIndex] by any non-hardware account.
-/// Use when importing a new recovery phrase or otherwise adding a distinct software HD wallet.
-int nextNonHardwareWalletIndex(List<Account> accounts) {
-  final used = getNonHardwareWalletIndices(accounts).toSet();
-  var i = 0;
-  while (used.contains(i)) {
-    i++;
-  }
-  return i;
-}
-
-/// Smallest non-negative index not used as [Account.walletIndex] by any account,
-/// including hardware wallets. Use when adding a distinct hardware wallet.
+/// Smallest non-negative index not used as [Account.walletIndex] by any account.
+/// Wallet index is a shared namespace across software and hardware wallets, so a
+/// new wallet (software import or hardware) must take a globally unused index.
 int nextWalletIndex(List<Account> accounts) {
   final used = accounts.map((a) => a.walletIndex).toSet();
   var i = 0;

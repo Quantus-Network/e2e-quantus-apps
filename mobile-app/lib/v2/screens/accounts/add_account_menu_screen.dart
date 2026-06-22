@@ -32,7 +32,7 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
 
   void _onImportWallet() {
     final accounts = ref.read(accountsProvider).value ?? <Account>[];
-    final walletIndex = nextNonHardwareWalletIndex(accounts);
+    final walletIndex = nextWalletIndex(accounts);
 
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => ImportWalletScreenV2(walletIndex: walletIndex, openAccountsOnComplete: true)),
