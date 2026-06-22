@@ -443,7 +443,7 @@ abstract class AppLocalizations {
   /// Add transparent account menu row title
   ///
   /// In en, this message translates to:
-  /// **'Add Transparent Account'**
+  /// **'Add Account'**
   String get addAccountMenuCreateTitle;
 
   /// Add transparent account menu row subtitle
@@ -455,13 +455,13 @@ abstract class AppLocalizations {
   /// Title of the add account more options action sheet
   ///
   /// In en, this message translates to:
-  /// **'More'**
+  /// **'Advanced'**
   String get addAccountMenuMoreTitle;
 
   /// Primary menu row opening the advanced add-account options
   ///
   /// In en, this message translates to:
-  /// **'More'**
+  /// **'Advanced'**
   String get addAccountMenuMoreRowTitle;
 
   /// Subtitle for the More menu row

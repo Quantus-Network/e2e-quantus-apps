@@ -269,7 +269,7 @@
     "@addAccountMenuTitle": {
       "description": "App bar title on add account menu"
     },
-    "addAccountMenuCreateTitle": "Add Transparent Account",
+    "addAccountMenuCreateTitle": "Add Account",
     "@addAccountMenuCreateTitle": {
       "description": "Add transparent account menu row title"
     },
@@ -277,11 +277,11 @@
     "@addAccountMenuCreateSubtitle": {
       "description": "Add transparent account menu row subtitle"
     },
-    "addAccountMenuMoreTitle": "More",
+    "addAccountMenuMoreTitle": "Advanced",
     "@addAccountMenuMoreTitle": {
       "description": "Title of the add account more options action sheet"
     },
-    "addAccountMenuMoreRowTitle": "More",
+    "addAccountMenuMoreRowTitle": "Advanced",
     "@addAccountMenuMoreRowTitle": {
       "description": "Primary menu row opening the advanced add-account options"
     },

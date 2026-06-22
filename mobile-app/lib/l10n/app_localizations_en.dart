@@ -201,16 +201,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addAccountMenuTitle => 'Add Account';
 
   @override
-  String get addAccountMenuCreateTitle => 'Add Transparent Account';
+  String get addAccountMenuCreateTitle => 'Add Account';
 
   @override
   String get addAccountMenuCreateSubtitle => 'Add another public account';
 
   @override
-  String get addAccountMenuMoreTitle => 'More';
+  String get addAccountMenuMoreTitle => 'Advanced';
 
   @override
-  String get addAccountMenuMoreRowTitle => 'More';
+  String get addAccountMenuMoreRowTitle => 'Advanced';
 
   @override
   String get addAccountMenuMoreRowSubtitle => 'Import a wallet or use multisig';
