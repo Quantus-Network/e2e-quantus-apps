@@ -119,12 +119,12 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
             subtitle: l10n.addAccountMenuCreateSubtitle,
             onTap: _onCreateNewAccount,
           ),
-            _AddMenuRow(
-              icon: Icons.qr_code_scanner,
-              title: l10n.addAccountMenuImportKeystoneTitle,
-              subtitle: l10n.addAccountMenuImportKeystoneSubtitle,
-              onTap: _onImportKeystone,
-            ),
+          _AddMenuRow(
+            icon: Icons.qr_code_scanner,
+            title: l10n.addAccountMenuImportKeystoneTitle,
+            subtitle: l10n.addAccountMenuImportKeystoneSubtitle,
+            onTap: _onImportKeystone,
+          ),
         ],
       ),
     );
