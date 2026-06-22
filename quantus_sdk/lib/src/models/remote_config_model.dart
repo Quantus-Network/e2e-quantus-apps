@@ -42,12 +42,12 @@ class RemoteConfigModel {
 
   static const RemoteConfigModel defaults = RemoteConfigModel(
     enableTestButtons: false,
-    enableKeystoneHardwareWallet: false,
-    enableHighSecurity: true,
+    enableKeystoneHardwareWallet: true,
+    enableHighSecurity: false,
     enableRemoteNotifications: true,
-    enableSwap: true,
+    enableSwap: false,
     enableEncryptedAccount: false,
-    enableMultisig: false,
+    enableMultisig: true,
   );
 
   Map<String, dynamic> toCacheJson() {
