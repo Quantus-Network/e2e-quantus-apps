@@ -96,9 +96,7 @@ class AccountMenuScreen extends ConsumerWidget {
 
   bool _isLastInWallet(WidgetRef ref, Account account) {
     final all = ref.read(accountsProvider).value ?? <Account>[];
-    final siblings = all.where(
-      (a) => a.walletIndex == account.walletIndex && a.accountType != AccountType.encrypted,
-    );
+    final siblings = all.where((a) => a.walletIndex == account.walletIndex && a.accountType != AccountType.encrypted);
     return siblings.length <= 1;
   }
 

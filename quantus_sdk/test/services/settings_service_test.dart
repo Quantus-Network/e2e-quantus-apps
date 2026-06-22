@@ -201,8 +201,7 @@ void main() {
 
       // Wallet with accounts at indices 0..6 (Account 1..7).
       final full = [
-        for (var i = 0; i < 7; i++)
-          Account(walletIndex: 0, index: i, name: 'Account ${i + 1}', accountId: 'id_$i'),
+        for (var i = 0; i < 7; i++) Account(walletIndex: 0, index: i, name: 'Account ${i + 1}', accountId: 'id_$i'),
       ];
       await settingsService.saveAccounts(full);
 
