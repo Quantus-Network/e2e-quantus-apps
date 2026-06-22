@@ -139,6 +139,30 @@ class SettingsService {
     await saveAccounts(accounts);
   }
 
+  /// Removes an entire wallet: drops all of its accounts and deletes its
+  /// mnemonic from secure storage. The primary wallet (index 0) cannot be
+  /// removed.
+  Future<void> removeWallet(int walletIndex) async {
+    if (walletIndex == 0) {
+      throw Exception('Cant remove the primary wallet!');
+    }
+    final accounts = await getAccounts();
+    final remaining = accounts.where((a) => a.walletIndex != walletIndex).toList();
+    if (remaining.length == accounts.length) {
+      throw Exception('Wallet $walletIndex not found');
+    }
+    if (remaining.isEmpty) {
+      throw Exception('Cant remove last wallet!');
+    }
+    final activeId = await _getActiveAccountId();
+    final activeRemoved = accounts.any((a) => a.walletIndex == walletIndex && a.accountId == activeId);
+    if (activeRemoved) {
+      await setActiveAccount(RegularAccount(remaining.first));
+    }
+    await saveAccounts(remaining);
+    await deleteMnemonic(walletIndex);
+  }
+
   Future<void> setActiveAccount(DisplayAccount account) async {
     await _prefs.setString(_activeDisplayAccountKey, jsonEncode(account.toJson()));
     if (account is RegularAccount) {
@@ -203,14 +227,22 @@ class SettingsService {
     return ix != -1 ? accounts[ix] : null;
   }
 
+  /// Returns the lowest non-negative derivation index not currently used by a
+  /// (non-encrypted) account in [walletIndex]. Filling the lowest gap first
+  /// keeps a wallet's accounts contiguous and deterministic: removing then
+  /// re-adding accounts always reproduces the same indices (and therefore the
+  /// same addresses) in the same order.
   Future<int> getNextFreeAccountIndex(int walletIndex) async {
     final accounts = await getAccounts();
-    final walletAccounts = accounts
+    final used = accounts
         .where((a) => a.walletIndex == walletIndex && a.index >= 0 && a.accountType != AccountType.encrypted)
-        .toList();
-    if (walletAccounts.isEmpty) return 0;
-    final maxIndex = walletAccounts.map((a) => a.index).reduce((a, b) => a > b ? a : b);
-    return maxIndex + 1;
+        .map((a) => a.index)
+        .toSet();
+    var index = 0;
+    while (used.contains(index)) {
+      index++;
+    }
+    return index;
   }
 
   // --- Multisig Accounts ---

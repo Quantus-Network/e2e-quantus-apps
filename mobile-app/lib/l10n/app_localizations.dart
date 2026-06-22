@@ -1520,6 +1520,54 @@ abstract class AppLocalizations {
   /// **'Couldn\'t disconnect. Please try again.'**
   String get accountMenuDisconnectError;
 
+  /// Title of the software account disconnect confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect account?'**
+  String get accountMenuDisconnectAccountTitle;
+
+  /// Body of the software account disconnect confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'This stops tracking \"{name}\" on this device. Your recovery phrase stays, so you can restore it later.'**
+  String accountMenuDisconnectAccountMessage(String name);
+
+  /// Title shown when disconnecting the last account in a wallet, which removes the whole wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect Wallet {number}?'**
+  String accountMenuDisconnectWalletTitle(int number);
+
+  /// Body shown when disconnecting the last account in a wallet
+  ///
+  /// In en, this message translates to:
+  /// **'\"{name}\" is the last account in Wallet {number}. Disconnecting it removes the entire wallet from this device.'**
+  String accountMenuDisconnectWalletMessage(String name, int number);
+
+  /// Confirm button for disconnecting an entire wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect Wallet'**
+  String get accountMenuDisconnectWalletConfirm;
+
+  /// Title of the final confirmation before permanently deleting a wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure?'**
+  String get accountMenuDeleteWalletTitle;
+
+  /// Body of the final confirmation before permanently deleting a wallet's seed phrase
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet {number}\'s recovery phrase will be permanently deleted from this device. Make sure it\'s backed up — this can\'t be undone.'**
+  String accountMenuDeleteWalletMessage(int number);
+
+  /// Confirm button for permanently deleting a wallet and its recovery phrase
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Wallet'**
+  String get accountMenuDeleteWalletConfirm;
+
   /// App bar title on account details screen
   ///
   /// In en, this message translates to:

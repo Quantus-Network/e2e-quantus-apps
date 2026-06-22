@@ -784,6 +784,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountMenuDisconnectError => 'Couldn\'t disconnect. Please try again.';
 
   @override
+  String get accountMenuDisconnectAccountTitle => 'Disconnect account?';
+
+  @override
+  String accountMenuDisconnectAccountMessage(String name) {
+    return 'This stops tracking \"$name\" on this device. Your recovery phrase stays, so you can restore it later.';
+  }
+
+  @override
+  String accountMenuDisconnectWalletTitle(int number) {
+    return 'Disconnect Wallet $number?';
+  }
+
+  @override
+  String accountMenuDisconnectWalletMessage(String name, int number) {
+    return '\"$name\" is the last account in Wallet $number. Disconnecting it removes the entire wallet from this device.';
+  }
+
+  @override
+  String get accountMenuDisconnectWalletConfirm => 'Disconnect Wallet';
+
+  @override
+  String get accountMenuDeleteWalletTitle => 'Are you sure?';
+
+  @override
+  String accountMenuDeleteWalletMessage(int number) {
+    return 'Wallet $number\'s recovery phrase will be permanently deleted from this device. Make sure it\'s backed up — this can\'t be undone.';
+  }
+
+  @override
+  String get accountMenuDeleteWalletConfirm => 'Delete Wallet';
+
+  @override
   String get accountDetailsTitle => 'Address Details';
 
   @override

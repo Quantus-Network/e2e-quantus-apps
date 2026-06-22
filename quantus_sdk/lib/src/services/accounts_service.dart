@@ -93,4 +93,11 @@ class AccountsService {
     await _settingsService.removeAccount(account);
     onAccountsChanged?.call();
   }
+
+  /// Removes an entire wallet (all its accounts plus its stored mnemonic). The
+  /// primary wallet (index 0) cannot be removed.
+  Future<void> removeWallet(int walletIndex) async {
+    await _settingsService.removeWallet(walletIndex);
+    onAccountsChanged?.call();
+  }
 }

@@ -786,6 +786,38 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountMenuDisconnectError => 'Tidak dapat memutuskan. Silakan coba lagi.';
 
   @override
+  String get accountMenuDisconnectAccountTitle => 'Putuskan akun?';
+
+  @override
+  String accountMenuDisconnectAccountMessage(String name) {
+    return 'Ini menghentikan pelacakan \"$name\" di perangkat ini. Frasa pemulihan Anda tetap tersimpan, jadi Anda dapat memulihkannya nanti.';
+  }
+
+  @override
+  String accountMenuDisconnectWalletTitle(int number) {
+    return 'Putuskan Dompet $number?';
+  }
+
+  @override
+  String accountMenuDisconnectWalletMessage(String name, int number) {
+    return '\"$name\" adalah akun terakhir di Dompet $number. Memutuskannya akan menghapus seluruh dompet dari perangkat ini.';
+  }
+
+  @override
+  String get accountMenuDisconnectWalletConfirm => 'Putuskan Dompet';
+
+  @override
+  String get accountMenuDeleteWalletTitle => 'Apakah Anda yakin?';
+
+  @override
+  String accountMenuDeleteWalletMessage(int number) {
+    return 'Frasa pemulihan Dompet $number akan dihapus permanen dari perangkat ini. Pastikan sudah dicadangkan — ini tidak dapat dibatalkan.';
+  }
+
+  @override
+  String get accountMenuDeleteWalletConfirm => 'Hapus Dompet';
+
+  @override
   String get accountDetailsTitle => 'Detail Alamat';
 
   @override

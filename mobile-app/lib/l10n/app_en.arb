@@ -1095,6 +1095,61 @@
     "@accountMenuDisconnectError": {
       "description": "Error toaster shown when disconnecting an account fails"
     },
+    "accountMenuDisconnectAccountTitle": "Disconnect account?",
+    "@accountMenuDisconnectAccountTitle": {
+      "description": "Title of the software account disconnect confirmation"
+    },
+    "accountMenuDisconnectAccountMessage": "This stops tracking \"{name}\" on this device. Your recovery phrase stays, so you can restore it later.",
+    "@accountMenuDisconnectAccountMessage": {
+      "description": "Body of the software account disconnect confirmation",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "accountMenuDisconnectWalletTitle": "Disconnect Wallet {number}?",
+    "@accountMenuDisconnectWalletTitle": {
+      "description": "Title shown when disconnecting the last account in a wallet, which removes the whole wallet",
+      "placeholders": {
+        "number": {
+          "type": "int"
+        }
+      }
+    },
+    "accountMenuDisconnectWalletMessage": "\"{name}\" is the last account in Wallet {number}. Disconnecting it removes the entire wallet from this device.",
+    "@accountMenuDisconnectWalletMessage": {
+      "description": "Body shown when disconnecting the last account in a wallet",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        },
+        "number": {
+          "type": "int"
+        }
+      }
+    },
+    "accountMenuDisconnectWalletConfirm": "Disconnect Wallet",
+    "@accountMenuDisconnectWalletConfirm": {
+      "description": "Confirm button for disconnecting an entire wallet"
+    },
+    "accountMenuDeleteWalletTitle": "Are you sure?",
+    "@accountMenuDeleteWalletTitle": {
+      "description": "Title of the final confirmation before permanently deleting a wallet"
+    },
+    "accountMenuDeleteWalletMessage": "Wallet {number}'s recovery phrase will be permanently deleted from this device. Make sure it's backed up — this can't be undone.",
+    "@accountMenuDeleteWalletMessage": {
+      "description": "Body of the final confirmation before permanently deleting a wallet's seed phrase",
+      "placeholders": {
+        "number": {
+          "type": "int"
+        }
+      }
+    },
+    "accountMenuDeleteWalletConfirm": "Delete Wallet",
+    "@accountMenuDeleteWalletConfirm": {
+      "description": "Confirm button for permanently deleting a wallet and its recovery phrase"
+    },
 
     "accountDetailsTitle": "Address Details",
     "@accountDetailsTitle": {

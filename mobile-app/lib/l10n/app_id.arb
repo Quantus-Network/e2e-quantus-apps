@@ -251,6 +251,14 @@
   "accountMenuDisconnectMultisigTitle": "Putuskan multisig?",
   "accountMenuDisconnectMultisigMessage": "Ini menghentikan pelacakan \"{name}\" di perangkat ini. Multisig tetap ada di on-chain, jadi Anda dapat menambahkannya kembali kapan saja.",
   "accountMenuDisconnectError": "Tidak dapat memutuskan. Silakan coba lagi.",
+  "accountMenuDisconnectAccountTitle": "Putuskan akun?",
+  "accountMenuDisconnectAccountMessage": "Ini menghentikan pelacakan \"{name}\" di perangkat ini. Frasa pemulihan Anda tetap tersimpan, jadi Anda dapat memulihkannya nanti.",
+  "accountMenuDisconnectWalletTitle": "Putuskan Dompet {number}?",
+  "accountMenuDisconnectWalletMessage": "\"{name}\" adalah akun terakhir di Dompet {number}. Memutuskannya akan menghapus seluruh dompet dari perangkat ini.",
+  "accountMenuDisconnectWalletConfirm": "Putuskan Dompet",
+  "accountMenuDeleteWalletTitle": "Apakah Anda yakin?",
+  "accountMenuDeleteWalletMessage": "Frasa pemulihan Dompet {number} akan dihapus permanen dari perangkat ini. Pastikan sudah dicadangkan — ini tidak dapat dibatalkan.",
+  "accountMenuDeleteWalletConfirm": "Hapus Dompet",
 
   "accountDetailsTitle": "Detail Alamat",
 

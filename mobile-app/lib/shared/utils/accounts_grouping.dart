@@ -61,13 +61,10 @@ AccountsGrouping groupAccounts({required List<Account> accounts, required List<M
     }
   }
 
-  bool isKeystoneWallet(List<Account> group) =>
-      group.isNotEmpty && group.every((a) => a.accountType == AccountType.keystone);
-
   final softwareIndices = <int>[];
   final keystoneIndices = <int>[];
   for (final entry in byWallet.entries) {
-    (isKeystoneWallet(entry.value) ? keystoneIndices : softwareIndices).add(entry.key);
+    (_isKeystoneWallet(entry.value) ? keystoneIndices : softwareIndices).add(entry.key);
   }
   softwareIndices.sort();
   keystoneIndices.sort();
@@ -117,6 +114,25 @@ AccountsGrouping groupAccounts({required List<Account> accounts, required List<M
   addSegment(AccountSegment.multisig, standalone);
 
   return AccountsGrouping(segmented: true, items: items);
+}
+
+bool _isKeystoneWallet(List<Account> group) =>
+    group.isNotEmpty && group.every((a) => a.accountType == AccountType.keystone);
+
+/// 1-based display number of the software wallet at [walletIndex], matching the
+/// numbering used by [groupAccounts]. Returns null when [walletIndex] is not a
+/// software wallet.
+int? softwareWalletNumber(List<Account> accounts, int walletIndex) {
+  final byWallet = <int, List<Account>>{};
+  for (final a in accounts) {
+    byWallet.putIfAbsent(a.walletIndex, () => []).add(a);
+  }
+  final softwareIndices = [
+    for (final entry in byWallet.entries)
+      if (!_isKeystoneWallet(entry.value)) entry.key,
+  ]..sort();
+  final pos = softwareIndices.indexOf(walletIndex);
+  return pos == -1 ? null : pos + 1;
 }
 
 int _compareAccounts(Account a, Account b) {
