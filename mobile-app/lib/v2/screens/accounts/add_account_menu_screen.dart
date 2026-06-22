@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -57,6 +58,7 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
 
   void _showMoreMenu() {
     final l10n = ref.read(l10nProvider);
+    final enableMultisig = ref.read(remoteConfigProvider).enableMultisig;
 
     BottomSheetContainer.show<void>(
       context,
@@ -73,24 +75,26 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
                 _onImportWallet();
               },
             ),
-            _AddMenuRow(
-              icon: Icons.radar_outlined,
-              title: l10n.addAccountMenuDiscoverMultisigTitle,
-              subtitle: l10n.addAccountMenuDiscoverMultisigSubtitle,
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _onImportMultisig();
-              },
-            ),
-            _AddMenuRow(
-              icon: Icons.group_outlined,
-              title: l10n.addAccountMenuMultisigTitle,
-              subtitle: l10n.addAccountMenuMultisigSubtitle,
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _onCreateMultisig();
-              },
-            ),
+            if (enableMultisig) ...[
+              _AddMenuRow(
+                icon: Icons.radar_outlined,
+                title: l10n.addAccountMenuDiscoverMultisigTitle,
+                subtitle: l10n.addAccountMenuDiscoverMultisigSubtitle,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _onImportMultisig();
+                },
+              ),
+              _AddMenuRow(
+                icon: Icons.group_outlined,
+                title: l10n.addAccountMenuMultisigTitle,
+                subtitle: l10n.addAccountMenuMultisigSubtitle,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _onCreateMultisig();
+                },
+              ),
+            ],
           ],
         ),
       ),

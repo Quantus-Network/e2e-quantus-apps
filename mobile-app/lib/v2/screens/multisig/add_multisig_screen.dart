@@ -266,7 +266,6 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
       }
     } catch (e) {
       quantusDebugPrint('[AddMultisigScreen] createMultisig error: $e');
-
       if (mounted) {
         context.showErrorToaster(message: l10n.multisigCreateErrorCouldNotCreate);
       }

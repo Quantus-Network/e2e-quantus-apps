@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -21,6 +22,7 @@ import 'package:resonance_network_wallet/v2/screens/accounts/open_accounts_manag
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_activity_section.dart';
+import 'package:resonance_network_wallet/v2/screens/multisig/multisig_proposal_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/propose/propose_recipient_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen.dart';
@@ -31,15 +33,14 @@ import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
-import 'package:resonance_network_wallet/v2/components/multisig_approval_toast_listener.dart';
-import 'package:resonance_network_wallet/v2/components/multisig_creation_toast_listener.dart';
-import 'package:resonance_network_wallet/v2/components/multisig_proposal_toast_listener.dart';
+import 'package:resonance_network_wallet/v2/components/global_toast_listener.dart';
 import 'package:resonance_network_wallet/v2/screens/home/activity_section.dart';
 import 'package:resonance_network_wallet/v2/screens/home/backup_reminder_banner.dart';
 
@@ -58,9 +59,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.listenManual<TransactionEvent?>(transactionIntentProvider, _onTransactionIntent);
     ref.listenManual<PaymentIntent?>(paymentIntentProvider, _onPaymentIntent);
     ref.listenManual<String?>(sharedAccountIntentProvider, _onSharedIntent);
+    ref.listenManual<ProposalIntent?>(proposalIntentProvider, _onProposalIntent);
     ref.listenManual<AsyncValue<DisplayAccount?>>(activeAccountProvider, (_, async) {
       if (async.value == null) return;
       _onTransactionIntent(null, ref.read(transactionIntentProvider));
+    });
+    // Multisig accounts may still be loading when a proposal intent arrives on a
+    // cold start; retry once they are available.
+    ref.listenManual<AsyncValue<List<MultisigAccount>>>(multisigAccountsProvider, (_, async) {
+      if (async.value == null) return;
+      _onProposalIntent(null, ref.read(proposalIntentProvider));
     });
 
     Future.microtask(_drainPendingIntents);
@@ -71,6 +79,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _onTransactionIntent(null, ref.read(transactionIntentProvider));
     _onPaymentIntent(null, ref.read(paymentIntentProvider));
     _onSharedIntent(null, ref.read(sharedAccountIntentProvider));
+    _onProposalIntent(null, ref.read(proposalIntentProvider));
   }
 
   void _onTransactionIntent(TransactionEvent? _, TransactionEvent? transaction) {
@@ -105,6 +114,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     showSharedAddressActionSheet(context, shared);
   }
 
+  /// Handles a proposal push notification tap: selects the owning multisig as
+  /// the active account, then opens the detail sheet immediately. The sheet
+  /// shows a loader while it resolves the proposal by id.
+  Future<void> _onProposalIntent(ProposalIntent? _, ProposalIntent? intent) async {
+    if (intent == null || !mounted) return;
+
+    final multisigAccounts = ref.read(multisigAccountsProvider).value;
+    // Still loading — the multisigAccountsProvider listener will retry.
+    if (multisigAccounts == null) return;
+
+    final msig = multisigAccounts.firstWhereOrNull((m) => m.accountId == intent.multisigAddress);
+    // The intent is consumed regardless: a missing multisig is not recoverable
+    // by waiting, and we don't want to retry a malformed payload.
+    ref.read(proposalIntentProvider.notifier).state = null;
+    if (msig == null) {
+      quantusDebugPrint('proposal intent: no local multisig for ${intent.multisigAddress}');
+      return;
+    }
+
+    await ref.read(activeAccountProvider.notifier).setActiveAccount(MultisigDisplayAccount(msig));
+    if (!mounted) return;
+
+    showMultisigProposalDetailSheetById(context, msig: msig, proposalId: intent.proposalId);
+  }
+
   Future<void> _refresh() async {
     try {
       await ref.read(globalHistoryPollingServiceProvider).triggerManualRefresh();
@@ -131,35 +165,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final colors = context.colors;
     final text = context.themeText;
 
-    return MultisigCreationToastListener(
-      child: MultisigApprovalToastListener(
-        child: MultisigProposalToastListener(
-          child: accountAsync.when(
-            loading: () => const ScaffoldBase(mainContent: Center(child: Loader())),
-            error: (e, _) => ScaffoldBase(
-              mainContent: Center(
-                child: Text(l10n.homeError(e.toString()), style: text.detail?.copyWith(color: colors.textError)),
-              ),
-            ),
-            data: (active) {
-              if (active == null) {
-                return ScaffoldBase(mainContent: Center(child: Text(l10n.homeNoActiveAccount)));
-              }
-              return ScaffoldBase.refreshable(
-                onRefresh: _refresh,
-                slivers: [
-                  _buildContent(active, colors, text, l10n),
-                  if (active is MultisigDisplayAccount)
-                    MultisigActivitySection(msig: active.account, txAsync: txAsync, onRetry: _refresh)
-                  else
-                    ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
-                  const SizedBox(height: 58),
-                ],
-                bottomContent: _buildBottomContent(l10n),
-              );
-            },
+    return GlobalToastListener(
+      child: accountAsync.when(
+        loading: () => const ScaffoldBase(mainContent: Center(child: Loader())),
+        error: (e, _) => ScaffoldBase(
+          mainContent: Center(
+            child: Text(l10n.homeError(e.toString()), style: text.detail?.copyWith(color: colors.textError)),
           ),
         ),
+        data: (active) {
+          if (active == null) {
+            return ScaffoldBase(mainContent: Center(child: Text(l10n.homeNoActiveAccount)));
+          }
+          return ScaffoldBase.refreshable(
+            onRefresh: _refresh,
+            slivers: [
+              _buildContent(active, colors, text, l10n),
+              if (active is MultisigDisplayAccount)
+                MultisigActivitySection(msig: active.account, txAsync: txAsync, onRetry: _refresh)
+              else
+                ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
+              const SizedBox(height: 58),
+            ],
+            bottomContent: _buildBottomContent(l10n),
+          );
+        },
       ),
     );
   }
