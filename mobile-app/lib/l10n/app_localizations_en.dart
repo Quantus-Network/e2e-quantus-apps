@@ -210,12 +210,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addAccountMenuMoreTitle => 'Advanced';
 
   @override
-  String get addAccountMenuMoreRowTitle => 'Advanced';
-
-  @override
-  String get addAccountMenuMoreRowSubtitle => 'Import a wallet or use multisig';
-
-  @override
   String get addAccountMenuImportKeystoneTitle => 'Add Keystone Hardware Account';
 
   @override

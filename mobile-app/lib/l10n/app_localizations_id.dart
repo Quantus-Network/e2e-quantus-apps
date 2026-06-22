@@ -211,12 +211,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get addAccountMenuMoreTitle => 'Lanjutan';
 
   @override
-  String get addAccountMenuMoreRowTitle => 'Lanjutan';
-
-  @override
-  String get addAccountMenuMoreRowSubtitle => 'Impor wallet atau gunakan multisig';
-
-  @override
   String get addAccountMenuImportKeystoneTitle => 'Tambah Akun Perangkat Keras Keystone';
 
   @override

@@ -458,18 +458,6 @@ abstract class AppLocalizations {
   /// **'Advanced'**
   String get addAccountMenuMoreTitle;
 
-  /// Primary menu row opening the advanced add-account options
-  ///
-  /// In en, this message translates to:
-  /// **'Advanced'**
-  String get addAccountMenuMoreRowTitle;
-
-  /// Subtitle for the More menu row
-  ///
-  /// In en, this message translates to:
-  /// **'Import a wallet or use multisig'**
-  String get addAccountMenuMoreRowSubtitle;
-
   /// Add keystone hardware account menu row title
   ///
   /// In en, this message translates to:

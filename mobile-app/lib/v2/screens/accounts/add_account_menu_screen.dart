@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/add_hardware_account_screen.dart';
@@ -104,10 +105,12 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    final enableKeystone = ref.watch(remoteConfigProvider).enableKeystoneHardwareWallet;
 
     return ScaffoldBase(
-      appBar: V2AppBar(title: l10n.addAccountMenuTitle),
+      appBar: V2AppBar(
+        title: l10n.addAccountMenuTitle,
+        trailing: QuantusIconButton.circular(icon: Icons.more_horiz, onTap: _showMoreMenu),
+      ),
       mainContent: _MenuList(
         rows: [
           _AddMenuRow(
@@ -116,19 +119,12 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
             subtitle: l10n.addAccountMenuCreateSubtitle,
             onTap: _onCreateNewAccount,
           ),
-          if (enableKeystone)
             _AddMenuRow(
               icon: Icons.qr_code_scanner,
               title: l10n.addAccountMenuImportKeystoneTitle,
               subtitle: l10n.addAccountMenuImportKeystoneSubtitle,
               onTap: _onImportKeystone,
             ),
-          _AddMenuRow(
-            icon: Icons.more_horiz,
-            title: l10n.addAccountMenuMoreRowTitle,
-            subtitle: l10n.addAccountMenuMoreRowSubtitle,
-            onTap: _showMoreMenu,
-          ),
         ],
       ),
     );

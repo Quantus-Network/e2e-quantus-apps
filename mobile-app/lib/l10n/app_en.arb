@@ -281,14 +281,6 @@
     "@addAccountMenuMoreTitle": {
       "description": "Title of the add account more options action sheet"
     },
-    "addAccountMenuMoreRowTitle": "Advanced",
-    "@addAccountMenuMoreRowTitle": {
-      "description": "Primary menu row opening the advanced add-account options"
-    },
-    "addAccountMenuMoreRowSubtitle": "Import a wallet or use multisig",
-    "@addAccountMenuMoreRowSubtitle": {
-      "description": "Subtitle for the More menu row"
-    },
     "addAccountMenuImportKeystoneTitle": "Add Keystone Hardware Account",
     "@addAccountMenuImportKeystoneTitle": {
       "description": "Add keystone hardware account menu row title"

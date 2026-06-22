@@ -70,8 +70,6 @@
   "addAccountMenuCreateTitle": "Tambah Akun",
   "addAccountMenuCreateSubtitle": "Tambahkan akun publik lainnya",
   "addAccountMenuMoreTitle": "Lanjutan",
-  "addAccountMenuMoreRowTitle": "Lanjutan",
-  "addAccountMenuMoreRowSubtitle": "Impor wallet atau gunakan multisig",
   "addAccountMenuImportKeystoneTitle": "Tambah Akun Perangkat Keras Keystone",
   "addAccountMenuImportKeystoneSubtitle": "Pindai QR alamat dari perangkat Keystone Anda",
   "addAccountMenuImportTitle": "Impor Wallet Lain",
