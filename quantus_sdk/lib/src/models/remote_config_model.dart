@@ -42,7 +42,7 @@ class RemoteConfigModel {
     enableRemoteNotifications: true,
     enableSwap: false,
     enableEncryptedAccount: false,
-    enableMultisig: false,
+    enableMultisig: true,
   );
 
   Map<String, dynamic> toCacheJson() {
