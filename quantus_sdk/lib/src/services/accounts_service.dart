@@ -34,7 +34,7 @@ class AccountsService {
     return newAccount;
   }
 
-  Future<Account> createEncryptedAccount({required int walletIndex}) async {
+  Future<Account> createEncryptedAccount({required int walletIndex, required String name}) async {
     final mnemonic = await _settingsService.getMnemonic(walletIndex);
     if (mnemonic == null) {
       throw Exception('Mnemonic not found. Cannot create encrypted account.');
@@ -43,7 +43,7 @@ class AccountsService {
     return Account(
       walletIndex: walletIndex,
       index: AppConstants.encryptedAccountIndex,
-      name: 'Encrypted Account',
+      name: name,
       accountId: keyPair.address,
       accountType: AccountType.encrypted,
     );
@@ -51,7 +51,7 @@ class AccountsService {
 
   /// Ensures every software (non-hardware) wallet has its single encrypted
   /// (wormhole) account persisted. Idempotent; returns true if any were added.
-  Future<bool> ensureEncryptedAccountsForSoftwareWallets() async {
+  Future<bool> ensureEncryptedAccountsForSoftwareWallets({required String name}) async {
     final accounts = await getAccounts();
     final byWallet = <int, List<Account>>{};
     for (final a in accounts) {
@@ -64,7 +64,7 @@ class AccountsService {
       final isHardware = group.every((a) => a.accountType == AccountType.keystone);
       final hasEncrypted = group.any((a) => a.accountType == AccountType.encrypted);
       if (isHardware || hasEncrypted) continue;
-      final account = await createEncryptedAccount(walletIndex: entry.key);
+      final account = await createEncryptedAccount(walletIndex: entry.key, name: name);
       await addAccount(account);
       created = true;
     }

@@ -132,12 +132,17 @@ class SettingsService {
       throw Exception('Cant remove last account!');
     }
     if (account.accountId == await _getActiveAccountId()) {
-      final replacement = accounts.firstWhere((a) => a.accountId != account.accountId);
+      final replacement = _preferNonEncrypted(accounts.where((a) => a.accountId != account.accountId));
       await setActiveAccount(RegularAccount(replacement));
     }
     accounts.removeWhere((a) => a.accountId == account.accountId);
     await saveAccounts(accounts);
   }
+
+  /// Picks a replacement active account, avoiding encrypted (wormhole)
+  /// accounts unless they are the only option.
+  Account _preferNonEncrypted(Iterable<Account> candidates) =>
+      candidates.firstWhere((a) => a.accountType != AccountType.encrypted, orElse: () => candidates.first);
 
   /// Removes an entire wallet: drops all of its accounts and deletes its
   /// mnemonic from secure storage. The primary wallet (index 0) cannot be
@@ -157,7 +162,7 @@ class SettingsService {
     final activeId = await _getActiveAccountId();
     final activeRemoved = accounts.any((a) => a.walletIndex == walletIndex && a.accountId == activeId);
     if (activeRemoved) {
-      await setActiveAccount(RegularAccount(remaining.first));
+      await setActiveAccount(RegularAccount(_preferNonEncrypted(remaining)));
     }
     await saveAccounts(remaining);
     await deleteMnemonic(walletIndex);

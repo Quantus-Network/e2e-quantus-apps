@@ -10,6 +10,7 @@ import 'package:resonance_network_wallet/shared/utils/accounts_grouping.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/account_badge.dart';
 import 'package:resonance_network_wallet/v2/components/confirm_action_sheet.dart';
+import 'package:resonance_network_wallet/v2/components/menu_divider.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
@@ -53,10 +54,10 @@ class AccountMenuScreen extends ConsumerWidget {
             value: account.name,
             onTap: () => _openNameEditor(context, ref, account),
           ),
-          Divider(color: colors.toasterBackground, height: 1),
+          const MenuDivider(),
           _MenuRow(label: l10n.accountMenuAddressDetails, onTap: () => _openAddressDetails(context, account)),
           if (canShowRecoveryPhrase) ...[
-            Divider(color: colors.toasterBackground, height: 1),
+            const MenuDivider(),
             _MenuRow(label: l10n.accountMenuShowRecoveryPhrase, onTap: () => _openRecoveryPhrase(context, account)),
           ],
         ],

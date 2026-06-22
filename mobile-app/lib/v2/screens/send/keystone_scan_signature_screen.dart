@@ -9,6 +9,8 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/screens/send/tx_submitted_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -192,14 +194,16 @@ class _KeystoneScanSignatureScreenState extends ConsumerState<KeystoneScanSignat
             child: SafeArea(
               child: Row(
                 children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  QuantusIconButton.rounded(
+                    icon: Icons.arrow_back,
+                    onTap: () => Navigator.pop(context),
+                    style: IconButtonStyle.glass,
                   ),
                   const Spacer(),
-                  IconButton(
-                    onPressed: _controller.toggleTorch,
-                    icon: const Icon(Icons.flash_on, color: Colors.white),
+                  QuantusIconButton.rounded(
+                    icon: Icons.flash_on,
+                    onTap: _controller.toggleTorch,
+                    style: IconButtonStyle.glass,
                   ),
                 ],
               ),
@@ -237,14 +241,11 @@ class _KeystoneScanSignatureScreenState extends ConsumerState<KeystoneScanSignat
                   Text(l10n.keystoneScanScanning(_parts.length), style: text.detail?.copyWith(color: Colors.white70)),
                 if (AppConstants.debugHardwareWallet && !_submitting) ...[
                   const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: _simulateSignature,
-                    style: TextButton.styleFrom(
-                      backgroundColor: colors.danger.useOpacity(0.7),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    ),
-                    child: const Text('DEBUG: Simulate signature'),
+                  QuantusButton.simple(
+                    label: 'DEBUG: Simulate signature',
+                    onTap: _simulateSignature,
+                    variant: ButtonVariant.danger,
+                    width: null,
                   ),
                 ],
               ],

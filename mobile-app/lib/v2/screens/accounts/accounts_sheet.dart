@@ -56,7 +56,8 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
   Future<void> _ensureEncryptedAccounts() async {
     if (!ref.read(remoteConfigProvider).enableEncryptedAccount) return;
     try {
-      final created = await ref.read(accountsServiceProvider).ensureEncryptedAccountsForSoftwareWallets();
+      final name = ref.read(l10nProvider).createAccountEncryptedDefaultName;
+      final created = await ref.read(accountsServiceProvider).ensureEncryptedAccountsForSoftwareWallets(name: name);
       if (created && mounted) ref.invalidate(accountsProvider);
     } catch (e, st) {
       quantusDebugPrint('[AccountsSheet] ensure encrypted accounts failed: $e\n$st');
@@ -248,10 +249,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     };
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        title,
-        style: context.themeText.smallParagraph?.copyWith(color: context.colors.textTertiary, fontSize: 12),
-      ),
+      child: Text(title, style: context.themeText.detail?.copyWith(color: context.colors.textTertiary)),
     );
   }
 
@@ -387,12 +385,7 @@ class _AccountRowShell extends StatelessWidget {
                               Flexible(
                                 child: Text(
                                   title!,
-                                  style: context.themeText.paragraph!.copyWith(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w400,
-                                    color: colors.textPrimary,
-                                    height: 1,
-                                  ),
+                                  style: context.themeText.paragraph!.copyWith(fontSize: 18, height: 1),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),

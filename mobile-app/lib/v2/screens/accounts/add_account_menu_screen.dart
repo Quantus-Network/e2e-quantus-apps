@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
+import 'package:resonance_network_wallet/v2/components/menu_divider.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
@@ -140,16 +141,10 @@ class _MenuList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
     final children = <Widget>[];
     for (var i = 0; i < rows.length; i++) {
       if (i > 0) {
-        children.add(
-          Padding(
-            padding: const EdgeInsets.only(top: 16, bottom: 24),
-            child: Divider(color: colors.toasterBackground, height: 1),
-          ),
-        );
+        children.add(const Padding(padding: EdgeInsets.only(top: 16, bottom: 24), child: MenuDivider()));
       }
       children.add(rows[i]);
     }

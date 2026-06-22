@@ -49,7 +49,10 @@ AccountsGrouping groupAccounts({required List<Account> accounts, required List<M
     byWallet.putIfAbsent(a.walletIndex, () => []).add(a);
   }
 
-  final walletIndexByAccountId = {for (final a in accounts) a.accountId: a.walletIndex};
+  final walletIndexByAccountId = <String, int>{};
+  for (final a in accounts) {
+    walletIndexByAccountId[a.accountId] = a.walletIndex;
+  }
   final multisigsByWallet = <int, List<MultisigAccount>>{};
   final standaloneMultisigs = <MultisigAccount>[];
   for (final m in multisigs) {

@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.da
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/account_badge.dart';
 import 'package:resonance_network_wallet/v2/components/confirm_action_sheet.dart';
+import 'package:resonance_network_wallet/v2/components/menu_divider.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
@@ -47,9 +48,9 @@ class MultisigAccountMenuScreen extends ConsumerWidget {
             value: account.name,
             onTap: () => _openNameEditor(context, ref, account),
           ),
-          Divider(color: colors.toasterBackground, height: 1),
+          const MenuDivider(),
           _MenuRow(label: l10n.accountMenuAddressDetails, onTap: () => _openAddressDetails(context, account)),
-          Divider(color: colors.toasterBackground, height: 1),
+          const MenuDivider(),
           _MenuRow(
             label: l10n.multisigAccountMenuDetails,
             value: l10n.multisigThresholdOf(account.threshold, account.signers.length),

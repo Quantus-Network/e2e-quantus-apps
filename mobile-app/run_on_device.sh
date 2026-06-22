@@ -8,7 +8,7 @@
 ##
 ## Uses profile mode by default. Pass "release" to override.
 ##
-## Usage: ./run_device.sh [profile|release]
+## Usage: ./run_on_device.sh [profile|release]
 
 set -eu
 
