@@ -6,8 +6,12 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
+import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
+import 'package:resonance_network_wallet/v2/components/menu_divider.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/add_hardware_account_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/create_account_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/import/import_wallet_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/add_multisig_screen.dart';
@@ -29,102 +33,140 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
 
   void _onImportWallet() {
     final accounts = ref.read(accountsProvider).value ?? <Account>[];
-    final walletIndex = nextNonHardwareWalletIndex(accounts);
+    final walletIndex = nextWalletIndex(accounts);
 
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => ImportWalletScreenV2(walletIndex: walletIndex)));
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => ImportWalletScreenV2(walletIndex: walletIndex, openAccountsOnComplete: true)),
+    );
   }
 
-  void _onAddMultisig() {
+  void _onImportKeystone() {
+    final accounts = ref.read(accountsProvider).value ?? <Account>[];
+    final walletIndex = nextWalletIndex(accounts);
+
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => AddHardwareAccountScreen(walletIndex: walletIndex, isNewWallet: true)));
+  }
+
+  void _onImportMultisig() {
+    ref.invalidate(discoveredMultisigsProvider);
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DiscoverMultisigScreen()));
+  }
+
+  void _onCreateMultisig() {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddMultisigScreen()));
   }
 
-  void _onDiscoverMultisig() {
-    ref.invalidate(discoveredMultisigsProvider);
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DiscoverMultisigScreen()));
+  void _showMoreMenu() {
+    final l10n = ref.read(l10nProvider);
+    final enableMultisig = ref.read(remoteConfigProvider).enableMultisig;
+
+    BottomSheetContainer.show<void>(
+      context,
+      builder: (sheetContext) => BottomSheetContainer(
+        title: l10n.addAccountMenuMoreTitle,
+        child: _MenuList(
+          rows: [
+            _AddMenuRow(
+              icon: Icons.save_alt,
+              title: l10n.addAccountMenuImportTitle,
+              subtitle: l10n.addAccountMenuImportSubtitle,
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _onImportWallet();
+              },
+            ),
+            if (enableMultisig) ...[
+              _AddMenuRow(
+                icon: Icons.radar_outlined,
+                title: l10n.addAccountMenuDiscoverMultisigTitle,
+                subtitle: l10n.addAccountMenuDiscoverMultisigSubtitle,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _onImportMultisig();
+                },
+              ),
+              _AddMenuRow(
+                icon: Icons.group_outlined,
+                title: l10n.addAccountMenuMultisigTitle,
+                subtitle: l10n.addAccountMenuMultisigSubtitle,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _onCreateMultisig();
+                },
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
-    final enableMultisig = ref.watch(remoteConfigProvider).enableMultisig;
-
-    List<Widget> separator() => [
-      const SizedBox(height: 16),
-      Divider(color: colors.toasterBackground, height: 1),
-      const SizedBox(height: 24),
-    ];
+    final enableKeystone = ref.watch(remoteConfigProvider).enableKeystoneHardwareWallet;
 
     return ScaffoldBase(
-      appBar: V2AppBar(title: l10n.addAccountMenuTitle),
-      mainContent: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+      appBar: V2AppBar(
+        title: l10n.addAccountMenuTitle,
+        trailing: QuantusIconButton.circular(icon: Icons.more_horiz, onTap: _showMoreMenu),
+      ),
+      mainContent: _MenuList(
+        rows: [
           _AddMenuRow(
             icon: Icons.add,
             title: l10n.addAccountMenuCreateTitle,
             subtitle: l10n.addAccountMenuCreateSubtitle,
             onTap: _onCreateNewAccount,
-            colors: colors,
-            text: text,
           ),
-          if (enableMultisig) ...[
-            ...separator(),
+          if (enableKeystone)
             _AddMenuRow(
-              icon: Icons.group_outlined,
-              title: l10n.addAccountMenuMultisigTitle,
-              subtitle: l10n.addAccountMenuMultisigSubtitle,
-              onTap: _onAddMultisig,
-              colors: colors,
-              text: text,
+              icon: Icons.qr_code_scanner,
+              title: l10n.addAccountMenuImportKeystoneTitle,
+              subtitle: l10n.addAccountMenuImportKeystoneSubtitle,
+              onTap: _onImportKeystone,
             ),
-            ...separator(),
-            _AddMenuRow(
-              icon: Icons.radar_outlined,
-              title: l10n.addAccountMenuDiscoverMultisigTitle,
-              subtitle: l10n.addAccountMenuDiscoverMultisigSubtitle,
-              onTap: _onDiscoverMultisig,
-              colors: colors,
-              text: text,
-            ),
-          ],
-          ...separator(),
-          _AddMenuRow(
-            icon: Icons.save_alt,
-            title: l10n.addAccountMenuImportTitle,
-            subtitle: l10n.addAccountMenuImportSubtitle,
-            onTap: _onImportWallet,
-            colors: colors,
-            text: text,
-          ),
         ],
       ),
     );
   }
 }
 
+class _MenuList extends StatelessWidget {
+  const _MenuList({required this.rows});
+
+  final List<_AddMenuRow> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    final children = <Widget>[];
+    for (var i = 0; i < rows.length; i++) {
+      if (i > 0) {
+        children.add(const Padding(padding: EdgeInsets.only(top: 16, bottom: 24), child: MenuDivider()));
+      }
+      children.add(rows[i]);
+    }
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children);
+  }
+}
+
 class _AddMenuRow extends StatelessWidget {
-  const _AddMenuRow({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-    required this.colors,
-    required this.text,
-  });
+  const _AddMenuRow({required this.icon, required this.title, required this.subtitle, required this.onTap});
 
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
-  final AppColorsV2 colors;
-  final AppTextTheme text;
 
   @override
   Widget build(BuildContext context) {
-    final containerSize = 40.0;
-    final iconSize = 20.0;
+    final AppColorsV2 colors = context.colors;
+    final AppTextTheme text = context.themeText;
+    const containerSize = 40.0;
+    const iconSize = 20.0;
 
     return Material(
       color: Colors.transparent,

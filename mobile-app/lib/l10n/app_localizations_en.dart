@@ -170,28 +170,65 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String accountsSheetWallet(int number) {
+    return 'Wallet $number';
+  }
+
+  @override
+  String accountsSheetKeystoneWallet(int number) {
+    String _temp0 = intl.Intl.pluralLogic(
+      number,
+      locale: localeName,
+      other: 'Keystone Hardware Wallet $number',
+      one: 'Keystone Hardware Wallet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get accountsSheetSubheaderTransparent => 'Transparent Accounts';
+
+  @override
+  String get accountsSheetSubheaderEncrypted => 'Encrypted Account';
+
+  @override
+  String get accountsSheetSubheaderKeystone => 'Keystone Accounts';
+
+  @override
+  String get accountsSheetSubheaderMultisig => 'Multisig Accounts';
+
+  @override
   String get addAccountMenuTitle => 'Add Account';
 
   @override
-  String get addAccountMenuCreateTitle => 'Create New Account';
+  String get addAccountMenuCreateTitle => 'Add Account';
 
   @override
-  String get addAccountMenuCreateSubtitle => 'Generate a fresh wallet address';
+  String get addAccountMenuCreateSubtitle => 'Add another public account';
 
   @override
-  String get addAccountMenuImportTitle => 'Import Wallet';
+  String get addAccountMenuMoreTitle => 'Advanced';
+
+  @override
+  String get addAccountMenuImportKeystoneTitle => 'Add Keystone Hardware Account';
+
+  @override
+  String get addAccountMenuImportKeystoneSubtitle => 'Scan the address QR from your Keystone device';
+
+  @override
+  String get addAccountMenuImportTitle => 'Import Another Wallet';
 
   @override
   String get addAccountMenuImportSubtitle => 'Use a recovery phrase to import';
 
   @override
-  String get addAccountMenuMultisigTitle => 'Create Multisig';
+  String get addAccountMenuMultisigTitle => 'Create New Multisig';
 
   @override
   String get addAccountMenuMultisigSubtitle => 'Set up a shared address with multiple signers';
 
   @override
-  String get addAccountMenuDiscoverMultisigTitle => 'Discover Multisig';
+  String get addAccountMenuDiscoverMultisigTitle => 'Add Multisig Account';
 
   @override
   String get addAccountMenuDiscoverMultisigSubtitle => 'Find multisigs where your accounts are signers';
@@ -681,6 +718,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createAccountErrorCouldNotAdd => 'Could not add account.';
 
   @override
+  String get createAccountEncryptedDefaultName => 'Encrypted Account';
+
+  @override
   String createAccountDefaultName(int number) {
     return 'Account $number';
   }
@@ -711,6 +751,63 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountMenuNotFound => 'Account not found';
+
+  @override
+  String get accountMenuDone => 'Done';
+
+  @override
+  String get accountMenuDisconnect => 'Disconnect';
+
+  @override
+  String get accountMenuDisconnectHardwareTitle => 'Disconnect hardware wallet?';
+
+  @override
+  String accountMenuDisconnectHardwareMessage(String name) {
+    return 'This stops tracking \"$name\" on this device. Your hardware wallet keeps the account, so you can reconnect it anytime.';
+  }
+
+  @override
+  String get accountMenuDisconnectMultisigTitle => 'Disconnect multisig?';
+
+  @override
+  String accountMenuDisconnectMultisigMessage(String name) {
+    return 'This stops tracking \"$name\" on this device. The multisig stays on-chain, so you can re-add it anytime.';
+  }
+
+  @override
+  String get accountMenuDisconnectError => 'Couldn\'t disconnect. Please try again.';
+
+  @override
+  String get accountMenuDisconnectAccountTitle => 'Disconnect account?';
+
+  @override
+  String accountMenuDisconnectAccountMessage(String name) {
+    return 'This stops tracking \"$name\" on this device. Your recovery phrase stays, so you can restore it later.';
+  }
+
+  @override
+  String accountMenuDisconnectWalletTitle(int number) {
+    return 'Disconnect Wallet $number?';
+  }
+
+  @override
+  String accountMenuDisconnectWalletMessage(String name, int number) {
+    return '\"$name\" is the last account in Wallet $number. Disconnecting it removes the entire wallet from this device.';
+  }
+
+  @override
+  String get accountMenuDisconnectWalletConfirm => 'Disconnect Wallet';
+
+  @override
+  String get accountMenuDeleteWalletTitle => 'Are you sure?';
+
+  @override
+  String accountMenuDeleteWalletMessage(int number) {
+    return 'Wallet $number\'s recovery phrase will be permanently deleted from this device. Make sure it\'s backed up — this can\'t be undone.';
+  }
+
+  @override
+  String get accountMenuDeleteWalletConfirm => 'Delete Wallet';
 
   @override
   String get accountDetailsTitle => 'Address Details';
@@ -839,6 +936,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sendTxSubmittedDone => 'Done';
+
+  @override
+  String get keystoneSignTitle => 'Scan with your Keystone';
+
+  @override
+  String get keystoneSignInstruction => 'Show this QR code to your Keystone hardware wallet to sign the transaction.';
+
+  @override
+  String get keystoneSignNext => 'Scan signature';
+
+  @override
+  String get keystoneSignError => 'Failed to prepare the transaction. Please try again.';
+
+  @override
+  String get keystoneScanInstruction => 'Scan the signature QR from your Keystone';
+
+  @override
+  String keystoneScanProgress(int scanned, int total) {
+    return '$scanned / $total frames';
+  }
+
+  @override
+  String keystoneScanScanning(int count) {
+    return '$count frames scanned';
+  }
+
+  @override
+  String get keystoneScanSubmitting => 'Submitting transaction...';
+
+  @override
+  String get keystoneScanError => 'Couldn\'t read the signature. Please try again.';
 
   @override
   String get sendLogicCantSelfTransfer => 'Can\'t Self Transfer';
@@ -1588,6 +1716,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonLoading => 'Loading...';
+
+  @override
+  String get commonCancel => 'Cancel';
 
   @override
   String commonAmountBalance(String balance, String symbol) {

@@ -230,38 +230,84 @@
         }
       }
     },
+    "accountsSheetWallet": "Wallet {number}",
+    "@accountsSheetWallet": {
+      "description": "Software wallet segment header in accounts sheet",
+      "placeholders": {
+        "number": {
+          "type": "int"
+        }
+      }
+    },
+    "accountsSheetKeystoneWallet": "{number, plural, =1{Keystone Hardware Wallet} other{Keystone Hardware Wallet {number}}}",
+    "@accountsSheetKeystoneWallet": {
+      "description": "Keystone hardware wallet segment header in accounts sheet; the first wallet omits the number",
+      "placeholders": {
+        "number": {
+          "type": "int"
+        }
+      }
+    },
+    "accountsSheetSubheaderTransparent": "Transparent Accounts",
+    "@accountsSheetSubheaderTransparent": {
+      "description": "Sub-segment header for transparent accounts"
+    },
+    "accountsSheetSubheaderEncrypted": "Encrypted Account",
+    "@accountsSheetSubheaderEncrypted": {
+      "description": "Sub-segment header for the encrypted account"
+    },
+    "accountsSheetSubheaderKeystone": "Keystone Accounts",
+    "@accountsSheetSubheaderKeystone": {
+      "description": "Sub-segment header for keystone accounts"
+    },
+    "accountsSheetSubheaderMultisig": "Multisig Accounts",
+    "@accountsSheetSubheaderMultisig": {
+      "description": "Sub-segment header for multisig accounts"
+    },
 
     "addAccountMenuTitle": "Add Account",
     "@addAccountMenuTitle": {
       "description": "App bar title on add account menu"
     },
-    "addAccountMenuCreateTitle": "Create New Account",
+    "addAccountMenuCreateTitle": "Add Account",
     "@addAccountMenuCreateTitle": {
-      "description": "Create new account menu row title"
+      "description": "Add transparent account menu row title"
     },
-    "addAccountMenuCreateSubtitle": "Generate a fresh wallet address",
+    "addAccountMenuCreateSubtitle": "Add another public account",
     "@addAccountMenuCreateSubtitle": {
-      "description": "Create new account menu row subtitle"
+      "description": "Add transparent account menu row subtitle"
     },
-    "addAccountMenuImportTitle": "Import Wallet",
+    "addAccountMenuMoreTitle": "Advanced",
+    "@addAccountMenuMoreTitle": {
+      "description": "Title of the add account more options action sheet"
+    },
+    "addAccountMenuImportKeystoneTitle": "Add Keystone Hardware Account",
+    "@addAccountMenuImportKeystoneTitle": {
+      "description": "Add keystone hardware account menu row title"
+    },
+    "addAccountMenuImportKeystoneSubtitle": "Scan the address QR from your Keystone device",
+    "@addAccountMenuImportKeystoneSubtitle": {
+      "description": "Add keystone hardware account menu row subtitle"
+    },
+    "addAccountMenuImportTitle": "Import Another Wallet",
     "@addAccountMenuImportTitle": {
-      "description": "Import wallet menu row title"
+      "description": "Import another wallet menu row title"
     },
     "addAccountMenuImportSubtitle": "Use a recovery phrase to import",
     "@addAccountMenuImportSubtitle": {
       "description": "Import wallet menu row subtitle"
     },
-    "addAccountMenuMultisigTitle": "Create Multisig",
+    "addAccountMenuMultisigTitle": "Create New Multisig",
     "@addAccountMenuMultisigTitle": {
-      "description": "Add multisig menu row title"
+      "description": "Create new multisig menu row title"
     },
     "addAccountMenuMultisigSubtitle": "Set up a shared address with multiple signers",
     "@addAccountMenuMultisigSubtitle": {
       "description": "Add multisig menu row subtitle"
     },
-    "addAccountMenuDiscoverMultisigTitle": "Discover Multisig",
+    "addAccountMenuDiscoverMultisigTitle": "Add Multisig Account",
     "@addAccountMenuDiscoverMultisigTitle": {
-      "description": "Discover multisig menu row title"
+      "description": "Add (discover) multisig menu row title"
     },
     "addAccountMenuDiscoverMultisigSubtitle": "Find multisigs where your accounts are signers",
     "@addAccountMenuDiscoverMultisigSubtitle": {
@@ -952,6 +998,10 @@
     "@createAccountErrorCouldNotAdd": {
       "description": "Error when account creation fails"
     },
+    "createAccountEncryptedDefaultName": "Encrypted Account",
+    "@createAccountEncryptedDefaultName": {
+      "description": "Default name for a newly created encrypted account"
+    },
     "createAccountDefaultName": "Account {number}",
     "@createAccountDefaultName": {
       "description": "Default name for a new account",
@@ -998,6 +1048,99 @@
     "accountMenuNotFound": "Account not found",
     "@accountMenuNotFound": {
       "description": "When account is not found on menu screen"
+    },
+    "accountMenuDone": "Done",
+    "@accountMenuDone": {
+      "description": "Done button shown on the account overview right after creating an account"
+    },
+    "accountMenuDisconnect": "Disconnect",
+    "@accountMenuDisconnect": {
+      "description": "Disconnect (stop tracking) button on hardware wallet and multisig overview"
+    },
+    "accountMenuDisconnectHardwareTitle": "Disconnect hardware wallet?",
+    "@accountMenuDisconnectHardwareTitle": {
+      "description": "Title of the hardware wallet disconnect confirmation"
+    },
+    "accountMenuDisconnectHardwareMessage": "This stops tracking \"{name}\" on this device. Your hardware wallet keeps the account, so you can reconnect it anytime.",
+    "@accountMenuDisconnectHardwareMessage": {
+      "description": "Body of the hardware wallet disconnect confirmation",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "accountMenuDisconnectMultisigTitle": "Disconnect multisig?",
+    "@accountMenuDisconnectMultisigTitle": {
+      "description": "Title of the multisig disconnect confirmation"
+    },
+    "accountMenuDisconnectMultisigMessage": "This stops tracking \"{name}\" on this device. The multisig stays on-chain, so you can re-add it anytime.",
+    "@accountMenuDisconnectMultisigMessage": {
+      "description": "Body of the multisig disconnect confirmation",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "accountMenuDisconnectError": "Couldn't disconnect. Please try again.",
+    "@accountMenuDisconnectError": {
+      "description": "Error toaster shown when disconnecting an account fails"
+    },
+    "accountMenuDisconnectAccountTitle": "Disconnect account?",
+    "@accountMenuDisconnectAccountTitle": {
+      "description": "Title of the software account disconnect confirmation"
+    },
+    "accountMenuDisconnectAccountMessage": "This stops tracking \"{name}\" on this device. Your recovery phrase stays, so you can restore it later.",
+    "@accountMenuDisconnectAccountMessage": {
+      "description": "Body of the software account disconnect confirmation",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "accountMenuDisconnectWalletTitle": "Disconnect Wallet {number}?",
+    "@accountMenuDisconnectWalletTitle": {
+      "description": "Title shown when disconnecting the last account in a wallet, which removes the whole wallet",
+      "placeholders": {
+        "number": {
+          "type": "int"
+        }
+      }
+    },
+    "accountMenuDisconnectWalletMessage": "\"{name}\" is the last account in Wallet {number}. Disconnecting it removes the entire wallet from this device.",
+    "@accountMenuDisconnectWalletMessage": {
+      "description": "Body shown when disconnecting the last account in a wallet",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        },
+        "number": {
+          "type": "int"
+        }
+      }
+    },
+    "accountMenuDisconnectWalletConfirm": "Disconnect Wallet",
+    "@accountMenuDisconnectWalletConfirm": {
+      "description": "Confirm button for disconnecting an entire wallet"
+    },
+    "accountMenuDeleteWalletTitle": "Are you sure?",
+    "@accountMenuDeleteWalletTitle": {
+      "description": "Title of the final confirmation before permanently deleting a wallet"
+    },
+    "accountMenuDeleteWalletMessage": "Wallet {number}'s recovery phrase will be permanently deleted from this device. Make sure it's backed up — this can't be undone.",
+    "@accountMenuDeleteWalletMessage": {
+      "description": "Body of the final confirmation before permanently deleting a wallet's seed phrase",
+      "placeholders": {
+        "number": {
+          "type": "int"
+        }
+      }
+    },
+    "accountMenuDeleteWalletConfirm": "Delete Wallet",
+    "@accountMenuDeleteWalletConfirm": {
+      "description": "Confirm button for permanently deleting a wallet and its recovery phrase"
     },
 
     "accountDetailsTitle": "Address Details",
@@ -1191,6 +1334,56 @@
     "sendTxSubmittedDone": "Done",
     "@sendTxSubmittedDone": {
       "description": "Done button on transaction submitted screen"
+    },
+
+    "keystoneSignTitle": "Scan with your Keystone",
+    "@keystoneSignTitle": {
+      "description": "Title on the Keystone sign screen showing the unsigned transaction QR"
+    },
+    "keystoneSignInstruction": "Show this QR code to your Keystone hardware wallet to sign the transaction.",
+    "@keystoneSignInstruction": {
+      "description": "Instruction on the Keystone sign screen"
+    },
+    "keystoneSignNext": "Scan signature",
+    "@keystoneSignNext": {
+      "description": "Button to advance from showing the QR to scanning the signature"
+    },
+    "keystoneSignError": "Failed to prepare the transaction. Please try again.",
+    "@keystoneSignError": {
+      "description": "Error when building the unsigned transaction payload fails"
+    },
+    "keystoneScanInstruction": "Scan the signature QR from your Keystone",
+    "@keystoneScanInstruction": {
+      "description": "Instruction on the Keystone signature scanner screen"
+    },
+    "keystoneScanProgress": "{scanned} / {total} frames",
+    "@keystoneScanProgress": {
+      "description": "Progress indicator showing scanned vs total animated QR frames",
+      "placeholders": {
+        "scanned": {
+          "type": "int"
+        },
+        "total": {
+          "type": "int"
+        }
+      }
+    },
+    "keystoneScanScanning": "{count} frames scanned",
+    "@keystoneScanScanning": {
+      "description": "Progress text before the total frame count is known",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "keystoneScanSubmitting": "Submitting transaction...",
+    "@keystoneScanSubmitting": {
+      "description": "Overlay text while the externally signed transaction is broadcast"
+    },
+    "keystoneScanError": "Couldn't read the signature. Please try again.",
+    "@keystoneScanError": {
+      "description": "Error when decoding or submitting the scanned signature fails"
     },
 
     "sendLogicCantSelfTransfer": "Can't Self Transfer",
@@ -2312,6 +2505,10 @@
     "commonLoading": "Loading...",
     "@commonLoading": {
       "description": "Text for generic loading state"
+    },
+    "commonCancel": "Cancel",
+    "@commonCancel": {
+      "description": "Generic cancel button label"
     },
     "commonAmountBalance": "{balance} {symbol}",
     "@commonAmountBalance": {

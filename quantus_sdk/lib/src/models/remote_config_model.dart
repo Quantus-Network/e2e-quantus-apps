@@ -4,6 +4,7 @@ class RemoteConfigModel {
   final bool enableHighSecurity;
   final bool enableRemoteNotifications;
   final bool enableSwap;
+  final bool enableEncryptedAccount;
   final bool enableMultisig;
 
   const RemoteConfigModel({
@@ -12,6 +13,7 @@ class RemoteConfigModel {
     required this.enableHighSecurity,
     required this.enableRemoteNotifications,
     required this.enableSwap,
+    required this.enableEncryptedAccount,
     required this.enableMultisig,
   });
 
@@ -22,6 +24,7 @@ class RemoteConfigModel {
       bool enableHighSecurity,
       bool enableRemoteNotifications,
       bool enableSwap,
+      bool enableEncryptedAccount,
       bool enableMultisig,
     )
     fn,
@@ -32,27 +35,30 @@ class RemoteConfigModel {
       enableHighSecurity,
       enableRemoteNotifications,
       enableSwap,
+      enableEncryptedAccount,
       enableMultisig,
     );
   }
 
   static const RemoteConfigModel defaults = RemoteConfigModel(
     enableTestButtons: false,
-    enableKeystoneHardwareWallet: false,
-    enableHighSecurity: true,
+    enableKeystoneHardwareWallet: true,
+    enableHighSecurity: false,
     enableRemoteNotifications: true,
-    enableSwap: true,
-    enableMultisig: false,
+    enableSwap: false,
+    enableEncryptedAccount: false,
+    enableMultisig: true,
   );
 
   Map<String, dynamic> toCacheJson() {
     return match(
-      fn: (test, keystone, security, notifications, swap, multisig) => {
+      fn: (test, keystone, security, notifications, swap, encrypted, multisig) => {
         'enableTestButtons': test,
         'enableKeystoneHardwareWallet': keystone,
         'enableHighSecurity': security,
         'enableRemoteNotifications': notifications,
         'enableSwap': swap,
+        'enableEncryptedAccount': encrypted,
         'enableMultisig': multisig,
       },
     );
@@ -65,6 +71,7 @@ class RemoteConfigModel {
       enableHighSecurity: json['enableHighSecurity'] ?? defaults.enableHighSecurity,
       enableRemoteNotifications: json['enableRemoteNotifications'] ?? defaults.enableRemoteNotifications,
       enableSwap: json['enableSwap'] ?? defaults.enableSwap,
+      enableEncryptedAccount: json['enableEncryptedAccount'] ?? defaults.enableEncryptedAccount,
       enableMultisig: json['enableMultisig'] ?? defaults.enableMultisig,
     );
   }
@@ -78,6 +85,7 @@ class RemoteConfigModel {
             enableHighSecurity,
             enableRemoteNotifications,
             enableSwap,
+            enableEncryptedAccount,
             enableMultisig,
           ) {
             return other.match(
@@ -88,6 +96,7 @@ class RemoteConfigModel {
                     otherEnableHighSecurity,
                     otherEnableRemoteNotifications,
                     otherEnableSwap,
+                    otherEnableEncryptedAccount,
                     otherEnableMultisig,
                   ) {
                     return enableTestButtons == otherEnableTestButtons &&
@@ -95,6 +104,7 @@ class RemoteConfigModel {
                         enableHighSecurity == otherEnableHighSecurity &&
                         enableRemoteNotifications == otherEnableRemoteNotifications &&
                         enableSwap == otherEnableSwap &&
+                        enableEncryptedAccount == otherEnableEncryptedAccount &&
                         enableMultisig == otherEnableMultisig;
                   },
             );

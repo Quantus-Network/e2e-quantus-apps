@@ -171,28 +171,65 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String accountsSheetWallet(int number) {
+    return 'Wallet $number';
+  }
+
+  @override
+  String accountsSheetKeystoneWallet(int number) {
+    String _temp0 = intl.Intl.pluralLogic(
+      number,
+      locale: localeName,
+      other: 'Wallet Perangkat Keras Keystone $number',
+      one: 'Wallet Perangkat Keras Keystone',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get accountsSheetSubheaderTransparent => 'Akun Transparan';
+
+  @override
+  String get accountsSheetSubheaderEncrypted => 'Akun Terenkripsi';
+
+  @override
+  String get accountsSheetSubheaderKeystone => 'Akun Keystone';
+
+  @override
+  String get accountsSheetSubheaderMultisig => 'Akun Multisig';
+
+  @override
   String get addAccountMenuTitle => 'Tambah Akun';
 
   @override
-  String get addAccountMenuCreateTitle => 'Buat Akun Baru';
+  String get addAccountMenuCreateTitle => 'Tambah Akun';
 
   @override
-  String get addAccountMenuCreateSubtitle => 'Buat alamat wallet baru';
+  String get addAccountMenuCreateSubtitle => 'Tambahkan akun publik lainnya';
 
   @override
-  String get addAccountMenuImportTitle => 'Impor Wallet';
+  String get addAccountMenuMoreTitle => 'Lanjutan';
+
+  @override
+  String get addAccountMenuImportKeystoneTitle => 'Tambah Akun Perangkat Keras Keystone';
+
+  @override
+  String get addAccountMenuImportKeystoneSubtitle => 'Pindai QR alamat dari perangkat Keystone Anda';
+
+  @override
+  String get addAccountMenuImportTitle => 'Impor Wallet Lain';
 
   @override
   String get addAccountMenuImportSubtitle => 'Gunakan recovery phrase untuk mengimpor';
 
   @override
-  String get addAccountMenuMultisigTitle => 'Buat Multisig';
+  String get addAccountMenuMultisigTitle => 'Buat Multisig Baru';
 
   @override
   String get addAccountMenuMultisigSubtitle => 'Siapkan alamat bersama dengan beberapa penandatangan';
 
   @override
-  String get addAccountMenuDiscoverMultisigTitle => 'Temukan Multisig';
+  String get addAccountMenuDiscoverMultisigTitle => 'Tambah Akun Multisig';
 
   @override
   String get addAccountMenuDiscoverMultisigSubtitle => 'Cari multisig di mana akun Anda adalah penandatangan';
@@ -683,6 +720,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get createAccountErrorCouldNotAdd => 'Gagal menambahkan akun.';
 
   @override
+  String get createAccountEncryptedDefaultName => 'Akun Terenkripsi';
+
+  @override
   String createAccountDefaultName(int number) {
     return 'Akun $number';
   }
@@ -713,6 +753,63 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get accountMenuNotFound => 'Akun tidak ditemukan';
+
+  @override
+  String get accountMenuDone => 'Selesai';
+
+  @override
+  String get accountMenuDisconnect => 'Putuskan';
+
+  @override
+  String get accountMenuDisconnectHardwareTitle => 'Putuskan dompet perangkat keras?';
+
+  @override
+  String accountMenuDisconnectHardwareMessage(String name) {
+    return 'Ini menghentikan pelacakan \"$name\" di perangkat ini. Dompet perangkat keras Anda tetap menyimpan akun, jadi Anda dapat menghubungkannya kembali kapan saja.';
+  }
+
+  @override
+  String get accountMenuDisconnectMultisigTitle => 'Putuskan multisig?';
+
+  @override
+  String accountMenuDisconnectMultisigMessage(String name) {
+    return 'Ini menghentikan pelacakan \"$name\" di perangkat ini. Multisig tetap ada di on-chain, jadi Anda dapat menambahkannya kembali kapan saja.';
+  }
+
+  @override
+  String get accountMenuDisconnectError => 'Tidak dapat memutuskan. Silakan coba lagi.';
+
+  @override
+  String get accountMenuDisconnectAccountTitle => 'Putuskan akun?';
+
+  @override
+  String accountMenuDisconnectAccountMessage(String name) {
+    return 'Ini menghentikan pelacakan \"$name\" di perangkat ini. Frasa pemulihan Anda tetap tersimpan, jadi Anda dapat memulihkannya nanti.';
+  }
+
+  @override
+  String accountMenuDisconnectWalletTitle(int number) {
+    return 'Putuskan Dompet $number?';
+  }
+
+  @override
+  String accountMenuDisconnectWalletMessage(String name, int number) {
+    return '\"$name\" adalah akun terakhir di Dompet $number. Memutuskannya akan menghapus seluruh dompet dari perangkat ini.';
+  }
+
+  @override
+  String get accountMenuDisconnectWalletConfirm => 'Putuskan Dompet';
+
+  @override
+  String get accountMenuDeleteWalletTitle => 'Apakah Anda yakin?';
+
+  @override
+  String accountMenuDeleteWalletMessage(int number) {
+    return 'Frasa pemulihan Dompet $number akan dihapus permanen dari perangkat ini. Pastikan sudah dicadangkan — ini tidak dapat dibatalkan.';
+  }
+
+  @override
+  String get accountMenuDeleteWalletConfirm => 'Hapus Dompet';
 
   @override
   String get accountDetailsTitle => 'Detail Alamat';
@@ -841,6 +938,38 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get sendTxSubmittedDone => 'Selesai';
+
+  @override
+  String get keystoneSignTitle => 'Pindai dengan Keystone Anda';
+
+  @override
+  String get keystoneSignInstruction =>
+      'Tunjukkan kode QR ini ke dompet perangkat keras Keystone Anda untuk menandatangani transaksi.';
+
+  @override
+  String get keystoneSignNext => 'Pindai tanda tangan';
+
+  @override
+  String get keystoneSignError => 'Gagal menyiapkan transaksi. Silakan coba lagi.';
+
+  @override
+  String get keystoneScanInstruction => 'Pindai QR tanda tangan dari Keystone Anda';
+
+  @override
+  String keystoneScanProgress(int scanned, int total) {
+    return '$scanned / $total bingkai';
+  }
+
+  @override
+  String keystoneScanScanning(int count) {
+    return '$count bingkai dipindai';
+  }
+
+  @override
+  String get keystoneScanSubmitting => 'Mengirim transaksi...';
+
+  @override
+  String get keystoneScanError => 'Tidak dapat membaca tanda tangan. Silakan coba lagi.';
 
   @override
   String get sendLogicCantSelfTransfer => 'Tidak Bisa Transfer ke Diri Sendiri';
@@ -1590,6 +1719,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get commonLoading => 'Memuat...';
+
+  @override
+  String get commonCancel => 'Batal';
 
   @override
   String commonAmountBalance(String balance, String symbol) {

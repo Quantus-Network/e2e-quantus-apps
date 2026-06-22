@@ -398,28 +398,82 @@ abstract class AppLocalizations {
   /// **'{balance} {symbol}'**
   String accountsSheetBalance(String balance, String symbol);
 
+  /// Software wallet segment header in accounts sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet {number}'**
+  String accountsSheetWallet(int number);
+
+  /// Keystone hardware wallet segment header in accounts sheet; the first wallet omits the number
+  ///
+  /// In en, this message translates to:
+  /// **'{number, plural, =1{Keystone Hardware Wallet} other{Keystone Hardware Wallet {number}}}'**
+  String accountsSheetKeystoneWallet(int number);
+
+  /// Sub-segment header for transparent accounts
+  ///
+  /// In en, this message translates to:
+  /// **'Transparent Accounts'**
+  String get accountsSheetSubheaderTransparent;
+
+  /// Sub-segment header for the encrypted account
+  ///
+  /// In en, this message translates to:
+  /// **'Encrypted Account'**
+  String get accountsSheetSubheaderEncrypted;
+
+  /// Sub-segment header for keystone accounts
+  ///
+  /// In en, this message translates to:
+  /// **'Keystone Accounts'**
+  String get accountsSheetSubheaderKeystone;
+
+  /// Sub-segment header for multisig accounts
+  ///
+  /// In en, this message translates to:
+  /// **'Multisig Accounts'**
+  String get accountsSheetSubheaderMultisig;
+
   /// App bar title on add account menu
   ///
   /// In en, this message translates to:
   /// **'Add Account'**
   String get addAccountMenuTitle;
 
-  /// Create new account menu row title
+  /// Add transparent account menu row title
   ///
   /// In en, this message translates to:
-  /// **'Create New Account'**
+  /// **'Add Account'**
   String get addAccountMenuCreateTitle;
 
-  /// Create new account menu row subtitle
+  /// Add transparent account menu row subtitle
   ///
   /// In en, this message translates to:
-  /// **'Generate a fresh wallet address'**
+  /// **'Add another public account'**
   String get addAccountMenuCreateSubtitle;
 
-  /// Import wallet menu row title
+  /// Title of the add account more options action sheet
   ///
   /// In en, this message translates to:
-  /// **'Import Wallet'**
+  /// **'Advanced'**
+  String get addAccountMenuMoreTitle;
+
+  /// Add keystone hardware account menu row title
+  ///
+  /// In en, this message translates to:
+  /// **'Add Keystone Hardware Account'**
+  String get addAccountMenuImportKeystoneTitle;
+
+  /// Add keystone hardware account menu row subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Scan the address QR from your Keystone device'**
+  String get addAccountMenuImportKeystoneSubtitle;
+
+  /// Import another wallet menu row title
+  ///
+  /// In en, this message translates to:
+  /// **'Import Another Wallet'**
   String get addAccountMenuImportTitle;
 
   /// Import wallet menu row subtitle
@@ -428,10 +482,10 @@ abstract class AppLocalizations {
   /// **'Use a recovery phrase to import'**
   String get addAccountMenuImportSubtitle;
 
-  /// Add multisig menu row title
+  /// Create new multisig menu row title
   ///
   /// In en, this message translates to:
-  /// **'Create Multisig'**
+  /// **'Create New Multisig'**
   String get addAccountMenuMultisigTitle;
 
   /// Add multisig menu row subtitle
@@ -440,10 +494,10 @@ abstract class AppLocalizations {
   /// **'Set up a shared address with multiple signers'**
   String get addAccountMenuMultisigSubtitle;
 
-  /// Discover multisig menu row title
+  /// Add (discover) multisig menu row title
   ///
   /// In en, this message translates to:
-  /// **'Discover Multisig'**
+  /// **'Add Multisig Account'**
   String get addAccountMenuDiscoverMultisigTitle;
 
   /// Discover multisig menu row subtitle
@@ -1346,6 +1400,12 @@ abstract class AppLocalizations {
   /// **'Could not add account.'**
   String get createAccountErrorCouldNotAdd;
 
+  /// Default name for a newly created encrypted account
+  ///
+  /// In en, this message translates to:
+  /// **'Encrypted Account'**
+  String get createAccountEncryptedDefaultName;
+
   /// Default name for a new account
   ///
   /// In en, this message translates to:
@@ -1405,6 +1465,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Account not found'**
   String get accountMenuNotFound;
+
+  /// Done button shown on the account overview right after creating an account
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get accountMenuDone;
+
+  /// Disconnect (stop tracking) button on hardware wallet and multisig overview
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get accountMenuDisconnect;
+
+  /// Title of the hardware wallet disconnect confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect hardware wallet?'**
+  String get accountMenuDisconnectHardwareTitle;
+
+  /// Body of the hardware wallet disconnect confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'This stops tracking \"{name}\" on this device. Your hardware wallet keeps the account, so you can reconnect it anytime.'**
+  String accountMenuDisconnectHardwareMessage(String name);
+
+  /// Title of the multisig disconnect confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect multisig?'**
+  String get accountMenuDisconnectMultisigTitle;
+
+  /// Body of the multisig disconnect confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'This stops tracking \"{name}\" on this device. The multisig stays on-chain, so you can re-add it anytime.'**
+  String accountMenuDisconnectMultisigMessage(String name);
+
+  /// Error toaster shown when disconnecting an account fails
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t disconnect. Please try again.'**
+  String get accountMenuDisconnectError;
+
+  /// Title of the software account disconnect confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect account?'**
+  String get accountMenuDisconnectAccountTitle;
+
+  /// Body of the software account disconnect confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'This stops tracking \"{name}\" on this device. Your recovery phrase stays, so you can restore it later.'**
+  String accountMenuDisconnectAccountMessage(String name);
+
+  /// Title shown when disconnecting the last account in a wallet, which removes the whole wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect Wallet {number}?'**
+  String accountMenuDisconnectWalletTitle(int number);
+
+  /// Body shown when disconnecting the last account in a wallet
+  ///
+  /// In en, this message translates to:
+  /// **'\"{name}\" is the last account in Wallet {number}. Disconnecting it removes the entire wallet from this device.'**
+  String accountMenuDisconnectWalletMessage(String name, int number);
+
+  /// Confirm button for disconnecting an entire wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect Wallet'**
+  String get accountMenuDisconnectWalletConfirm;
+
+  /// Title of the final confirmation before permanently deleting a wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure?'**
+  String get accountMenuDeleteWalletTitle;
+
+  /// Body of the final confirmation before permanently deleting a wallet's seed phrase
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet {number}\'s recovery phrase will be permanently deleted from this device. Make sure it\'s backed up — this can\'t be undone.'**
+  String accountMenuDeleteWalletMessage(int number);
+
+  /// Confirm button for permanently deleting a wallet and its recovery phrase
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Wallet'**
+  String get accountMenuDeleteWalletConfirm;
 
   /// App bar title on account details screen
   ///
@@ -1645,6 +1795,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Done'**
   String get sendTxSubmittedDone;
+
+  /// Title on the Keystone sign screen showing the unsigned transaction QR
+  ///
+  /// In en, this message translates to:
+  /// **'Scan with your Keystone'**
+  String get keystoneSignTitle;
+
+  /// Instruction on the Keystone sign screen
+  ///
+  /// In en, this message translates to:
+  /// **'Show this QR code to your Keystone hardware wallet to sign the transaction.'**
+  String get keystoneSignInstruction;
+
+  /// Button to advance from showing the QR to scanning the signature
+  ///
+  /// In en, this message translates to:
+  /// **'Scan signature'**
+  String get keystoneSignNext;
+
+  /// Error when building the unsigned transaction payload fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to prepare the transaction. Please try again.'**
+  String get keystoneSignError;
+
+  /// Instruction on the Keystone signature scanner screen
+  ///
+  /// In en, this message translates to:
+  /// **'Scan the signature QR from your Keystone'**
+  String get keystoneScanInstruction;
+
+  /// Progress indicator showing scanned vs total animated QR frames
+  ///
+  /// In en, this message translates to:
+  /// **'{scanned} / {total} frames'**
+  String keystoneScanProgress(int scanned, int total);
+
+  /// Progress text before the total frame count is known
+  ///
+  /// In en, this message translates to:
+  /// **'{count} frames scanned'**
+  String keystoneScanScanning(int count);
+
+  /// Overlay text while the externally signed transaction is broadcast
+  ///
+  /// In en, this message translates to:
+  /// **'Submitting transaction...'**
+  String get keystoneScanSubmitting;
+
+  /// Error when decoding or submitting the scanned signature fails
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read the signature. Please try again.'**
+  String get keystoneScanError;
 
   /// Button label when sending to own address
   ///
@@ -3025,6 +3229,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Loading...'**
   String get commonLoading;
+
+  /// Generic cancel button label
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get commonCancel;
 
   /// Formatted balance with token symbol
   ///
