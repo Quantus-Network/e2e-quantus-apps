@@ -3,7 +3,11 @@ import 'package:flutter/material.dart';
 /// App UI locales the user can select in settings.
 enum AppLocale {
   en(languageCode: 'en', displayName: 'English', numberFormatLocale: 'en_US'),
-  id(languageCode: 'id', displayName: 'Bahasa Indonesia', numberFormatLocale: 'id_ID');
+  id(languageCode: 'id', displayName: 'Bahasa Indonesia', numberFormatLocale: 'id_ID'),
+  zh(languageCode: 'zh', displayName: '中文', numberFormatLocale: 'zh_CN'),
+  ru(languageCode: 'ru', displayName: 'Русский', numberFormatLocale: 'ru_RU'),
+  hi(languageCode: 'hi', displayName: 'हिन्दी', numberFormatLocale: 'hi_IN'),
+  de(languageCode: 'de', displayName: 'Deutsch', numberFormatLocale: 'de_DE');
 
   const AppLocale({required this.languageCode, required this.displayName, required this.numberFormatLocale});
 
