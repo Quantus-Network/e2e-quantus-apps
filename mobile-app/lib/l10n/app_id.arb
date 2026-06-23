@@ -387,8 +387,7 @@
   "receiveTabAddress": "Alamat",
   "receiveCopy": "Salin",
   "receiveErrorLoadingAccount": "Gagal memuat data akun: {error}",
-  "receiveClipboardContent": "ID Akun:\n{accountId}\n\nCheckphrase:\n{checksum}",
-  "receiveCopiedMessage": "Detail akun disalin ke clipboard",
+  "receiveCopiedMessage": "Alamat disalin ke clipboard",
 
   "posAmountTitle": "Tagihan Baru",
   "posAmountCharge": "Tagih {amount}",

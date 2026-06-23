@@ -1190,12 +1190,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String receiveClipboardContent(String accountId, String checksum) {
-    return 'ID Akun:\n$accountId\n\nCheckphrase:\n$checksum';
-  }
-
-  @override
-  String get receiveCopiedMessage => 'Detail akun disalin ke clipboard';
+  String get receiveCopiedMessage => 'Alamat disalin ke clipboard';
 
   @override
   String get posAmountTitle => 'Tagihan Baru';

@@ -2258,16 +2258,10 @@ abstract class AppLocalizations {
   /// **'Error loading account data: {error}'**
   String receiveErrorLoadingAccount(String error);
 
-  /// Clipboard content when copying account details
+  /// Toast when the address is copied
   ///
   /// In en, this message translates to:
-  /// **'Account Id:\n{accountId}\n\nCheckphrase:\n{checksum}'**
-  String receiveClipboardContent(String accountId, String checksum);
-
-  /// Toast when account details are copied
-  ///
-  /// In en, this message translates to:
-  /// **'Account details copied to clipboard'**
+  /// **'Address copied to clipboard'**
   String get receiveCopiedMessage;
 
   /// App bar title on POS amount screen

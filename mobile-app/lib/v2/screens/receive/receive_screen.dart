@@ -67,12 +67,9 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
     }
   }
 
-  void _copyAccountDetails(BuildContext context) {
+  void _copyAddress(BuildContext context) {
     final l10n = ref.read(l10nProvider);
-    context.copyTextWithToaster(
-      l10n.receiveClipboardContent(_accountId!, _checksum!),
-      message: l10n.receiveCopiedMessage,
-    );
+    context.copyTextWithToaster(_accountId!, message: l10n.receiveCopiedMessage);
   }
 
   @override
@@ -119,14 +116,12 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
     }
 
     if (_selectedTab == ReceiveTab.qrCode) {
-      content = ShareAccountButton(onTap: _share, isDisabled: isLoading);
-    } else {
       content = Row(
         children: [
           Expanded(
             child: QuantusButton.simple(
               label: l10n.receiveCopy,
-              onTap: () => _copyAccountDetails(context),
+              onTap: () => _copyAddress(context),
               isDisabled: isLoading,
               icon: Icon(Icons.copy, size: 20, color: context.colors.textPrimary),
               iconPlacement: IconPlacement.leading,
@@ -139,6 +134,8 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
           ),
         ],
       );
+    } else {
+      content = ShareAccountButton(onTap: _share, isDisabled: isLoading);
     }
 
     return ScaffoldBaseBottomContent(child: content);

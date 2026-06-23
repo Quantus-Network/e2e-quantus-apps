@@ -1187,12 +1187,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String receiveClipboardContent(String accountId, String checksum) {
-    return 'Account Id:\n$accountId\n\nCheckphrase:\n$checksum';
-  }
-
-  @override
-  String get receiveCopiedMessage => 'Account details copied to clipboard';
+  String get receiveCopiedMessage => 'Address copied to clipboard';
 
   @override
   String get posAmountTitle => 'New Charge';
