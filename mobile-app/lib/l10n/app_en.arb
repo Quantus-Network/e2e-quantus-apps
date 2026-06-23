@@ -1706,21 +1706,9 @@
         }
       }
     },
-    "receiveClipboardContent": "Account Id:\n{accountId}\n\nCheckphrase:\n{checksum}",
-    "@receiveClipboardContent": {
-      "description": "Clipboard content when copying account details",
-      "placeholders": {
-        "accountId": {
-          "type": "String"
-        },
-        "checksum": {
-          "type": "String"
-        }
-      }
-    },
-    "receiveCopiedMessage": "Account details copied to clipboard",
+    "receiveCopiedMessage": "Address copied to clipboard",
     "@receiveCopiedMessage": {
-      "description": "Toast when account details are copied"
+      "description": "Toast when the address is copied"
     },
 
     "posAmountTitle": "New Charge",
