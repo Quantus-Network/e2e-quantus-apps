@@ -2461,7 +2461,7 @@
       "description": "Empty state on refund address picker"
     },
 
-    "componentQrScannerTitle": "Scan QR Code",
+    "componentQrScannerTitle": "X QR Code",
     "@componentQrScannerTitle": {
       "description": "Text for app bar or button label on QR scanner component"
     },

@@ -27,7 +27,7 @@ class TransactionSubmissionService {
 
   TransactionSubmissionService(this._ref) : _poller = PendingTransactionPollingService(_ref);
 
-  Future<void> balanceTransfer(
+  Future<String> balanceTransfer(
     Account account,
     String targetAddress,
     BigInt amount,
@@ -52,13 +52,13 @@ class TransactionSubmissionService {
     TelemetryService().sendEvent('send_transfer');
 
     // C. Submit and track the transaction
-    await submitAndTrackTransaction(() => BalancesService().balanceTransfer(account, targetAddress, amount), pendingTx);
+    return submitAndTrackTransaction(() => BalancesService().balanceTransfer(account, targetAddress, amount), pendingTx);
   }
 
   /// Broadcasts a transfer whose signature was produced off-device (e.g. by a
   /// Keystone hardware wallet). The [unsignedData] is rebuilt into an extrinsic
   /// using the externally provided [signature] and [publicKey].
-  Future<void> submitExternallySignedTransfer({
+  Future<String> submitExternallySignedTransfer({
     required Account account,
     required String targetAddress,
     required BigInt amount,
@@ -80,7 +80,7 @@ class TransactionSubmissionService {
 
     TelemetryService().sendEvent('send_transfer_hardware');
 
-    await submitAndTrackTransaction(
+    return submitAndTrackTransaction(
       () => SubstrateService().submitExtrinsicWithExternalSignature(unsignedData, signature, publicKey),
       pendingTx,
     );
@@ -400,7 +400,10 @@ class TransactionSubmissionService {
   /// Retries live in SubstrateService.submitExtrinsic, which resubmits the
   /// same signed bytes. Outer retries would re-sign with a fresh nonce and can
   /// double spend if a prior submit already reached the network.
-  Future<void> submitAndTrackTransaction(Future<Uint8List> Function() submit, PendingTransactionEvent pendingTx) async {
+  Future<String> submitAndTrackTransaction(
+    Future<Uint8List> Function() submit,
+    PendingTransactionEvent pendingTx,
+  ) async {
     try {
       quantusDebugPrint('Submitting transaction: ${pendingTx.id}');
 
@@ -413,6 +416,7 @@ class TransactionSubmissionService {
           .updateState(pendingTx.id, TransactionState.pending, error: pendingTx.error, extrinsicHash: extrinsicHash);
 
       _startPollingForTransaction(pendingTx.copyWith(extrinsicHash: extrinsicHash));
+      return extrinsicHash;
     } catch (e, stackTrace) {
       quantusDebugPrint('Failed to submit transaction ${pendingTx.id}: $e');
       quantusDebugPrint('Stack trace: $stackTrace');

@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
@@ -19,11 +18,14 @@ import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class SelectRecipientScreen extends ConsumerStatefulWidget {
-  const SelectRecipientScreen({super.key});
+  final SendStrategy strategy;
+
+  const SelectRecipientScreen({super.key, required this.strategy});
 
   @override
   ConsumerState<SelectRecipientScreen> createState() => _SelectRecipientScreenState();
@@ -39,6 +41,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   bool _hasAddressError = true;
   bool _loadingRecents = true;
   bool _isPayMode = false;
+  bool _canContinue = false;
   String? _recipientChecksum;
 
   @override
@@ -59,13 +62,11 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
 
   Future<void> _loadRecents() async {
     final checksumService = ref.read(humanReadableChecksumServiceProvider);
-    final settingsService = ref.read(settingsServiceProvider);
     final recentAddressesService = ref.read(recentAddressesServiceProvider);
 
     try {
       final all = await recentAddressesService.getAddresses();
-      final active = await settingsService.getActiveAccount();
-      final currentId = active?.account.accountId;
+      final currentId = widget.strategy.sourceAccountId(ref);
       final addresses = all.where((a) => a != currentId).toList();
       if (!mounted) return;
       setState(() {
@@ -91,6 +92,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
         _hasAddressError = true;
         _recipientChecksum = null;
         _isPayMode = false;
+        _canContinue = false;
       });
       return;
     }
@@ -101,24 +103,17 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     final checksumService = ref.read(humanReadableChecksumServiceProvider);
     final substrate = ref.read(substrateServiceProvider);
     final isValid = substrate.isValidSS58Address(address);
+    final sourceId = widget.strategy.sourceAccountId(ref);
     setState(() {
       _hasAddressError = !isValid;
       _recipientChecksum = null;
+      _canContinue = isValid && address != sourceId;
     });
     if (isValid) {
       checksumService.getHumanReadableName(address).then((checksum) {
         if (mounted) setState(() => _recipientChecksum = checksum);
       });
     }
-  }
-
-  bool get _canContinue {
-    final text = _recipientController.text.trim();
-    if (text.isEmpty) return false;
-    if (_hasAddressError) return false;
-    final activeId = ref.read(activeAccountProvider).value?.account.accountId ?? '';
-    if (text == activeId) return false;
-    return true;
   }
 
   /// Single entry point for every way a recipient is supplied (scan, paste,
@@ -159,6 +154,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
       MaterialPageRoute(
         settings: inputAmountScreenRouteSettings,
         builder: (_) => InputAmountScreen(
+          strategy: widget.strategy,
           recipientAddress: address,
           recipientChecksum: _recipientChecksum,
           initialAmount: _amountController.text,
@@ -174,6 +170,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
       setState(() {
         _recipientChecksum = null;
         _hasAddressError = true;
+        _canContinue = false;
       });
     });
   }
@@ -190,19 +187,19 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    ref.watch(activeAccountProvider);
+    final strings = widget.strategy.strings(l10n);
     final colors = context.colors;
     final text = context.themeText;
 
     return ScaffoldBase(
-      appBar: V2AppBar(title: l10n.sendTitle),
+      appBar: V2AppBar(title: strings.flowTitle),
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(l10n.sendSelectRecipientSendTo, style: text.sendSectionLabel?.copyWith(color: colors.textPrimary)),
+              Text(strings.recipientSectionLabel, style: text.sendSectionLabel?.copyWith(color: colors.textPrimary)),
               const SizedBox(height: 12),
               _buildRecipientField(colors, l10n),
               const SizedBox(height: 28),
