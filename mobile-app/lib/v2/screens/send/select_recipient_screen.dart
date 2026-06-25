@@ -138,7 +138,10 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     );
     if (scanResult == null || !mounted) return;
     final payment = PaymentIntent.tryParseUrl(scanResult);
+    print('payment: $payment');
+    print('scanResult: $scanResult');
     if (payment != null) {
+      print('to: ${payment?.to}, amount: ${payment?.amount}');
       _setRecipient(payment.to, amount: payment.amount, isPayMode: true);
     } else {
       _setRecipient(scanResult);
