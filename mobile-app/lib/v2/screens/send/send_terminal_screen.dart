@@ -40,7 +40,10 @@ class SendTerminalScreen extends ConsumerWidget {
         _popToHome(context);
       },
       child: ScaffoldBase(
-        appBar: V2AppBar(title: content.title, leading: AppBackButton(onTap: () => _popToHome(context))),
+        appBar: V2AppBar(
+          title: content.title,
+          leading: AppBackButton(onTap: () => _popToHome(context)),
+        ),
         mainContent: Column(
           children: [
             Center(
@@ -75,7 +78,10 @@ class SendTerminalScreen extends ConsumerWidget {
                           text: l10n.sendTxSubmittedToLabel,
                           style: text.paragraph?.copyWith(fontWeight: FontWeight.w500),
                         ),
-                        TextSpan(text: ':', style: text.paragraph?.copyWith(fontWeight: FontWeight.w600)),
+                        TextSpan(
+                          text: ':',
+                          style: text.paragraph?.copyWith(fontWeight: FontWeight.w600),
+                        ),
                       ],
                     ),
                   ),
@@ -146,7 +152,10 @@ class SendTerminalScreen extends ConsumerWidget {
     return Container(
       width: 78,
       height: 78,
-      decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: colors.success, width: 2)),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: colors.success, width: 2),
+      ),
       alignment: Alignment.center,
       child: Icon(Icons.check, size: 32, color: colors.success),
     );

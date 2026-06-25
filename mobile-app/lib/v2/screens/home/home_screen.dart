@@ -368,7 +368,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           label: l10n.multisigProposeTitle,
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => SelectRecipientScreen(strategy: MultisigProposeStrategy(msig: msig))),
+            MaterialPageRoute(
+              builder: (_) => SelectRecipientScreen(strategy: MultisigProposeStrategy(msig: msig)),
+            ),
           ),
         ),
       ],

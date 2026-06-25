@@ -26,7 +26,9 @@ class ExplorerLink extends ConsumerWidget {
       onTap: active ? () => openUrl(url!) : null,
       child: Container(
         padding: const EdgeInsets.only(bottom: 3),
-        decoration: BoxDecoration(border: Border(bottom: BorderSide(color: linkColor, width: 1))),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: linkColor, width: 1)),
+        ),
         child: Text(
           l10n.activityDetailViewExplorer,
           style: context.themeText.smallParagraph?.copyWith(color: linkColor, fontWeight: FontWeight.w400),

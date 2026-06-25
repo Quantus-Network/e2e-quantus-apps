@@ -52,7 +52,10 @@ class TransactionSubmissionService {
     TelemetryService().sendEvent('send_transfer');
 
     // C. Submit and track the transaction
-    return submitAndTrackTransaction(() => BalancesService().balanceTransfer(account, targetAddress, amount), pendingTx);
+    return submitAndTrackTransaction(
+      () => BalancesService().balanceTransfer(account, targetAddress, amount),
+      pendingTx,
+    );
   }
 
   /// Broadcasts a transfer whose signature was produced off-device (e.g. by a

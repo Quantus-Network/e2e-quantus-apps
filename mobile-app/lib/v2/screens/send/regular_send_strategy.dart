@@ -108,7 +108,14 @@ class RegularSendStrategy extends SendStrategy {
     final regularFee = fee as RegularFee;
     final recipient = recipientAddress.trim();
     final account = (await SettingsService().getActiveRegularAccount())!;
-    final terminal = _terminal(l10n, fmt, recipient: recipient, checksum: recipientChecksum, amount: amount, isPayMode: isPayMode);
+    final terminal = _terminal(
+      l10n,
+      fmt,
+      recipient: recipient,
+      checksum: recipientChecksum,
+      amount: amount,
+      isPayMode: isPayMode,
+    );
 
     // Keystone (hardware) accounts sign off-device: hand off to the QR flow
     // instead of signing locally. The debug flag forces this path for testing.

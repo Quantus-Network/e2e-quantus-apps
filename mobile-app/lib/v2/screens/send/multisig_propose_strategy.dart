@@ -44,7 +44,8 @@ class MultisigProposeStrategy extends SendStrategy {
   ProviderListenable<AsyncValue<BigInt>> get spendableBalanceProvider => balanceProviderFamily(msig.accountId);
 
   @override
-  bool extraBalancesLoading(WidgetRef ref) => ref.watch(effectiveBalanceProviderFamily(msig.myMemberAccountId)).isLoading;
+  bool extraBalancesLoading(WidgetRef ref) =>
+      ref.watch(effectiveBalanceProviderFamily(msig.myMemberAccountId)).isLoading;
 
   // The proposal fee is paid by the member, not from the multisig balance.
   @override
@@ -140,11 +141,23 @@ class MultisigProposeStrategy extends SendStrategy {
         valueStyle: valueStyle,
       ),
       const SizedBox(height: 4),
-      DetailSummaryRow.review(label: l10n.sendReviewNetworkFee, value: amt(breakdown.networkFee), valueStyle: valueStyle),
+      DetailSummaryRow.review(
+        label: l10n.sendReviewNetworkFee,
+        value: amt(breakdown.networkFee),
+        valueStyle: valueStyle,
+      ),
       const SizedBox(height: 4),
-      DetailSummaryRow.review(label: l10n.multisigProposalDepositLabel, value: amt(breakdown.deposit), valueStyle: valueStyle),
+      DetailSummaryRow.review(
+        label: l10n.multisigProposalDepositLabel,
+        value: amt(breakdown.deposit),
+        valueStyle: valueStyle,
+      ),
       const SizedBox(height: 4),
-      DetailSummaryRow.review(label: l10n.multisigProposeFeeRowLabel, value: amt(breakdown.creationFee), valueStyle: valueStyle),
+      DetailSummaryRow.review(
+        label: l10n.multisigProposeFeeRowLabel,
+        value: amt(breakdown.creationFee),
+        valueStyle: valueStyle,
+      ),
       const SizedBox(height: 4),
       DetailSummaryRow.review(
         label: l10n.multisigProposeMemberTotalLabel,
@@ -202,7 +215,9 @@ class MultisigProposeStrategy extends SendStrategy {
       ref.invalidate(multisigPastProposalsProvider(msig));
       ref.invalidate(multisigCurrentBlockProvider);
 
-      return SendSubmitted(_terminal(l10n, fmt, recipient: recipientAddress, checksum: recipientChecksum, amount: amount));
+      return SendSubmitted(
+        _terminal(l10n, fmt, recipient: recipientAddress, checksum: recipientChecksum, amount: amount),
+      );
     } catch (e, st) {
       debugPrint('Propose submit error: $e $st');
       return SendFailed(l10n.multisigProposeSubmitFailed);
