@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/routes.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
 import 'package:resonance_network_wallet/v2/components/address_input_field.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
@@ -42,6 +43,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   bool _loadingRecents = true;
   bool _isPayMode = false;
   bool _canContinue = false;
+  bool _isSelfSend = false;
   String? _recipientChecksum;
 
   @override
@@ -93,6 +95,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
         _recipientChecksum = null;
         _isPayMode = false;
         _canContinue = false;
+        _isSelfSend = false;
       });
       return;
     }
@@ -104,11 +107,17 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     final substrate = ref.read(substrateServiceProvider);
     final isValid = substrate.isValidSS58Address(address);
     final sourceId = widget.strategy.sourceAccountId(ref);
+    final isSelfSend = isValid && address == sourceId;
+    final showSelfSendWarning = isSelfSend && !_isSelfSend;
     setState(() {
       _hasAddressError = !isValid;
+      _isSelfSend = isSelfSend;
       _recipientChecksum = null;
-      _canContinue = isValid && address != sourceId;
+      _canContinue = isValid && !isSelfSend;
     });
+    if (showSelfSendWarning) {
+      context.showWarningToaster(message: ref.read(l10nProvider).sendLogicCantSelfTransfer);
+    }
     if (isValid) {
       checksumService.getHumanReadableName(address).then((checksum) {
         if (mounted) setState(() => _recipientChecksum = checksum);
@@ -138,10 +147,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     );
     if (scanResult == null || !mounted) return;
     final payment = PaymentIntent.tryParseUrl(scanResult);
-    print('payment: $payment');
-    print('scanResult: $scanResult');
     if (payment != null) {
-      print('to: ${payment?.to}, amount: ${payment?.amount}');
       _setRecipient(payment.to, amount: payment.amount, isPayMode: true);
     } else {
       _setRecipient(scanResult);
@@ -174,6 +180,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
         _recipientChecksum = null;
         _hasAddressError = true;
         _canContinue = false;
+        _isSelfSend = false;
       });
     });
   }
@@ -339,7 +346,11 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   }
 
   Widget _buildBottomButton(AppLocalizations l10n) {
-    final btnText = _canContinue ? l10n.sendSelectRecipientContinue : l10n.sendEnterAddress;
+    final btnText = _canContinue
+        ? l10n.sendSelectRecipientContinue
+        : _isSelfSend
+        ? l10n.sendLogicCantSelfTransfer
+        : l10n.sendEnterAddress;
 
     return ScaffoldBaseBottomContent(
       child: QuantusButton.simple(
