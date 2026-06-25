@@ -121,6 +121,15 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     return true;
   }
 
+  /// Single entry point for every way a recipient is supplied (scan, paste,
+  /// recent). The controller text is assigned last and outside [setState] so the
+  /// [_onRecipientChanged] listener drives validation and the continue button.
+  void _setRecipient(String address, {String amount = '', bool isPayMode = false}) {
+    _amountController.text = amount;
+    setState(() => _isPayMode = isPayMode);
+    _recipientController.text = address;
+  }
+
   Future<void> _scanQr() async {
     final substrate = ref.read(substrateServiceProvider);
     final scanResult = await Navigator.push<String>(
@@ -135,16 +144,9 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     if (scanResult == null || !mounted) return;
     final payment = PaymentIntent.tryParseUrl(scanResult);
     if (payment != null) {
-      setState(() {
-        _recipientController.text = payment.to;
-        _amountController.text = payment.amount;
-        _isPayMode = true;
-      });
+      _setRecipient(payment.to, amount: payment.amount, isPayMode: true);
     } else {
-      setState(() {
-        _recipientController.text = scanResult;
-        _isPayMode = false;
-      });
+      _setRecipient(scanResult);
     }
   }
 
@@ -176,19 +178,13 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     });
   }
 
-  void _onRecentTap(String address) {
-    _amountController.clear();
-    setState(() => _isPayMode = false);
-    _recipientController.text = address;
-  }
+  void _onRecentTap(String address) => _setRecipient(address);
 
   Future<void> _pasteRecipient() async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     final text = data?.text?.trim() ?? '';
     if (text.isEmpty) return;
-    _amountController.clear();
-    setState(() => _isPayMode = false);
-    _recipientController.text = text;
+    _setRecipient(text);
   }
 
   @override
