@@ -43,7 +43,7 @@ void main() {
       expect(result, isNotNull);
       expect(result!.amount, expectedAmount);
       expect(result.isReversible, false);
-      expect(result.reversibleTimeframe, null);
+      expect(result.reversibleDelay, null);
       expect(result.toAddress, expectedTargetAddress);
     });
 
@@ -56,7 +56,7 @@ void main() {
           '0d04007416854906f03a9dff66e3270a736c44e15970ac03a638471523a03069f276ca0040b0464f010000000000000000000001e093040000000000d5010c00007400000002000000826beefbe2be72645ff376f18de745ac196dc77637436090de4174180706118efeebb9b31159a679a1e49ccc34d363b5d4a00b836ad4f85cbba8c6274ac2566800';
       final expectedTargetAddress = 'qzn5St24cMsjE4JKYdXLBctusWj5zom67dnrW22SweAahLGeG';
       final expectedAmount = BigInt.from(1440000000000);
-      final expectedReversibleTimeframe = 5 * 60 * 1000; // 5 minutes in millisecond
+      final expectedReversibleTimeframe = 5 * 60 * 1000; // 5 minutes in milliseconds
       final payload = Uint8List.fromList(hex.decode(hexPayload));
 
       final result = QuantusPayloadParser.parsePayload(payload);
@@ -64,7 +64,10 @@ void main() {
       expect(result, isNotNull);
       expect(result!.amount, expectedAmount);
       expect(result.isReversible, true);
-      expect(result.reversibleTimeframe, expectedReversibleTimeframe);
+      expect(result.reversibleDelay, isNotNull);
+      expect(result.reversibleDelay!.value, expectedReversibleTimeframe);
+      expect(result.reversibleDelay!.unit, DelayUnit.milliseconds);
+      expect(result.reversibleTimeframe, expectedReversibleTimeframe); // Legacy getter
       expect(result.toAddress, expectedTargetAddress);
     });
 
@@ -100,10 +103,10 @@ void main() {
       expect(result!.toAddress, startsWith('qz'));
       expect(result.amount, BigInt.from(10000000000000));
       expect(result.isReversible, true);
-      expect(result.reversibleTimeframe, null); // Uses configured delay
+      expect(result.reversibleDelay, null); // Uses configured delay
     });
 
-    test('parses reversible transfer with custom delay', () {
+    test('parses reversible transfer with custom delay in blocks', () {
       // Create a mock reversible transfer with delay payload
       // Pallet index 13 (ReversibleTransfers), call index 4 (schedule_transfer_with_delay)
       final payload = Uint8List.fromList([
@@ -137,7 +140,49 @@ void main() {
       expect(result!.toAddress, startsWith('qz'));
       expect(result.amount, BigInt.from(10000000000000));
       expect(result.isReversible, true);
-      expect(result.reversibleTimeframe, 100);
+      expect(result.reversibleDelay, isNotNull);
+      expect(result.reversibleDelay!.value, 100);
+      expect(result.reversibleDelay!.unit, DelayUnit.blocks);
+      expect(result.reversibleTimeframe, 100); // Legacy getter
+    });
+
+    test('parses reversible transfer with custom delay in milliseconds', () {
+      // Create a mock reversible transfer with delay payload using timestamp variant
+      // Pallet index 13 (ReversibleTransfers), call index 4 (schedule_transfer_with_delay)
+      final payload = Uint8List.fromList([
+        13, // pallet index
+        4, // call index
+        0, // MultiAddress::Id
+        ...List.filled(32, 4), // mock account ID (32 bytes)
+        0x00,
+        0xa0,
+        0x72,
+        0x4e,
+        0x18,
+        0x09,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00, // amount (16 bytes, little endian) - 10000000000000 as u128
+        1, // Timestamp variant (milliseconds)
+        0xe0, 0x93, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, // delay: 300000 ms (5 minutes) as u64
+      ]);
+
+      final result = QuantusPayloadParser.parsePayload(payload);
+
+      expect(result, isNotNull);
+      expect(result!.toAddress, startsWith('qz'));
+      expect(result.amount, BigInt.from(10000000000000));
+      expect(result.isReversible, true);
+      expect(result.reversibleDelay, isNotNull);
+      expect(result.reversibleDelay!.value, 300000);
+      expect(result.reversibleDelay!.unit, DelayUnit.milliseconds);
     });
 
     test('returns null for unknown pallet', () {
@@ -146,12 +191,12 @@ void main() {
       expect(result, null);
     });
 
-    test('TransactionInfo toString formats correctly', () {
+    test('TransactionInfo toString formats block delay correctly', () {
       final tx = TransactionInfo(
         toAddress: '0x01010101010101010101010101010101010101010101010101010101010101',
         amount: BigInt.from(10000000000000), // 1000 QUS with 10 decimals
         isReversible: true,
-        reversibleTimeframe: 7200,
+        reversibleDelay: const ReversibleDelay(value: 7200, unit: DelayUnit.blocks),
       );
 
       final output = tx.toString();
@@ -159,6 +204,71 @@ void main() {
       expect(output, contains('Amount: 1000.0000 QUS'));
       expect(output, contains('Reversible: true'));
       expect(output, contains('Reversible Timeframe: 7200 blocks'));
+    });
+
+    test('TransactionInfo toString formats millisecond delay correctly', () {
+      final tx = TransactionInfo(
+        toAddress: '0x01010101010101010101010101010101010101010101010101010101010101',
+        amount: BigInt.from(10000000000000),
+        isReversible: true,
+        reversibleDelay: const ReversibleDelay(value: 300000, unit: DelayUnit.milliseconds), // 5 minutes
+      );
+
+      final output = tx.toString();
+      expect(output, contains('Reversible Timeframe: 5 minutes'));
+    });
+
+    test('TransactionInfo toString formats hour delay correctly', () {
+      final tx = TransactionInfo(
+        toAddress: '0x01010101010101010101010101010101010101010101010101010101010101',
+        amount: BigInt.from(10000000000000),
+        isReversible: true,
+        reversibleDelay: const ReversibleDelay(value: 3600000, unit: DelayUnit.milliseconds), // 1 hour
+      );
+
+      final output = tx.toString();
+      expect(output, contains('Reversible Timeframe: 1 hour'));
+    });
+  });
+
+  group('ReversibleDelay', () {
+    test('equality works correctly', () {
+      const delay1 = ReversibleDelay(value: 100, unit: DelayUnit.blocks);
+      const delay2 = ReversibleDelay(value: 100, unit: DelayUnit.blocks);
+      const delay3 = ReversibleDelay(value: 100, unit: DelayUnit.milliseconds);
+
+      expect(delay1, equals(delay2));
+      expect(delay1, isNot(equals(delay3)));
+    });
+
+    test('toString formats blocks correctly', () {
+      const delay = ReversibleDelay(value: 100, unit: DelayUnit.blocks);
+      expect(delay.toString(), '100 blocks');
+    });
+
+    test('toString formats minutes correctly', () {
+      const delay = ReversibleDelay(value: 300000, unit: DelayUnit.milliseconds); // 5 minutes
+      expect(delay.toString(), '5 minutes');
+    });
+
+    test('toString formats single minute correctly', () {
+      const delay = ReversibleDelay(value: 60000, unit: DelayUnit.milliseconds); // 1 minute
+      expect(delay.toString(), '1 minute');
+    });
+
+    test('toString formats hours correctly', () {
+      const delay = ReversibleDelay(value: 7200000, unit: DelayUnit.milliseconds); // 2 hours
+      expect(delay.toString(), '2 hours');
+    });
+
+    test('toString formats seconds correctly', () {
+      const delay = ReversibleDelay(value: 45000, unit: DelayUnit.milliseconds); // 45 seconds
+      expect(delay.toString(), '45 seconds');
+    });
+
+    test('toString formats sub-second correctly', () {
+      const delay = ReversibleDelay(value: 500, unit: DelayUnit.milliseconds); // 500 ms
+      expect(delay.toString(), '500 ms');
     });
   });
 }

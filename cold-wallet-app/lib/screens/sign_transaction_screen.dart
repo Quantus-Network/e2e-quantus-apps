@@ -154,8 +154,8 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
             if (_toCheckphrase != null && _toCheckphrase!.isNotEmpty)
               _detailRow(context, 'Checkphrase', _toCheckphrase!, valueColor: colors.checksum),
             _detailRow(context, 'Reversible', info.isReversible ? 'Yes' : 'No'),
-            if (info.isReversible && info.reversibleTimeframe != null)
-              _detailRow(context, 'Reversible window', '${info.reversibleTimeframe} blocks'),
+            if (info.isReversible && info.reversibleDelay != null)
+              _detailRow(context, 'Reversible window', info.reversibleDelay.toString()),
             if (_error != null) ...[
               const SizedBox(height: 16),
               Text(

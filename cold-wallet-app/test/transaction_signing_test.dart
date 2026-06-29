@@ -34,7 +34,7 @@ void main() {
 
       expect(info, isNotNull);
       expect(info!.isReversible, isFalse);
-      expect(info.reversibleTimeframe, isNull);
+      expect(info.reversibleDelay, isNull);
       expect(info.toAddress, startsWith('qz'));
       expect(info.amount, BigInt.parse('100000000000')); // 0.1 QUAN at 12 decimals
     });

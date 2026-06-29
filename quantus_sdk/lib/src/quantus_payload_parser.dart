@@ -25,17 +25,67 @@ import 'package:polkadart/scale_codec.dart';
 import 'package:ss58/ss58.dart';
 import 'package:quantus_sdk/src/constants/app_constants.dart';
 
+/// The unit type for a reversible transfer delay.
+enum DelayUnit {
+  /// Delay specified in block numbers.
+  blocks,
+
+  /// Delay specified in milliseconds (timestamp).
+  milliseconds,
+}
+
+/// Represents a parsed delay value with its unit type preserved.
+class ReversibleDelay {
+  /// The delay value (in blocks or milliseconds depending on [unit]).
+  final int value;
+
+  /// The unit type of the delay value.
+  final DelayUnit unit;
+
+  const ReversibleDelay({required this.value, required this.unit});
+
+  @override
+  String toString() {
+    switch (unit) {
+      case DelayUnit.blocks:
+        return '$value blocks';
+      case DelayUnit.milliseconds:
+        final seconds = value ~/ 1000;
+        if (seconds >= 3600 && seconds % 3600 == 0) {
+          return '${seconds ~/ 3600} hour${seconds ~/ 3600 == 1 ? '' : 's'}';
+        } else if (seconds >= 60 && seconds % 60 == 0) {
+          return '${seconds ~/ 60} minute${seconds ~/ 60 == 1 ? '' : 's'}';
+        } else if (seconds > 0) {
+          return '$seconds second${seconds == 1 ? '' : 's'}';
+        }
+        return '$value ms';
+    }
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is ReversibleDelay && value == other.value && unit == other.unit;
+
+  @override
+  int get hashCode => Object.hash(value, unit);
+}
+
 class TransactionInfo {
   final String toAddress;
   final BigInt amount;
   final bool isReversible;
-  final int? reversibleTimeframe; // in blocks or milliseconds
+  final ReversibleDelay? reversibleDelay;
+
+  /// Legacy getter for backwards compatibility.
+  /// @deprecated Use [reversibleDelay] instead to get both value and unit.
+  int? get reversibleTimeframe => reversibleDelay?.value;
 
   TransactionInfo({
     required this.toAddress,
     required this.amount,
     required this.isReversible,
-    this.reversibleTimeframe,
+    this.reversibleDelay,
+    @Deprecated('Use reversibleDelay instead') int? reversibleTimeframe,
   });
 
   @override
@@ -46,7 +96,7 @@ Transaction Details:
   To Address: $toAddress
   Amount: $amountStr QUS
   Reversible: $isReversible
-  ${isReversible && reversibleTimeframe != null ? 'Reversible Timeframe: $reversibleTimeframe blocks' : ''}
+  ${isReversible && reversibleDelay != null ? 'Reversible Timeframe: $reversibleDelay' : ''}
 ''';
   }
 }
@@ -118,14 +168,14 @@ class QuantusPayloadParser {
           toAddress: dest,
           amount: amount,
           isReversible: true,
-          reversibleTimeframe: null, // Uses configured delay
+          reversibleDelay: null, // Uses configured delay
         );
       } else if (callIndex == 4) {
         // schedule_transfer_with_delay
         final dest = _parseMultiAddress(input);
         final amount = U128Codec.codec.decode(input);
         final delay = _parseBlockNumberOrTimestamp(input);
-        return TransactionInfo(toAddress: dest, amount: amount, isReversible: true, reversibleTimeframe: delay);
+        return TransactionInfo(toAddress: dest, amount: amount, isReversible: true, reversibleDelay: delay);
         // } else if (callIndex == 5) {
         //   // schedule_asset_transfer
         //   final assetId = U32Codec.codec.decode(input);
@@ -135,7 +185,7 @@ class QuantusPayloadParser {
         //     toAddress: dest,
         //     amount: amount,
         //     isReversible: true,
-        //     reversibleTimeframe: null, // Uses configured delay
+        //     reversibleDelay: null, // Uses configured delay
         //   );
         // } else if (callIndex == 6) {
         //   // schedule_asset_transfer_with_delay
@@ -143,7 +193,7 @@ class QuantusPayloadParser {
         //   final dest = _parseMultiAddress(input);
         //   final amount = U128Codec.codec.decode(input);
         //   final delay = _parseBlockNumberOrTimestamp(input);
-        //   return TransactionInfo(toAddress: dest, amount: amount, isReversible: true, reversibleTimeframe: delay);
+        //   return TransactionInfo(toAddress: dest, amount: amount, isReversible: true, reversibleDelay: delay);
       }
     } catch (e) {
       print('Error parsing reversible transfers call: $e');
@@ -176,16 +226,17 @@ class QuantusPayloadParser {
     }
   }
 
-  static int? _parseBlockNumberOrTimestamp(Input input) {
+  static ReversibleDelay? _parseBlockNumberOrTimestamp(Input input) {
     final variant = U8Codec.codec.decode(input);
 
     if (variant == 0) {
       // BlockNumber(u32)
-      return U32Codec.codec.decode(input);
+      final blocks = U32Codec.codec.decode(input);
+      return ReversibleDelay(value: blocks, unit: DelayUnit.blocks);
     } else if (variant == 1) {
-      // Timestamp(u64)
+      // Timestamp(u64) - value is in milliseconds
       final timestamp = U64Codec.codec.decode(input);
-      return timestamp.toInt();
+      return ReversibleDelay(value: timestamp.toInt(), unit: DelayUnit.milliseconds);
     }
 
     return null;
