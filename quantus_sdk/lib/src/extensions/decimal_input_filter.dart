@@ -31,20 +31,21 @@ class DecimalInputFilter extends TextInputFormatter {
     final sep = localeConfig.decimalSeparator;
     final groupSep = localeConfig.groupingSeparator;
 
-    // Detect paste vs typing: paste inserts multiple characters at once.
-    final bool isPaste = (newValue.text.length - oldValue.text.length) > 1;
+    // Detect single-character typing vs paste/replacement.
+    // A true typing edit inserts exactly one character at the cursor without
+    // removing any existing text. Paste or select-all replacement can produce
+    // any length delta (including 0 or 1), so we cannot rely on length alone.
+    final bool isSingleCharTyping = _isSingleCharacterInsertion(oldValue, newValue);
 
-    String text;
+    String text = newValue.text;
 
-    if (isPaste) {
-      // PASTE MODE: apply full locale rules.
-      // Strip grouping separators and keep the locale's decimal separator.
-      text = newValue.text.replaceAll(groupSep, '');
+    if (!isSingleCharTyping) {
+      // PASTE/REPLACEMENT MODE: apply full locale rules.
+      // Strip grouping separators entirely - they are formatting, not data.
+      text = text.replaceAll(groupSep, '');
     } else {
       // TYPING MODE: accept EITHER `.` or `,` as a decimal separator attempt.
       // Mobile keyboards may show either symbol regardless of locale.
-      text = newValue.text;
-
       final hasDecimalAlready = oldValue.text.contains(sep);
 
       if (!hasDecimalAlready && text.contains(groupSep) && !oldValue.text.contains(groupSep)) {
@@ -110,5 +111,47 @@ class DecimalInputFilter extends TextInputFormatter {
     final sep = localeConfig.decimalSeparator;
     final other = sep == '.' ? ',' : '.';
     return text.replaceAll(other, sep);
+  }
+
+  /// Detects if the edit represents a single character being typed (inserted).
+  /// Returns true only when exactly one character was inserted at the cursor
+  /// position without any text being deleted. This distinguishes true typing
+  /// from paste operations (which can have any length delta, including 0 or 1
+  /// when replacing selected text).
+  bool _isSingleCharacterInsertion(TextEditingValue oldValue, TextEditingValue newValue) {
+    // Must be exactly one character longer.
+    if (newValue.text.length != oldValue.text.length + 1) {
+      return false;
+    }
+
+    // The old selection must have been collapsed (no text selected).
+    // If text was selected, this is a replacement, not a pure insertion.
+    if (!oldValue.selection.isCollapsed) {
+      return false;
+    }
+
+    // The new cursor should be exactly one position after the old cursor.
+    final oldCursor = oldValue.selection.baseOffset;
+    final newCursor = newValue.selection.baseOffset;
+    if (newCursor != oldCursor + 1) {
+      return false;
+    }
+
+    // The text before and after the insertion point should be unchanged.
+    final oldText = oldValue.text;
+    final newText = newValue.text;
+
+    // Check prefix (text before cursor) is unchanged.
+    if (oldCursor > 0 && newText.substring(0, oldCursor) != oldText.substring(0, oldCursor)) {
+      return false;
+    }
+
+    // Check suffix (text after cursor) is unchanged.
+    if (oldCursor < oldText.length && 
+        newText.substring(oldCursor + 1) != oldText.substring(oldCursor)) {
+      return false;
+    }
+
+    return true;
   }
 }
