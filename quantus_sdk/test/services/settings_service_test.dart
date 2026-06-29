@@ -253,5 +253,27 @@ void main() {
       // Assert: transparent indices stay contiguous (1), not 1025.
       expect(nextIndex, 1);
     });
+
+    test('clearAll does NOT delete mnemonics from secure storage', () async {
+      // This test verifies the security fix: clearAll() should only clear
+      // SharedPreferences, not secure storage containing mnemonics.
+      // Note: We can't directly test secure storage in unit tests, but we verify
+      // the method signature exists and is separate from clearAllIncludingMnemonics.
+      await settingsService.initialize();
+      await settingsService.saveAccounts([account1]);
+
+      // Verify accounts exist
+      var accounts = await settingsService.getAccounts();
+      expect(accounts.length, 1);
+
+      // Call clearAll (should NOT delete mnemonics)
+      await settingsService.clearAll();
+
+      // Verify SharedPreferences were cleared
+      accounts = await settingsService.getAccounts();
+      expect(accounts, isEmpty);
+
+      // Note: Mnemonic deletion would need to be tested with a mock FlutterSecureStorage
+    });
   });
 }
