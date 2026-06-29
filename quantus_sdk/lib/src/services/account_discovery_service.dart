@@ -7,6 +7,20 @@ class AccountDiscoveryService {
 
   AccountDiscoveryService(this._hdWalletService);
 
+  /// Maximum allowed gap limit to prevent excessive CPU/memory usage.
+  static const int maxGapLimit = 100;
+
+  /// Minimum gap limit (BIP-44 specifies 20 as the standard).
+  static const int minGapLimit = 1;
+
+  /// Default gap limit per BIP-44 specification.
+  static const int defaultGapLimit = 20;
+
+  /// Maximum scan index to prevent infinite loops from malicious indexer
+  /// responses. This allows discovering up to 10,000 accounts which is
+  /// far beyond any realistic use case.
+  static const int maxScanIndex = 10000;
+
   static const String _accountsQuery = r'''
     query AccountsQuery($ids: [String!]) {
       accounts: account(where: {id: {_in: $ids}}) {
@@ -18,28 +32,57 @@ class AccountDiscoveryService {
   /// Discovers on-chain HD accounts using the BIP-44 gap-limit algorithm:
   /// scan HD indices in batches and keep going as long as accounts exist,
   /// stopping once [gapLimit] consecutive indices have no on-chain account.
+  ///
+  /// [gapLimit] must be between [minGapLimit] and [maxGapLimit] (default: 20).
+  /// Scanning stops at [maxScanIndex] regardless of indexer responses to
+  /// prevent denial-of-service from malicious backends.
+  ///
+  /// Throws [ArgumentError] if [gapLimit] is out of bounds.
   Future<List<Account>> discoverAccounts({
     required String mnemonic,
     required int walletIndex,
-    int gapLimit = 20,
+    int gapLimit = defaultGapLimit,
   }) async {
+    // Validate gapLimit to prevent excessive resource usage.
+    if (gapLimit < minGapLimit || gapLimit > maxGapLimit) {
+      throw ArgumentError.value(
+        gapLimit,
+        'gapLimit',
+        'must be between $minGapLimit and $maxGapLimit',
+      );
+    }
+
     final discovered = <Account>[];
 
     var consecutiveMissing = 0;
     var index = 0;
-    while (consecutiveMissing < gapLimit) {
+
+    while (consecutiveMissing < gapLimit && index < maxScanIndex) {
+      // Cap batch size to not exceed maxScanIndex.
+      final batchEnd = (index + gapLimit).clamp(0, maxScanIndex);
+      final batchSize = batchEnd - index;
+      if (batchSize <= 0) break;
+
       final batch = <Account>[];
-      for (var i = index; i < index + gapLimit; i++) {
+      final queriedIds = <String>{};
+
+      for (var i = index; i < batchEnd; i++) {
         final keyPair = _hdWalletService.keyPairAtIndex(mnemonic, i);
+        final accountId = keyPair.ss58Address;
         batch.add(
-          Account(walletIndex: walletIndex, index: i, name: 'Account ${i + 1}', accountId: keyPair.ss58Address),
+          Account(walletIndex: walletIndex, index: i, name: 'Account ${i + 1}', accountId: accountId),
         );
+        queriedIds.add(accountId);
       }
 
       final existingIds = await _findExistingAccountIds(batch.map((a) => a.accountId).toList());
 
+      // Only consider IDs that we actually queried - ignore any extra IDs
+      // the server might return to prevent response manipulation attacks.
+      final validExistingIds = existingIds.intersection(queriedIds);
+
       for (final account in batch) {
-        if (existingIds.contains(account.accountId)) {
+        if (validExistingIds.contains(account.accountId)) {
           discovered.add(account);
           consecutiveMissing = 0;
         } else {
@@ -48,7 +91,7 @@ class AccountDiscoveryService {
         }
       }
 
-      index += gapLimit;
+      index += batchSize;
     }
 
     return discovered;
