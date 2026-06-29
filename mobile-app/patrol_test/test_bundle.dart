@@ -9,7 +9,7 @@ import 'package:patrol/src/platform/contracts/contracts.dart';
 import 'package:test_api/src/backend/invoker.dart';
 
 // START: GENERATED TEST IMPORTS
-import 'smoke/hello_world_test.dart' as smoke__hello_world_test;
+import 'flows/create_wallet_test.dart' as flows__create_wallet_test;
 // END: GENERATED TEST IMPORTS
 
 Future<void> main() async {
@@ -72,7 +72,7 @@ Future<void> main() async {
   });
 
 // START: GENERATED TEST GROUPS
-  group('smoke.hello_world_test', smoke__hello_world_test.main);
+  group('flows.create_wallet_test', flows__create_wallet_test.main);
 // END: GENERATED TEST GROUPS
 
   final dartTestGroup = await testExplorationCompleter.future;

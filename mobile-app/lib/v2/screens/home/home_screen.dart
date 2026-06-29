@@ -166,6 +166,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final text = context.themeText;
 
     return GlobalToastListener(
+      key: const Key('home_screen'),
       child: accountAsync.when(
         loading: () => const ScaffoldBase(mainContent: Center(child: Loader())),
         error: (e, _) => ScaffoldBase(

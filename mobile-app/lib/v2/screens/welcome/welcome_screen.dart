@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -49,9 +51,7 @@ class _WelcomeScreenV2State extends ConsumerState<WelcomeScreenV2> {
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
 
-      if (ref.read(remoteConfigProvider).enableRemoteNotifications) {
-        ref.read(firebaseMessagingServiceProvider).registerDeviceIfPossible();
-      }
+      unawaited(_registerForRemoteNotifications());
 
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
@@ -75,11 +75,27 @@ class _WelcomeScreenV2State extends ConsumerState<WelcomeScreenV2> {
     }
   }
 
+  /// Best-effort push-notification registration.
+  ///
+  /// This must never block or abort wallet creation. `FirebaseMessaging.instance`
+  /// throws when Firebase has not been initialized yet (it is initialized lazily
+  /// once remote notifications are enabled), so tapping immediately after launch
+  /// could otherwise throw here and skip navigation to the account-ready screen.
+  Future<void> _registerForRemoteNotifications() async {
+    try {
+      if (!ref.read(remoteConfigProvider).enableRemoteNotifications) return;
+      await ref.read(firebaseMessagingServiceProvider).registerDeviceIfPossible();
+    } catch (_) {
+      // Notifications are non-critical to wallet creation; ignore failures.
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
 
     return ScaffoldBase(
+      key: const Key('welcome_screen'),
       backgroundWidget: const OnboardingBackground(),
       mainContent: Column(
         mainAxisAlignment: MainAxisAlignment.end,
@@ -91,9 +107,15 @@ class _WelcomeScreenV2State extends ConsumerState<WelcomeScreenV2> {
             child: Text(l10n.welcomeTagline, textAlign: TextAlign.center, style: context.themeText.mediumTitle),
           ),
           const SizedBox(height: 56),
-          QuantusButton.simple(label: l10n.welcomeCreateNewWallet, onTap: _createWallet, isLoading: _isCreating),
+          QuantusButton.simple(
+            key: const Key('welcome_create_wallet_button'),
+            label: l10n.welcomeCreateNewWallet,
+            onTap: _createWallet,
+            isLoading: _isCreating,
+          ),
           const SizedBox(height: 24),
           QuantusButton.simple(
+            key: const Key('welcome_import_wallet_button'),
             label: l10n.welcomeImportWallet,
             onTap: () => Navigator.push(
               context,

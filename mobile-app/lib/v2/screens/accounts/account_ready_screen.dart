@@ -136,6 +136,7 @@ class AccountReadyScreen extends ConsumerWidget {
         ),
         bottomContent: ScaffoldBaseBottomContent(
           child: QuantusButton.simple(
+            key: const Key('account_ready_done_button'),
             label: l10n.accountReadyDone,
             onTap: () => _goHome(context),
             variant: ButtonVariant.primary,
