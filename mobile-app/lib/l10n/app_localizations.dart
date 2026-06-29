@@ -3179,7 +3179,7 @@ abstract class AppLocalizations {
   /// Text for app bar or button label on QR scanner component
   ///
   /// In en, this message translates to:
-  /// **'X QR Code'**
+  /// **'Scan QR Code'**
   String get componentQrScannerTitle;
 
   /// Snackbar when gallery image has no QR code

@@ -1689,7 +1689,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapRefundPickerEmpty => 'No recent refund addresses';
 
   @override
-  String get componentQrScannerTitle => 'X QR Code';
+  String get componentQrScannerTitle => 'Scan QR Code';
 
   @override
   String get componentQrScannerNoCode => 'No QR code found in image';
