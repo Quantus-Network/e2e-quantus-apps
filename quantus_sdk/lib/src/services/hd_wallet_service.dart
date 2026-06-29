@@ -34,14 +34,48 @@ class WormholeKeyPair {
   }
 }
 
+/// Exception thrown when attempting to use dev mnemonics in release builds.
+class DevMnemonicNotAllowedException implements Exception {
+  final String mnemonic;
+  
+  DevMnemonicNotAllowedException(this.mnemonic);
+  
+  @override
+  String toString() => 'DevMnemonicNotAllowedException: '
+      'Development mnemonic "$mnemonic" is not allowed in release builds. '
+      'These mnemonics produce well-known keypairs with publicly known private keys.';
+}
+
 class HdWalletService {
+  /// Development-only mnemonics that produce well-known test keypairs.
+  /// 
+  /// **SECURITY WARNING**: These mnemonics have publicly known private keys
+  /// and should NEVER be used with real funds. They are only enabled when
+  /// [allowDevMnemonics] is true (typically in debug/test builds only).
   static const _devAccounts = {
     AppConstants.crystalAlice: crypto.crystalAlice,
     AppConstants.crystalBob: crypto.crystalBob,
     AppConstants.crystalCharlie: crypto.crystalCharlie,
   };
 
+  /// Whether development mnemonics are allowed.
+  /// 
+  /// Set to `false` in production builds to prevent accidental use of
+  /// well-known test keypairs. Defaults to the value of [AppConstants.globalDebug].
+  static bool allowDevMnemonics = AppConstants.globalDebug;
+
+  /// Checks if the given mnemonic is a development-only mnemonic.
   static bool isDevAccount(String mnemonic) => _devAccounts.containsKey(mnemonic);
+
+  /// Validates that a mnemonic is safe to use.
+  /// 
+  /// Throws [DevMnemonicNotAllowedException] if [mnemonic] is a dev mnemonic
+  /// and [allowDevMnemonics] is false.
+  static void validateMnemonic(String mnemonic) {
+    if (isDevAccount(mnemonic) && !allowDevMnemonics) {
+      throw DevMnemonicNotAllowedException(mnemonic);
+    }
+  }
 
   Keypair _deriveHDWallet({required String mnemonic, int account = 0, int change = 0, int addressIndex = 0}) {
     final derivationPath = "m/44'/189189'/$account'/$change'/$addressIndex'";
@@ -49,13 +83,28 @@ class HdWalletService {
   }
 
   Keypair keyPairAtIndex(String mnemonic, int index) {
+    // Check for dev mnemonics
     final devKeypair = _devAccounts[mnemonic];
-    if (devKeypair != null) return devKeypair();
+    if (devKeypair != null) {
+      if (!allowDevMnemonics) {
+        throw DevMnemonicNotAllowedException(mnemonic);
+      }
+      print('WARNING: Using development mnemonic with publicly known private keys');
+      return devKeypair();
+    }
+    
     if (index == -1) return crypto.generateKeypair(mnemonicStr: mnemonic);
     return _deriveHDWallet(mnemonic: mnemonic, account: index);
   }
 
   crypto.WormholeResult deriveWormhole(String mnemonic, {int account = 0, int change = 0, int addressIndex = 0}) {
+    // Dev mnemonics don't support wormhole derivation
+    if (isDevAccount(mnemonic)) {
+      if (!allowDevMnemonics) {
+        throw DevMnemonicNotAllowedException(mnemonic);
+      }
+      throw ArgumentError('Wormhole derivation is not supported for dev mnemonics');
+    }
     final path = "m/44'/189189189'/$account'/$change'/$addressIndex'";
     return crypto.deriveWormhole(mnemonicStr: mnemonic, path: path);
   }
