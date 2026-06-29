@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/services/wallet_creation_service.dart';
+import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -95,7 +96,7 @@ class _WelcomeScreenV2State extends ConsumerState<WelcomeScreenV2> {
     final l10n = ref.watch(l10nProvider);
 
     return ScaffoldBase(
-      key: const Key('welcome_screen'),
+      key: const Key(E2EKeys.welcomeScreen),
       backgroundWidget: const OnboardingBackground(),
       mainContent: Column(
         mainAxisAlignment: MainAxisAlignment.end,
@@ -108,14 +109,14 @@ class _WelcomeScreenV2State extends ConsumerState<WelcomeScreenV2> {
           ),
           const SizedBox(height: 56),
           QuantusButton.simple(
-            key: const Key('welcome_create_wallet_button'),
+            key: const Key(E2EKeys.welcomeCreateWalletButton),
             label: l10n.welcomeCreateNewWallet,
             onTap: _createWallet,
             isLoading: _isCreating,
           ),
           const SizedBox(height: 24),
           QuantusButton.simple(
-            key: const Key('welcome_import_wallet_button'),
+            key: const Key(E2EKeys.welcomeImportWalletButton),
             label: l10n.welcomeImportWallet,
             onTap: () => Navigator.push(
               context,

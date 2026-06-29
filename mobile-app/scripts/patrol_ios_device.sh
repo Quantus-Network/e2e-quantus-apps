@@ -19,10 +19,27 @@
 #   (device)" build phase in ios/Runner.xcodeproj, so it is NOT handled here.
 #
 # Usage:
-#   scripts/patrol_ios_device.sh <test_target> [device_udid]
+#   scripts/patrol_ios_device.sh [options] [test_target ...]
 #
-# Example:
-#   scripts/patrol_ios_device.sh patrol_test/smoke/hello_world_test.dart 00008110-000848190E61401E
+# Options:
+#   -d, --device <udid>   Target device UDID (default: first connected device).
+#
+# Test targets:
+#   * Pass zero targets to run the WHOLE suite: patrol bundles every
+#     `*_test.dart` under `patrol_test/` into a single app binary.
+#   * Pass one or more targets to run only those files.
+#
+# Examples:
+#   # Run all e2e tests on the first connected device:
+#   scripts/patrol_ios_device.sh
+#
+#   # Run a single test:
+#   scripts/patrol_ios_device.sh patrol_test/smoke/hello_world_test.dart
+#
+#   # Run a couple of tests on a specific device:
+#   scripts/patrol_ios_device.sh -d 00008110-000848190E61401E \
+#     patrol_test/flows/create_wallet_test.dart \
+#     patrol_test/flows/import_wallet_test.dart
 #
 # Notes:
 #   * Keep the iPhone unlocked and connected via USB while running.
@@ -33,8 +50,38 @@
 # the whole script under `set -e`.
 set -eu
 
-TEST_TARGET="${1:?Usage: patrol_ios_device.sh <test_target> [device_udid]}"
-DEVICE_UDID="${2:-}"
+usage() {
+  echo "Usage: patrol_ios_device.sh [-d <device_udid>] [test_target ...]" >&2
+}
+
+DEVICE_UDID=""
+TEST_TARGETS=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -d|--device)
+      DEVICE_UDID="${2:?--device requires a UDID}"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      TEST_TARGETS+=("$@")
+      break
+      ;;
+    -*)
+      echo "ERROR: unknown option: $1" >&2
+      usage
+      exit 1
+      ;;
+    *)
+      TEST_TARGETS+=("$1")
+      shift
+      ;;
+  esac
+done
 
 # Tunables (override via environment if needed).
 DESTINATION_TIMEOUT="${DESTINATION_TIMEOUT:-120}"
@@ -56,8 +103,38 @@ if [[ -z "$DEVICE_UDID" ]]; then
   echo "==> Auto-selected device: $DEVICE_UDID"
 fi
 
+# Test secrets/fixtures (e.g. TEST_IMPORT_MNEMONIC) are injected at build time via
+# --dart-define so they are never bundled into the app as an asset.
+#   * Locally: read from a gitignored .env.test (key=value) via --dart-define-from-file.
+#   * CI / Firebase Test Lab: export TEST_IMPORT_MNEMONIC (and any others) and they
+#     are forwarded as --dart-define from the runner's secret store.
+DART_DEFINES=()
+if [[ -f .env.test ]]; then
+  echo "==> Injecting test secrets from .env.test"
+  DART_DEFINES+=(--dart-define-from-file=.env.test)
+elif [[ -n "${TEST_IMPORT_MNEMONIC:-}" ]]; then
+  echo "==> Injecting test secrets from environment"
+  DART_DEFINES+=(--dart-define=TEST_IMPORT_MNEMONIC="$TEST_IMPORT_MNEMONIC")
+else
+  echo "WARNING: no .env.test file and TEST_IMPORT_MNEMONIC is unset;" \
+       "tests that need a seed phrase (e.g. import_wallet) will fail." >&2
+fi
+
+# Build the `-t <target>` flags. With no targets, patrol bundles every
+# `*_test.dart` under `patrol_test/`, i.e. the whole suite in one binary.
+TARGET_ARGS=()
+if [[ ${#TEST_TARGETS[@]} -gt 0 ]]; then
+  for target in "${TEST_TARGETS[@]}"; do
+    TARGET_ARGS+=(-t "$target")
+  done
+  echo "==> Test targets: ${TEST_TARGETS[*]}"
+else
+  echo "==> No targets given; building the WHOLE patrol_test suite."
+fi
+
 echo "==> [1/3] Building Patrol bundle for device (release)..."
-patrol build ios -t "$TEST_TARGET" --release
+patrol build ios ${TARGET_ARGS[@]+"${TARGET_ARGS[@]}"} --release \
+  ${DART_DEFINES[@]+"${DART_DEFINES[@]}"}
 
 APP="build/ios_integ/Build/Products/Release-iphoneos/Runner.app"
 if [[ ! -d "$APP" ]]; then

@@ -130,6 +130,7 @@ app.*.symbols
 /mobile-app/android/.kotlin
 /mobile-app/android/.idea
 mobile-app/.env
+mobile-app/.env.test
 /rust-transaction-parser/target
 /.cursor
 mobile-app/android/app/google-services.json
