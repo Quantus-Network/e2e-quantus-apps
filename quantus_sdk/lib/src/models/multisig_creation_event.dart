@@ -28,7 +28,9 @@ abstract class MultisigCreationEvent extends TransactionEvent {
     required super.blockNumber,
     super.blockHash,
     super.extrinsicHash,
-  }) : super(from: creatorId, to: multisigAddress, amount: palletFee + networkFee);
+  }) : assert(palletFee >= BigInt.zero, 'palletFee must be non-negative'),
+       assert(networkFee >= BigInt.zero, 'networkFee must be non-negative'),
+       super(from: creatorId, to: multisigAddress, amount: palletFee + networkFee);
 
   bool isCreator(String accountId) => creatorId == accountId;
 }
@@ -59,6 +61,9 @@ class MultisigCreationDraftFields {
     final maxSigners = MultisigCreationEvent.palletConstants.maxSigners;
     if (draft.signers.length > maxSigners) {
       throw FormatException('signers exceeds maximum length of $maxSigners (got ${draft.signers.length})');
+    }
+    if (networkFee < BigInt.zero) {
+      throw FormatException('networkFee must be non-negative (got $networkFee)');
     }
     return MultisigCreationDraftFields(
       creatorId: draft.creator ?? draft.myMemberAccountId,

@@ -86,11 +86,11 @@ class MultisigCreatedEvent extends MultisigCreationEvent {
 
   static BigInt _networkFeeFromGraphql(Map<String, dynamic> multisig) {
     final raw = multisig['fee'];
-    if (raw != null) return bigIntFromJson(raw);
+    if (raw != null) return nonNegativeBigIntFromJson(raw, 'fee');
 
     final extrinsic = jsonMapOrNull(multisig['extrinsic']);
     final extrinsicFee = extrinsic?['fee'];
-    if (extrinsicFee != null) return bigIntFromJson(extrinsicFee);
+    if (extrinsicFee != null) return nonNegativeBigIntFromJson(extrinsicFee, 'extrinsic.fee');
 
     final id = multisig['id'];
     throw FormatException('Missing network fee for multisig $id');

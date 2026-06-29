@@ -32,6 +32,16 @@ BigInt bigIntFromJson(dynamic value) {
   throw FormatException('Cannot parse BigInt from ${value.runtimeType}: $value');
 }
 
+/// Parses a BigInt that must be non-negative (>= 0).
+/// Use for on-chain balance/fee values which are unsigned.
+BigInt nonNegativeBigIntFromJson(dynamic value, String fieldName) {
+  final result = bigIntFromJson(value);
+  if (result < BigInt.zero) {
+    throw FormatException('$fieldName must be non-negative (got $result)');
+  }
+  return result;
+}
+
 int intFromJson(dynamic value) {
   if (value is int) return value;
   if (value is num) return value.toInt();
