@@ -4,6 +4,8 @@ use sp_runtime::traits::{BlakeTwo256, Hash as HashT, TrailingZeroInput};
 
 const PALLET_ID: [u8; 8] = *b"py/mltsg";
 const SS58_PREFIX: u16 = 189;
+const MAX_SIGNERS: usize = 100;
+const MIN_SIGNERS: usize = 2;
 
 fn derive_multisig_address(
     signers: Vec<AccountId32>,
@@ -12,6 +14,7 @@ fn derive_multisig_address(
 ) -> AccountId32 {
     let mut sorted_signers = signers;
     sorted_signers.sort();
+    sorted_signers.dedup();
 
     let mut data = Vec::new();
     data.extend_from_slice(&PALLET_ID);
@@ -33,6 +36,14 @@ pub fn predict_multisig_address(
     threshold: u32,
     nonce: u64,
 ) -> Result<String, String> {
+    // Early validation before parsing addresses
+    if signers.len() < MIN_SIGNERS {
+        return Err(format!("At least {MIN_SIGNERS} unique signers are required"));
+    }
+    if signers.len() > MAX_SIGNERS {
+        return Err(format!("At most {MAX_SIGNERS} signers are allowed"));
+    }
+
     let account_ids: Vec<AccountId32> = signers
         .iter()
         .map(|s| {
@@ -41,7 +52,30 @@ pub fn predict_multisig_address(
         })
         .collect::<Result<_, _>>()?;
 
-    let account_id = derive_multisig_address(account_ids, threshold, nonce);
+    // Canonicalize and validate uniqueness
+    let mut canonical_signers = account_ids;
+    canonical_signers.sort();
+    canonical_signers.dedup();
+
+    if canonical_signers.len() < MIN_SIGNERS {
+        return Err(format!("At least {MIN_SIGNERS} unique signers are required"));
+    }
+    if canonical_signers.len() != signers.len() {
+        return Err("Duplicate signers are not allowed".to_string());
+    }
+
+    // Validate threshold
+    if threshold == 0 {
+        return Err("Threshold must be greater than zero".to_string());
+    }
+    if threshold as usize > canonical_signers.len() {
+        return Err(format!(
+            "Threshold must be between 1 and {}",
+            canonical_signers.len()
+        ));
+    }
+
+    let account_id = derive_multisig_address(canonical_signers, threshold, nonce);
     Ok(account_id.to_ss58check_with_version(sp_core::crypto::Ss58AddressFormat::custom(
         SS58_PREFIX,
     )))
@@ -92,7 +126,64 @@ mod tests {
 
     #[test]
     fn predict_multisig_address_rejects_invalid_ss58() {
-        let result = predict_multisig_address(vec!["not-an-address".to_string()], 1, 0);
+        let result = predict_multisig_address(
+            vec!["not-an-address".to_string(), "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty".to_string()],
+            1,
+            0,
+        );
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn predict_multisig_address_rejects_single_signer() {
+        let result = predict_multisig_address(
+            vec!["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY".to_string()],
+            1,
+            0,
+        );
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("At least 2 unique signers"));
+    }
+
+    #[test]
+    fn predict_multisig_address_rejects_duplicate_signers() {
+        let signer_a = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY";
+        let signer_b = "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty";
+
+        let result = predict_multisig_address(
+            vec![signer_a.to_string(), signer_b.to_string(), signer_b.to_string()],
+            2,
+            0,
+        );
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Duplicate signers"));
+    }
+
+    #[test]
+    fn predict_multisig_address_rejects_zero_threshold() {
+        let signer_a = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY";
+        let signer_b = "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty";
+
+        let result = predict_multisig_address(
+            vec![signer_a.to_string(), signer_b.to_string()],
+            0,
+            0,
+        );
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Threshold must be greater than zero"));
+    }
+
+    #[test]
+    fn predict_multisig_address_rejects_threshold_exceeding_signers() {
+        let signer_a = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY";
+        let signer_b = "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty";
+
+        let result = predict_multisig_address(
+            vec![signer_a.to_string(), signer_b.to_string()],
+            3,
+            0,
+        );
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Threshold must be between"));
     }
 }

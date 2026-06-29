@@ -72,7 +72,7 @@ class MultisigService {
   ///
   /// Uses [nonce] for address uniqueness; defaults to [defaultMultisigNonce].
   Future<String> predictMultisigAddress({required List<String> signers, required int threshold, BigInt? nonce}) async {
-    _validateSignersAndThreshold(signers, threshold, minSigners: 1);
+    _validateSignersAndThreshold(signers, threshold, minSigners: 2);
 
     return multisig_rust.predictMultisigAddress(
       signers: signers,
@@ -211,15 +211,27 @@ class MultisigService {
 
   /// Validates [signers] and [threshold] for multisig operations.
   ///
-  /// [minSigners] is the minimum signer count for the operation: prediction
-  /// allows a single signer, while on-chain creation requires at least two.
-  /// The threshold must be between 1 and the number of signers.
+  /// [minSigners] is the minimum unique signer count for the operation.
+  /// The threshold must be between 1 and the number of unique signers.
+  /// Duplicate signers are rejected, and the signer count must not exceed maxSigners.
   void _validateSignersAndThreshold(List<String> signers, int threshold, {required int minSigners}) {
     if (signers.length < minSigners) {
       throw ArgumentError.value(signers, 'signers', 'At least $minSigners signer(s) are required');
     }
-    if (threshold < 1 || threshold > signers.length) {
-      throw ArgumentError.value(threshold, 'threshold', 'Must be between 1 and ${signers.length}');
+    if (signers.length > palletConstants.maxSigners) {
+      throw ArgumentError.value(signers, 'signers', 'At most ${palletConstants.maxSigners} signers are allowed');
+    }
+
+    // Check for duplicates by converting to set
+    final uniqueSigners = signers.toSet();
+    if (uniqueSigners.length != signers.length) {
+      throw ArgumentError.value(signers, 'signers', 'Duplicate signers are not allowed');
+    }
+    if (uniqueSigners.length < minSigners) {
+      throw ArgumentError.value(signers, 'signers', 'At least $minSigners unique signer(s) are required');
+    }
+    if (threshold < 1 || threshold > uniqueSigners.length) {
+      throw ArgumentError.value(threshold, 'threshold', 'Must be between 1 and ${uniqueSigners.length}');
     }
   }
 

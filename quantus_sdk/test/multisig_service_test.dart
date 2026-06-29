@@ -38,6 +38,13 @@ void main() {
       expect(MultisigService().predictMultisigAddress(signers: [], threshold: 1), throwsA(isA<ArgumentError>()));
     });
 
+    test('throws when only one signer provided', () {
+      expect(
+        MultisigService().predictMultisigAddress(signers: [signerA], threshold: 1),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+
     test('throws when threshold is out of range', () {
       expect(
         MultisigService().predictMultisigAddress(signers: [signerA, signerB], threshold: 0),
@@ -45,6 +52,24 @@ void main() {
       );
       expect(
         MultisigService().predictMultisigAddress(signers: [signerA, signerB], threshold: 3),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+
+    test('throws when duplicate signers are provided', () {
+      expect(
+        MultisigService().predictMultisigAddress(signers: [signerA, signerB, signerB], threshold: 2),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+
+    test('throws when more than maxSigners provided', () {
+      final tooManySigners = List.generate(
+        MultisigService.palletConstants.maxSigners + 1,
+        (i) => '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', // Will also fail duplicate check
+      );
+      expect(
+        MultisigService().predictMultisigAddress(signers: tooManySigners, threshold: 2),
         throwsA(isA<ArgumentError>()),
       );
     });
