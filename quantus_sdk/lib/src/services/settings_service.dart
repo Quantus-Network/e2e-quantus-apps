@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -13,6 +14,13 @@ class SettingsService {
 
   late SharedPreferences _prefs;
   final _secureStorage = const FlutterSecureStorage(mOptions: MacOsOptions(usesDataProtectionKeychain: false));
+
+  /// Serializes all account read-modify-write operations to prevent race
+  /// conditions where concurrent async flows could lose updates.
+  final _AsyncMutex _accountsMutex = _AsyncMutex();
+
+  /// Serializes all multisig account read-modify-write operations.
+  final _AsyncMutex _multisigMutex = _AsyncMutex();
 
   // New keys for multi-account support
   static const String _accountsKey = 'accounts_v5';
@@ -101,42 +109,48 @@ class SettingsService {
   }
 
   Future<void> addAccount(Account account) async {
-    final accounts = await getAccounts();
-    // Check for duplicates by index or accountId before adding
-    if (!accounts.any(
-      (a) => (a.walletIndex == account.walletIndex && a.index == account.index) || a.accountId == account.accountId,
-    )) {
-      accounts.add(account);
-      await saveAccounts(accounts);
-      if (accounts.length == 1) {
-        // make sure that active account is always a valid account
-        await setActiveAccount(RegularAccount(account));
+    await _accountsMutex.run(() async {
+      final accounts = await getAccounts();
+      // Check for duplicates by index or accountId before adding
+      if (!accounts.any(
+        (a) => (a.walletIndex == account.walletIndex && a.index == account.index) || a.accountId == account.accountId,
+      )) {
+        accounts.add(account);
+        await saveAccounts(accounts);
+        if (accounts.length == 1) {
+          // make sure that active account is always a valid account
+          await setActiveAccount(RegularAccount(account));
+        }
+      } else {
+        throw Exception('Account already exists');
       }
-    } else {
-      throw Exception('Account already exists');
-    }
+    });
   }
 
   Future<void> updateAccount(Account account) async {
-    final accounts = await getAccounts();
-    final index = accounts.indexWhere((a) => a.accountId == account.accountId);
-    if (index != -1) {
-      accounts[index] = account;
-      await saveAccounts(accounts);
-    }
+    await _accountsMutex.run(() async {
+      final accounts = await getAccounts();
+      final index = accounts.indexWhere((a) => a.accountId == account.accountId);
+      if (index != -1) {
+        accounts[index] = account;
+        await saveAccounts(accounts);
+      }
+    });
   }
 
   Future<void> removeAccount(Account account) async {
-    final accounts = await getAccounts();
-    if (accounts.length == 1) {
-      throw Exception('Cant remove last account!');
-    }
-    if (account.accountId == await _getActiveAccountId()) {
-      final replacement = _preferNonEncrypted(accounts.where((a) => a.accountId != account.accountId));
-      await setActiveAccount(RegularAccount(replacement));
-    }
-    accounts.removeWhere((a) => a.accountId == account.accountId);
-    await saveAccounts(accounts);
+    await _accountsMutex.run(() async {
+      final accounts = await getAccounts();
+      if (accounts.length == 1) {
+        throw Exception('Cant remove last account!');
+      }
+      if (account.accountId == await _getActiveAccountId()) {
+        final replacement = _preferNonEncrypted(accounts.where((a) => a.accountId != account.accountId));
+        await setActiveAccount(RegularAccount(replacement));
+      }
+      accounts.removeWhere((a) => a.accountId == account.accountId);
+      await saveAccounts(accounts);
+    });
   }
 
   /// Picks a replacement active account, avoiding encrypted (wormhole)
@@ -148,24 +162,26 @@ class SettingsService {
   /// mnemonic from secure storage. The primary wallet (index 0) cannot be
   /// removed.
   Future<void> removeWallet(int walletIndex) async {
-    if (walletIndex == 0) {
-      throw Exception('Cant remove the primary wallet!');
-    }
-    final accounts = await getAccounts();
-    final remaining = accounts.where((a) => a.walletIndex != walletIndex).toList();
-    if (remaining.length == accounts.length) {
-      throw Exception('Wallet $walletIndex not found');
-    }
-    if (remaining.isEmpty) {
-      throw Exception('Cant remove last wallet!');
-    }
-    final activeId = await _getActiveAccountId();
-    final activeRemoved = accounts.any((a) => a.walletIndex == walletIndex && a.accountId == activeId);
-    if (activeRemoved) {
-      await setActiveAccount(RegularAccount(_preferNonEncrypted(remaining)));
-    }
-    await saveAccounts(remaining);
-    await deleteMnemonic(walletIndex);
+    await _accountsMutex.run(() async {
+      if (walletIndex == 0) {
+        throw Exception('Cant remove the primary wallet!');
+      }
+      final accounts = await getAccounts();
+      final remaining = accounts.where((a) => a.walletIndex != walletIndex).toList();
+      if (remaining.length == accounts.length) {
+        throw Exception('Wallet $walletIndex not found');
+      }
+      if (remaining.isEmpty) {
+        throw Exception('Cant remove last wallet!');
+      }
+      final activeId = await _getActiveAccountId();
+      final activeRemoved = accounts.any((a) => a.walletIndex == walletIndex && a.accountId == activeId);
+      if (activeRemoved) {
+        await setActiveAccount(RegularAccount(_preferNonEncrypted(remaining)));
+      }
+      await saveAccounts(remaining);
+      await deleteMnemonic(walletIndex);
+    });
   }
 
   Future<void> setActiveAccount(DisplayAccount account) async {
@@ -250,6 +266,48 @@ class SettingsService {
     return index;
   }
 
+  /// Atomically allocates the next free account index for [walletIndex] and
+  /// persists [buildAccount]'s result in a single synchronized operation.
+  ///
+  /// This prevents race conditions where two concurrent callers could both
+  /// receive the same index from [getNextFreeAccountIndex] before either
+  /// persists their account.
+  ///
+  /// [buildAccount] receives the allocated index and must return the Account
+  /// to persist. The returned Account is also returned from this method.
+  Future<Account> createAndAddAccount({
+    required int walletIndex,
+    required Future<Account> Function(int index) buildAccount,
+  }) async {
+    return await _accountsMutex.run(() async {
+      final nextIndex = await getNextFreeAccountIndex(walletIndex);
+      final account = await buildAccount(nextIndex);
+
+      // Verify the built account uses the allocated index
+      if (account.walletIndex != walletIndex || account.index != nextIndex) {
+        throw ArgumentError(
+          'buildAccount must return an account with walletIndex=$walletIndex and index=$nextIndex, '
+          'got walletIndex=${account.walletIndex} and index=${account.index}',
+        );
+      }
+
+      final accounts = await getAccounts();
+      // Double-check no duplicate was created (defensive)
+      if (accounts.any((a) => a.accountId == account.accountId)) {
+        throw Exception('Account already exists');
+      }
+
+      accounts.add(account);
+      await saveAccounts(accounts);
+
+      if (accounts.length == 1) {
+        await setActiveAccount(RegularAccount(account));
+      }
+
+      return account;
+    });
+  }
+
   // --- Multisig Accounts ---
 
   Future<List<MultisigAccount>> getMultisigAccounts() async {
@@ -265,37 +323,43 @@ class SettingsService {
   }
 
   Future<void> addMultisigAccount(MultisigAccount account) async {
-    final accounts = await getMultisigAccounts();
-    if (accounts.any((a) => a.accountId == account.accountId)) {
-      throw Exception('Multisig already added');
-    }
-    accounts.add(account);
-    await _saveMultisigAccounts(accounts);
+    await _multisigMutex.run(() async {
+      final accounts = await getMultisigAccounts();
+      if (accounts.any((a) => a.accountId == account.accountId)) {
+        throw Exception('Multisig already added');
+      }
+      accounts.add(account);
+      await _saveMultisigAccounts(accounts);
+    });
   }
 
   Future<void> updateMultisigAccount(MultisigAccount account) async {
-    final accounts = await getMultisigAccounts();
-    final index = accounts.indexWhere((a) => a.accountId == account.accountId);
-    if (index != -1) {
-      accounts[index] = account;
-      await _saveMultisigAccounts(accounts);
-    }
+    await _multisigMutex.run(() async {
+      final accounts = await getMultisigAccounts();
+      final index = accounts.indexWhere((a) => a.accountId == account.accountId);
+      if (index != -1) {
+        accounts[index] = account;
+        await _saveMultisigAccounts(accounts);
+      }
+    });
   }
 
   Future<void> removeMultisigAccount(String accountId) async {
-    final accounts = await getMultisigAccounts();
-    final filtered = accounts.where((a) => a.accountId != accountId).toList();
-    if (filtered.length == accounts.length) {
-      throw Exception('Multisig not found');
-    }
-    await _saveMultisigAccounts(filtered);
-    final active = await getActiveAccount();
-    if (active is MultisigDisplayAccount && active.account.accountId == accountId) {
-      final regulars = await getAccounts();
-      if (regulars.isNotEmpty) {
-        await setActiveAccount(RegularAccount(regulars.first));
+    await _multisigMutex.run(() async {
+      final accounts = await getMultisigAccounts();
+      final filtered = accounts.where((a) => a.accountId != accountId).toList();
+      if (filtered.length == accounts.length) {
+        throw Exception('Multisig not found');
       }
-    }
+      await _saveMultisigAccounts(filtered);
+      final active = await getActiveAccount();
+      if (active is MultisigDisplayAccount && active.account.accountId == accountId) {
+        final regulars = await getAccounts();
+        if (regulars.isNotEmpty) {
+          await setActiveAccount(RegularAccount(regulars.first));
+        }
+      }
+    });
   }
 
   // --- Address Book Methods ---
@@ -611,5 +675,33 @@ class SettingsService {
 
   void clearExistingUserSeenPromoVideoFlag() {
     _prefs.remove(existingUserSeenPromoVideoKey);
+  }
+}
+
+/// A simple async mutex that serializes access to a critical section.
+///
+/// Unlike a synchronous lock, this allows the critical section to contain
+/// await points while still guaranteeing mutual exclusion. Callers queue up
+/// and execute one at a time in FIFO order.
+class _AsyncMutex {
+  Future<void>? _last;
+
+  /// Runs [action] with exclusive access. If another action is already running,
+  /// this call waits until it completes before starting.
+  Future<T> run<T>(Future<T> Function() action) async {
+    // Chain onto the previous operation (if any) to serialize execution.
+    final previous = _last;
+    final completer = Completer<void>();
+    _last = completer.future;
+
+    try {
+      // Wait for any previous operation to finish.
+      if (previous != null) {
+        await previous;
+      }
+      return await action();
+    } finally {
+      completer.complete();
+    }
   }
 }

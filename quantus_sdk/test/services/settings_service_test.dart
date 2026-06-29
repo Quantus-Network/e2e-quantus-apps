@@ -275,5 +275,89 @@ void main() {
 
       // Note: Mnemonic deletion would need to be tested with a mock FlutterSecureStorage
     });
+
+    test('concurrent addAccount calls do not lose data', () async {
+      // This test verifies that the mutex prevents race conditions where
+      // concurrent addAccount calls could overwrite each other's changes.
+      await settingsService.initialize();
+
+      // Create accounts with unique indices and IDs
+      final accountsToAdd = [
+        for (var i = 0; i < 5; i++)
+          Account(walletIndex: 0, index: i, name: 'Account ${i + 1}', accountId: 'concurrent_$i'),
+      ];
+
+      // Launch all addAccount calls concurrently
+      await Future.wait(accountsToAdd.map((a) => settingsService.addAccount(a)));
+
+      // Verify all accounts were persisted
+      final savedAccounts = await settingsService.getAccounts();
+      expect(savedAccounts.length, 5);
+
+      // Verify each account is present
+      for (final account in accountsToAdd) {
+        expect(
+          savedAccounts.any((a) => a.accountId == account.accountId),
+          isTrue,
+          reason: 'Account ${account.accountId} should be persisted',
+        );
+      }
+    });
+
+    test('concurrent updateAccount calls do not lose updates', () async {
+      // This test verifies that the mutex prevents race conditions where
+      // concurrent updateAccount calls could overwrite each other's changes.
+      await settingsService.initialize();
+
+      // Set up initial accounts
+      final initialAccounts = [
+        for (var i = 0; i < 3; i++)
+          Account(walletIndex: 0, index: i, name: 'Account ${i + 1}', accountId: 'update_test_$i'),
+      ];
+      await settingsService.saveAccounts(initialAccounts);
+
+      // Launch concurrent updates to different accounts
+      await Future.wait([
+        settingsService.updateAccount(initialAccounts[0].copyWith(name: 'Updated 1')),
+        settingsService.updateAccount(initialAccounts[1].copyWith(name: 'Updated 2')),
+        settingsService.updateAccount(initialAccounts[2].copyWith(name: 'Updated 3')),
+      ]);
+
+      // Verify all updates were applied
+      final savedAccounts = await settingsService.getAccounts();
+      expect(savedAccounts.length, 3);
+      expect(savedAccounts.firstWhere((a) => a.accountId == 'update_test_0').name, 'Updated 1');
+      expect(savedAccounts.firstWhere((a) => a.accountId == 'update_test_1').name, 'Updated 2');
+      expect(savedAccounts.firstWhere((a) => a.accountId == 'update_test_2').name, 'Updated 3');
+    });
+
+    test('mixed concurrent operations preserve data integrity', () async {
+      // This test verifies that the mutex serializes mixed operations correctly.
+      await settingsService.initialize();
+
+      // Set up initial account
+      const initial = Account(walletIndex: 0, index: 0, name: 'Initial', accountId: 'mixed_0');
+      await settingsService.addAccount(initial);
+
+      // Create additional accounts
+      final toAdd = [
+        const Account(walletIndex: 0, index: 1, name: 'Add 1', accountId: 'mixed_1'),
+        const Account(walletIndex: 0, index: 2, name: 'Add 2', accountId: 'mixed_2'),
+      ];
+
+      // Launch mixed concurrent operations
+      await Future.wait([
+        settingsService.addAccount(toAdd[0]),
+        settingsService.updateAccount(initial.copyWith(name: 'Updated Initial')),
+        settingsService.addAccount(toAdd[1]),
+      ]);
+
+      // Verify final state
+      final savedAccounts = await settingsService.getAccounts();
+      expect(savedAccounts.length, 3);
+      expect(savedAccounts.firstWhere((a) => a.accountId == 'mixed_0').name, 'Updated Initial');
+      expect(savedAccounts.any((a) => a.accountId == 'mixed_1'), isTrue);
+      expect(savedAccounts.any((a) => a.accountId == 'mixed_2'), isTrue);
+    });
   });
 }

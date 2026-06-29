@@ -18,6 +18,14 @@ class AccountsService {
   final SettingsService _settingsService = SettingsService();
   void Function()? onAccountsChanged;
 
+  /// Creates a new account draft with the next available index.
+  ///
+  /// Note: This does NOT persist the account. Call [addAccount] after any
+  /// modifications (e.g., setting a custom name) to save the account.
+  ///
+  /// If concurrent callers create accounts before either persists, the second
+  /// [addAccount] call will fail with a duplicate error. Consider using
+  /// [createAndAddAccount] for atomic creation when no modifications are needed.
   Future<Account> createNewAccount({required int walletIndex}) async {
     final mnemonic = await _settingsService.getMnemonic(walletIndex);
     if (mnemonic == null) {
@@ -28,10 +36,37 @@ class AccountsService {
     final newAccount = Account(
       walletIndex: walletIndex,
       index: nextIndex,
-      name: 'Account ${nextIndex + 1}', // Default name
+      name: 'Account ${nextIndex + 1}',
       accountId: keypair.ss58Address,
     );
     return newAccount;
+  }
+
+  /// Atomically creates and persists a new account in a single operation.
+  ///
+  /// Use this when you don't need to modify the account before persisting.
+  /// The [name] parameter allows setting a custom account name.
+  Future<Account> createAndAddAccount({required int walletIndex, String? name}) async {
+    final mnemonic = await _settingsService.getMnemonic(walletIndex);
+    if (mnemonic == null) {
+      throw Exception('Mnemonic not found. Cannot create new account.');
+    }
+
+    final account = await _settingsService.createAndAddAccount(
+      walletIndex: walletIndex,
+      buildAccount: (nextIndex) async {
+        final keypair = HdWalletService().keyPairAtIndex(mnemonic, nextIndex);
+        return Account(
+          walletIndex: walletIndex,
+          index: nextIndex,
+          name: name ?? 'Account ${nextIndex + 1}',
+          accountId: keypair.ss58Address,
+        );
+      },
+    );
+
+    onAccountsChanged?.call();
+    return account;
   }
 
   Future<Account> createEncryptedAccount({required int walletIndex, required String name}) async {
