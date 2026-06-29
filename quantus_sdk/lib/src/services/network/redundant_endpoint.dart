@@ -7,13 +7,52 @@ import 'package:quantus_sdk/src/utils/timing.dart';
 // This set of classes implements redundant endpoints using a strategy to select the best endpoints and to retry failed requests
 // on different endpoints.
 
+/// Represents a single endpoint with health tracking.
 class Endpoint {
   final String url;
   Duration? latency;
   DateTime? lastSuccess;
   DateTime? lastFailure;
+  int consecutiveFailures = 0;
+
+  /// Duration after which a failed endpoint is reconsidered for use.
+  static const failureCooldown = Duration(minutes: 5);
+
+  /// Maximum penalty latency for failed endpoints (prevents integer overflow).
+  static const maxPenaltyLatency = Duration(hours: 24);
 
   Endpoint({required this.url, this.latency, this.lastSuccess, this.lastFailure});
+
+  /// Whether this endpoint should be skipped due to recent failures.
+  bool get isInCooldown {
+    if (lastFailure == null) return false;
+    final elapsed = DateTime.now().difference(lastFailure!);
+    // Allow retry after cooldown period, scaled by consecutive failures
+    final cooldownDuration = failureCooldown * (consecutiveFailures.clamp(1, 10));
+    return elapsed < cooldownDuration;
+  }
+
+  /// Effective latency for sorting, considering failure state.
+  Duration get effectiveLatency {
+    if (isInCooldown) {
+      // Penalize endpoints in cooldown, but allow them to be tried if all else fails
+      return maxPenaltyLatency + Duration(minutes: consecutiveFailures);
+    }
+    return latency ?? const Duration(seconds: 30);
+  }
+
+  void recordSuccess(Duration elapsed) {
+    latency = elapsed;
+    lastSuccess = DateTime.now();
+    consecutiveFailures = 0;
+  }
+
+  void recordFailure() {
+    lastFailure = DateTime.now();
+    consecutiveFailures++;
+    // Apply penalty but cap it to prevent overflow
+    latency = Duration(seconds: (consecutiveFailures * 60).clamp(60, 86400));
+  }
 }
 
 class GraphQlEndpointService extends RedundantEndpointService {
@@ -32,7 +71,11 @@ class RpcEndpointService extends RedundantEndpointService {
 
   RpcEndpointService._internal() : super(endpoints: AppConstants.rpcEndpoints.map((e) => Endpoint(url: e)).toList());
 
-  String get bestEndpointUrl => endpoints.first.url;
+  /// Returns the URL of the endpoint with the best (lowest) effective latency.
+  String get bestEndpointUrl {
+    _sortServers();
+    return endpoints.first.url;
+  }
 
   Future<T> rpcTask<T>(Future<T> Function(Uri uri) task) async {
     return _executeTask((url) => task(Uri.parse(url)));
@@ -49,12 +92,7 @@ class RedundantEndpointService {
   }
 
   void _sortServers() {
-    endpoints.sort((a, b) {
-      if (a.latency == null && b.latency == null) return 0;
-      if (a.latency == null) return 1;
-      if (b.latency == null) return -1;
-      return a.latency!.compareTo(b.latency!);
-    });
+    endpoints.sort((a, b) => a.effectiveLatency.compareTo(b.effectiveLatency));
   }
 
   bool _isReachabilityError(dynamic error) {
@@ -67,8 +105,16 @@ class RedundantEndpointService {
     return ConnectivityService().currentStatus == NetworkStatus.offline;
   }
 
+  /// Checks if an HTTP response indicates a server error that should trigger failover.
+  bool _isServerError(http.Response response) {
+    return response.statusCode >= 500 && response.statusCode < 600;
+  }
+
   Future<T> _executeTask<T>(Future<T> Function(String url) task) async {
     dynamic lastError;
+
+    // Sort endpoints by effective latency before attempting
+    _sortServers();
 
     for (final endpoint in endpoints) {
       final startTime = DateTime.now();
@@ -76,10 +122,16 @@ class RedundantEndpointService {
       try {
         final result = await task(endpoint.url);
 
+        // Check for server errors in HTTP responses
+        if (result is http.Response && _isServerError(result)) {
+          lastError = Exception('Server error: ${result.statusCode}');
+          logEndpointFailure(endpoint, lastError);
+          continue; // Try next endpoint
+        }
+
         final elapsed = DateTime.now().difference(startTime);
         printTiming('endpoint task ${endpoint.url}', elapsed.inMilliseconds);
-        endpoint.latency ??= elapsed;
-        endpoint.lastSuccess = DateTime.now();
+        endpoint.recordSuccess(elapsed);
 
         _sortServers();
         return result;
@@ -100,8 +152,7 @@ class RedundantEndpointService {
       if (_isReachabilityError(error)) {
         print('Reachability error on endpoint: ${endpoint.url}: $error');
       }
-      endpoint.lastFailure = DateTime.now();
-      endpoint.latency = const Duration(days: 365);
+      endpoint.recordFailure();
     }
   }
 
