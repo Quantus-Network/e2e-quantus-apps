@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
@@ -55,6 +56,17 @@ class Endpoint {
   }
 }
 
+/// Exception thrown when a request times out.
+class EndpointTimeoutException implements Exception {
+  final String url;
+  final Duration timeout;
+
+  EndpointTimeoutException(this.url, this.timeout);
+
+  @override
+  String toString() => 'EndpointTimeoutException: Request to $url timed out after ${timeout.inSeconds}s';
+}
+
 class GraphQlEndpointService extends RedundantEndpointService {
   static final GraphQlEndpointService _instance = GraphQlEndpointService._internal();
 
@@ -77,13 +89,20 @@ class RpcEndpointService extends RedundantEndpointService {
     return endpoints.first.url;
   }
 
-  Future<T> rpcTask<T>(Future<T> Function(Uri uri) task) async {
-    return _executeTask((url) => task(Uri.parse(url)));
+  Future<T> rpcTask<T>(Future<T> Function(Uri uri) task, {Duration? timeout}) async {
+    return _executeTask((url) => task(Uri.parse(url)), timeout: timeout);
   }
 }
 
 class RedundantEndpointService {
   final List<Endpoint> endpoints;
+
+  /// Default timeout for HTTP requests. Prevents hanging futures from stalled
+  /// connections or unresponsive servers.
+  static const Duration defaultTimeout = Duration(seconds: 30);
+
+  /// Maximum allowed timeout to prevent excessively long waits.
+  static const Duration maxTimeout = Duration(minutes: 5);
 
   RedundantEndpointService({required this.endpoints});
 
@@ -98,6 +117,8 @@ class RedundantEndpointService {
   bool _isReachabilityError(dynamic error) {
     return error is SocketException ||
         error is HttpException ||
+        error is TimeoutException ||
+        error is EndpointTimeoutException ||
         (error.toString().contains('Failed host lookup') || error.toString().contains('Connection refused'));
   }
 
@@ -110,8 +131,11 @@ class RedundantEndpointService {
     return response.statusCode >= 500 && response.statusCode < 600;
   }
 
-  Future<T> _executeTask<T>(Future<T> Function(String url) task) async {
+  Future<T> _executeTask<T>(Future<T> Function(String url) task, {Duration? timeout}) async {
     dynamic lastError;
+
+    // Clamp timeout to reasonable bounds.
+    final effectiveTimeout = (timeout ?? defaultTimeout).compareTo(maxTimeout) > 0 ? maxTimeout : (timeout ?? defaultTimeout);
 
     // Sort endpoints by effective latency before attempting
     _sortServers();
@@ -120,7 +144,11 @@ class RedundantEndpointService {
       final startTime = DateTime.now();
 
       try {
-        final result = await task(endpoint.url);
+        // Wrap the task with a timeout to prevent hanging on stalled connections.
+        final result = await task(endpoint.url).timeout(
+          effectiveTimeout,
+          onTimeout: () => throw EndpointTimeoutException(endpoint.url, effectiveTimeout),
+        );
 
         // Check for server errors in HTTP responses
         if (result is http.Response && _isServerError(result)) {
@@ -156,13 +184,17 @@ class RedundantEndpointService {
     }
   }
 
-  Future<http.Response> get(String path, {Map<String, String>? headers}) async {
-    return _executeTask((url) => http.get(Uri.parse('$url$path'), headers: _mergedHeaders(headers)));
+  Future<http.Response> get(String path, {Map<String, String>? headers, Duration? timeout}) async {
+    return _executeTask(
+      (url) => http.get(Uri.parse('$url$path'), headers: _mergedHeaders(headers)),
+      timeout: timeout,
+    );
   }
 
-  Future<http.Response> post({String? path, Map<String, String>? headers, String? body}) async {
+  Future<http.Response> post({String? path, Map<String, String>? headers, String? body, Duration? timeout}) async {
     return _executeTask(
       (url) => http.post(Uri.parse('$url${(path ?? '')}'), body: body, headers: _mergedHeaders(headers)),
+      timeout: timeout,
     );
   }
 }
