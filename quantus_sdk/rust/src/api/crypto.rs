@@ -45,11 +45,28 @@ pub fn to_account_id(obj: &Keypair) -> String {
     account.to_ss58check()
 }
 /// Convert key in ss58check format to accountId32
+/// 
+/// Validates that the address uses the expected SS58 prefix set via set_default_ss58_prefix.
+/// Returns an error if the prefix doesn't match or the address is invalid.
 #[flutter_rust_bridge::frb(sync)]
-pub fn ss58_to_account_id(s: &str) -> Vec<u8> {
-    // from_ss58check returns a Result, we unwrap it to panic on invalid input.
-    // We then convert the AccountId32 struct to a Vec<u8> to be compatible with Polkadart's typedef.
-    AsRef::<[u8]>::as_ref(&AccountId32::from_ss58check(s).unwrap()).to_vec()
+pub fn ss58_to_account_id(s: &str) -> Result<Vec<u8>, String> {
+    // Parse the address with the expected prefix validation
+    let (account, format) = AccountId32::from_ss58check_with_version(s)
+        .map_err(|e| format!("Invalid SS58 address: {:?}", e))?;
+    
+    // Get the expected prefix from the global default
+    let expected_format = sp_core::crypto::default_ss58_version();
+    
+    // Validate that the address prefix matches our expected network prefix
+    if format != expected_format {
+        return Err(format!(
+            "Address has incorrect network prefix. Expected prefix {}, got prefix {}. This address may be for a different network.",
+            u16::from(expected_format),
+            u16::from(format)
+        ));
+    }
+    
+    Ok(AsRef::<[u8]>::as_ref(&account).to_vec())
 }
 
 #[flutter_rust_bridge::frb(sync)]
@@ -241,5 +258,66 @@ mod tests {
         // Verify the signature
         let is_valid = verify_message(&keypair, message, &signature);
         assert!(is_valid, "Signature verification failed for long message");
+    }
+
+    #[test]
+    fn test_ss58_prefix_validation_accepts_matching_prefix() {
+        // This test verifies that addresses with the CURRENT expected prefix are accepted.
+        // Due to global state, we read what prefix is currently set rather than set our own.
+        let current_format = sp_core::crypto::default_ss58_version();
+        let prefix = u16::from(current_format);
+        
+        // Generate a valid address for the current prefix using Alice's account bytes
+        let alice_bytes: [u8; 32] = [
+            0xd4, 0x35, 0x93, 0xc7, 0x15, 0xfd, 0xd3, 0x1c,
+            0x61, 0x14, 0x1a, 0xbd, 0x04, 0xa9, 0x9f, 0xd6,
+            0x82, 0x2c, 0x85, 0x58, 0x85, 0x4c, 0xcd, 0xe3,
+            0x9a, 0x56, 0x84, 0xe7, 0xa5, 0x6d, 0xa2, 0x7d,
+        ];
+        let account = AccountId32::new(alice_bytes);
+        let address = account.to_ss58check_with_version(current_format);
+        
+        // Should succeed because prefix matches
+        let result = ss58_to_account_id(&address);
+        assert!(result.is_ok(), "Should accept address with correct prefix ({}): {:?}", prefix, result.err());
+        assert_eq!(result.unwrap().len(), 32);
+    }
+
+    #[test]
+    fn test_ss58_prefix_validation_rejects_different_prefix() {
+        // Generate an address with a DIFFERENT prefix than the expected one
+        let current_format = sp_core::crypto::default_ss58_version();
+        let current_prefix = u16::from(current_format);
+        
+        // Use a different prefix
+        let different_prefix = if current_prefix == 42 { 0 } else { 42 };
+        let different_format = sp_core::crypto::Ss58AddressFormat::custom(different_prefix);
+        
+        // Generate address with the different prefix
+        let alice_bytes: [u8; 32] = [
+            0xd4, 0x35, 0x93, 0xc7, 0x15, 0xfd, 0xd3, 0x1c,
+            0x61, 0x14, 0x1a, 0xbd, 0x04, 0xa9, 0x9f, 0xd6,
+            0x82, 0x2c, 0x85, 0x58, 0x85, 0x4c, 0xcd, 0xe3,
+            0x9a, 0x56, 0x84, 0xe7, 0xa5, 0x6d, 0xa2, 0x7d,
+        ];
+        let account = AccountId32::new(alice_bytes);
+        let wrong_prefix_address = account.to_ss58check_with_version(different_format);
+        
+        // Should fail because prefix doesn't match
+        let result = ss58_to_account_id(&wrong_prefix_address);
+        assert!(result.is_err(), "Should reject address with wrong prefix");
+        let err = result.unwrap_err();
+        assert!(err.contains("incorrect network prefix"), "Error should mention prefix mismatch: {}", err);
+    }
+
+    #[test]
+    fn test_ss58_rejects_invalid_address() {
+        set_default_ss58_prefix(189);
+        
+        // Invalid address
+        let invalid_address = "not-a-valid-address";
+        
+        let result = ss58_to_account_id(invalid_address);
+        assert!(result.is_err(), "Should reject invalid address");
     }
 }
