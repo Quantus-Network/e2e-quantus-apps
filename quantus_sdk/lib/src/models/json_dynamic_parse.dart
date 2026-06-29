@@ -49,6 +49,16 @@ List<String> nonEmptyStringListFromJson(dynamic value, String fieldName) {
   return value.map((e) => e.toString()).toList();
 }
 
+/// Parses a non-empty string list and enforces a maximum length.
+/// Throws [FormatException] if the list is missing, empty, or exceeds [maxLength].
+List<String> boundedStringListFromJson(dynamic value, String fieldName, {required int maxLength}) {
+  final list = nonEmptyStringListFromJson(value, fieldName);
+  if (list.length > maxLength) {
+    throw FormatException('$fieldName exceeds maximum length of $maxLength (got ${list.length})');
+  }
+  return list;
+}
+
 /// Parses indexer threshold and ensures it is valid for [signerCount].
 int multisigThresholdFromJson(dynamic value, {required int signerCount}) {
   final threshold = intFromJson(value);

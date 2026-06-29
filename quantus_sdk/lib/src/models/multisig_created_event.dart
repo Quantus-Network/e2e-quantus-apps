@@ -64,7 +64,8 @@ class MultisigCreatedEvent extends MultisigCreationEvent {
     final address = stringFromJson(multisig['id']);
     final creator = nestedAccountId(multisig['creator']);
     final block = jsonMapOrNull(multisig['block']);
-    final signers = nonEmptyStringListFromJson(multisig['signers'], 'signers');
+    final maxSigners = MultisigCreationEvent.palletConstants.maxSigners;
+    final signers = boundedStringListFromJson(multisig['signers'], 'signers', maxLength: maxSigners);
     final threshold = multisigThresholdFromJson(multisig['threshold'], signerCount: signers.length);
 
     return MultisigCreatedEvent(

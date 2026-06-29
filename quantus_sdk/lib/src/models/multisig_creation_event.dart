@@ -56,6 +56,10 @@ class MultisigCreationDraftFields {
   BigInt get totalCost => palletFee + networkFee;
 
   factory MultisigCreationDraftFields.fromDraft(MultisigAccount draft, {required BigInt networkFee}) {
+    final maxSigners = MultisigCreationEvent.palletConstants.maxSigners;
+    if (draft.signers.length > maxSigners) {
+      throw FormatException('signers exceeds maximum length of $maxSigners (got ${draft.signers.length})');
+    }
     return MultisigCreationDraftFields(
       creatorId: draft.creator ?? draft.myMemberAccountId,
       multisigAddress: draft.accountId,
