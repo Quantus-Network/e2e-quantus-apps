@@ -61,6 +61,33 @@ class MultisigService {
       final myMember = resolveMyMemberAccountId(record, myAccountIds);
       if (myMember == null) continue;
 
+      // Verify the multisig address matches the predicted address to prevent spoofed indexer data.
+      // This ensures the multisig was legitimately created on-chain with the claimed parameters.
+      final signers = record['signers'];
+      final threshold = record['threshold'];
+      final nonce = record['nonce'];
+      if (signers is! List || signers.isEmpty) continue;
+
+      try {
+        final signerStrings = signers.map((s) => s.toString()).toList();
+        final thresholdInt = threshold is int ? threshold : int.parse(threshold.toString());
+        final nonceBigInt = nonce != null ? BigInt.parse(nonce.toString()) : defaultMultisigNonce;
+
+        final predictedAddress = await predictMultisigAddress(
+          signers: signerStrings,
+          threshold: thresholdInt,
+          nonce: nonceBigInt,
+        );
+
+        if (predictedAddress != address) {
+          // Address mismatch - possible spoofed indexer data, skip this record
+          continue;
+        }
+      } catch (_) {
+        // Invalid signer data or address prediction failed, skip this record
+        continue;
+      }
+
       index++;
       results.add(multisigAccountFromIndexerRecord(record, myMemberAccountId: myMember, name: 'Multisig $index'));
     }
