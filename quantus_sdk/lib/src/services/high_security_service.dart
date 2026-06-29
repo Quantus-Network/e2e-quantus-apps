@@ -71,11 +71,16 @@ class HighSecurityService {
     print('getHighSecurityConfig: $address -> $hsData');
     if (hsData != null) {
       final accountId = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(hsData.guardian));
-      if (hsData.delay is! qp.Timestamp) {
-        throw ArgumentError('Expected timestamp delay, got block number');
-      }
-      final safeguardWindow = DurationToTimestampExtension.fromQpTimestamp(hsData.delay as qp.Timestamp);
-      return HighSecurityData(guardianAccountId: accountId, safeguardWindow: safeguardWindow);
+      final SafeguardDelay delay = switch (hsData.delay) {
+        qp.Timestamp timestamp => TimestampDelay(
+            DurationToTimestampExtension.fromQpTimestamp(timestamp),
+          ),
+        qp.BlockNumber blockNumber => BlockNumberDelay(blockNumber.value0),
+        _ => throw StateError(
+            'Unknown delay type: ${hsData.delay.runtimeType}',
+          ),
+      };
+      return HighSecurityData(guardianAccountId: accountId, delay: delay);
     } else {
       // not a high security account
       return null;
