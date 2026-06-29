@@ -5,8 +5,8 @@
 /// transaction details to users before signing.
 ///
 /// Supported transaction types:
-/// - Balance transfers (pallet index 3)
-/// - Reversible transfers (pallet index 12)
+/// - Balance transfers (pallet index 2)
+/// - Reversible transfers (pallet index 13)
 ///
 /// Usage:
 /// ```dart
