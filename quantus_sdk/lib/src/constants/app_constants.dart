@@ -79,7 +79,7 @@ class AppConstants {
   // Valid SS58 address returned/filled by debug buttons so address-entry flows
   // (send, swap, add hardware account) can be exercised in the simulator where
   // the camera is unavailable.
-  static const String debugTestAddress = 'qzn5St24cMsjE4JKYdXLBctusWj5zom67dnrW22SweAahLGeG';
+  static const String debugTestAddress = 'qznQKhufTDfU3szAzfgCny7wMhxUN3qjEqneiRUNgC7MjSDyG';
 
   static const String accountSettingsRouteName = 'account-settings';
   static const int highSecurityStepsCount = 3;
