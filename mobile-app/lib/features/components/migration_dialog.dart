@@ -5,15 +5,15 @@ import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class MigrationDialog extends StatefulWidget {
-  final List<MigrationAccountData> migrationData;
+  final List<MigrationResult> migrationResults;
   final Future<void> Function() onMigrate;
   final Future<void> Function()? onTryLater;
 
-  const MigrationDialog({super.key, required this.migrationData, required this.onMigrate, this.onTryLater});
+  const MigrationDialog({super.key, required this.migrationResults, required this.onMigrate, this.onTryLater});
 
   static Future<void> show({
     required BuildContext context,
-    required List<MigrationAccountData> migrationData,
+    required List<MigrationResult> migrationResults,
     required Future<void> Function() onMigrate,
     Future<void> Function()? onTryLater,
   }) {
@@ -24,7 +24,7 @@ class MigrationDialog extends StatefulWidget {
       isDismissible: false,
       enableDrag: false,
       constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
-      builder: (ctx) => MigrationDialog(migrationData: migrationData, onMigrate: onMigrate, onTryLater: onTryLater),
+      builder: (ctx) => MigrationDialog(migrationResults: migrationResults, onMigrate: onMigrate, onTryLater: onTryLater),
     );
   }
 
@@ -38,7 +38,8 @@ class _MigrationDialogState extends State<MigrationDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final accountCount = widget.migrationData.length;
+    final successCount = widget.migrationResults.whereType<MigrationSuccess>().length;
+    final failureCount = widget.migrationResults.whereType<MigrationFailure>().length;
     final colors = context.colors;
     final text = context.themeText;
 
@@ -64,9 +65,16 @@ class _MigrationDialogState extends State<MigrationDialog> {
           ),
           const SizedBox(height: 24),
           Text(
-            '$accountCount ${accountCount > 1 ? 'Accounts' : 'Account'} to migrate.',
+            '$successCount ${successCount == 1 ? 'Account' : 'Accounts'} to migrate.',
             style: text.paragraph?.copyWith(fontWeight: FontWeight.w600, color: colors.accentGreen),
           ),
+          if (failureCount > 0) ...[
+            const SizedBox(height: 8),
+            Text(
+              '$failureCount ${failureCount == 1 ? 'account' : 'accounts'} cannot be migrated (missing wallet data).',
+              style: text.smallParagraph?.copyWith(color: colors.accentOrange),
+            ),
+          ],
           const SizedBox(height: 40),
           if (_errorMessage != null)
             Container(
@@ -79,7 +87,7 @@ class _MigrationDialogState extends State<MigrationDialog> {
           QuantusButton.simple(
             label: _errorMessage != null ? 'Retry' : 'Migrate Accounts',
             isLoading: _isMigrating,
-            onTap: () async {
+            onTap: successCount == 0 ? null : () async {
               setState(() => _isMigrating = true);
               try {
                 await widget.onMigrate();

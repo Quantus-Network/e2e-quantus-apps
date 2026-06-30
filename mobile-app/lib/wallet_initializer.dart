@@ -26,7 +26,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
   bool _loading = true;
   bool _walletExists = false;
   bool _needsMigration = false;
-  List<MigrationAccountData>? _migrationData;
+  List<MigrationResult>? _migrationResults;
   final SettingsService _settingsService = SettingsService();
   late final MigrationService _migrationService;
 
@@ -53,16 +53,33 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
 
     if (needsMigration) {
       try {
-        final migrationData = await _migrationService.getMigrationData();
+        final migrationResults = await _migrationService.getMigrationData();
 
-        for (final data in migrationData) {
-          quantusDebugPrint(
-            'MIGRATION: \nold index: ${data.oldAccount.index} \nold name: ${data.oldAccount.name} \nold accountId: ${data.oldAccount.accountId} \nnew accountId: ${data.newAccountId}',
-          );
+        for (final result in migrationResults) {
+          switch (result) {
+            case MigrationSuccess(:final oldAccount, :final newAccountId):
+              quantusDebugPrint(
+                'MIGRATION SUCCESS: \n'
+                '  walletIndex: ${oldAccount.walletIndex} \n'
+                '  old index: ${oldAccount.index} \n'
+                '  old name: ${oldAccount.name} \n'
+                '  old accountId: ${oldAccount.accountId} \n'
+                '  new accountId: $newAccountId',
+              );
+            case MigrationFailure(:final oldAccount, :final reason):
+              quantusDebugPrint(
+                'MIGRATION FAILURE: \n'
+                '  walletIndex: ${oldAccount.walletIndex} \n'
+                '  old index: ${oldAccount.index} \n'
+                '  old name: ${oldAccount.name} \n'
+                '  reason: $reason',
+              );
+          }
         }
+        
         setState(() {
           _needsMigration = true;
-          _migrationData = migrationData;
+          _migrationResults = migrationResults;
           _loading = false;
         });
 
@@ -70,7 +87,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           MigrationDialog.show(
             context: context,
-            migrationData: _migrationData!,
+            migrationResults: _migrationResults!,
             onMigrate: _performMigration,
             onTryLater: _tryLater,
           );
@@ -120,14 +137,28 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
   }
 
   Future<void> _performMigration() async {
-    if (_migrationData == null) return;
+    if (_migrationResults == null) return;
 
     try {
-      // First, upload migration data to Supabase
-      await _uploadMigrationDataToSupabase(_migrationData!);
+      // First, upload successful migration data to Supabase
+      final successes = _migrationResults!.whereType<MigrationSuccess>().toList();
+      if (successes.isNotEmpty) {
+        await _uploadMigrationDataToSupabase(successes);
+      }
 
       // Then perform the actual migration
-      await _migrationService.performMigration(_migrationData!);
+      final failures = await _migrationService.performMigration(_migrationResults!);
+      
+      if (failures.isNotEmpty) {
+        quantusDebugPrint('Migration completed with ${failures.length} failures');
+        for (final failure in failures) {
+          TelemetryService().sendEvent('migration_account_failure', parameters: {
+            'wallet_index': failure.oldAccount.walletIndex.toString(),
+            'account_index': failure.oldAccount.index.toString(),
+            'reason': failure.reason,
+          });
+        }
+      }
 
       _reloadAccounts();
       // Migration completed successfully. Update state to show the main app.
@@ -148,9 +179,9 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
     await _settingsService.setAccountsToMigrate(oldAccounts);
 
     // Proceed with local migration immediately
-    if (_migrationData != null) {
+    if (_migrationResults != null) {
       try {
-        await _migrationService.performMigration(_migrationData!);
+        await _migrationService.performMigration(_migrationResults!);
       } catch (e, stackTrace) {
         quantusDebugPrint('error in tryLater: $e');
         quantusDebugPrint('stack trace: $stackTrace');
@@ -169,13 +200,13 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
     });
   }
 
-  Future<void> _uploadMigrationDataToSupabase(List<MigrationAccountData> migrationData) async {
+  Future<void> _uploadMigrationDataToSupabase(List<MigrationSuccess> migrationSuccesses) async {
     quantusDebugPrint('_uploadMigrationDataToSupabase');
     final supabase = EnvUtils.supabaseClient;
 
     try {
       // Prepare the data for insertion
-      final dataToInsert = migrationData
+      final dataToInsert = migrationSuccesses
           .map(
             (data) => {
               'old_account_id': data.oldAccount.accountId,
@@ -190,7 +221,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
       // Insert all records at once
       await supabase.from('account_id_mappings').insert(dataToInsert);
 
-      quantusDebugPrint('Successfully uploaded ${migrationData.length} migration records to Supabase');
+      quantusDebugPrint('Successfully uploaded ${migrationSuccesses.length} migration records to Supabase');
     } catch (e) {
       quantusDebugPrint('Failed to upload migration data to Supabase: $e');
       // Re-throw the error so it gets caught by the caller
