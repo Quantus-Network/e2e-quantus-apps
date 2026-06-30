@@ -7,7 +7,9 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/services/history_polling_manager.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 
@@ -210,3 +212,31 @@ class FirebaseMessagingService {
 final firebaseMessagingServiceProvider = Provider<FirebaseMessagingService>((ref) {
   return FirebaseMessagingService(ref);
 });
+
+/// Best-effort push-notification registration for onboarding entry points.
+///
+/// This must never block or abort wallet creation/import. Reading
+/// [firebaseMessagingServiceProvider] constructs a [FirebaseMessagingService],
+/// whose field initializer touches `FirebaseMessaging.instance` synchronously;
+/// that throws when Firebase has not been initialized yet (it is initialized
+/// lazily once remote notifications are enabled). Tapping immediately after
+/// launch could therefore throw and skip navigation, so the provider read and
+/// every subsequent call are wrapped here and all failures are swallowed.
+///
+/// When [insertAddress] is non-null, the address is registered for push
+/// notifications on the existing device; otherwise the device itself is
+/// registered for the first time.
+Future<void> registerForRemoteNotificationsBestEffort(WidgetRef ref, {String? insertAddress}) async {
+  try {
+    if (!ref.read(remoteConfigProvider).enableRemoteNotifications) return;
+    final service = ref.read(firebaseMessagingServiceProvider);
+    if (insertAddress != null) {
+      await service.insertNewAddress(insertAddress);
+    } else {
+      await service.registerDeviceIfPossible();
+    }
+  } catch (e) {
+    quantusDebugPrint('Failed to register for remote notifications: $e');
+    TelemetryService().sendError('registerForRemoteNotifications', error: e, stackTrace: StackTrace.current);
+  }
+}

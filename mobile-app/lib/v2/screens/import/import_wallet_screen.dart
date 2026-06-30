@@ -1,9 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
@@ -116,11 +117,12 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       _settingsService.setRecoveryPhraseViewed(widget.walletIndex);
       ref.invalidate(recoveryPhraseViewedProvider(widget.walletIndex));
 
-      if (ref.read(remoteConfigProvider).enableRemoteNotifications && widget.walletIndex == 0) {
-        ref.read(firebaseMessagingServiceProvider).registerDeviceIfPossible();
-      } else if (ref.read(remoteConfigProvider).enableRemoteNotifications && widget.walletIndex > 0) {
-        ref.read(firebaseMessagingServiceProvider).insertNewAddress(key.ss58Address);
-      }
+      unawaited(
+        registerForRemoteNotificationsBestEffort(
+          ref,
+          insertAddress: widget.walletIndex > 0 ? key.ss58Address : null,
+        ),
+      );
 
       if (!mounted) return;
       if (widget.openAccountsOnComplete) {

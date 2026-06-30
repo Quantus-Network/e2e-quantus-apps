@@ -5,13 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
-import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/services/wallet_creation_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_ready_screen.dart';
@@ -54,7 +51,7 @@ class _WelcomeScreenV2State extends ConsumerState<WelcomeScreenV2> {
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
 
-      unawaited(_registerForRemoteNotifications());
+      unawaited(registerForRemoteNotificationsBestEffort(ref));
 
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
@@ -75,22 +72,6 @@ class _WelcomeScreenV2State extends ConsumerState<WelcomeScreenV2> {
       }
     } finally {
       if (mounted) setState(() => _isCreating = false);
-    }
-  }
-
-  /// Best-effort push-notification registration.
-  ///
-  /// This must never block or abort wallet creation. `FirebaseMessaging.instance`
-  /// throws when Firebase has not been initialized yet (it is initialized lazily
-  /// once remote notifications are enabled), so tapping immediately after launch
-  /// could otherwise throw here and skip navigation to the account-ready screen.
-  Future<void> _registerForRemoteNotifications() async {
-    try {
-      if (!ref.read(remoteConfigProvider).enableRemoteNotifications) return;
-      await ref.read(firebaseMessagingServiceProvider).registerDeviceIfPossible();
-    } catch (e) {
-      quantusDebugPrint('Failed to register for remote notifications: $e');
-      TelemetryService().sendError('registerForRemoteNotifications', error: e, stackTrace: StackTrace.current);
     }
   }
 
