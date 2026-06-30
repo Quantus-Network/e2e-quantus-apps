@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/services/wallet_creation_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
@@ -89,6 +90,7 @@ class _WelcomeScreenV2State extends ConsumerState<WelcomeScreenV2> {
       await ref.read(firebaseMessagingServiceProvider).registerDeviceIfPossible();
     } catch (e) {
       quantusDebugPrint('Failed to register for remote notifications: $e');
+      TelemetryService().sendError('registerForRemoteNotifications', error: e, stackTrace: StackTrace.current);
     }
   }
 
