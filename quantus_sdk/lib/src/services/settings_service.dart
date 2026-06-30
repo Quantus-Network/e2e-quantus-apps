@@ -166,6 +166,8 @@ class SettingsService {
     }
     await saveAccounts(remaining);
     await deleteMnemonic(walletIndex);
+    await _prefs.remove(_walletOriginKey(walletIndex));
+    await _prefs.remove(_recoveryPhraseViewedKey(walletIndex));
   }
 
   Future<void> setActiveAccount(DisplayAccount account) async {
