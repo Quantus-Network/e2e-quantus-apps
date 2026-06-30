@@ -58,7 +58,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   bool _hasFee = false;
   bool _feeFetchFailed = false;
   // Each request has a counter value, so old responses can be ignored
-  int _fetchFeeCounter = 0; 
+  int _fetchFeeCounter = 0;
 
   AmountInputLogic get _amountInputLogic => AmountInputLogic(
     exchangeRateService: ref.read(exchangeRateServiceProvider),
