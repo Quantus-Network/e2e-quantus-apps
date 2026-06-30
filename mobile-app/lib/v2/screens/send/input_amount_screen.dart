@@ -57,7 +57,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   bool _isFetchingFee = false;
   bool _hasFee = false;
   bool _feeFetchFailed = false;
-  int _feeFetchGeneration = 0;
+  // Each request has a counter value, so old responses can be ignored
+  int _fetchFeeCounter = 0; 
 
   AmountInputLogic get _amountInputLogic => AmountInputLogic(
     exchangeRateService: ref.read(exchangeRateServiceProvider),
@@ -137,19 +138,19 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   }
 
   void _refreshFee() {
-    final generation = ++_feeFetchGeneration;
+    final counter = ++_fetchFeeCounter;
     final showLoader = !_hasFee || _feeFetchFailed;
     setState(() {
       _isFetchingFee = showLoader;
       if (showLoader) _feeFetchFailed = false;
     });
-    _fetchFee(generation);
+    _fetchFee(counter);
   }
 
-  Future<void> _fetchFee(int generation) async {
+  Future<void> _fetchFee(int counter) async {
     try {
       final fee = await widget.strategy.estimateFee(ref, recipient: widget.recipientAddress.trim(), amount: _amount);
-      if (!mounted || generation != _feeFetchGeneration) return;
+      if (!mounted || counter != _fetchFeeCounter) return;
       setState(() {
         _fee = fee;
         _hasFee = true;
@@ -158,7 +159,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       });
     } catch (e, st) {
       debugPrint('Fee fetch error: $e\n$st');
-      if (!mounted || generation != _feeFetchGeneration) return;
+      if (!mounted || counter != _fetchFeeCounter) return;
       setState(() {
         _fee = null;
         _hasFee = false;

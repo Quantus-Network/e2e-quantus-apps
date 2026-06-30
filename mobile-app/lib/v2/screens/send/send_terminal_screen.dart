@@ -149,9 +149,10 @@ class SendTerminalScreen extends ConsumerWidget {
   }
 
   Widget _successMark(AppColorsV2 colors) {
+    const size = 78.0;
     return Container(
-      width: 78,
-      height: 78,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: colors.success, width: 2),
