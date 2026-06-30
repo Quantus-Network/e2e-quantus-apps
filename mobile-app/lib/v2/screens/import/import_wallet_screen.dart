@@ -118,10 +118,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       ref.invalidate(recoveryPhraseViewedProvider(widget.walletIndex));
 
       unawaited(
-        registerForRemoteNotificationsBestEffort(
-          ref,
-          insertAddress: widget.walletIndex > 0 ? key.ss58Address : null,
-        ),
+        registerForRemoteNotificationsBestEffort(ref, insertAddress: widget.walletIndex > 0 ? key.ss58Address : null),
       );
 
       if (!mounted) return;
