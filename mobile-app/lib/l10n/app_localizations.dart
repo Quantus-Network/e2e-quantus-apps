@@ -2534,6 +2534,12 @@ abstract class AppLocalizations {
   /// **'Done'**
   String get settingsRecoveryPhraseDone;
 
+  /// Secondary action on the recovery phrase caution screen that dismisses the backup reminder without revealing the phrase
+  ///
+  /// In en, this message translates to:
+  /// **'I already backed up my wallet'**
+  String get settingsRecoveryAlreadyBackedUp;
+
   /// App bar on reset wallet caution screen
   ///
   /// In en, this message translates to:

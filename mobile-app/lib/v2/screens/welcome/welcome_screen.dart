@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/services/wallet_creation_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
@@ -48,6 +49,8 @@ class _WelcomeScreenV2State extends ConsumerState<WelcomeScreenV2> {
 
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
+      ref.invalidate(walletOriginProvider(_walletIndex));
+      ref.invalidate(recoveryPhraseViewedProvider(_walletIndex));
 
       if (ref.read(remoteConfigProvider).enableRemoteNotifications) {
         ref.read(firebaseMessagingServiceProvider).registerDeviceIfPossible();
