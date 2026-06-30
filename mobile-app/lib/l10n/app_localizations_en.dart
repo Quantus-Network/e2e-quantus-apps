@@ -1339,6 +1339,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsRecoveryPhraseDone => 'Done';
 
   @override
+  String get settingsRecoveryAlreadyBackedUp => 'I already backed up my wallet';
+
+  @override
   String get settingsResetTitle => 'Reset Wallet';
 
   @override

@@ -241,17 +241,26 @@ final recoveryPhraseViewedProvider = Provider.family<bool, int>((ref, walletInde
   return ref.watch(settingsServiceProvider).recoveryPhraseViewed(walletIndex);
 });
 
+final walletOriginProvider = Provider.family<WalletOrigin?, int>((ref, walletIndex) {
+  return ref.watch(settingsServiceProvider).getWalletOrigin(walletIndex);
+});
+
 /// 0.0001 QUAN in raw units; dust below this doesn't warrant a backup nudge.
 final _backupNudgeBalanceThreshold = BigInt.from(10).pow(AppConstants.decimals - 4);
 
 /// Wallet index needing a recovery phrase backup reminder, or null when none.
+/// Only nudges mnemonic-backed wallets created on this device (or legacy wallets
+/// of unknown origin). Never nudges multisig/entrusted accounts (not
+/// [RegularAccount]), hardware (keystone) wallets, or imported wallets.
 final backupReminderWalletIndexProvider = Provider<int?>((ref) {
   final active = ref.watch(activeAccountProvider).value;
   if (active is! RegularAccount) return null;
+  if (active.account.accountType != AccountType.local) return null;
 
   final walletIndex = active.account.walletIndex;
   if (AppConstants.debugAlwaysShowBackupNudge) return walletIndex;
 
+  if (ref.watch(walletOriginProvider(walletIndex)) == WalletOrigin.imported) return null;
   if (ref.watch(recoveryPhraseViewedProvider(walletIndex))) return null;
 
   final balance = ref.watch(balanceProvider).value ?? BigInt.zero;
