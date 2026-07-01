@@ -118,7 +118,6 @@ start_emulator() {
     local serial
     serial="$(first_running_emulator || true)"
     if [[ -n "$serial" ]]; then
-      wait_for_emulator_boot "$serial"
       DEVICE_SERIAL="$serial"
       return 0
     fi
@@ -155,6 +154,8 @@ if [[ -z "$DEVICE_SERIAL" ]]; then
   fi
   start_emulator "$AVD_NAME"
 fi
+
+wait_for_emulator_boot "$DEVICE_SERIAL"
 
 if [[ "$DEVICE_SERIAL" != emulator-* ]]; then
   echo "WARNING: $DEVICE_SERIAL does not look like an emulator serial." >&2
