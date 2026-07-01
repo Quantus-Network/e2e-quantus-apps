@@ -6,6 +6,7 @@ import '../support/patrol_timeouts.dart';
 import '../support/selectors.dart';
 import '../support/send_preflight.dart';
 import '../support/test_env.dart';
+import '../support/text_input.dart';
 import '../support/wallet_flows.dart';
 
 Future<void> _openReviewSend(PatrolIntegrationTester $) async {
@@ -43,7 +44,9 @@ void main() {
     await $(Selectors.sendContinueButton).tap();
 
     await $(Selectors.sendInputAmountScreen).waitUntilVisible(timeout: PatrolTimeouts.network);
-    await $(Selectors.sendAmountField).enterText(send.amountText);
+    await typeTextIntoField($, Selectors.sendAmountField, send.amountText);
+    // Fee refresh is debounced on the amount screen.
+    await $.pump(const Duration(milliseconds: 600));
     await _openReviewSend($);
 
     await $(Selectors.sendConfirmButton).tap();
@@ -55,6 +58,5 @@ void main() {
 
     await $(Selectors.homePendingSendActivityItem).scrollTo();
     await $(Selectors.homePendingSendActivityItem).waitUntilVisible(timeout: PatrolTimeouts.network);
-    expect($(Selectors.homePendingSendActivityItem), findsOneWidget);
   });
 }

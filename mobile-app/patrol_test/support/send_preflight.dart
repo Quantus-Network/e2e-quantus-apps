@@ -1,6 +1,8 @@
 import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances;
 import 'package:quantus_sdk/quantus_sdk.dart';
 
+import 'e2e_locale.dart';
+
 /// Pre-send checks for the send-flow Patrol test.
 class SendPreflight {
   SendPreflight._();
@@ -26,8 +28,9 @@ class SendPreflight {
       );
     }
 
+    final localeConfig = E2eLocale.numberConfig();
     final amountText = NumberFormattingService(
-      localeConfig: LocaleNumberConfig.dotDecimal,
+      localeConfig: localeConfig,
     ).formatBalance(ed, smartDecimals: AppConstants.decimals, addThousandsSeparators: false);
 
     return (amount: ed, amountText: amountText);
