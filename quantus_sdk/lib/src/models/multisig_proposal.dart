@@ -1,9 +1,15 @@
 import 'dart:developer' as developer;
+import 'dart:typed_data';
 
+import 'package:convert/convert.dart';
 import 'package:flutter/foundation.dart';
+import 'package:polkadart/scale_codec.dart' show ByteInput;
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart';
+import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart';
+import 'package:quantus_sdk/src/constants/app_constants.dart';
 import 'package:quantus_sdk/src/models/json_dynamic_parse.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
+import 'package:ss58/ss58.dart';
 
 /// On-chain lifecycle status of a multisig proposal.
 ///
@@ -11,6 +17,22 @@ import 'package:quantus_sdk/src/models/multisig_account.dart';
 /// [MultisigProposal.expiryBlock] versus the current block and is therefore not
 /// a stored status.
 enum MultisigProposalStatus { active, approved, executed, cancelled, removed, unknown }
+
+/// Result of verifying indexer-provided proposal data against call_raw bytes.
+enum CallVerificationStatus {
+  /// call_raw matches the indexer-decoded recipient and amount
+  verified,
+  /// call_raw was not provided by the indexer
+  noCallRaw,
+  /// call_raw could not be decoded (malformed or unknown call type)
+  decodeError,
+  /// Decoded call is not a transfer (no recipient/amount to verify)
+  notATransfer,
+  /// Decoded recipient does not match indexer-provided recipient
+  recipientMismatch,
+  /// Decoded amount does not match indexer-provided amount
+  amountMismatch,
+}
 
 /// A multisig proposal as exposed by the indexer.
 @immutable
@@ -50,6 +72,16 @@ class MultisigProposal {
   final MultisigProposalStatus status;
   final String? decodeError;
 
+  /// Raw encoded call bytes from the indexer (hex string with 0x prefix).
+  /// Used to verify that displayed recipient/amount match the actual on-chain call.
+  final String? callRaw;
+
+  /// Result of verifying indexer data against [callRaw].
+  final CallVerificationStatus verificationStatus;
+
+  /// Human-readable verification error message, if verification failed.
+  final String? verificationError;
+
   /// Approval threshold of the owning multisig (injected at mapping time).
   final int threshold;
 
@@ -76,6 +108,9 @@ class MultisigProposal {
     required this.threshold,
     required this.signerCount,
     this.decodeError,
+    this.callRaw,
+    this.verificationStatus = CallVerificationStatus.noCallRaw,
+    this.verificationError,
   });
 
   /// Maps an indexer `multisig_proposal` record to a [MultisigProposal].
@@ -83,6 +118,10 @@ class MultisigProposal {
   /// [msig] supplies threshold and signer count, which the proposal row does
   /// not carry. [burnedPalletFeeOverride] fills in when the nested row lacks
   /// `burned_pallet_fee` but the parent account event carries it.
+  ///
+  /// The factory verifies that [callRaw] (when present) matches the indexer-
+  /// provided [recipient] and [amount] to prevent spoofed indexer data from
+  /// misleading signers about what action they're approving.
   factory MultisigProposal.fromIndexerJson(
     Map<String, dynamic> record, {
     required MultisigAccount msig,
@@ -90,6 +129,19 @@ class MultisigProposal {
   }) {
     final transferAmountRaw = record['transfer_amount'] ?? record['transferAmount'];
     final burnedRaw = record['burned_pallet_fee'] ?? record['burnedPalletFee'];
+    final callRawValue = record['call_raw'] ?? record['callRaw'];
+    final callRaw = callRawValue is String && callRawValue.isNotEmpty ? callRawValue : null;
+    
+    final indexerRecipient = nestedAccountId(record['transferTo'] ?? record['transfer_to']);
+    final indexerAmount = transferAmountRaw != null ? bigIntFromJson(transferAmountRaw) : BigInt.zero;
+    
+    // Verify call_raw matches indexer-provided recipient/amount
+    final (verificationStatus, verificationError) = _verifyCallRaw(
+      callRaw: callRaw,
+      indexerRecipient: indexerRecipient,
+      indexerAmount: indexerAmount,
+    );
+    
     return MultisigProposal(
       entityId: stringFromJson(record['id']),
       id: _intFromJson(record['proposal_id'] ?? record['proposalId']),
@@ -100,8 +152,8 @@ class MultisigProposal {
       updatedAt: dateTimeFromJson(record['updated_at'] ?? record['created_at']),
       pallet: _stringOrEmpty(record['pallet']),
       call: _stringOrEmpty(record['call']),
-      recipient: nestedAccountId(record['transferTo'] ?? record['transfer_to']),
-      amount: transferAmountRaw != null ? bigIntFromJson(transferAmountRaw) : BigInt.zero,
+      recipient: indexerRecipient,
+      amount: indexerAmount,
       expiryBlock: _intFromJson(record['expiry_block'] ?? record['expiryBlock']),
       approvals: _stringList(record['approvals']),
       deposit: bigIntFromJson(record['deposit']),
@@ -111,7 +163,90 @@ class MultisigProposal {
       threshold: msig.threshold,
       signerCount: msig.signers.length,
       decodeError: (record['decode_error'] ?? record['decodeError']) as String?,
+      callRaw: callRaw,
+      verificationStatus: verificationStatus,
+      verificationError: verificationError,
     );
+  }
+  
+  /// Verifies that call_raw bytes match the indexer-provided recipient and amount.
+  static (CallVerificationStatus, String?) _verifyCallRaw({
+    required String? callRaw,
+    required String indexerRecipient,
+    required BigInt indexerAmount,
+  }) {
+    if (callRaw == null || callRaw.isEmpty) {
+      return (CallVerificationStatus.noCallRaw, 'No call_raw provided by indexer');
+    }
+    
+    try {
+      final callBytes = _hexToBytes(callRaw);
+      final runtimeCall = RuntimeCall.decode(ByteInput(callBytes));
+      final callJson = runtimeCall.toJson();
+      
+      // Check if this is a Balances transfer
+      final balances = callJson['Balances'];
+      if (balances == null) {
+        // Not a balances call - no recipient/amount to verify
+        return (CallVerificationStatus.notATransfer, null);
+      }
+      
+      // Handle different transfer call variants
+      final transferData = balances['transfer_allow_death'] ?? 
+                          balances['transfer_keep_alive'] ??
+                          balances['transfer'];
+      
+      if (transferData == null) {
+        // Balances call but not a transfer (e.g., set_balance)
+        return (CallVerificationStatus.notATransfer, null);
+      }
+      
+      // Extract recipient from call
+      final dest = transferData['dest'] as Map<String, dynamic>?;
+      if (dest == null) {
+        return (CallVerificationStatus.decodeError, 'Missing dest in transfer call');
+      }
+      
+      // Handle MultiAddress::Id format
+      final recipientBytes = dest['Id'] as List?;
+      if (recipientBytes == null) {
+        return (CallVerificationStatus.decodeError, 'Unsupported address format in transfer call');
+      }
+      
+      final decodedRecipient = Address(
+        prefix: AppConstants.ss58prefix,
+        pubkey: Uint8List.fromList(recipientBytes.cast<int>()),
+      ).encode();
+      
+      // Extract amount from call
+      final value = transferData['value'];
+      final decodedAmount = value is BigInt ? value : BigInt.parse(value.toString());
+      
+      // Compare decoded values with indexer values
+      if (decodedRecipient != indexerRecipient) {
+        return (
+          CallVerificationStatus.recipientMismatch,
+          'Recipient mismatch: indexer says "$indexerRecipient" but call_raw contains "$decodedRecipient"',
+        );
+      }
+      
+      if (decodedAmount != indexerAmount) {
+        return (
+          CallVerificationStatus.amountMismatch,
+          'Amount mismatch: indexer says "$indexerAmount" but call_raw contains "$decodedAmount"',
+        );
+      }
+      
+      return (CallVerificationStatus.verified, null);
+    } catch (e) {
+      return (CallVerificationStatus.decodeError, 'Failed to decode call_raw: $e');
+    }
+  }
+  
+  /// Converts a hex string (with or without 0x prefix) to bytes.
+  static Uint8List _hexToBytes(String hexString) {
+    final cleanHex = hexString.startsWith('0x') ? hexString.substring(2) : hexString;
+    return Uint8List.fromList(hex.decode(cleanHex));
   }
 
   /// Parses a (possibly upper-cased) indexer status string.
@@ -170,7 +305,31 @@ class MultisigProposal {
   /// Whether threshold is met and the proposal awaits execution.
   bool get isReadyToExecute => status == MultisigProposalStatus.approved;
 
-  MultisigProposal copyWith({MultisigProposalStatus? status, List<String>? approvals, BigInt? burnedPalletFee}) {
+  /// Whether the proposal's displayed recipient/amount have been verified against call_raw.
+  ///
+  /// Returns true if:
+  /// - [verificationStatus] is [CallVerificationStatus.verified], or
+  /// - [verificationStatus] is [CallVerificationStatus.notATransfer] (nothing to verify)
+  ///
+  /// UI should warn users when this is false before allowing approval/execution.
+  bool get isVerified =>
+      verificationStatus == CallVerificationStatus.verified ||
+      verificationStatus == CallVerificationStatus.notATransfer;
+
+  /// Whether verification failed due to a mismatch (not just missing data).
+  ///
+  /// This indicates potential indexer spoofing and should block approval/execution.
+  bool get hasVerificationMismatch =>
+      verificationStatus == CallVerificationStatus.recipientMismatch ||
+      verificationStatus == CallVerificationStatus.amountMismatch;
+
+  MultisigProposal copyWith({
+    MultisigProposalStatus? status,
+    List<String>? approvals,
+    BigInt? burnedPalletFee,
+    CallVerificationStatus? verificationStatus,
+    String? verificationError,
+  }) {
     return MultisigProposal(
       entityId: entityId,
       id: id,
@@ -191,6 +350,9 @@ class MultisigProposal {
       threshold: threshold,
       signerCount: signerCount,
       decodeError: decodeError,
+      callRaw: callRaw,
+      verificationStatus: verificationStatus ?? this.verificationStatus,
+      verificationError: verificationError ?? this.verificationError,
     );
   }
 
