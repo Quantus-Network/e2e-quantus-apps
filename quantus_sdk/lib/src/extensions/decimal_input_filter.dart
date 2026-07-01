@@ -4,7 +4,7 @@ import 'package:quantus_sdk/src/services/locale_number_config.dart';
 /// A locale-aware [TextInputFormatter] that:
 /// - Accepts BOTH `.` and `,` as the decimal separator during **typing**
 ///   (because mobile keyboards may show either regardless of locale).
-/// - Applies locale rules (strips grouping separators) during **paste**.
+/// - Applies locale rules during **paste**.
 /// - Enforces a maximum number of decimal places (useful for fiat currencies
 ///   with 0 decimals like IDR/JPY).
 /// - Prevents leading zeros (except for `0` followed by the decimal separator).
@@ -40,9 +40,10 @@ class DecimalInputFilter extends TextInputFormatter {
     String text = newValue.text;
 
     if (!isSingleCharTyping) {
-      // PASTE/REPLACEMENT MODE: apply full locale rules.
-      // Strip grouping separators entirely - they are formatting, not data.
-      text = text.replaceAll(groupSep, '');
+      // PASTE/REPLACEMENT MODE: keep separators intact so locale validation
+      // can reject malformed or cross-locale values instead of silently
+      // collapsing them (e.g., "1,5" in en_US should not become "15").
+      // The normalize() call below will validate grouping structure.
     } else {
       // TYPING MODE: accept EITHER `.` or `,` as a decimal separator attempt.
       // Mobile keyboards may show either symbol regardless of locale.
@@ -74,7 +75,13 @@ class DecimalInputFilter extends TextInputFormatter {
     }
 
     // Normalize to canonical form (dot decimal) for validation.
-    final normalized = localeConfig.normalize(text);
+    // This will throw InvalidNumberInputException if grouping is malformed.
+    late final String normalized;
+    try {
+      normalized = localeConfig.normalize(text);
+    } on InvalidNumberInputException {
+      return oldValue;
+    }
 
     // Build validation regex based on maxDecimalPlaces.
     final String decimalRegexPart;
@@ -90,8 +97,13 @@ class DecimalInputFilter extends TextInputFormatter {
     final regex = RegExp('^(0|([1-9]\\d*))$decimalRegexPart\$');
 
     if (regex.hasMatch(normalized)) {
-      // Ensure the text uses the locale's decimal separator for display.
-      final displayText = _ensureLocaleDecimal(text);
+      // Strip grouping separators first, then ensure correct decimal separator.
+      // We can't use _ensureLocaleDecimal first because it converts ALL separators.
+      String displayText = text.replaceAll(groupSep, '');
+      
+      // Now convert the remaining separator (if any) to the locale's decimal
+      final otherSep = sep == '.' ? ',' : '.';
+      displayText = displayText.replaceAll(otherSep, sep);
 
       if (displayText != newValue.text) {
         return TextEditingValue(
@@ -103,14 +115,6 @@ class DecimalInputFilter extends TextInputFormatter {
     }
 
     return oldValue;
-  }
-
-  /// Ensures the text uses only the locale's decimal separator.
-  /// Converts any `.` or `,` to the locale's decimal separator.
-  String _ensureLocaleDecimal(String text) {
-    final sep = localeConfig.decimalSeparator;
-    final other = sep == '.' ? ',' : '.';
-    return text.replaceAll(other, sep);
   }
 
   /// Detects if the edit represents a single character being typed (inserted).

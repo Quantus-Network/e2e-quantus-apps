@@ -95,28 +95,90 @@ class NumberFormattingService {
   ///
   /// Supports canonical dot-decimal wire amounts and legacy locale-formatted
   /// amounts from older POS QR codes.
+  ///
+  /// Returns `null` for ambiguous inputs where the separator could be either
+  /// a decimal or thousands grouping (e.g., "1,000" or "1.000" with only
+  /// one separator and exactly 3 digits after).
   BigInt? parseWireAmount(String formattedAmount) {
     if (formattedAmount.isEmpty) {
       return BigInt.zero;
     }
 
     final config = _wireLocaleConfigFor(formattedAmount);
+    if (config == null) {
+      debugPrint('Error parsing wire amount $formattedAmount: ambiguous separators');
+      return null;
+    }
     return NumberFormattingService(localeConfig: config).parseAmount(formattedAmount);
   }
 
-  static LocaleNumberConfig _wireLocaleConfigFor(String input) {
+  /// Determines the locale config for parsing a wire amount.
+  ///
+  /// Returns `null` for ambiguous inputs that could be interpreted either way.
+  static LocaleNumberConfig? _wireLocaleConfigFor(String input) {
     final hasComma = input.contains(',');
     final hasDot = input.contains('.');
 
+    // If both separators are present, use the last one as decimal
     if (hasComma && hasDot) {
       final lastComma = input.lastIndexOf(',');
       final lastDot = input.lastIndexOf('.');
       return lastComma > lastDot ? LocaleNumberConfig.commaDecimal : LocaleNumberConfig.dotDecimal;
     }
+    
+    // Single separator - need to disambiguate
     if (hasComma) {
-      return LocaleNumberConfig.commaDecimal;
+      return _singleSeparatorWireLocale(input, ',');
     }
+    if (hasDot) {
+      return _singleSeparatorWireLocale(input, '.');
+    }
+    
+    // No separators - default to dot decimal (doesn't matter)
     return LocaleNumberConfig.dotDecimal;
+  }
+
+  /// Determines locale for an input with only one type of separator.
+  ///
+  /// - Multiple occurrences of the separator → it's a grouping separator
+  /// - Single occurrence with exactly 3 digits after → AMBIGUOUS (return null)
+  /// - Single occurrence with != 3 digits after → it's a decimal separator
+  /// - Trailing separator (nothing after) → it's a decimal separator
+  static LocaleNumberConfig? _singleSeparatorWireLocale(String input, String separator) {
+    final first = input.indexOf(separator);
+    final last = input.lastIndexOf(separator);
+    
+    // Multiple occurrences → it's definitely a grouping separator
+    if (first != last) {
+      // For comma grouping (e.g., "1,000,000"), use dot decimal config
+      // For dot grouping (e.g., "1.000.000"), use comma decimal config
+      return separator == ',' ? LocaleNumberConfig.dotDecimal : LocaleNumberConfig.commaDecimal;
+    }
+
+    // Single occurrence - check what follows
+    final after = input.substring(first + separator.length);
+    
+    // Trailing separator (e.g., "1,") → treat as decimal
+    if (after.isEmpty) {
+      return separator == ',' ? LocaleNumberConfig.commaDecimal : LocaleNumberConfig.dotDecimal;
+    }
+
+    // Verify digits only before and after
+    final before = input.substring(0, first);
+    final digitsOnly = RegExp(r'^\d+$');
+    if (!digitsOnly.hasMatch(before) || !digitsOnly.hasMatch(after)) {
+      return null; // Invalid format
+    }
+
+    // Exactly 3 digits after → AMBIGUOUS
+    // Could be "1,000" (one thousand) or "1,000" (one point zero zero zero)
+    // Could be "1.000" (one thousand in EU) or "1.000" (one in US)
+    if (after.length == 3) {
+      return null; // Reject ambiguous input
+    }
+
+    // Not 3 digits after → it's a decimal separator
+    return separator == ',' ? LocaleNumberConfig.commaDecimal : LocaleNumberConfig.dotDecimal;
   }
 
   /// Parses a user-entered formatted string amount into a raw BigInt amount

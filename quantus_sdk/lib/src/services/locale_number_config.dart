@@ -62,8 +62,13 @@ class LocaleNumberConfig {
   ///   '1,000.50' → '1000.50'
   ///   '1000.5'   → '1000.5'
   ///   '1,000'    → '1000'
+  ///
+  /// Throws [InvalidNumberInputException] when grouping separators are present
+  /// but not positioned as valid integer-part group delimiters.
   String normalize(String input) {
     if (input.isEmpty) return input;
+
+    _validateGrouping(input);
 
     String result = input;
 
@@ -79,6 +84,47 @@ class LocaleNumberConfig {
     }
 
     return result;
+  }
+
+  /// Validates that grouping separators are positioned correctly.
+  ///
+  /// Valid grouping requires:
+  /// - Grouping separators only in the integer part (before decimal)
+  /// - First group: 1-3 digits
+  /// - Subsequent groups: exactly 3 digits each
+  ///
+  /// Invalid examples: '9,9,9', '1,00', '1,0000', '1.234,56,7'
+  void _validateGrouping(String input) {
+    if (groupingSeparator.isEmpty || groupingSeparator == decimalSeparator || !input.contains(groupingSeparator)) {
+      return;
+    }
+
+    final decimalIndex = input.indexOf(decimalSeparator);
+    final integerPart = decimalIndex == -1 ? input : input.substring(0, decimalIndex);
+    final fractionalPart = decimalIndex == -1 ? '' : input.substring(decimalIndex + decimalSeparator.length);
+
+    // Grouping separators are not allowed in fractional part
+    if (fractionalPart.contains(groupingSeparator)) {
+      throw InvalidNumberInputException(rawInput: input, normalized: input);
+    }
+
+    final groups = integerPart.split(groupingSeparator);
+    if (groups.length == 1) {
+      return; // No grouping separators in integer part
+    }
+
+    // First group must be 1-3 digits
+    final firstGroup = groups.first;
+    if (!RegExp(r'^\d{1,3}$').hasMatch(firstGroup)) {
+      throw InvalidNumberInputException(rawInput: input, normalized: input);
+    }
+
+    // Subsequent groups must be exactly 3 digits
+    for (final group in groups.skip(1)) {
+      if (!RegExp(r'^\d{3}$').hasMatch(group)) {
+        throw InvalidNumberInputException(rawInput: input, normalized: input);
+      }
+    }
   }
 
   /// Parses a locale-formatted numeric string into a [Decimal].
