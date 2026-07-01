@@ -80,17 +80,42 @@ first_booted_simulator() {
     | sed 's/[[:space:]]*$//'
 }
 
+# Newest installed iOS simulator runtime (e.g. 26.5).
+newest_ios_version() {
+  xcrun simctl list runtimes available 2>/dev/null \
+    | sed -n 's/^iOS \([0-9.]*\).*/\1/p' \
+    | sort -t. -k1,1n -k2,2n -k3,3n \
+    | tail -1
+}
+
 # Prefer the newest runtime when multiple simulators share the same name.
 simulator_udid_for_name() {
   local name="$1"
   xcrun simctl list devices available 2>/dev/null \
-    | grep -F "    $name (" \
-    | tail -1 \
-    | sed -E 's/^[[:space:]]+[^(]+ \(([A-F0-9-]+)\).*/\1/'
+    | awk -v name="$name" '
+      $1 == "--" && $2 == "iOS" { ver = $3; next }
+      ver != "" && index($0, "    " name " (") == 1 {
+        if (match($0, /\([A-F0-9-]+\)/)) {
+          udid = substr($0, RSTART + 1, RLENGTH - 2)
+          n = split(ver, a, ".")
+          key = a[1] * 1000000 + a[2] * 1000 + (n >= 3 ? a[3] + 0 : 0)
+          if (key > best_key) { best_key = key; best_udid = udid }
+        }
+      }
+      END { if (best_udid != "") print best_udid }
+    '
 }
 
 default_simulator_name() {
+  local ver
+  ver="$(newest_ios_version)"
+  [[ -z "$ver" ]] && return 1
   xcrun simctl list devices available 2>/dev/null \
+    | awk -v ver="$ver" '
+      $1 == "--" && $2 == "iOS" && $3 == ver { found = 1; next }
+      found && $1 == "--" { exit }
+      found { print }
+    ' \
     | grep -E '^\s+iPhone' \
     | tail -1 \
     | sed -E 's/^[[:space:]]+([^(]+) \(.*/\1/' \
