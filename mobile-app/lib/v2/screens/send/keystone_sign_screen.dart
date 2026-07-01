@@ -12,6 +12,7 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_scan_signature_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -26,6 +27,7 @@ class KeystoneSignScreen extends ConsumerStatefulWidget {
   final int blockHeight;
   final String recipientChecksum;
   final bool isPayMode;
+  final SendTerminalContent terminal;
 
   const KeystoneSignScreen({
     super.key,
@@ -35,6 +37,7 @@ class KeystoneSignScreen extends ConsumerStatefulWidget {
     required this.networkFee,
     required this.blockHeight,
     required this.recipientChecksum,
+    required this.terminal,
     this.isPayMode = false,
   });
 
@@ -88,6 +91,7 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
           blockHeight: widget.blockHeight,
           recipientChecksum: widget.recipientChecksum,
           isPayMode: widget.isPayMode,
+          terminal: widget.terminal,
         ),
       ),
     );
