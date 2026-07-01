@@ -248,11 +248,8 @@ class SubstrateService {
     final payload = payloadToSign.encode(registry);
 
     if (isSigned) {
-      final mnemonic = await account.getMnemonic();
-      if (mnemonic == null) {
-        throw Exception('Mnemonic not found for signing.');
-      }
-      final senderWallet = HdWalletService().keyPairAtIndex(mnemonic, account.index);
+      // Use getKeypair() which validates account type and address match
+      final senderWallet = await account.getKeypair();
 
       final signature = senderWallet.sign(payload);
       final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, senderWallet.publicKey);
