@@ -159,18 +159,13 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _heroCard(colors, text, l10n, approxDisplay),
-              const SizedBox(height: 28),
-              _summarySection(l10n, addr, totalRaw),
-              if (_errorMessage != null) ...[
-                const SizedBox(height: 16),
-                Text(_errorMessage!, style: text.detail?.copyWith(color: colors.textError)),
-              ],
-            ],
-          ),
+          _heroCard(colors, text, l10n, approxDisplay),
+          const SizedBox(height: 28),
+          Expanded(child: SingleChildScrollView(child: _summarySection(l10n, addr, totalRaw))),
+          if (_errorMessage != null) ...[
+            const SizedBox(height: 16),
+            Text(_errorMessage!, style: text.detail?.copyWith(color: colors.textError)),
+          ],
         ],
       ),
       bottomContent: ScaffoldBaseBottomContent(
