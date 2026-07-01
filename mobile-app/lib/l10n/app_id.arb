@@ -440,6 +440,7 @@
 
   "settingsRecoveryPhraseTitle": "Frasa Pemulihan",
   "settingsRecoveryPhraseDone": "Selesai",
+  "settingsRecoveryAlreadyBackedUp": "Saya sudah mencadangkan dompet saya",
 
   "settingsResetTitle": "Reset Dompet",
   "settingsResetAuthReason": "Autentikasi untuk mereset dompet",

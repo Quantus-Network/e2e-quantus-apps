@@ -1342,6 +1342,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsRecoveryPhraseDone => 'Selesai';
 
   @override
+  String get settingsRecoveryAlreadyBackedUp => 'Saya sudah mencadangkan dompet saya';
+
+  @override
   String get settingsResetTitle => 'Reset Dompet';
 
   @override
