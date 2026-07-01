@@ -11,6 +11,10 @@ class WormholeAddressManager {
   final HdWalletService _hdWalletService;
 
   WormholeKeyPair? _primary;
+  
+  /// Generation counter to detect stale initialization.
+  /// Incremented on clear() to invalidate in-flight initialize() calls.
+  int _generation = 0;
 
   WormholeAddressManager({required MnemonicGetter getMnemonic, HdWalletService? hdWalletService})
     : _getMnemonic = getMnemonic,
@@ -19,9 +23,20 @@ class WormholeAddressManager {
   WormholeKeyPair? get primary => _primary;
 
   Future<void> initialize() async {
+    final generationAtStart = _generation;
     final mnemonic = await _getMnemonic();
+    
+    // Check if clear() was called while we were awaiting
+    if (_generation != generationAtStart) {
+      // Stale initialization - do not update state
+      return;
+    }
+    
     _primary = mnemonic == null ? null : _hdWalletService.deriveWormholeKeyPair(mnemonic: mnemonic);
   }
 
-  void clear() => _primary = null;
+  void clear() {
+    _generation++;
+    _primary = null;
+  }
 }
