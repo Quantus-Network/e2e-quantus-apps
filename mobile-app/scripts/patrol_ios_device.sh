@@ -103,11 +103,13 @@ if [[ -z "$DEVICE_UDID" ]]; then
   echo "==> Auto-selected device: $DEVICE_UDID"
 fi
 
-# Test secrets/fixtures (e.g. TEST_IMPORT_MNEMONIC) are injected at build time via
-# --dart-define so they are never bundled into the app as an asset.
+# Test secrets/fixtures (TEST_IMPORT_MNEMONIC, TEST_SEND_RECIPIENT_ADDRESS) are injected
+# at build time via --dart-define so they are never bundled into the app as an asset.
 #   * Locally: read from a gitignored .env.test (key=value) via --dart-define-from-file.
-#   * CI / Firebase Test Lab: export TEST_IMPORT_MNEMONIC (and any others) and they
-#     are forwarded as --dart-define from the runner's secret store.
+#   * CI / Firebase Test Lab: export vars and they are forwarded as --dart-define.
+#
+# Note: send_flow_test is simulator/emulator-only and is not supported on physical
+# devices (enrolled biometrics block Confirm without a bypass).
 DART_DEFINES=()
 if [[ -f .env.test ]]; then
   echo "==> Injecting test secrets from .env.test"
@@ -115,9 +117,12 @@ if [[ -f .env.test ]]; then
 elif [[ -n "${TEST_IMPORT_MNEMONIC:-}" ]]; then
   echo "==> Injecting test secrets from environment"
   DART_DEFINES+=(--dart-define=TEST_IMPORT_MNEMONIC="$TEST_IMPORT_MNEMONIC")
+  if [[ -n "${TEST_SEND_RECIPIENT_ADDRESS:-}" ]]; then
+    DART_DEFINES+=(--dart-define=TEST_SEND_RECIPIENT_ADDRESS="$TEST_SEND_RECIPIENT_ADDRESS")
+  fi
 else
   echo "WARNING: no .env.test file and TEST_IMPORT_MNEMONIC is unset;" \
-       "tests that need a seed phrase (e.g. import_wallet) will fail." >&2
+       "tests that need a seed phrase (e.g. import_wallet, send_flow) will fail." >&2
 fi
 
 # Build the `-t <target>` flags. With no targets, patrol bundles every

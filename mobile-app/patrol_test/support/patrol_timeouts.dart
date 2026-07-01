@@ -14,4 +14,7 @@ class PatrolTimeouts {
   /// Time to wait for operations that hit the network (e.g. account checksum,
   /// initial balance load on the home screen).
   static const Duration network = Duration(seconds: 45);
+
+  /// Time to wait for extrinsic sign + broadcast after confirming a send.
+  static const Duration transaction = Duration(seconds: 90);
 }

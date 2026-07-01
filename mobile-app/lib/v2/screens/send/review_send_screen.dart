@@ -10,6 +10,7 @@ import 'package:resonance_network_wallet/providers/currency_display_provider.dar
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
+import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
@@ -153,6 +154,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
     final totalRaw = widget.amount + widget.networkFee;
 
     return ScaffoldBase(
+      key: const Key(E2EKeys.sendReviewScreen),
       appBar: V2AppBar(title: widget.isPayMode ? l10n.sendPayTitle : l10n.sendTitle),
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -173,6 +175,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       ),
       bottomContent: ScaffoldBaseBottomContent(
         child: QuantusButton.simple(
+          key: const Key(E2EKeys.sendConfirmButton),
           label: l10n.sendReviewConfirm,
           variant: ButtonVariant.primary,
           isLoading: _submitting,

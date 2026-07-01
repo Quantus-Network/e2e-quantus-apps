@@ -182,10 +182,13 @@ if [[ "$DEVICE_SERIAL" != emulator-* ]]; then
   echo "WARNING: $DEVICE_SERIAL does not look like an emulator serial." >&2
 fi
 
-# Test secrets/fixtures (e.g. TEST_IMPORT_MNEMONIC) are injected at build time via
-# --dart-define so they are never bundled into the app as an asset.
+# Test secrets/fixtures (TEST_IMPORT_MNEMONIC, TEST_SEND_RECIPIENT_ADDRESS) are injected
+# at build time via --dart-define so they are never bundled into the app as an asset.
 #   * Locally: read from a gitignored .env.test (key=value) via --dart-define-from-file.
-#   * CI: export TEST_IMPORT_MNEMONIC (and any others) from the runner's secret store.
+#   * CI: export vars from the runner's secret store.
+#
+# send_flow_test: emulator only; keep fingerprint NOT enrolled so LocalAuthentication
+# auto-passes on Confirm.
 DART_DEFINES=()
 if [[ -f .env.test ]]; then
   echo "==> Injecting test secrets from .env.test"
@@ -193,9 +196,12 @@ if [[ -f .env.test ]]; then
 elif [[ -n "${TEST_IMPORT_MNEMONIC:-}" ]]; then
   echo "==> Injecting test secrets from environment"
   DART_DEFINES+=(--dart-define=TEST_IMPORT_MNEMONIC="$TEST_IMPORT_MNEMONIC")
+  if [[ -n "${TEST_SEND_RECIPIENT_ADDRESS:-}" ]]; then
+    DART_DEFINES+=(--dart-define=TEST_SEND_RECIPIENT_ADDRESS="$TEST_SEND_RECIPIENT_ADDRESS")
+  fi
 else
   echo "WARNING: no .env.test file and TEST_IMPORT_MNEMONIC is unset;" \
-       "tests that need a seed phrase (e.g. import_wallet) will fail." >&2
+       "tests that need a seed phrase (e.g. import_wallet, send_flow) will fail." >&2
 fi
 
 # Build the `-t <target>` flags. With no targets, patrol bundles every

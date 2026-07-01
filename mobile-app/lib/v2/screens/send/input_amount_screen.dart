@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
@@ -252,6 +253,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     );
 
     return ScaffoldBase(
+      key: const Key(E2EKeys.sendInputAmountScreen),
       appBar: V2AppBar(title: widget.isPayMode ? l10n.sendPayTitle : l10n.sendTitle),
       mainContent: LayoutBuilder(
         builder: (context, constraints) => SingleChildScrollView(
@@ -358,6 +360,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final maxDecimals = isFlipped ? selectedFiat.decimals : null;
     final inputField = IntrinsicWidth(
       child: TextField(
+        key: const Key(E2EKeys.sendAmountField),
         controller: _amountController,
         focusNode: _amountFocus,
         onChanged: _onAmountChanged,
@@ -508,6 +511,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
           ),
           const SizedBox(height: 32),
           QuantusButton.simple(
+            key: const Key(E2EKeys.sendReviewButton),
             label: btnText,
             variant: ButtonVariant.primary,
             isDisabled: btnDisabled,

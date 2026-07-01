@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -54,6 +55,7 @@ class TxSubmittedScreen extends ConsumerWidget {
         _popToHome(context);
       },
       child: ScaffoldBase(
+        key: const Key(E2EKeys.sendTxSubmittedScreen),
         appBar: V2AppBar(
           title: isPayMode ? l10n.sendPayTitle : l10n.sendTitle,
           leading: AppBackButton(onTap: () => _popToHome(context)),
@@ -121,6 +123,7 @@ class TxSubmittedScreen extends ConsumerWidget {
         ),
         bottomContent: ScaffoldBaseBottomContent(
           child: QuantusButton.simple(
+            key: const Key(E2EKeys.sendTxSubmittedDoneButton),
             label: l10n.sendTxSubmittedDone,
             variant: ButtonVariant.primary,
             onTap: () => _popToHome(context),
