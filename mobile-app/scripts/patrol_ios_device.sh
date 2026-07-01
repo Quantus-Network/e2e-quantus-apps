@@ -50,48 +50,34 @@
 # the whole script under `set -e`.
 set -eu
 
+# shellcheck source=lib/patrol_common.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/patrol_common.sh"
+
 usage() {
   echo "Usage: patrol_ios_device.sh [-d <device_udid>] [test_target ...]" >&2
 }
 
-DEVICE_UDID=""
-TEST_TARGETS=()
-while [[ $# -gt 0 ]]; do
+patrol_ios_device_platform_option() {
   case "$1" in
     -d|--device)
       DEVICE_UDID="${2:?--device requires a UDID}"
-      shift 2
-      ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
-    --)
-      shift
-      TEST_TARGETS+=("$@")
-      break
-      ;;
-    -*)
-      echo "ERROR: unknown option: $1" >&2
-      usage
-      exit 1
-      ;;
-    *)
-      TEST_TARGETS+=("$1")
-      shift
+      echo 2
+      return 0
       ;;
   esac
-done
+  echo 0
+  return 1
+}
+
+DEVICE_UDID=""
+patrol_parse_runner_args usage false patrol_ios_device_platform_option "$@"
 
 # Tunables (override via environment if needed).
 DESTINATION_TIMEOUT="${DESTINATION_TIMEOUT:-120}"
 TEST_SERVER_PORT="${PATROL_TEST_SERVER_PORT:-8081}"
 APP_SERVER_PORT="${PATROL_APP_SERVER_PORT:-8082}"
 
-# Resolve the mobile-app root (this script lives in mobile-app/scripts).
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-APP_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-cd "$APP_ROOT"
+patrol_resolve_app_root "${BASH_SOURCE[0]}"
 
 # Pick the device automatically if none was provided.
 if [[ -z "$DEVICE_UDID" ]]; then
@@ -103,34 +89,8 @@ if [[ -z "$DEVICE_UDID" ]]; then
   echo "==> Auto-selected device: $DEVICE_UDID"
 fi
 
-# Test secrets/fixtures (e.g. TEST_IMPORT_MNEMONIC) are injected at build time via
-# --dart-define so they are never bundled into the app as an asset.
-#   * Locally: read from a gitignored .env.test (key=value) via --dart-define-from-file.
-#   * CI / Firebase Test Lab: export TEST_IMPORT_MNEMONIC (and any others) and they
-#     are forwarded as --dart-define from the runner's secret store.
-DART_DEFINES=()
-if [[ -f .env.test ]]; then
-  echo "==> Injecting test secrets from .env.test"
-  DART_DEFINES+=(--dart-define-from-file=.env.test)
-elif [[ -n "${TEST_IMPORT_MNEMONIC:-}" ]]; then
-  echo "==> Injecting test secrets from environment"
-  DART_DEFINES+=(--dart-define=TEST_IMPORT_MNEMONIC="$TEST_IMPORT_MNEMONIC")
-else
-  echo "WARNING: no .env.test file and TEST_IMPORT_MNEMONIC is unset;" \
-       "tests that need a seed phrase (e.g. import_wallet) will fail." >&2
-fi
-
-# Build the `-t <target>` flags. With no targets, patrol bundles every
-# `*_test.dart` under `patrol_test/`, i.e. the whole suite in one binary.
-TARGET_ARGS=()
-if [[ ${#TEST_TARGETS[@]} -gt 0 ]]; then
-  for target in "${TEST_TARGETS[@]}"; do
-    TARGET_ARGS+=(-t "$target")
-  done
-  echo "==> Test targets: ${TEST_TARGETS[*]}"
-else
-  echo "==> No targets given; building the WHOLE patrol_test suite."
-fi
+patrol_collect_dart_defines
+patrol_build_target_args building
 
 echo "==> [1/3] Building Patrol bundle for device (release)..."
 patrol build ios ${TARGET_ARGS[@]+"${TARGET_ARGS[@]}"} --release \

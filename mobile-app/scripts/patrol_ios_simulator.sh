@@ -47,8 +47,28 @@
 # the whole script under `set -e`.
 set -eu
 
+# shellcheck source=lib/patrol_common.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/patrol_common.sh"
+
 usage() {
   echo "Usage: patrol_ios_simulator.sh [-d <udid>] [-s <name>] [--debug|--release] [test_target ...]" >&2
+}
+
+patrol_ios_simulator_platform_option() {
+  case "$1" in
+    -d|--device)
+      DEVICE_ID="${2:?--device requires a UDID}"
+      echo 2
+      return 0
+      ;;
+    -s|--simulator)
+      SIMULATOR_NAME="${2:?--simulator requires a name}"
+      echo 2
+      return 0
+      ;;
+  esac
+  echo 0
+  return 1
 }
 
 # Prints "<name>\t<udid>" for the first booted iPhone simulator, if any.
@@ -118,51 +138,9 @@ boot_simulator() {
 DEVICE_ID=""
 DEVICE_LABEL=""
 SIMULATOR_NAME=""
-BUILD_MODE="--debug"
-TEST_TARGETS=()
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    -d|--device)
-      DEVICE_ID="${2:?--device requires a UDID}"
-      shift 2
-      ;;
-    -s|--simulator)
-      SIMULATOR_NAME="${2:?--simulator requires a name}"
-      shift 2
-      ;;
-    --debug)
-      BUILD_MODE="--debug"
-      shift
-      ;;
-    --release)
-      BUILD_MODE="--release"
-      shift
-      ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
-    --)
-      shift
-      TEST_TARGETS+=("$@")
-      break
-      ;;
-    -*)
-      echo "ERROR: unknown option: $1" >&2
-      usage
-      exit 1
-      ;;
-    *)
-      TEST_TARGETS+=("$1")
-      shift
-      ;;
-  esac
-done
+patrol_parse_runner_args usage true patrol_ios_simulator_platform_option "$@"
 
-# Resolve the mobile-app root (this script lives in mobile-app/scripts).
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-APP_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-cd "$APP_ROOT"
+patrol_resolve_app_root "${BASH_SOURCE[0]}"
 
 # Pick or boot a simulator.
 if [[ -z "$DEVICE_ID" ]]; then
@@ -186,33 +164,8 @@ if [[ -z "$DEVICE_ID" ]]; then
   boot_simulator "$SIMULATOR_NAME"
 fi
 
-# Test secrets/fixtures (e.g. TEST_IMPORT_MNEMONIC) are injected at build time via
-# --dart-define so they are never bundled into the app as an asset.
-#   * Locally: read from a gitignored .env.test (key=value) via --dart-define-from-file.
-#   * CI: export TEST_IMPORT_MNEMONIC (and any others) from the runner's secret store.
-DART_DEFINES=()
-if [[ -f .env.test ]]; then
-  echo "==> Injecting test secrets from .env.test"
-  DART_DEFINES+=(--dart-define-from-file=.env.test)
-elif [[ -n "${TEST_IMPORT_MNEMONIC:-}" ]]; then
-  echo "==> Injecting test secrets from environment"
-  DART_DEFINES+=(--dart-define=TEST_IMPORT_MNEMONIC="$TEST_IMPORT_MNEMONIC")
-else
-  echo "WARNING: no .env.test file and TEST_IMPORT_MNEMONIC is unset;" \
-       "tests that need a seed phrase (e.g. import_wallet) will fail." >&2
-fi
-
-# Build the `-t <target>` flags. With no targets, patrol bundles every
-# `*_test.dart` under `patrol_test/`, i.e. the whole suite in one binary.
-TARGET_ARGS=()
-if [[ ${#TEST_TARGETS[@]} -gt 0 ]]; then
-  for target in "${TEST_TARGETS[@]}"; do
-    TARGET_ARGS+=(-t "$target")
-  done
-  echo "==> Test targets: ${TEST_TARGETS[*]}"
-else
-  echo "==> No targets given; running the WHOLE patrol_test suite."
-fi
+patrol_collect_dart_defines
+patrol_build_target_args running
 
 PATROL_DEVICE="${DEVICE_LABEL:-$DEVICE_ID}"
 echo "==> Running Patrol tests on $PATROL_DEVICE ($BUILD_MODE)..."
