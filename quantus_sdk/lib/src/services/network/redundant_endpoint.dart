@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/utils/timing.dart';
@@ -186,15 +187,63 @@ class RedundantEndpointService {
 
   Future<http.Response> get(String path, {Map<String, String>? headers, Duration? timeout}) async {
     return _executeTask(
-      (url) => http.get(Uri.parse('$url$path'), headers: _mergedHeaders(headers)),
+      (url) => http.get(_buildSafeUri(url, path), headers: _mergedHeaders(headers)),
       timeout: timeout,
     );
   }
 
   Future<http.Response> post({String? path, Map<String, String>? headers, String? body, Duration? timeout}) async {
     return _executeTask(
-      (url) => http.post(Uri.parse('$url${(path ?? '')}'), body: body, headers: _mergedHeaders(headers)),
+      (url) => http.post(_buildSafeUri(url, path ?? ''), body: body, headers: _mergedHeaders(headers)),
       timeout: timeout,
     );
+  }
+
+  /// Builds a safe URI by properly resolving the path against the base URL.
+  /// 
+  /// This prevents SSRF attacks where a malicious path like `@attacker.example/path`
+  /// could change the request authority via userinfo syntax.
+  /// 
+  /// Throws [ArgumentError] if the path attempts to override the host.
+  static Uri _buildSafeUri(String baseUrl, String path) {
+    return buildSafeUriForTest(baseUrl, path);
+  }
+
+  /// Exposed for testing. See [_buildSafeUri].
+  @visibleForTesting
+  static Uri buildSafeUriForTest(String baseUrl, String path) {
+    final base = Uri.parse(baseUrl);
+    
+    // Reject paths that could change the authority (SSRF prevention).
+    // These patterns can trick URI parsers into connecting to different hosts:
+    // - `@host` (userinfo syntax)
+    // - `//host` (protocol-relative)
+    // - Absolute URLs
+    if (path.contains('@') || 
+        path.startsWith('//') || 
+        path.contains('://') ||
+        (path.isNotEmpty && !path.startsWith('/') && !path.startsWith('?'))) {
+      // For paths that don't start with / or ?, ensure they're relative by prepending /
+      if (!path.startsWith('/') && !path.startsWith('?') && !path.contains('@') && !path.contains('://')) {
+        path = '/$path';
+      } else if (path.contains('@') || path.startsWith('//') || path.contains('://')) {
+        throw ArgumentError('Invalid path: contains authority-changing characters: $path');
+      }
+    }
+    
+    // Use Uri.resolve for safe path resolution that preserves the base authority.
+    // Ensure base URL ends with / for proper resolution.
+    final normalizedBase = base.path.isEmpty || base.path.endsWith('/') 
+        ? base 
+        : base.replace(path: '${base.path}/');
+    
+    final resolved = normalizedBase.resolve(path);
+    
+    // Final safety check: verify the resolved host matches the original.
+    if (resolved.host != base.host) {
+      throw ArgumentError('Path resolution changed host from ${base.host} to ${resolved.host}');
+    }
+    
+    return resolved;
   }
 }
