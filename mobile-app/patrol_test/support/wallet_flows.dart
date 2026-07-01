@@ -9,6 +9,18 @@ import 'test_env.dart';
 class WalletFlows {
   WalletFlows._();
 
+  /// Creates a new wallet from the welcome screen and waits for home.
+  static Future<void> createFromWelcome(PatrolIntegrationTester $) async {
+    expect($(Selectors.welcomeScreen), findsOneWidget);
+
+    await $(Selectors.welcomeCreateWalletButton).tap();
+
+    await $(Selectors.accountReadyDoneButton).waitUntilVisible(timeout: PatrolTimeouts.network);
+    await $(Selectors.accountReadyDoneButton).tap();
+
+    await $(Selectors.homeScreen).waitUntilVisible(timeout: PatrolTimeouts.network);
+  }
+
   /// Imports a wallet from the welcome screen and waits for home.
   static Future<void> importFromWelcome(PatrolIntegrationTester $) async {
     expect($(Selectors.welcomeScreen), findsOneWidget);

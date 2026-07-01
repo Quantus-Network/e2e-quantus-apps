@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
+import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_caution_scaffold.dart';
@@ -46,13 +47,17 @@ class _RecoveryPhraseConfirmationScreenState extends ConsumerState<RecoveryPhras
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
 
-    return SettingsCautionScaffold(
-      appBarTitle: l10n.settingsRecoveryPhraseTitle,
-      data: SettingsCautionScaffoldData.recoveryPhrase(l10n),
-      continueLabel: l10n.commonContinue,
-      onContinue: _onContinue,
-      secondaryLabel: widget.showAlreadyBackedUp ? l10n.settingsRecoveryAlreadyBackedUp : null,
-      onSecondary: widget.showAlreadyBackedUp ? _onAlreadyBackedUp : null,
+    return KeyedSubtree(
+      key: const Key(E2EKeys.recoveryPhraseConfirmScreen),
+      child: SettingsCautionScaffold(
+        appBarTitle: l10n.settingsRecoveryPhraseTitle,
+        data: SettingsCautionScaffoldData.recoveryPhrase(l10n),
+        continueLabel: l10n.commonContinue,
+        continueButtonKey: const Key(E2EKeys.recoveryPhraseConfirmContinueButton),
+        onContinue: _onContinue,
+        secondaryLabel: widget.showAlreadyBackedUp ? l10n.settingsRecoveryAlreadyBackedUp : null,
+        onSecondary: widget.showAlreadyBackedUp ? _onAlreadyBackedUp : null,
+      ),
     );
   }
 }
