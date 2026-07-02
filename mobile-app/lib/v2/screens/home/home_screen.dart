@@ -328,6 +328,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
 
     final sendCard = _actionCard(
+      key: const Key(E2EKeys.homeSendButton),
       iconAsset: 'assets/v2/action_send.svg',
       label: l10n.homeSend,
       onTap: () => Navigator.push(
@@ -379,9 +380,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _actionCard({required String iconAsset, required String label, required VoidCallback onTap}) {
+  Widget _actionCard({Key? key, required String iconAsset, required String label, required VoidCallback onTap}) {
     return Expanded(
       child: QuantusButton.simple(
+        key: key,
         label: label,
         onTap: onTap,
         icon: SvgPicture.asset(iconAsset, width: 24, height: 24),

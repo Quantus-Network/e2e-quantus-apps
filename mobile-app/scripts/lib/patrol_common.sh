@@ -79,9 +79,6 @@ patrol_collect_dart_defines() {
   if [[ -f .env.test ]]; then
     echo "==> Injecting test secrets from .env.test"
     DART_DEFINES+=(--dart-define-from-file=.env.test)
-  elif [[ -n "${TEST_IMPORT_MNEMONIC:-}" ]]; then
-    echo "==> Injecting test secrets from environment"
-    DART_DEFINES+=(--dart-define=TEST_IMPORT_MNEMONIC="$TEST_IMPORT_MNEMONIC")
   else
     echo "WARNING: no .env.test file and TEST_IMPORT_MNEMONIC is unset;" \
          "tests that need a seed phrase (e.g. import_wallet) will fail." >&2

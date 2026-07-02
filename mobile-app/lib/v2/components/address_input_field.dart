@@ -18,6 +18,7 @@ class AddressInputField extends StatelessWidget {
   final Widget? trailing;
   final int addressPrefix;
   final int addressPostfix;
+  final Key? fieldKey;
 
   const AddressInputField({
     super.key,
@@ -29,6 +30,7 @@ class AddressInputField extends StatelessWidget {
     this.trailing,
     this.addressPrefix = 16,
     this.addressPostfix = 16,
+    this.fieldKey,
   });
 
   @override
@@ -52,6 +54,7 @@ class AddressInputField extends StatelessWidget {
                     children: [
                       Expanded(
                         child: TextField(
+                          key: fieldKey,
                           controller: controller,
                           focusNode: focusNode,
                           keyboardType: TextInputType.text,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
 import 'package:resonance_network_wallet/v2/components/explorer_link.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
@@ -40,6 +41,7 @@ class SendTerminalScreen extends ConsumerWidget {
         _popToHome(context);
       },
       child: ScaffoldBase(
+        key: const Key(E2EKeys.sendTxSubmittedScreen),
         appBar: V2AppBar(
           title: content.title,
           leading: AppBackButton(onTap: () => _popToHome(context)),
@@ -120,6 +122,7 @@ class SendTerminalScreen extends ConsumerWidget {
         ),
         bottomContent: ScaffoldBaseBottomContent(
           child: QuantusButton.simple(
+            key: const Key(E2EKeys.sendTxSubmittedDoneButton),
             label: content.doneLabel,
             variant: ButtonVariant.primary,
             onTap: () => _popToHome(context),

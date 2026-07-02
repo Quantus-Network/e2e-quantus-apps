@@ -20,4 +20,20 @@ class Selectors {
   static const Key importWalletButton = Key(E2EKeys.importWalletButton);
 
   static const Key homeScreen = Key(E2EKeys.homeScreen);
+  static const Key homeSendButton = Key(E2EKeys.homeSendButton);
+  static const Key homePendingSendActivityItem = Key(E2EKeys.homePendingSendActivityItem);
+
+  static const Key sendSelectRecipientScreen = Key(E2EKeys.sendSelectRecipientScreen);
+  static const Key sendRecipientField = Key(E2EKeys.sendRecipientField);
+  static const Key sendContinueButton = Key(E2EKeys.sendContinueButton);
+
+  static const Key sendInputAmountScreen = Key(E2EKeys.sendInputAmountScreen);
+  static const Key sendAmountField = Key(E2EKeys.sendAmountField);
+  static const Key sendReviewButton = Key(E2EKeys.sendReviewButton);
+
+  static const Key sendReviewScreen = Key(E2EKeys.sendReviewScreen);
+  static const Key sendConfirmButton = Key(E2EKeys.sendConfirmButton);
+
+  static const Key sendTxSubmittedScreen = Key(E2EKeys.sendTxSubmittedScreen);
+  static const Key sendTxSubmittedDoneButton = Key(E2EKeys.sendTxSubmittedDoneButton);
 }

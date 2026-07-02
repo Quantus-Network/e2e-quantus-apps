@@ -329,11 +329,13 @@ Widget buildTxItem(
   AppLocalizations l10n, {
   required String formattedAmount,
   required bool isLastItem,
+  Key? itemKey,
   VoidCallback? onTap,
 }) {
   final directionLabel = data.counterpartyDirectionLabel ?? (data.isSend ? l10n.activityTxTo : l10n.activityTxFrom);
 
   return GestureDetector(
+    key: itemKey,
     onTap: onTap,
     behavior: HitTestBehavior.opaque,
     child: Column(

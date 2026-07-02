@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/routes.dart';
+import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
 import 'package:resonance_network_wallet/v2/components/address_input_field.dart';
@@ -202,6 +203,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     final text = context.themeText;
 
     return ScaffoldBase(
+      key: const Key(E2EKeys.sendSelectRecipientScreen),
       appBar: V2AppBar(title: strings.flowTitle),
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -273,6 +275,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     return AddressInputField(
       controller: _recipientController,
       focusNode: _recipientFocus,
+      fieldKey: const Key(E2EKeys.sendRecipientField),
       hasValid: hasValid,
       recipientChecksum: _recipientChecksum,
       hintText: l10n.sendSelectRecipientSearchHint(AppConstants.tokenSymbol),
@@ -354,6 +357,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
 
     return ScaffoldBaseBottomContent(
       child: QuantusButton.simple(
+        key: const Key(E2EKeys.sendContinueButton),
         label: btnText,
         variant: ButtonVariant.primary,
         isDisabled: !_canContinue,

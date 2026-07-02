@@ -21,4 +21,20 @@ class E2EKeys {
   static const String importWalletButton = 'import_wallet_button';
 
   static const String homeScreen = 'home_screen';
+  static const String homeSendButton = 'home_send_button';
+  static const String homePendingSendActivityItem = 'home_pending_send_activity_item';
+
+  static const String sendSelectRecipientScreen = 'send_select_recipient_screen';
+  static const String sendRecipientField = 'send_recipient_field';
+  static const String sendContinueButton = 'send_continue_button';
+
+  static const String sendInputAmountScreen = 'send_input_amount_screen';
+  static const String sendAmountField = 'send_amount_field';
+  static const String sendReviewButton = 'send_review_button';
+
+  static const String sendReviewScreen = 'send_review_screen';
+  static const String sendConfirmButton = 'send_confirm_button';
+
+  static const String sendTxSubmittedScreen = 'send_tx_submitted_screen';
+  static const String sendTxSubmittedDoneButton = 'send_tx_submitted_done_button';
 }
