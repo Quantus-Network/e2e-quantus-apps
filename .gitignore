@@ -2,6 +2,7 @@
 *.class
 *.lock
 !pubspec.lock
+!Cargo.lock
 *.log
 *.pyc
 *.swp
