@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
@@ -97,16 +98,51 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
     );
   }
 
+  Widget _transactionDetails(AppColorsV2 colors, AppTextTheme text, CurrencyDisplayState amountDisplay) {
+    return Column(
+      children: [
+        Text(
+          '${amountDisplay.primaryAmount} ${AppConstants.tokenSymbol}',
+          style: text.smallTitle?.copyWith(color: colors.textPrimary),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          widget.recipientAddress.trim(),
+          style: text.detail?.copyWith(
+            color: colors.textMuted,
+            fontFamily: AppTextTheme.fontFamilySecondary,
+            fontSize: 12,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          widget.recipientChecksum,
+          style: text.smallParagraph?.copyWith(color: colors.checksum, height: 1.2),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
+    final amountDisplay = ref.watch(txAmountDisplayProvider)(
+      widget.amount,
+      isSend: true,
+      withSignPrefix: false,
+      withQuanSymbol: false,
+      quanDecimals: 4,
+    );
 
     return ScaffoldBase(
       appBar: V2AppBar(title: widget.isPayMode ? l10n.sendPayTitle : l10n.sendTitle),
       mainContent: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 8),
           Text(l10n.keystoneSignTitle, style: text.smallTitle, textAlign: TextAlign.center),
@@ -116,7 +152,9 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
             style: text.smallParagraph?.copyWith(color: colors.textTertiary),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
+          _transactionDetails(colors, text, amountDisplay),
+          const SizedBox(height: 24),
           Expanded(child: Center(child: _buildQr(colors, text))),
         ],
       ),
