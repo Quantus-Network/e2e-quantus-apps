@@ -75,8 +75,15 @@ first_booted_simulator() {
   xcrun simctl list devices booted 2>/dev/null \
     | grep -E '^\s+iPhone' \
     | head -1 \
-    | sed -E 's/^[[:space:]]+([^(]+) \(([A-F0-9-]+)\).*/\1\t\2/' \
-    | sed 's/[[:space:]]*$//'
+    | awk '
+      match($0, /\([A-F0-9-]+\)/) {
+        udid = substr($0, RSTART + 1, RLENGTH - 2)
+        name = substr($0, 1, RSTART - 2)
+        sub(/^[[:space:]]+/, "", name)
+        sub(/[[:space:]]+$/, "", name)
+        print name "\t" udid
+      }
+    '
 }
 
 # Newest installed iOS simulator runtime (e.g. 26.5).
