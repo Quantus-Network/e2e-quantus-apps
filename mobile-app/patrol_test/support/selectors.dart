@@ -21,7 +21,20 @@ class Selectors {
 
   static const Key homeScreen = Key(E2EKeys.homeScreen);
   static const Key homeSendButton = Key(E2EKeys.homeSendButton);
+  static const Key homeSettingsButton = Key(E2EKeys.homeSettingsButton);
   static const Key homePendingSendActivityItem = Key(E2EKeys.homePendingSendActivityItem);
+
+  static const Key settingsScreen = Key(E2EKeys.settingsScreen);
+  static const Key settingsWalletMenuRow = Key(E2EKeys.settingsWalletMenuRow);
+
+  static const Key walletSettingsScreen = Key(E2EKeys.walletSettingsScreen);
+  static const Key walletSettingsRecoveryPhraseRow = Key(E2EKeys.walletSettingsRecoveryPhraseRow);
+
+  static const Key recoveryPhraseConfirmScreen = Key(E2EKeys.recoveryPhraseConfirmScreen);
+  static const Key recoveryPhraseConfirmContinueButton = Key(E2EKeys.recoveryPhraseConfirmContinueButton);
+  static const Key recoveryPhraseScreen = Key(E2EKeys.recoveryPhraseScreen);
+  static const Key recoveryPhraseRevealArea = Key(E2EKeys.recoveryPhraseRevealArea);
+  static const Key recoveryPhraseRevealed = Key(E2EKeys.recoveryPhraseRevealed);
 
   static const Key sendSelectRecipientScreen = Key(E2EKeys.sendSelectRecipientScreen);
   static const Key sendRecipientField = Key(E2EKeys.sendRecipientField);

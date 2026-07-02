@@ -22,7 +22,20 @@ class E2EKeys {
 
   static const String homeScreen = 'home_screen';
   static const String homeSendButton = 'home_send_button';
+  static const String homeSettingsButton = 'home_settings_button';
   static const String homePendingSendActivityItem = 'home_pending_send_activity_item';
+
+  static const String settingsScreen = 'settings_screen';
+  static const String settingsWalletMenuRow = 'settings_wallet_menu_row';
+
+  static const String walletSettingsScreen = 'wallet_settings_screen';
+  static const String walletSettingsRecoveryPhraseRow = 'wallet_settings_recovery_phrase_row';
+
+  static const String recoveryPhraseConfirmScreen = 'recovery_phrase_confirm_screen';
+  static const String recoveryPhraseConfirmContinueButton = 'recovery_phrase_confirm_continue_button';
+  static const String recoveryPhraseScreen = 'recovery_phrase_screen';
+  static const String recoveryPhraseRevealArea = 'recovery_phrase_reveal_area';
+  static const String recoveryPhraseRevealed = 'recovery_phrase_revealed';
 
   static const String sendSelectRecipientScreen = 'send_select_recipient_screen';
   static const String sendRecipientField = 'send_recipient_field';

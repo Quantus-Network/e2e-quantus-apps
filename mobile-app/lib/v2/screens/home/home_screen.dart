@@ -277,6 +277,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             const SizedBox(width: 12),
             QuantusIconButton.circular(
+              key: const Key(E2EKeys.homeSettingsButton),
               style: IconButtonStyle.glass,
               icon: Icons.settings_outlined,
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreenV2())),

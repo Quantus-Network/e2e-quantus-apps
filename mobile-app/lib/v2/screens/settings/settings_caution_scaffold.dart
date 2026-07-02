@@ -48,6 +48,7 @@ class SettingsCautionScaffold extends StatelessWidget {
   final bool continueButtonLoading;
   final String? secondaryLabel;
   final VoidCallback? onSecondary;
+  final Key? continueButtonKey;
 
   const SettingsCautionScaffold({
     super.key,
@@ -61,6 +62,7 @@ class SettingsCautionScaffold extends StatelessWidget {
     this.continueButtonLoading = false,
     this.secondaryLabel,
     this.onSecondary,
+    this.continueButtonKey,
   });
 
   @override
@@ -96,6 +98,7 @@ class SettingsCautionScaffold extends StatelessWidget {
         continueButtonLoading: continueButtonLoading,
         secondaryLabel: secondaryLabel,
         onSecondary: onSecondary,
+        continueButtonKey: continueButtonKey,
       ),
     );
   }
@@ -111,6 +114,7 @@ class _SettingsCautionBottom extends StatelessWidget {
     required this.continueButtonLoading,
     required this.secondaryLabel,
     required this.onSecondary,
+    this.continueButtonKey,
   });
 
   final String? checkboxLabel;
@@ -121,6 +125,7 @@ class _SettingsCautionBottom extends StatelessWidget {
   final bool continueButtonLoading;
   final String? secondaryLabel;
   final VoidCallback? onSecondary;
+  final Key? continueButtonKey;
 
   @override
   Widget build(BuildContext context) {
@@ -133,6 +138,7 @@ class _SettingsCautionBottom extends StatelessWidget {
             const SizedBox(height: 32),
           ],
           QuantusButton.simple(
+            key: continueButtonKey,
             label: continueLabel,
             onTap: onContinue,
             variant: ButtonVariant.primary,
