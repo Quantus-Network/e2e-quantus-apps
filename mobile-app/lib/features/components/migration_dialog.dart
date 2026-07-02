@@ -106,7 +106,9 @@ class _MigrationDialogState extends ConsumerState<MigrationDialog> {
           if (_errorMessage != null || successCount == 0) ...[
             const SizedBox(height: 12),
             QuantusButton.simple(
-              label: successCount == 0 && _errorMessage == null ? l10n.migrationDialogSkip : l10n.migrationDialogTryLater,
+              label: successCount == 0 && _errorMessage == null
+                  ? l10n.migrationDialogSkip
+                  : l10n.migrationDialogTryLater,
               variant: ButtonVariant.transparent,
               onTap: () async {
                 if (widget.onTryLater != null) await widget.onTryLater!();
