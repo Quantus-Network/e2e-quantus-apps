@@ -26,6 +26,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
   bool _loading = true;
   bool _walletExists = false;
   bool _needsMigration = false;
+  bool _hasMigrationFailures = false;
   List<MigrationResult>? _migrationResults;
   final SettingsService _settingsService = SettingsService();
   late final MigrationService _migrationService;
@@ -161,12 +162,31 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
       }
 
       _reloadAccounts();
-      // Migration completed successfully. Update state to show the main app.
+      // Migration attempted. Update state to show the main app.
+      // Track if there were failures so we can indicate incomplete migration.
       setState(() {
         _needsMigration = false;
+        _hasMigrationFailures = failures.isNotEmpty;
         _walletExists = true;
         _loading = false;
       });
+      
+      // Notify user if some accounts couldn't be migrated
+      if (failures.isNotEmpty && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '${failures.length} account(s) could not be migrated. '
+                  'Migration will retry on next app launch.',
+                ),
+                duration: const Duration(seconds: 5),
+              ),
+            );
+          }
+        });
+      }
     } catch (e) {
       quantusDebugPrint('migration error: $e');
       rethrow;
@@ -179,9 +199,10 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
     await _settingsService.setAccountsToMigrate(oldAccounts);
 
     // Proceed with local migration immediately
+    List<MigrationFailure> failures = [];
     if (_migrationResults != null) {
       try {
-        await _migrationService.performMigration(_migrationResults!);
+        failures = await _migrationService.performMigration(_migrationResults!);
       } catch (e, stackTrace) {
         quantusDebugPrint('error in tryLater: $e');
         quantusDebugPrint('stack trace: $stackTrace');
@@ -195,6 +216,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
     if (!mounted) return;
     setState(() {
       _needsMigration = false;
+      _hasMigrationFailures = failures.isNotEmpty;
       _walletExists = true;
       _loading = false;
     });
