@@ -1,4 +1,5 @@
 import 'package:convert/convert.dart';
+import 'package:flutter/foundation.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:ss58/ss58.dart';
 
@@ -89,7 +90,7 @@ class HdWalletService {
       if (!allowDevMnemonics) {
         throw DevMnemonicNotAllowedException(mnemonic);
       }
-      print('WARNING: Using development mnemonic with publicly known private keys');
+      debugPrint('WARNING: Using development mnemonic with publicly known private keys');
       return devKeypair();
     }
     
