@@ -13,6 +13,7 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_scan_signature_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -58,12 +59,28 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
   }
 
   Future<void> _prepare() async {
+    final cacheKey = KeystoneSignCacheKey.fromSendParams(
+      accountId: widget.account.accountId,
+      recipientAddress: widget.recipientAddress,
+      amount: widget.amount,
+    );
+    final cached = ref.read(keystoneSignCacheProvider.notifier).lookup(cacheKey);
+    if (cached != null) {
+      if (!mounted) return;
+      setState(() {
+        _unsignedData = cached.unsignedData;
+        _urParts = cached.urParts;
+      });
+      return;
+    }
+
     try {
       final substrate = ref.read(substrateServiceProvider);
       final call = ref.read(balancesServiceProvider).getBalanceTransferCall(widget.recipientAddress, widget.amount);
       final unsigned = await substrate.getUnsignedTransactionPayload(widget.account, call);
       final parts = encodeUr(data: unsigned.encodedPayloadRaw);
       if (parts.isEmpty) throw Exception('Failed to encode transaction payload as UR');
+      ref.read(keystoneSignCacheProvider.notifier).store(key: cacheKey, unsignedData: unsigned, urParts: parts);
       if (!mounted) return;
       setState(() {
         _unsignedData = unsigned;
@@ -89,7 +106,7 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
           recipientAddress: widget.recipientAddress,
           amount: widget.amount,
           networkFee: widget.networkFee,
-          blockHeight: widget.blockHeight,
+          blockHeight: unsignedData.payloadToSign.blockNumber,
           recipientChecksum: widget.recipientChecksum,
           isPayMode: widget.isPayMode,
           terminal: widget.terminal,
