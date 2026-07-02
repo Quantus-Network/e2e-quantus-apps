@@ -4,17 +4,8 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 void main() {
   group('MigrationResult sealed class', () {
     test('MigrationSuccess holds account data correctly', () {
-      const oldAccount = Account(
-        walletIndex: 0,
-        index: 1,
-        name: 'Test Account',
-        accountId: 'old_id',
-      );
-      const success = MigrationSuccess(
-        oldAccount: oldAccount,
-        publicKeyHex: 'abc123',
-        newAccountId: 'new_id',
-      );
+      const oldAccount = Account(walletIndex: 0, index: 1, name: 'Test Account', accountId: 'old_id');
+      const success = MigrationSuccess(oldAccount: oldAccount, publicKeyHex: 'abc123', newAccountId: 'new_id');
 
       expect(success.oldAccount, equals(oldAccount));
       expect(success.publicKeyHex, equals('abc123'));
@@ -22,28 +13,15 @@ void main() {
     });
 
     test('MigrationFailure holds failure reason', () {
-      const oldAccount = Account(
-        walletIndex: 1,
-        index: 0,
-        name: 'Failed Account',
-        accountId: 'old_id',
-      );
-      const failure = MigrationFailure(
-        oldAccount: oldAccount,
-        reason: 'No mnemonic found for wallet 1',
-      );
+      const oldAccount = Account(walletIndex: 1, index: 0, name: 'Failed Account', accountId: 'old_id');
+      const failure = MigrationFailure(oldAccount: oldAccount, reason: 'No mnemonic found for wallet 1');
 
       expect(failure.oldAccount, equals(oldAccount));
       expect(failure.reason, equals('No mnemonic found for wallet 1'));
     });
 
     test('pattern matching works on MigrationResult', () {
-      const oldAccount = Account(
-        walletIndex: 0,
-        index: 0,
-        name: 'Test',
-        accountId: 'test_id',
-      );
+      const oldAccount = Account(walletIndex: 0, index: 0, name: 'Test', accountId: 'test_id');
 
       const MigrationResult success = MigrationSuccess(
         oldAccount: oldAccount,
@@ -51,10 +29,7 @@ void main() {
         newAccountId: 'new_id',
       );
 
-      const MigrationResult failure = MigrationFailure(
-        oldAccount: oldAccount,
-        reason: 'test error',
-      );
+      const MigrationResult failure = MigrationFailure(oldAccount: oldAccount, reason: 'test error');
 
       String describeResult(MigrationResult result) {
         return switch (result) {
@@ -71,30 +46,12 @@ void main() {
   group('MigrationService wallet index handling', () {
     test('accounts from different wallets should preserve their walletIndex', () {
       // This test verifies the design: accounts should keep their original walletIndex
-      const account0 = Account(
-        walletIndex: 0,
-        index: 0,
-        name: 'Wallet 0 Account',
-        accountId: 'w0_a0',
-      );
-      const account1 = Account(
-        walletIndex: 1,
-        index: 0,
-        name: 'Wallet 1 Account',
-        accountId: 'w1_a0',
-      );
+      const account0 = Account(walletIndex: 0, index: 0, name: 'Wallet 0 Account', accountId: 'w0_a0');
+      const account1 = Account(walletIndex: 1, index: 0, name: 'Wallet 1 Account', accountId: 'w1_a0');
 
       // Simulating what getMigrationData should produce
-      const success0 = MigrationSuccess(
-        oldAccount: account0,
-        publicKeyHex: 'hex0',
-        newAccountId: 'new_w0_a0',
-      );
-      const success1 = MigrationSuccess(
-        oldAccount: account1,
-        publicKeyHex: 'hex1',
-        newAccountId: 'new_w1_a0',
-      );
+      const success0 = MigrationSuccess(oldAccount: account0, publicKeyHex: 'hex0', newAccountId: 'new_w0_a0');
+      const success1 = MigrationSuccess(oldAccount: account1, publicKeyHex: 'hex1', newAccountId: 'new_w1_a0');
 
       // Verify wallet indices are preserved in the success results
       expect(success0.oldAccount.walletIndex, equals(0));
@@ -156,17 +113,8 @@ void main() {
 
   group('MigrationAccountData backward compatibility', () {
     test('fromSuccess factory creates equivalent data', () {
-      const oldAccount = Account(
-        walletIndex: 0,
-        index: 0,
-        name: 'Test',
-        accountId: 'old_id',
-      );
-      const success = MigrationSuccess(
-        oldAccount: oldAccount,
-        publicKeyHex: 'hex123',
-        newAccountId: 'new_id',
-      );
+      const oldAccount = Account(walletIndex: 0, index: 0, name: 'Test', accountId: 'old_id');
+      const success = MigrationSuccess(oldAccount: oldAccount, publicKeyHex: 'hex123', newAccountId: 'new_id');
 
       // ignore: deprecated_member_use_from_same_package
       final legacyData = MigrationAccountData.fromSuccess(success);

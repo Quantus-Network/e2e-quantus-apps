@@ -23,10 +23,10 @@ class ConnectivityService {
     _initialized = true;
 
     final initialResult = await _connectivity.checkConnectivity();
-    
+
     // Check if disposed while awaiting
     if (_disposed) return;
-    
+
     _updateStatus(initialResult, emitInitial: true);
 
     _subscription = _connectivity.onConnectivityChanged.listen(_onConnectivityChanged, onError: _onError);
@@ -44,7 +44,7 @@ class ConnectivityService {
 
   void _updateStatus(List<ConnectivityResult> results, {bool emitInitial = false}) {
     if (_disposed) return;
-    
+
     final newStatus = results.contains(ConnectivityResult.none) ? NetworkStatus.offline : NetworkStatus.online;
 
     if (emitInitial || newStatus != _currentStatus) {

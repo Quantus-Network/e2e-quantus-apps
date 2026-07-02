@@ -125,7 +125,7 @@ class NumberFormattingService {
       final lastDot = input.lastIndexOf('.');
       return lastComma > lastDot ? LocaleNumberConfig.commaDecimal : LocaleNumberConfig.dotDecimal;
     }
-    
+
     // Single separator - need to disambiguate
     if (hasComma) {
       return _singleSeparatorWireLocale(input, ',');
@@ -133,7 +133,7 @@ class NumberFormattingService {
     if (hasDot) {
       return _singleSeparatorWireLocale(input, '.');
     }
-    
+
     // No separators - default to dot decimal (doesn't matter)
     return LocaleNumberConfig.dotDecimal;
   }
@@ -147,7 +147,7 @@ class NumberFormattingService {
   static LocaleNumberConfig? _singleSeparatorWireLocale(String input, String separator) {
     final first = input.indexOf(separator);
     final last = input.lastIndexOf(separator);
-    
+
     // Multiple occurrences → it's definitely a grouping separator
     if (first != last) {
       // For comma grouping (e.g., "1,000,000"), use dot decimal config
@@ -157,7 +157,7 @@ class NumberFormattingService {
 
     // Single occurrence - check what follows
     final after = input.substring(first + separator.length);
-    
+
     // Trailing separator (e.g., "1,") → treat as decimal
     if (after.isEmpty) {
       return separator == ',' ? LocaleNumberConfig.commaDecimal : LocaleNumberConfig.dotDecimal;

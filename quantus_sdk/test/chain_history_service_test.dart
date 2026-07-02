@@ -7,11 +7,7 @@ void main() {
 
   group('OtherTransfersResult', () {
     test('includes rawRowsConsumed for cursor advancement', () {
-      const result = OtherTransfersResult(
-        transfers: [],
-        hasMore: true,
-        rawRowsConsumed: 10,
-      );
+      const result = OtherTransfersResult(transfers: [], hasMore: true, rawRowsConsumed: 10);
 
       expect(result.rawRowsConsumed, 10);
       expect(result.transfers.length, 0);

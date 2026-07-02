@@ -8,7 +8,8 @@ class UnsupportedAccountTypeForSigningException implements Exception {
   UnsupportedAccountTypeForSigningException(this.accountType);
 
   @override
-  String toString() => 'UnsupportedAccountTypeForSigningException: '
+  String toString() =>
+      'UnsupportedAccountTypeForSigningException: '
       'Account type "${accountType.name}" does not support local signing. '
       'Only "local" and "encrypted" accounts can derive keypairs.';
 }
@@ -19,13 +20,11 @@ class AccountAddressMismatchException implements Exception {
   final String expectedAddress;
   final String derivedAddress;
 
-  AccountAddressMismatchException({
-    required this.expectedAddress,
-    required this.derivedAddress,
-  });
+  AccountAddressMismatchException({required this.expectedAddress, required this.derivedAddress});
 
   @override
-  String toString() => 'AccountAddressMismatchException: '
+  String toString() =>
+      'AccountAddressMismatchException: '
       'Derived address "$derivedAddress" does not match stored accountId "$expectedAddress". '
       'Account data may be corrupted or tampered.';
 }
@@ -67,10 +66,7 @@ extension HDWalletAccount on Account {
 
     // Validate that derived address matches stored accountId
     if (keypair.ss58Address != accountId) {
-      throw AccountAddressMismatchException(
-        expectedAddress: accountId,
-        derivedAddress: keypair.ss58Address,
-      );
+      throw AccountAddressMismatchException(expectedAddress: accountId, derivedAddress: keypair.ss58Address);
     }
 
     return keypair;

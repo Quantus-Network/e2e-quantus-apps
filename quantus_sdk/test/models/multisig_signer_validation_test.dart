@@ -29,17 +29,11 @@ void main() {
     });
 
     test('throws when list is empty', () {
-      expect(
-        () => boundedStringListFromJson([], 'test', maxLength: 5),
-        throwsA(isA<FormatException>()),
-      );
+      expect(() => boundedStringListFromJson([], 'test', maxLength: 5), throwsA(isA<FormatException>()));
     });
 
     test('throws when value is not a list', () {
-      expect(
-        () => boundedStringListFromJson('not a list', 'test', maxLength: 5),
-        throwsA(isA<FormatException>()),
-      );
+      expect(() => boundedStringListFromJson('not a list', 'test', maxLength: 5), throwsA(isA<FormatException>()));
     });
   });
 
@@ -68,11 +62,7 @@ void main() {
       expect(
         () => nonNegativeBigIntFromJson(-1, 'fee'),
         throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            contains('fee must be non-negative (got -1)'),
-          ),
+          isA<FormatException>().having((e) => e.message, 'message', contains('fee must be non-negative (got -1)')),
         ),
       );
     });
@@ -91,10 +81,7 @@ void main() {
     });
 
     test('throws on negative BigInt', () {
-      expect(
-        () => nonNegativeBigIntFromJson(BigInt.from(-999), 'palletFee'),
-        throwsA(isA<FormatException>()),
-      );
+      expect(() => nonNegativeBigIntFromJson(BigInt.from(-999), 'palletFee'), throwsA(isA<FormatException>()));
     });
   });
 
@@ -147,10 +134,7 @@ void main() {
     test('rejects grossly oversized signer array from malicious indexer', () {
       final json = _buildMultisigJson(signerCount: 10000);
 
-      expect(
-        () => MultisigCreatedEvent.fromMultisigGraphql(multisig: json),
-        throwsA(isA<FormatException>()),
-      );
+      expect(() => MultisigCreatedEvent.fromMultisigGraphql(multisig: json), throwsA(isA<FormatException>()));
     });
 
     test('rejects negative fee from malicious indexer', () {
@@ -158,13 +142,7 @@ void main() {
 
       expect(
         () => MultisigCreatedEvent.fromMultisigGraphql(multisig: json),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            contains('fee must be non-negative'),
-          ),
-        ),
+        throwsA(isA<FormatException>().having((e) => e.message, 'message', contains('fee must be non-negative'))),
       );
     });
 
@@ -195,10 +173,7 @@ void main() {
         },
       };
 
-      expect(
-        () => MultisigCreatedEvent.fromAccountEvent(event),
-        throwsA(isA<FormatException>()),
-      );
+      expect(() => MultisigCreatedEvent.fromAccountEvent(event), throwsA(isA<FormatException>()));
     });
 
     test('rejects account event with negative fee', () {
@@ -217,10 +192,7 @@ void main() {
         },
       };
 
-      expect(
-        () => MultisigCreatedEvent.fromAccountEvent(event),
-        throwsA(isA<FormatException>()),
-      );
+      expect(() => MultisigCreatedEvent.fromAccountEvent(event), throwsA(isA<FormatException>()));
     });
   });
 
@@ -241,11 +213,7 @@ void main() {
       expect(
         () => MultisigCreatedEvent.fromMultisigGraphql(multisig: json),
         throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            contains('extrinsic.fee must be non-negative'),
-          ),
+          isA<FormatException>().having((e) => e.message, 'message', contains('extrinsic.fee must be non-negative')),
         ),
       );
     });

@@ -63,12 +63,7 @@ void main() {
       final callRaw = encodeTransferCall(recipient, amount);
 
       final proposal = MultisigProposal.fromIndexerJson(
-        buildProposalRow(
-          proposalId: 1,
-          callRaw: callRaw,
-          transferTo: recipient,
-          transferAmount: amount,
-        ),
+        buildProposalRow(proposalId: 1, callRaw: callRaw, transferTo: recipient, transferAmount: amount),
         msig: msig,
       );
 
@@ -205,12 +200,7 @@ void main() {
       final callRaw = encodeTransferCall(recipient, amount);
 
       final proposal = MultisigProposal.fromIndexerJson(
-        buildProposalRow(
-          proposalId: 6,
-          callRaw: callRaw,
-          transferTo: recipient,
-          transferAmount: amount,
-        ),
+        buildProposalRow(proposalId: 6, callRaw: callRaw, transferTo: recipient, transferAmount: amount),
         msig: msig,
       );
 
@@ -221,26 +211,23 @@ void main() {
       // Encode a non-transfer Balances call (or any non-Balances call)
       // For simplicity, use invalid call bytes that will fail decode
       // but test the logic with a mock non-transfer scenario
-      final proposal = MultisigProposal.fromIndexerJson(
-        {
-          'id': 'proposal-7',
-          'proposal_id': 7,
-          'created_at': '2026-06-04T10:00:00.000Z',
-          'updated_at': '2026-06-04T10:00:00.000Z',
-          'pallet': 'System',
-          'call': 'remark',
-          'call_raw': null, // No call_raw, will result in noCallRaw
-          'transfer_amount': null, // No amount
-          'status': 'ACTIVE',
-          'expiry_block': 12345,
-          'deposit': '500000000000',
-          'approvals': [],
-          'decode_error': null,
-          'proposer': {'id': signerA},
-          'transferTo': null, // No recipient
-        },
-        msig: msig,
-      );
+      final proposal = MultisigProposal.fromIndexerJson({
+        'id': 'proposal-7',
+        'proposal_id': 7,
+        'created_at': '2026-06-04T10:00:00.000Z',
+        'updated_at': '2026-06-04T10:00:00.000Z',
+        'pallet': 'System',
+        'call': 'remark',
+        'call_raw': null, // No call_raw, will result in noCallRaw
+        'transfer_amount': null, // No amount
+        'status': 'ACTIVE',
+        'expiry_block': 12345,
+        'deposit': '500000000000',
+        'approvals': [],
+        'decode_error': null,
+        'proposer': {'id': signerA},
+        'transferTo': null, // No recipient
+      }, msig: msig);
 
       // With no call_raw and no recipient/amount, this is noCallRaw (not verified but not mismatch)
       expect(proposal.verificationStatus, CallVerificationStatus.noCallRaw);
@@ -250,30 +237,27 @@ void main() {
     test('notATransferButIndexerClaimsTransfer when call_raw is not a transfer but indexer shows recipient', () {
       // Create a call_raw that decodes but is NOT a transfer
       // We'll use System::remark which is pallet index 0
-      // System pallet call: remark(Vec<u8>) 
+      // System pallet call: remark(Vec<u8>)
       // Pallet 0, call index 0 (remark), then a Vec<u8> with some data
       final systemRemarkCallRaw = '0x00000474657374'; // System::remark("test")
 
-      final proposal = MultisigProposal.fromIndexerJson(
-        {
-          'id': 'proposal-8',
-          'proposal_id': 8,
-          'created_at': '2026-06-04T10:00:00.000Z',
-          'updated_at': '2026-06-04T10:00:00.000Z',
-          'pallet': 'Balances', // Indexer claims Balances
-          'call': 'transfer_allow_death', // Indexer claims transfer
-          'call_raw': systemRemarkCallRaw, // But actual call is System::remark
-          'transfer_amount': amount.toString(), // Indexer claims an amount
-          'status': 'ACTIVE',
-          'expiry_block': 12345,
-          'deposit': '500000000000',
-          'approvals': [],
-          'decode_error': null,
-          'proposer': {'id': signerA},
-          'transferTo': {'id': recipient}, // Indexer claims a recipient
-        },
-        msig: msig,
-      );
+      final proposal = MultisigProposal.fromIndexerJson({
+        'id': 'proposal-8',
+        'proposal_id': 8,
+        'created_at': '2026-06-04T10:00:00.000Z',
+        'updated_at': '2026-06-04T10:00:00.000Z',
+        'pallet': 'Balances', // Indexer claims Balances
+        'call': 'transfer_allow_death', // Indexer claims transfer
+        'call_raw': systemRemarkCallRaw, // But actual call is System::remark
+        'transfer_amount': amount.toString(), // Indexer claims an amount
+        'status': 'ACTIVE',
+        'expiry_block': 12345,
+        'deposit': '500000000000',
+        'approvals': [],
+        'decode_error': null,
+        'proposer': {'id': signerA},
+        'transferTo': {'id': recipient}, // Indexer claims a recipient
+      }, msig: msig);
 
       // The verification should catch that call_raw is not a transfer but indexer claims it is
       expect(proposal.verificationStatus, CallVerificationStatus.notATransferButIndexerClaimsTransfer);

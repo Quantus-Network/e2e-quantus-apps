@@ -77,7 +77,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
               );
           }
         }
-        
+
         setState(() {
           _needsMigration = true;
           _migrationResults = migrationResults;
@@ -149,15 +149,18 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
 
       // Then perform the actual migration
       final failures = await _migrationService.performMigration(_migrationResults!);
-      
+
       if (failures.isNotEmpty) {
         quantusDebugPrint('Migration completed with ${failures.length} failures');
         for (final failure in failures) {
-          TelemetryService().sendEvent('migration_account_failure', parameters: {
-            'wallet_index': failure.oldAccount.walletIndex.toString(),
-            'account_index': failure.oldAccount.index.toString(),
-            'reason': failure.reason,
-          });
+          TelemetryService().sendEvent(
+            'migration_account_failure',
+            parameters: {
+              'wallet_index': failure.oldAccount.walletIndex.toString(),
+              'account_index': failure.oldAccount.index.toString(),
+              'reason': failure.reason,
+            },
+          );
         }
       }
 
@@ -170,7 +173,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
         _walletExists = true;
         _loading = false;
       });
-      
+
       // Notify user if some accounts couldn't be migrated
       if (failures.isNotEmpty && mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {

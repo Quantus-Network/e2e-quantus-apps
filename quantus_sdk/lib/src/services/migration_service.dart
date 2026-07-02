@@ -18,22 +18,16 @@ sealed class MigrationResult {
 class MigrationSuccess extends MigrationResult {
   final String publicKeyHex;
   final String newAccountId;
-  
-  const MigrationSuccess({
-    required Account oldAccount,
-    required this.publicKeyHex,
-    required this.newAccountId,
-  }) : super(oldAccount);
+
+  const MigrationSuccess({required Account oldAccount, required this.publicKeyHex, required this.newAccountId})
+    : super(oldAccount);
 }
 
 /// Account that cannot be migrated due to missing mnemonic or other error.
 class MigrationFailure extends MigrationResult {
   final String reason;
-  
-  const MigrationFailure({
-    required Account oldAccount,
-    required this.reason,
-  }) : super(oldAccount);
+
+  const MigrationFailure({required Account oldAccount, required this.reason}) : super(oldAccount);
 }
 
 class MigrationService {
@@ -48,17 +42,17 @@ class MigrationService {
   }
 
   /// Get migration data including old accounts with their public keys.
-  /// 
+  ///
   /// Returns a list of [MigrationResult] where each item is either:
   /// - [MigrationSuccess]: Account can be migrated with the derived address
   /// - [MigrationFailure]: Account cannot be migrated (e.g., missing mnemonic)
-  /// 
+  ///
   /// This method respects each account's [walletIndex] and [accountType],
   /// using the correct mnemonic and derivation path for each account.
   Future<List<MigrationResult>> getMigrationData() async {
     final oldAccounts = _settingsService.getOldAccounts();
     final migrationResults = <MigrationResult>[];
-    
+
     // Cache mnemonics by wallet index to avoid repeated secure storage reads
     final mnemonicCache = <int, String?>{};
 
@@ -70,21 +64,19 @@ class MigrationService {
           mnemonicCache[walletIndex] = await _settingsService.getMnemonic(walletIndex);
         }
         final mnemonic = mnemonicCache[walletIndex];
-        
+
         if (mnemonic == null) {
-          migrationResults.add(MigrationFailure(
-            oldAccount: account,
-            reason: 'No mnemonic found for wallet $walletIndex',
-          ));
+          migrationResults.add(
+            MigrationFailure(oldAccount: account, reason: 'No mnemonic found for wallet $walletIndex'),
+          );
           continue;
         }
 
         // Derive keypair based on account type
         final String publicKeyHex;
         final String newAccountId;
-        
-        if (account.accountType == AccountType.encrypted ||
-            account.index == AppConstants.encryptedAccountIndex) {
+
+        if (account.accountType == AccountType.encrypted || account.index == AppConstants.encryptedAccountIndex) {
           // Encrypted/wormhole accounts use a different derivation path
           final wormholeKeyPair = _hdWalletService.deriveWormholeKeyPair(
             mnemonic: mnemonic,
@@ -100,16 +92,11 @@ class MigrationService {
           newAccountId = crypto.toAccountId(obj: keypair);
         }
 
-        migrationResults.add(MigrationSuccess(
-          oldAccount: account,
-          publicKeyHex: publicKeyHex,
-          newAccountId: newAccountId,
-        ));
+        migrationResults.add(
+          MigrationSuccess(oldAccount: account, publicKeyHex: publicKeyHex, newAccountId: newAccountId),
+        );
       } catch (e) {
-        migrationResults.add(MigrationFailure(
-          oldAccount: account,
-          reason: 'Derivation error: $e',
-        ));
+        migrationResults.add(MigrationFailure(oldAccount: account, reason: 'Derivation error: $e'));
       }
     }
 
@@ -117,15 +104,15 @@ class MigrationService {
   }
 
   /// Perform the migration by creating new accounts and clearing old data.
-  /// 
+  ///
   /// Only accounts with [MigrationSuccess] results are migrated.
   /// Accounts with [MigrationFailure] are skipped but their failure is logged.
-  /// 
+  ///
   /// Returns the list of accounts that failed to migrate (if any).
   Future<List<MigrationFailure>> performMigration(List<MigrationResult> migrationResults) async {
     final newAccounts = <Account>[];
     final failures = <MigrationFailure>[];
-    
+
     for (final result in migrationResults) {
       switch (result) {
         case MigrationSuccess(:final oldAccount, :final newAccountId):
@@ -148,7 +135,7 @@ class MigrationService {
           );
 
           newAccounts.add(newAccount);
-          
+
         case MigrationFailure(:final oldAccount, :final reason):
           print(
             'performMigration SKIPPED: \n'
@@ -166,7 +153,7 @@ class MigrationService {
       await _settingsService.saveAccounts(newAccounts);
       await _settingsService.setActiveAccount(RegularAccount(newAccounts.first));
     }
-    
+
     // Only clear old accounts if all migrations succeeded
     // This prevents data loss when some accounts couldn't be migrated
     if (failures.isEmpty) {
@@ -177,7 +164,7 @@ class MigrationService {
         'Old accounts NOT cleared to prevent data loss.',
       );
     }
-    
+
     return failures;
   }
 
@@ -221,12 +208,8 @@ class MigrationAccountData {
   final String publicKeyHex;
   final String newAccountId;
 
-  const MigrationAccountData({
-    required this.oldAccount,
-    required this.publicKeyHex,
-    required this.newAccountId,
-  });
-  
+  const MigrationAccountData({required this.oldAccount, required this.publicKeyHex, required this.newAccountId});
+
   /// Convert from [MigrationSuccess] for backward compatibility.
   factory MigrationAccountData.fromSuccess(MigrationSuccess success) {
     return MigrationAccountData(

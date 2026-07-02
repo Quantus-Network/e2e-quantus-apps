@@ -30,11 +30,7 @@ class HighSecurityService {
     String guardianAccountId,
     Duration safeguardDuration,
   ) async {
-    return await _reversibleTransfersService.getHighSecuritySetupFee(
-      account,
-      guardianAccountId,
-      safeguardDuration,
-    );
+    return await _reversibleTransfersService.getHighSecuritySetupFee(account, guardianAccountId, safeguardDuration);
   }
 
   Future<bool> isHighSecurity(Account account) async {
@@ -72,13 +68,9 @@ class HighSecurityService {
     if (hsData != null) {
       final accountId = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(hsData.guardian));
       final SafeguardDelay delay = switch (hsData.delay) {
-        qp.Timestamp timestamp => TimestampDelay(
-            DurationToTimestampExtension.fromQpTimestamp(timestamp),
-          ),
+        qp.Timestamp timestamp => TimestampDelay(DurationToTimestampExtension.fromQpTimestamp(timestamp)),
         qp.BlockNumber blockNumber => BlockNumberDelay(blockNumber.value0),
-        _ => throw StateError(
-            'Unknown delay type: ${hsData.delay.runtimeType}',
-          ),
+        _ => throw StateError('Unknown delay type: ${hsData.delay.runtimeType}'),
       };
       return HighSecurityData(guardianAccountId: accountId, delay: delay);
     } else {
@@ -96,7 +88,7 @@ class HighSecurityService {
   /// This is an atomic operation that either succeeds completely or fails completely.
   Future<Uint8List> pullAllFunds(String lostAccountAddress, Account guardianAccount) async {
     print('pullAllFunds: $lostAccountAddress, guardian: ${guardianAccount.accountId}');
-    
+
     final call = _getRecoverFundsCall(lostAccountAddress);
     return await _substrateService.submitExtrinsic(guardianAccount, call);
   }
@@ -110,7 +102,7 @@ class HighSecurityService {
   ReversibleTransfers _getRecoverFundsCall(String lostAccountAddress) {
     final quantusApi = Planck(_substrateService.provider!);
     final lostAccountId = crypto.ss58ToAccountId(s: lostAccountAddress);
-    
+
     return quantusApi.tx.reversibleTransfers.recoverFunds(account: lostAccountId);
   }
 }

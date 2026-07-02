@@ -24,7 +24,8 @@ class MigrationDialog extends StatefulWidget {
       isDismissible: false,
       enableDrag: false,
       constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
-      builder: (ctx) => MigrationDialog(migrationResults: migrationResults, onMigrate: onMigrate, onTryLater: onTryLater),
+      builder: (ctx) =>
+          MigrationDialog(migrationResults: migrationResults, onMigrate: onMigrate, onTryLater: onTryLater),
     );
   }
 
@@ -87,20 +88,24 @@ class _MigrationDialogState extends State<MigrationDialog> {
           QuantusButton.simple(
             label: _errorMessage != null ? 'Retry' : 'Migrate Accounts',
             isLoading: _isMigrating,
-            onTap: successCount == 0 ? null : () async {
-              setState(() => _isMigrating = true);
-              try {
-                await widget.onMigrate();
-                // ignore: use_build_context_synchronously
-                if (mounted) Navigator.of(context).pop();
-              } catch (e) {
-                if (mounted) {
-                  setState(() => _errorMessage = 'We couldn\'t upload migration data. Please retry or try later.');
-                }
-              } finally {
-                if (mounted) setState(() => _isMigrating = false);
-              }
-            },
+            onTap: successCount == 0
+                ? null
+                : () async {
+                    setState(() => _isMigrating = true);
+                    try {
+                      await widget.onMigrate();
+                      // ignore: use_build_context_synchronously
+                      if (mounted) Navigator.of(context).pop();
+                    } catch (e) {
+                      if (mounted) {
+                        setState(
+                          () => _errorMessage = 'We couldn\'t upload migration data. Please retry or try later.',
+                        );
+                      }
+                    } finally {
+                      if (mounted) setState(() => _isMigrating = false);
+                    }
+                  },
           ),
           // Show "Try later" when there's an error OR when there are no migratable accounts
           if (_errorMessage != null || successCount == 0) ...[

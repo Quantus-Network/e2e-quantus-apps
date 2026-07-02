@@ -73,8 +73,13 @@ void main() {
 
       expect(
         () => account.getKeypair(),
-        throwsA(isA<UnsupportedAccountTypeForSigningException>()
-            .having((e) => e.accountType, 'accountType', AccountType.keystone)),
+        throwsA(
+          isA<UnsupportedAccountTypeForSigningException>().having(
+            (e) => e.accountType,
+            'accountType',
+            AccountType.keystone,
+          ),
+        ),
       );
     });
 
@@ -89,8 +94,13 @@ void main() {
 
       expect(
         () => account.getKeypair(),
-        throwsA(isA<UnsupportedAccountTypeForSigningException>()
-            .having((e) => e.accountType, 'accountType', AccountType.external)),
+        throwsA(
+          isA<UnsupportedAccountTypeForSigningException>().having(
+            (e) => e.accountType,
+            'accountType',
+            AccountType.external,
+          ),
+        ),
       );
     });
 
@@ -109,8 +119,13 @@ void main() {
 
       expect(
         () => account.getKeypair(),
-        throwsA(isA<UnsupportedAccountTypeForSigningException>()
-            .having((e) => e.accountType, 'accountType', AccountType.encrypted)),
+        throwsA(
+          isA<UnsupportedAccountTypeForSigningException>().having(
+            (e) => e.accountType,
+            'accountType',
+            AccountType.encrypted,
+          ),
+        ),
       );
     });
   });
@@ -132,9 +147,11 @@ void main() {
 
       expect(
         () => tamperedAccount.getKeypair(),
-        throwsA(isA<AccountAddressMismatchException>()
-            .having((e) => e.expectedAddress, 'expectedAddress', keypairIndex1.ss58Address)
-            .having((e) => e.derivedAddress, 'derivedAddress', keypairIndex0.ss58Address)),
+        throwsA(
+          isA<AccountAddressMismatchException>()
+              .having((e) => e.expectedAddress, 'expectedAddress', keypairIndex1.ss58Address)
+              .having((e) => e.derivedAddress, 'derivedAddress', keypairIndex0.ss58Address),
+        ),
       );
     });
 
@@ -169,10 +186,7 @@ void main() {
         'accountType': AccountType.local.name,
       });
 
-      expect(
-        () => tamperedAccount.getKeypair(),
-        throwsA(isA<AccountAddressMismatchException>()),
-      );
+      expect(() => tamperedAccount.getKeypair(), throwsA(isA<AccountAddressMismatchException>()));
     });
   });
 
@@ -189,8 +203,7 @@ void main() {
 
       expect(
         () => account.getKeypair(),
-        throwsA(isA<Exception>()
-            .having((e) => e.toString(), 'message', contains('Mnemonic not found'))),
+        throwsA(isA<Exception>().having((e) => e.toString(), 'message', contains('Mnemonic not found'))),
       );
     });
   });

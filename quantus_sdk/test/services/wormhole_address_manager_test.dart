@@ -27,7 +27,7 @@ void main() {
 
       // Start initialize but don't complete it yet
       final initializeFuture = manager.initialize();
-      
+
       // Clear while initialize is still awaiting
       manager.clear();
       expect(manager.primary, isNull, reason: 'clear() should remove any currently cached key pair');
@@ -37,8 +37,11 @@ void main() {
       await initializeFuture;
 
       // The stale initialize should NOT have restored primary
-      expect(manager.primary, isNull, 
-        reason: 'stale initialize() continuation should not restore primary after clear()');
+      expect(
+        manager.primary,
+        isNull,
+        reason: 'stale initialize() continuation should not restore primary after clear()',
+      );
     });
 
     test('initialize() works normally when not cleared', () async {
@@ -59,7 +62,7 @@ void main() {
     test('multiple clear() calls increment generation correctly', () async {
       final requests = <Completer<String?>>[];
       var requestIndex = 0;
-      
+
       final manager = WormholeAddressManager(
         getMnemonic: () {
           final completer = Completer<String?>();
@@ -72,11 +75,11 @@ void main() {
       // Start first initialize
       final init1 = manager.initialize();
       manager.clear();
-      
+
       // Start second initialize
       final init2 = manager.initialize();
       manager.clear();
-      
+
       // Start third initialize (this one should succeed)
       final init3 = manager.initialize();
 
@@ -84,14 +87,17 @@ void main() {
       requests[0].complete('mnemonic1');
       requests[1].complete('mnemonic2');
       requests[2].complete('mnemonic3');
-      
+
       await init1;
       await init2;
       await init3;
 
       // Only the third initialize should have set primary
       expect(manager.primary, isNotNull);
-      expect(manager.primary!.address, contains('mnemonic3'.runes.fold<int>(0, (sum, rune) => sum + rune).toRadixString(16)));
+      expect(
+        manager.primary!.address,
+        contains('mnemonic3'.runes.fold<int>(0, (sum, rune) => sum + rune).toRadixString(16)),
+      );
     });
   });
 }

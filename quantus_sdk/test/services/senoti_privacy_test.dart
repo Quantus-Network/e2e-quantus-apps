@@ -19,7 +19,7 @@ void main() {
         accountId: 'qzRegularAccount',
         accountType: AccountType.local,
       );
-      
+
       final encryptedAccount = Account(
         walletIndex: 0,
         index: -1,
@@ -27,7 +27,7 @@ void main() {
         accountId: 'qzWormholeAccount',
         accountType: AccountType.encrypted,
       );
-      
+
       final keystoneAccount = Account(
         walletIndex: 1,
         index: 0,
@@ -58,7 +58,7 @@ void main() {
         accountId: 'qzEncrypted',
         accountType: AccountType.encrypted,
       );
-      
+
       expect(encryptedAccount.accountType, AccountType.encrypted);
       expect(encryptedAccount.accountType != AccountType.encrypted, isFalse);
     });

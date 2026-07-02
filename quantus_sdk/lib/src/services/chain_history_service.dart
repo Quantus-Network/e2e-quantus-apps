@@ -14,11 +14,7 @@ class OtherTransfersResult {
   /// rows. Use this to advance pagination cursors, not [transfers.length].
   final int rawRowsConsumed;
 
-  const OtherTransfersResult({
-    required this.transfers,
-    required this.hasMore,
-    required this.rawRowsConsumed,
-  });
+  const OtherTransfersResult({required this.transfers, required this.hasMore, required this.rawRowsConsumed});
 }
 
 class _Page<T> {
@@ -693,11 +689,7 @@ ${MultisigGraphql.cancelledMultisigProposalAccountEventSelection}
 
       final List<dynamic>? events = responseBody['data']?['accountEvents'];
       final page = _pageFromEvents(events, limit, tryParseOtherTransferEvent);
-      return OtherTransfersResult(
-        transfers: page.items,
-        hasMore: page.hasMore,
-        rawRowsConsumed: page.rawRowsConsumed,
-      );
+      return OtherTransfersResult(transfers: page.items, hasMore: page.hasMore, rawRowsConsumed: page.rawRowsConsumed);
     } catch (e, stackTrace) {
       sw.stop();
       printTiming('fetchOtherTransfers FAILED', sw.elapsedMilliseconds);

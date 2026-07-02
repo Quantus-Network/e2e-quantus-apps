@@ -136,7 +136,9 @@ class RedundantEndpointService {
     dynamic lastError;
 
     // Clamp timeout to reasonable bounds.
-    final effectiveTimeout = (timeout ?? defaultTimeout).compareTo(maxTimeout) > 0 ? maxTimeout : (timeout ?? defaultTimeout);
+    final effectiveTimeout = (timeout ?? defaultTimeout).compareTo(maxTimeout) > 0
+        ? maxTimeout
+        : (timeout ?? defaultTimeout);
 
     // Sort endpoints by effective latency before attempting
     _sortServers();
@@ -146,10 +148,9 @@ class RedundantEndpointService {
 
       try {
         // Wrap the task with a timeout to prevent hanging on stalled connections.
-        final result = await task(endpoint.url).timeout(
-          effectiveTimeout,
-          onTimeout: () => throw EndpointTimeoutException(endpoint.url, effectiveTimeout),
-        );
+        final result = await task(
+          endpoint.url,
+        ).timeout(effectiveTimeout, onTimeout: () => throw EndpointTimeoutException(endpoint.url, effectiveTimeout));
 
         // Check for server errors in HTTP responses
         if (result is http.Response && _isServerError(result)) {
@@ -200,10 +201,10 @@ class RedundantEndpointService {
   }
 
   /// Builds a safe URI by properly resolving the path against the base URL.
-  /// 
+  ///
   /// This prevents SSRF attacks where a malicious path like `@attacker.example/path`
   /// could change the request authority via userinfo syntax.
-  /// 
+  ///
   /// Throws [ArgumentError] if the path attempts to override the host.
   static Uri _buildSafeUri(String baseUrl, String path) {
     return buildSafeUriForTest(baseUrl, path);
@@ -213,14 +214,14 @@ class RedundantEndpointService {
   @visibleForTesting
   static Uri buildSafeUriForTest(String baseUrl, String path) {
     final base = Uri.parse(baseUrl);
-    
+
     // Reject paths that could change the authority (SSRF prevention).
     // These patterns can trick URI parsers into connecting to different hosts:
     // - `@host` (userinfo syntax)
     // - `//host` (protocol-relative)
     // - Absolute URLs
-    if (path.contains('@') || 
-        path.startsWith('//') || 
+    if (path.contains('@') ||
+        path.startsWith('//') ||
         path.contains('://') ||
         (path.isNotEmpty && !path.startsWith('/') && !path.startsWith('?'))) {
       // For paths that don't start with / or ?, ensure they're relative by prepending /
@@ -230,20 +231,18 @@ class RedundantEndpointService {
         throw ArgumentError('Invalid path: contains authority-changing characters: $path');
       }
     }
-    
+
     // Use Uri.resolve for safe path resolution that preserves the base authority.
     // Ensure base URL ends with / for proper resolution.
-    final normalizedBase = base.path.isEmpty || base.path.endsWith('/') 
-        ? base 
-        : base.replace(path: '${base.path}/');
-    
+    final normalizedBase = base.path.isEmpty || base.path.endsWith('/') ? base : base.replace(path: '${base.path}/');
+
     final resolved = normalizedBase.resolve(path);
-    
+
     // Final safety check: verify the resolved host matches the original.
     if (resolved.host != base.host) {
       throw ArgumentError('Path resolution changed host from ${base.host} to ${resolved.host}');
     }
-    
+
     return resolved;
   }
 }

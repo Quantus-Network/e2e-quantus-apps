@@ -12,10 +12,7 @@ void main() {
     });
 
     test('defaultTimeout is less than maxTimeout', () {
-      expect(
-        RedundantEndpointService.defaultTimeout.compareTo(RedundantEndpointService.maxTimeout),
-        lessThan(0),
-      );
+      expect(RedundantEndpointService.defaultTimeout.compareTo(RedundantEndpointService.maxTimeout), lessThan(0));
     });
   });
 

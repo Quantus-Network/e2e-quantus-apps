@@ -38,18 +38,19 @@ class WormholeKeyPair {
 /// Exception thrown when attempting to use dev mnemonics in release builds.
 class DevMnemonicNotAllowedException implements Exception {
   final String mnemonic;
-  
+
   DevMnemonicNotAllowedException(this.mnemonic);
-  
+
   @override
-  String toString() => 'DevMnemonicNotAllowedException: '
+  String toString() =>
+      'DevMnemonicNotAllowedException: '
       'Development mnemonic "$mnemonic" is not allowed in release builds. '
       'These mnemonics produce well-known keypairs with publicly known private keys.';
 }
 
 class HdWalletService {
   /// Development-only mnemonics that produce well-known test keypairs.
-  /// 
+  ///
   /// **SECURITY WARNING**: These mnemonics have publicly known private keys
   /// and should NEVER be used with real funds. They are only enabled when
   /// [allowDevMnemonics] is true (typically in debug/test builds only).
@@ -60,7 +61,7 @@ class HdWalletService {
   };
 
   /// Whether development mnemonics are allowed.
-  /// 
+  ///
   /// Set to `false` in production builds to prevent accidental use of
   /// well-known test keypairs. Defaults to the value of [AppConstants.globalDebug].
   static bool allowDevMnemonics = AppConstants.globalDebug;
@@ -69,7 +70,7 @@ class HdWalletService {
   static bool isDevAccount(String mnemonic) => _devAccounts.containsKey(mnemonic);
 
   /// Validates that a mnemonic is safe to use.
-  /// 
+  ///
   /// Throws [DevMnemonicNotAllowedException] if [mnemonic] is a dev mnemonic
   /// and [allowDevMnemonics] is false.
   static void validateMnemonic(String mnemonic) {
@@ -93,7 +94,7 @@ class HdWalletService {
       debugPrint('WARNING: Using development mnemonic with publicly known private keys');
       return devKeypair();
     }
-    
+
     if (index == -1) return crypto.generateKeypair(mnemonicStr: mnemonic);
     return _deriveHDWallet(mnemonic: mnemonic, account: index);
   }

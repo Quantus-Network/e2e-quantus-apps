@@ -45,11 +45,7 @@ class AccountDiscoveryService {
   }) async {
     // Validate gapLimit to prevent excessive resource usage.
     if (gapLimit < minGapLimit || gapLimit > maxGapLimit) {
-      throw ArgumentError.value(
-        gapLimit,
-        'gapLimit',
-        'must be between $minGapLimit and $maxGapLimit',
-      );
+      throw ArgumentError.value(gapLimit, 'gapLimit', 'must be between $minGapLimit and $maxGapLimit');
     }
 
     final discovered = <Account>[];
@@ -69,9 +65,7 @@ class AccountDiscoveryService {
       for (var i = index; i < batchEnd; i++) {
         final keyPair = _hdWalletService.keyPairAtIndex(mnemonic, i);
         final accountId = keyPair.ss58Address;
-        batch.add(
-          Account(walletIndex: walletIndex, index: i, name: 'Account ${i + 1}', accountId: accountId),
-        );
+        batch.add(Account(walletIndex: walletIndex, index: i, name: 'Account ${i + 1}', accountId: accountId));
         queriedIds.add(accountId);
       }
 

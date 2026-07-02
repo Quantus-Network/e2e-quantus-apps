@@ -39,10 +39,7 @@ void main() {
     });
 
     test('throws when only one signer provided', () {
-      expect(
-        MultisigService().predictMultisigAddress(signers: [signerA], threshold: 1),
-        throwsA(isA<ArgumentError>()),
-      );
+      expect(MultisigService().predictMultisigAddress(signers: [signerA], threshold: 1), throwsA(isA<ArgumentError>()));
     });
 
     test('throws when threshold is out of range', () {

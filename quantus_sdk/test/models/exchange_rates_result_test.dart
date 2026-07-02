@@ -8,12 +8,7 @@ void main() {
       final validExpiry = nowUnix + 3600; // 1 hour from now
 
       final json = <String, dynamic>{
-        'conversion_rates': <String, dynamic>{
-          'USD': 1.0,
-          'EUR': 0.85,
-          'MYR': 3.97,
-          'IDR': 17337.90,
-        },
+        'conversion_rates': <String, dynamic>{'USD': 1.0, 'EUR': 0.85, 'MYR': 3.97, 'IDR': 17337.90},
         'time_next_update_unix': validExpiry,
       };
 
@@ -151,10 +146,7 @@ void main() {
       final nowUnix = DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
       final json = <String, dynamic>{
-        'conversion_rates': <String, dynamic>{
-          'invalid': -1.0,
-          '': 0.0,
-        },
+        'conversion_rates': <String, dynamic>{'invalid': -1.0, '': 0.0},
         'time_next_update_unix': nowUnix + 3600,
       };
 

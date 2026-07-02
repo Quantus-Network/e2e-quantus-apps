@@ -17,14 +17,8 @@ void main() {
       });
 
       test('defaultGapLimit is within bounds', () {
-        expect(
-          AccountDiscoveryService.defaultGapLimit,
-          greaterThanOrEqualTo(AccountDiscoveryService.minGapLimit),
-        );
-        expect(
-          AccountDiscoveryService.defaultGapLimit,
-          lessThanOrEqualTo(AccountDiscoveryService.maxGapLimit),
-        );
+        expect(AccountDiscoveryService.defaultGapLimit, greaterThanOrEqualTo(AccountDiscoveryService.minGapLimit));
+        expect(AccountDiscoveryService.defaultGapLimit, lessThanOrEqualTo(AccountDiscoveryService.maxGapLimit));
       });
     });
 

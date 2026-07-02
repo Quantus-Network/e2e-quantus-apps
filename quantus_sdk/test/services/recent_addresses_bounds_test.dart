@@ -13,11 +13,11 @@ void main() {
     test('rejects addresses exceeding maxAddressLength', () async {
       final service = RecentAddressesService();
       final oversizedAddress = 'qz${'A' * RecentAddressesService.maxAddressLength}';
-      
+
       expect(oversizedAddress.length, greaterThan(RecentAddressesService.maxAddressLength));
-      
+
       final result = await service.addAddress(oversizedAddress);
-      
+
       expect(result, isFalse);
       final addresses = await service.getAddresses();
       expect(addresses, isEmpty);
@@ -26,11 +26,11 @@ void main() {
     test('accepts addresses at exactly maxAddressLength', () async {
       final service = RecentAddressesService();
       final maxLengthAddress = 'A' * RecentAddressesService.maxAddressLength;
-      
+
       expect(maxLengthAddress.length, equals(RecentAddressesService.maxAddressLength));
-      
+
       final result = await service.addAddress(maxLengthAddress);
-      
+
       expect(result, isTrue);
       final addresses = await service.getAddresses();
       expect(addresses, hasLength(1));
@@ -40,9 +40,9 @@ void main() {
     test('accepts normal-sized addresses', () async {
       final service = RecentAddressesService();
       const normalAddress = 'qz1234567890abcdef';
-      
+
       final result = await service.addAddress(normalAddress);
-      
+
       expect(result, isTrue);
       final addresses = await service.getAddresses();
       expect(addresses, contains(normalAddress));
@@ -52,14 +52,14 @@ void main() {
       // Simulate oversized addresses stored before the fix
       final oversizedAddress = 'qz${'A' * 1000}';
       const normalAddress = 'qz-normal-address';
-      
+
       SharedPreferences.setMockInitialValues({
         'recent_addresses': [oversizedAddress, normalAddress],
       });
-      
+
       final service = RecentAddressesService();
       final addresses = await service.getAddresses();
-      
+
       expect(addresses, hasLength(1));
       expect(addresses.first, equals(normalAddress));
     });

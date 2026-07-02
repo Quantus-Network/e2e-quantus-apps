@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:human_checksum/human_checksum.dart';
 
 /// A simple LRU cache with a maximum capacity.
-/// 
+///
 /// When the cache exceeds [maxSize], the least recently accessed entries
 /// are evicted to make room for new entries.
 class _LruCache<K, V> {
@@ -14,9 +14,9 @@ class _LruCache<K, V> {
   // LinkedHashMap is required for insertion-order iteration (LRU eviction).
   // ignore: prefer_collection_literals
   final _cache = LinkedHashMap<K, V>();
-  
+
   _LruCache(this.maxSize) : assert(maxSize > 0);
-  
+
   V? get(K key) {
     final value = _cache.remove(key);
     if (value != null) {
@@ -25,22 +25,22 @@ class _LruCache<K, V> {
     }
     return value;
   }
-  
+
   void put(K key, V value) {
     // Remove if exists to update access order
     _cache.remove(key);
     _cache[key] = value;
-    
+
     // Evict oldest entries if over capacity
     while (_cache.length > maxSize) {
       _cache.remove(_cache.keys.first);
     }
   }
-  
+
   bool containsKey(K key) => _cache.containsKey(key);
-  
+
   void clear() => _cache.clear();
-  
+
   int get length => _cache.length;
 }
 
@@ -53,7 +53,7 @@ class HumanReadableChecksumService {
   /// SS58 addresses are typically 47-50 characters. We allow some margin
   /// but reject obviously oversized strings to prevent memory abuse.
   static const int maxAddressLength = 64;
-  
+
   /// Maximum number of cached checksum results.
   /// This bounds memory usage from untrusted address inputs.
   static const int maxCacheSize = 1000;
@@ -114,7 +114,7 @@ class HumanReadableChecksumService {
     if (address.isEmpty || address.length > maxAddressLength) {
       return '';
     }
-    
+
     try {
       final key = address + (upperCase ? '#U' : '');
       final cached = _checkPhraseCache.get(key);
@@ -145,7 +145,7 @@ class HumanReadableChecksumService {
             .toList()
             .join('-');
       }
-      
+
       // Only cache non-empty results to avoid caching invalid addresses
       if (finalResult.isNotEmpty) {
         _checkPhraseCache.put(key, finalResult);

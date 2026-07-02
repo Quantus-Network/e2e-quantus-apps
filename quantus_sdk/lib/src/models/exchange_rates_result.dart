@@ -46,9 +46,6 @@ class ExchangeRatesResult {
     final maxAllowedExpiry = nowUnix + maxExpirySeconds;
     final clampedExpiry = rawExpiry > maxAllowedExpiry ? maxAllowedExpiry : rawExpiry;
 
-    return ExchangeRatesResult(
-      rates: validatedRates,
-      timeNextUpdateUnix: clampedExpiry,
-    );
+    return ExchangeRatesResult(rates: validatedRates, timeNextUpdateUnix: clampedExpiry);
   }
 }

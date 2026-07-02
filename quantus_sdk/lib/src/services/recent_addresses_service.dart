@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class RecentAddressesService {
   static const String _storageKey = 'recent_addresses';
   static const int _maxSize = 100;
-  
+
   /// Maximum address length in characters.
   /// Typical blockchain addresses are 32-64 chars; 256 provides headroom for
   /// longer formats while preventing storage abuse from oversized inputs.
@@ -18,7 +18,7 @@ class RecentAddressesService {
   RecentAddressesService._internal();
 
   /// Adds an address to the recent addresses list.
-  /// 
+  ///
   /// Returns `false` if the address exceeds [maxAddressLength] and was not added.
   /// Returns `true` if the address was successfully added.
   Future<bool> addAddress(String address) async {
@@ -26,7 +26,7 @@ class RecentAddressesService {
     if (address.length > maxAddressLength) {
       return false;
     }
-    
+
     final prefs = await SharedPreferences.getInstance();
     List<String> addresses = await getAddresses();
 

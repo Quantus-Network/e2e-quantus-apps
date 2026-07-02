@@ -22,17 +22,23 @@ enum MultisigProposalStatus { active, approved, executed, cancelled, removed, un
 enum CallVerificationStatus {
   /// call_raw matches the indexer-decoded recipient and amount
   verified,
+
   /// call_raw was not provided by the indexer
   noCallRaw,
+
   /// call_raw could not be decoded (malformed or unknown call type)
   decodeError,
+
   /// Decoded call is not a transfer, and indexer shows no recipient/amount
   notATransfer,
+
   /// Decoded call is not a transfer, but indexer claims there IS a recipient/amount
   /// This is suspicious - the displayed data doesn't match the actual call
   notATransferButIndexerClaimsTransfer,
+
   /// Decoded recipient does not match indexer-provided recipient
   recipientMismatch,
+
   /// Decoded amount does not match indexer-provided amount
   amountMismatch,
 }
@@ -134,17 +140,17 @@ class MultisigProposal {
     final burnedRaw = record['burned_pallet_fee'] ?? record['burnedPalletFee'];
     final callRawValue = record['call_raw'] ?? record['callRaw'];
     final callRaw = callRawValue is String && callRawValue.isNotEmpty ? callRawValue : null;
-    
+
     final indexerRecipient = nestedAccountId(record['transferTo'] ?? record['transfer_to']);
     final indexerAmount = transferAmountRaw != null ? bigIntFromJson(transferAmountRaw) : BigInt.zero;
-    
+
     // Verify call_raw matches indexer-provided recipient/amount
     final (verificationStatus, verificationError) = _verifyCallRaw(
       callRaw: callRaw,
       indexerRecipient: indexerRecipient,
       indexerAmount: indexerAmount,
     );
-    
+
     return MultisigProposal(
       entityId: stringFromJson(record['id']),
       id: _intFromJson(record['proposal_id'] ?? record['proposalId']),
@@ -171,7 +177,7 @@ class MultisigProposal {
       verificationError: verificationError,
     );
   }
-  
+
   /// Verifies that call_raw bytes match the indexer-provided recipient and amount.
   static (CallVerificationStatus, String?) _verifyCallRaw({
     required String? callRaw,
@@ -181,15 +187,15 @@ class MultisigProposal {
     if (callRaw == null || callRaw.isEmpty) {
       return (CallVerificationStatus.noCallRaw, 'No call_raw provided by indexer');
     }
-    
+
     try {
       final callBytes = _hexToBytes(callRaw);
       final runtimeCall = RuntimeCall.decode(ByteInput(callBytes));
       final callJson = runtimeCall.toJson();
-      
+
       // Check if indexer claims this is a transfer (has recipient and/or non-zero amount)
       final indexerClaimsTransfer = indexerRecipient.isNotEmpty || indexerAmount > BigInt.zero;
-      
+
       // Check if this is a Balances transfer
       final balances = callJson['Balances'];
       if (balances == null) {
@@ -202,12 +208,10 @@ class MultisigProposal {
         }
         return (CallVerificationStatus.notATransfer, null);
       }
-      
+
       // Handle different transfer call variants
-      final transferData = balances['transfer_allow_death'] ?? 
-                          balances['transfer_keep_alive'] ??
-                          balances['transfer'];
-      
+      final transferData = balances['transfer_allow_death'] ?? balances['transfer_keep_alive'] ?? balances['transfer'];
+
       if (transferData == null) {
         // Balances call but not a transfer (e.g., set_balance) - suspicious if indexer claims transfer
         if (indexerClaimsTransfer) {
@@ -218,28 +222,28 @@ class MultisigProposal {
         }
         return (CallVerificationStatus.notATransfer, null);
       }
-      
+
       // Extract recipient from call
       final dest = transferData['dest'] as Map<String, dynamic>?;
       if (dest == null) {
         return (CallVerificationStatus.decodeError, 'Missing dest in transfer call');
       }
-      
+
       // Handle MultiAddress::Id format
       final recipientBytes = dest['Id'] as List?;
       if (recipientBytes == null) {
         return (CallVerificationStatus.decodeError, 'Unsupported address format in transfer call');
       }
-      
+
       final decodedRecipient = Address(
         prefix: AppConstants.ss58prefix,
         pubkey: Uint8List.fromList(recipientBytes.cast<int>()),
       ).encode();
-      
+
       // Extract amount from call
       final value = transferData['value'];
       final decodedAmount = value is BigInt ? value : BigInt.parse(value.toString());
-      
+
       // Compare decoded values with indexer values
       if (decodedRecipient != indexerRecipient) {
         return (
@@ -247,20 +251,20 @@ class MultisigProposal {
           'Recipient mismatch: indexer says "$indexerRecipient" but call_raw contains "$decodedRecipient"',
         );
       }
-      
+
       if (decodedAmount != indexerAmount) {
         return (
           CallVerificationStatus.amountMismatch,
           'Amount mismatch: indexer says "$indexerAmount" but call_raw contains "$decodedAmount"',
         );
       }
-      
+
       return (CallVerificationStatus.verified, null);
     } catch (e) {
       return (CallVerificationStatus.decodeError, 'Failed to decode call_raw: $e');
     }
   }
-  
+
   /// Converts a hex string (with or without 0x prefix) to bytes.
   static Uint8List _hexToBytes(String hexString) {
     final cleanHex = hexString.startsWith('0x') ? hexString.substring(2) : hexString;

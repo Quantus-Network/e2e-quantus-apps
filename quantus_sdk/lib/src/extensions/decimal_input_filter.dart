@@ -100,7 +100,7 @@ class DecimalInputFilter extends TextInputFormatter {
       // Strip grouping separators first, then ensure correct decimal separator.
       // We can't use _ensureLocaleDecimal first because it converts ALL separators.
       String displayText = text.replaceAll(groupSep, '');
-      
+
       // Now convert the remaining separator (if any) to the locale's decimal
       final otherSep = sep == '.' ? ',' : '.';
       displayText = displayText.replaceAll(otherSep, sep);
@@ -151,8 +151,7 @@ class DecimalInputFilter extends TextInputFormatter {
     }
 
     // Check suffix (text after cursor) is unchanged.
-    if (oldCursor < oldText.length && 
-        newText.substring(oldCursor + 1) != oldText.substring(oldCursor)) {
+    if (oldCursor < oldText.length && newText.substring(oldCursor + 1) != oldText.substring(oldCursor)) {
       return false;
     }
 

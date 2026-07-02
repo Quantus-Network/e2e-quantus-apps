@@ -22,34 +22,22 @@ void main() {
 
     test('rejects invalid grouping pattern 9,9,9', () {
       final config = LocaleNumberConfig.dotDecimal;
-      expect(
-        () => config.normalize('9,9,9'),
-        throwsA(isA<InvalidNumberInputException>()),
-      );
+      expect(() => config.normalize('9,9,9'), throwsA(isA<InvalidNumberInputException>()));
     });
 
     test('rejects grouping with wrong digit count 1,00', () {
       final config = LocaleNumberConfig.dotDecimal;
-      expect(
-        () => config.normalize('1,00'),
-        throwsA(isA<InvalidNumberInputException>()),
-      );
+      expect(() => config.normalize('1,00'), throwsA(isA<InvalidNumberInputException>()));
     });
 
     test('rejects grouping with 4 digits 1,0000', () {
       final config = LocaleNumberConfig.dotDecimal;
-      expect(
-        () => config.normalize('1,0000'),
-        throwsA(isA<InvalidNumberInputException>()),
-      );
+      expect(() => config.normalize('1,0000'), throwsA(isA<InvalidNumberInputException>()));
     });
 
     test('rejects grouping in fractional part', () {
       final config = LocaleNumberConfig.dotDecimal;
-      expect(
-        () => config.normalize('1.234,56,7'),
-        throwsA(isA<InvalidNumberInputException>()),
-      );
+      expect(() => config.normalize('1.234,56,7'), throwsA(isA<InvalidNumberInputException>()));
     });
 
     test('accepts numbers without grouping', () {
@@ -67,7 +55,7 @@ void main() {
       final pastedValue = const TextEditingValue(text: '1,5');
 
       final result = filter.formatEditUpdate(oldValue, pastedValue);
-      
+
       // Should reject because "1,5" is ambiguous in US locale
       // (could be "1.5" in EU or invalid grouping)
       expect(result.text, equals(''));
@@ -79,7 +67,7 @@ void main() {
       final pastedValue = const TextEditingValue(text: '1.5');
 
       final result = filter.formatEditUpdate(oldValue, pastedValue);
-      
+
       // Should reject because "1.5" has invalid grouping in EU locale
       expect(result.text, equals(''));
     });
@@ -90,7 +78,7 @@ void main() {
       final pastedValue = const TextEditingValue(text: '1,000.50');
 
       final result = filter.formatEditUpdate(oldValue, pastedValue);
-      
+
       // Should accept and strip grouping for display
       expect(result.text, equals('1000.50'));
     });
@@ -108,7 +96,7 @@ void main() {
   group('NumberFormattingService wire amount parsing', () {
     test('rejects ambiguous single-separator amount 1,000', () {
       final parser = NumberFormattingService();
-      
+
       // "1,000" could be 1 (EU decimal) or 1000 (US grouping)
       final result = parser.parseWireAmount('1,000');
       expect(result, isNull);
@@ -116,7 +104,7 @@ void main() {
 
     test('rejects ambiguous single-separator amount 1.000', () {
       final parser = NumberFormattingService();
-      
+
       // "1.000" could be 1 (US decimal) or 1000 (EU grouping)
       final result = parser.parseWireAmount('1.000');
       expect(result, isNull);
@@ -124,7 +112,7 @@ void main() {
 
     test('accepts unambiguous decimal 1.5', () {
       final parser = NumberFormattingService();
-      
+
       // "1.5" can only be 1.5 (not valid grouping)
       final result = parser.parseWireAmount('1.5');
       expect(result, isNotNull);
@@ -133,7 +121,7 @@ void main() {
 
     test('accepts unambiguous decimal 1,5', () {
       final parser = NumberFormattingService();
-      
+
       // "1,5" can only be 1.5 in EU format (not valid grouping)
       final result = parser.parseWireAmount('1,5');
       expect(result, isNotNull);
@@ -142,7 +130,7 @@ void main() {
 
     test('accepts amount with both separators 1,234.56', () {
       final parser = NumberFormattingService();
-      
+
       // Clear US format
       final result = parser.parseWireAmount('1,234.56');
       expect(result, isNotNull);
@@ -151,7 +139,7 @@ void main() {
 
     test('accepts amount with both separators EU format 1.234,56', () {
       final parser = NumberFormattingService();
-      
+
       // Clear EU format
       final result = parser.parseWireAmount('1.234,56');
       expect(result, isNotNull);
@@ -160,7 +148,7 @@ void main() {
 
     test('accepts multiple grouping separators 1,000,000', () {
       final parser = NumberFormattingService();
-      
+
       // Multiple commas = definitely grouping, so this is 1 million
       final result = parser.parseWireAmount('1,000,000');
       expect(result, isNotNull);
@@ -169,7 +157,7 @@ void main() {
 
     test('accepts integer without separators', () {
       final parser = NumberFormattingService();
-      
+
       final result = parser.parseWireAmount('1234');
       expect(result, isNotNull);
       expect(result, equals(BigInt.from(1234) * BigInt.from(10).pow(12)));
@@ -189,7 +177,7 @@ void main() {
       final pastedValue = const TextEditingValue(text: '1,5');
 
       final acceptedValue = filter.formatEditUpdate(oldValue, pastedValue);
-      
+
       // The fix: should reject (return old value), not collapse to "15"
       expect(acceptedValue.text, isNot(equals('15')));
       expect(acceptedValue.text, equals('')); // Rejected, returns old empty value
@@ -197,12 +185,9 @@ void main() {
 
     test('locale parser no longer accepts invalid grouping 9,9,9', () {
       final localeParser = LocaleNumberConfig.dotDecimal;
-      
+
       // The fix: should throw instead of returning "999"
-      expect(
-        () => localeParser.parseDecimal('9,9,9'),
-        throwsA(isA<InvalidNumberInputException>()),
-      );
+      expect(() => localeParser.parseDecimal('9,9,9'), throwsA(isA<InvalidNumberInputException>()));
     });
 
     test('wire parser no longer silently rescales ambiguous amounts', () {
