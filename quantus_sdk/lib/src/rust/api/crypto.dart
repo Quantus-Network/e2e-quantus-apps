@@ -16,9 +16,6 @@ void setDefaultSs58Prefix({required int prefix}) =>
 String toAccountId({required Keypair obj}) => RustLib.instance.api.crateApiCryptoToAccountId(obj: obj);
 
 /// Convert key in ss58check format to accountId32
-///
-/// Validates that the address uses the expected SS58 prefix set via set_default_ss58_prefix.
-/// Returns an error if the prefix doesn't match or the address is invalid.
 Uint8List ss58ToAccountId({required String s}) => RustLib.instance.api.crateApiCryptoSs58ToAccountId(s: s);
 
 Keypair generateKeypair({required String mnemonicStr}) =>

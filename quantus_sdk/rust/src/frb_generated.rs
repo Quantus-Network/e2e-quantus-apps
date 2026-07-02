@@ -1020,8 +1020,9 @@ fn wire__crate__api__crypto__ss58_to_account_id_impl(
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_s = <String>::sse_decode(&mut deserializer);
             deserializer.end();
-            transform_result_sse::<_, String>((move || {
-                let output_ok = crate::api::crypto::ss58_to_account_id(&api_s)?;
+            transform_result_sse::<_, ()>((move || {
+                let output_ok =
+                    Result::<_, ()>::Ok(crate::api::crypto::ss58_to_account_id(&api_s))?;
                 Ok(output_ok)
             })())
         },
