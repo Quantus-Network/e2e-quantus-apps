@@ -25,7 +25,6 @@ import 'package:resonance_network_wallet/v2/screens/receive/receive_screen.dart'
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_activity_section.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_proposal_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/send/multisig_propose_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen.dart';
@@ -97,7 +96,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _onPaymentIntent(PaymentIntent? _, PaymentIntent? payment) {
     if (payment == null || !mounted) return;
     ref.read(paymentIntentProvider.notifier).state = null;
-    ref.read(keystoneSignCacheProvider.notifier).startNewSendSession();
 
     final pageRoute = MaterialPageRoute(
       builder: (_) => InputAmountScreen(
@@ -332,13 +330,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final sendCard = _actionCard(
       iconAsset: 'assets/v2/action_send.svg',
       label: l10n.homeSend,
-      onTap: () {
-        ref.read(keystoneSignCacheProvider.notifier).startNewSendSession();
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const SelectRecipientScreen(strategy: RegularSendStrategy())),
-        );
-      },
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const SelectRecipientScreen(strategy: RegularSendStrategy())),
+      ),
     );
 
     final swapCard = _actionCard(
@@ -373,15 +368,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _actionCard(
           iconAsset: 'assets/v2/action_send.svg',
           label: l10n.multisigProposeTitle,
-          onTap: () {
-            ref.read(keystoneSignCacheProvider.notifier).startNewSendSession();
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => SelectRecipientScreen(strategy: MultisigProposeStrategy(msig: msig)),
-              ),
-            );
-          },
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => SelectRecipientScreen(strategy: MultisigProposeStrategy(msig: msig)),
+            ),
+          ),
         ),
       ],
     );
