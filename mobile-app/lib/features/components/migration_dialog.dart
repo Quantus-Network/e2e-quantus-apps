@@ -102,10 +102,11 @@ class _MigrationDialogState extends State<MigrationDialog> {
               }
             },
           ),
-          if (_errorMessage != null) ...[
+          // Show "Try later" when there's an error OR when there are no migratable accounts
+          if (_errorMessage != null || successCount == 0) ...[
             const SizedBox(height: 12),
             QuantusButton.simple(
-              label: 'Try later',
+              label: successCount == 0 && _errorMessage == null ? 'Skip' : 'Try later',
               variant: ButtonVariant.transparent,
               onTap: () async {
                 if (widget.onTryLater != null) await widget.onTryLater!();
