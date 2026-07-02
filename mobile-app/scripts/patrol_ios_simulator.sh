@@ -58,16 +58,15 @@ patrol_ios_simulator_platform_option() {
   case "$1" in
     -d|--device)
       DEVICE_ID="${2:?--device requires a UDID}"
-      echo 2
+      PLATFORM_CONSUMED=2
       return 0
       ;;
     -s|--simulator)
       SIMULATOR_NAME="${2:?--simulator requires a name}"
-      echo 2
+      PLATFORM_CONSUMED=2
       return 0
       ;;
   esac
-  echo 0
   return 1
 }
 
@@ -76,8 +75,15 @@ first_booted_simulator() {
   xcrun simctl list devices booted 2>/dev/null \
     | grep -E '^\s+iPhone' \
     | head -1 \
-    | sed -E 's/^[[:space:]]+([^(]+) \(([A-F0-9-]+)\).*/\1\t\2/' \
-    | sed 's/[[:space:]]*$//'
+    | awk '
+      match($0, /\([A-F0-9-]+\)/) {
+        udid = substr($0, RSTART + 1, RLENGTH - 2)
+        name = substr($0, 1, RSTART - 2)
+        sub(/^[[:space:]]+/, "", name)
+        sub(/[[:space:]]+$/, "", name)
+        print name "\t" udid
+      }
+    '
 }
 
 # Newest installed iOS simulator runtime (e.g. 26.5).

@@ -9,9 +9,11 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
+import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
-import 'package:resonance_network_wallet/v2/screens/send/tx_submitted_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_terminal_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -27,6 +29,7 @@ class KeystoneScanSignatureScreen extends ConsumerStatefulWidget {
   final int blockHeight;
   final String recipientChecksum;
   final bool isPayMode;
+  final SendTerminalContent terminal;
 
   const KeystoneScanSignatureScreen({
     super.key,
@@ -37,6 +40,7 @@ class KeystoneScanSignatureScreen extends ConsumerStatefulWidget {
     required this.networkFee,
     required this.blockHeight,
     required this.recipientChecksum,
+    required this.terminal,
     this.isPayMode = false,
   });
 
@@ -97,7 +101,7 @@ class _KeystoneScanSignatureScreenState extends ConsumerState<KeystoneScanSignat
       final signature = bytes.sublist(0, sigSize);
       final publicKey = bytes.sublist(sigSize);
 
-      await ref
+      final hash = await ref
           .read(transactionSubmissionServiceProvider)
           .submitExternallySignedTransfer(
             account: widget.account,
@@ -120,12 +124,8 @@ class _KeystoneScanSignatureScreenState extends ConsumerState<KeystoneScanSignat
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => TxSubmittedScreen(
-            amount: widget.amount,
-            recipientAddress: widget.recipientAddress,
-            recipientChecksum: widget.recipientChecksum,
-            isPayMode: widget.isPayMode,
-          ),
+          builder: (_) =>
+              SendTerminalScreen(content: widget.terminal.copyWith(explorerUrl: explorerImmediateTransactionUrl(hash))),
         ),
       );
     } catch (e, st) {

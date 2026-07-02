@@ -46,7 +46,7 @@ class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScr
   }
 
   void _fillDebugAddress() {
-    _address.text = 'qzn5St24cMsjE4JKYdXLBctusWj5zom67dnrW22SweAahLGeG';
+    _address.text = AppConstants.debugTestAddress;
     if (_error != null) setState(() => _error = null);
   }
 
