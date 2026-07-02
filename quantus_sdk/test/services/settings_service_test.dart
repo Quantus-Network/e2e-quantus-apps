@@ -253,5 +253,20 @@ void main() {
       // Assert: transparent indices stay contiguous (1), not 1025.
       expect(nextIndex, 1);
     });
+
+    test('clearAll does NOT delete mnemonics from secure storage', () async {
+      // clearAll() should only clear SharedPreferences; mnemonic deletion is a
+      // separate explicit operation (clearAllIncludingMnemonics).
+      await settingsService.initialize();
+      await settingsService.saveAccounts([account1]);
+
+      var accounts = await settingsService.getAccounts();
+      expect(accounts.length, 1);
+
+      await settingsService.clearAll();
+
+      accounts = await settingsService.getAccounts();
+      expect(accounts, isEmpty);
+    });
   });
 }

@@ -45,11 +45,24 @@ pub fn to_account_id(obj: &Keypair) -> String {
     account.to_ss58check()
 }
 /// Convert key in ss58check format to accountId32
+///
+/// Validates that the address uses the expected SS58 prefix set via set_default_ss58_prefix.
+/// Returns an error if the prefix doesn't match or the address is invalid.
 #[flutter_rust_bridge::frb(sync)]
-pub fn ss58_to_account_id(s: &str) -> Vec<u8> {
-    // from_ss58check returns a Result, we unwrap it to panic on invalid input.
-    // We then convert the AccountId32 struct to a Vec<u8> to be compatible with Polkadart's typedef.
-    AsRef::<[u8]>::as_ref(&AccountId32::from_ss58check(s).unwrap()).to_vec()
+pub fn ss58_to_account_id(s: &str) -> Result<Vec<u8>, String> {
+    let (account, format) = AccountId32::from_ss58check_with_version(s)
+        .map_err(|e| format!("Invalid SS58 address: {:?}", e))?;
+
+    let expected_format = sp_core::crypto::default_ss58_version();
+    if format != expected_format {
+        return Err(format!(
+            "Address has incorrect network prefix. Expected prefix {}, got prefix {}. This address may be for a different network.",
+            u16::from(expected_format),
+            u16::from(format)
+        ));
+    }
+
+    Ok(AsRef::<[u8]>::as_ref(&account).to_vec())
 }
 
 #[flutter_rust_bridge::frb(sync)]
@@ -241,5 +254,55 @@ mod tests {
         // Verify the signature
         let is_valid = verify_message(&keypair, message, &signature);
         assert!(is_valid, "Signature verification failed for long message");
+    }
+
+    fn alice_account() -> AccountId32 {
+        AccountId32::new([
+            0xd4, 0x35, 0x93, 0xc7, 0x15, 0xfd, 0xd3, 0x1c, 0x61, 0x14, 0x1a, 0xbd, 0x04, 0xa9,
+            0x9f, 0xd6, 0x82, 0x2c, 0x85, 0x58, 0x85, 0x4c, 0xcd, 0xe3, 0x9a, 0x56, 0x84, 0xe7,
+            0xa5, 0x6d, 0xa2, 0x7d,
+        ])
+    }
+
+    #[test]
+    fn test_ss58_prefix_validation_accepts_matching_prefix() {
+        // The default prefix is process-global; every test that sets it uses 189
+        // so concurrent test threads cannot race to different values.
+        set_default_ss58_prefix(189);
+        let address = alice_account()
+            .to_ss58check_with_version(sp_core::crypto::Ss58AddressFormat::custom(189));
+
+        let result = ss58_to_account_id(&address);
+        assert!(
+            result.is_ok(),
+            "Should accept address with correct prefix (189): {:?}",
+            result.err()
+        );
+        assert_eq!(result.unwrap().len(), 32);
+    }
+
+    #[test]
+    fn test_ss58_prefix_validation_rejects_different_prefix() {
+        set_default_ss58_prefix(189);
+        // Prefix 0 is never set as the default anywhere in the test suite.
+        let different_format = sp_core::crypto::Ss58AddressFormat::custom(0);
+        let wrong_prefix_address = alice_account().to_ss58check_with_version(different_format);
+
+        let result = ss58_to_account_id(&wrong_prefix_address);
+        assert!(result.is_err(), "Should reject address with wrong prefix");
+        let err = result.unwrap_err();
+        assert!(
+            err.contains("incorrect network prefix"),
+            "Error should mention prefix mismatch: {}",
+            err
+        );
+    }
+
+    #[test]
+    fn test_ss58_rejects_invalid_address() {
+        set_default_ss58_prefix(189);
+
+        let result = ss58_to_account_id("not-a-valid-address");
+        assert!(result.is_err(), "Should reject invalid address");
     }
 }

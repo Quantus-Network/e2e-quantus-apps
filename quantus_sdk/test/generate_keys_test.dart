@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ss58/ss58.dart' as ss58;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -98,7 +99,10 @@ void main() {
       expect(hex.encode(result.firstHash), expectedPreimage);
 
       final addressBytes = ss58ToAccountId(s: result.address);
-      final expectedAddressBytes = ss58ToAccountId(s: '5H8AGzwKPtKMfKKuKYCoAFApCoy4EVewCqc9k6GrSgqHoaXm');
+      // The expected address uses the generic Substrate prefix (42), which
+      // ss58ToAccountId now rejects, so decode it with the prefix-agnostic
+      // ss58 package instead.
+      final expectedAddressBytes = ss58.Address.decode('5H8AGzwKPtKMfKKuKYCoAFApCoy4EVewCqc9k6GrSgqHoaXm').pubkey;
       expect(addressBytes, expectedAddressBytes);
     });
 
