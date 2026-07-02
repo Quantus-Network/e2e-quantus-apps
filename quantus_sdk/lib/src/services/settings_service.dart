@@ -525,24 +525,8 @@ class SettingsService {
     }());
   }
 
-  /// Clears all application settings from SharedPreferences.
-  ///
-  /// Does NOT delete mnemonics from secure storage. Mnemonics must be
-  /// explicitly deleted via [deleteAllMnemonics] or [deleteMnemonic] so
-  /// recovery phrases can't be lost accidentally.
+  // Clear all settings
   Future<void> clearAll() async {
-    await _prefs.clear();
-  }
-
-  /// Deletes all mnemonics from secure storage. Destructive: only call after
-  /// explicit user confirmation.
-  Future<void> deleteAllMnemonics() async {
-    await _secureStorage.deleteAll();
-  }
-
-  /// Clears all settings AND deletes all mnemonics. Destructive: makes all
-  /// wallets unrecoverable without external backups.
-  Future<void> clearAllIncludingMnemonics() async {
     await _prefs.clear();
     await _secureStorage.deleteAll();
   }

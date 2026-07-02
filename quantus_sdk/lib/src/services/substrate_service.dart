@@ -393,8 +393,7 @@ class SubstrateService {
 
   Future<void> logout() async {
     print('Log out!');
-    // Full wallet logout/reset intentionally deletes mnemonics too.
-    await _settingsService.clearAllIncludingMnemonics();
+    await _settingsService.clearAll();
     TaskmasterService().logout();
   }
 
