@@ -59,6 +59,10 @@ class KeystoneSignCacheNotifier extends StateNotifier<KeystoneSignCacheEntry?> {
   }) {
     state = KeystoneSignCacheEntry(key: key, unsignedData: unsignedData, urParts: urParts);
   }
+
+  void reset() {
+    state = null;
+  }
 }
 
 final keystoneSignCacheProvider = StateNotifierProvider<KeystoneSignCacheNotifier, KeystoneSignCacheEntry?>(
