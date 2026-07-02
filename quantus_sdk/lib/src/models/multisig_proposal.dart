@@ -26,8 +26,11 @@ enum CallVerificationStatus {
   noCallRaw,
   /// call_raw could not be decoded (malformed or unknown call type)
   decodeError,
-  /// Decoded call is not a transfer (no recipient/amount to verify)
+  /// Decoded call is not a transfer, and indexer shows no recipient/amount
   notATransfer,
+  /// Decoded call is not a transfer, but indexer claims there IS a recipient/amount
+  /// This is suspicious - the displayed data doesn't match the actual call
+  notATransferButIndexerClaimsTransfer,
   /// Decoded recipient does not match indexer-provided recipient
   recipientMismatch,
   /// Decoded amount does not match indexer-provided amount
@@ -184,10 +187,19 @@ class MultisigProposal {
       final runtimeCall = RuntimeCall.decode(ByteInput(callBytes));
       final callJson = runtimeCall.toJson();
       
+      // Check if indexer claims this is a transfer (has recipient and/or non-zero amount)
+      final indexerClaimsTransfer = indexerRecipient.isNotEmpty || indexerAmount > BigInt.zero;
+      
       // Check if this is a Balances transfer
       final balances = callJson['Balances'];
       if (balances == null) {
-        // Not a balances call - no recipient/amount to verify
+        // Not a balances call - suspicious if indexer claims it's a transfer
+        if (indexerClaimsTransfer) {
+          return (
+            CallVerificationStatus.notATransferButIndexerClaimsTransfer,
+            'Indexer shows recipient/amount but call_raw is not a Balances call',
+          );
+        }
         return (CallVerificationStatus.notATransfer, null);
       }
       
@@ -197,7 +209,13 @@ class MultisigProposal {
                           balances['transfer'];
       
       if (transferData == null) {
-        // Balances call but not a transfer (e.g., set_balance)
+        // Balances call but not a transfer (e.g., set_balance) - suspicious if indexer claims transfer
+        if (indexerClaimsTransfer) {
+          return (
+            CallVerificationStatus.notATransferButIndexerClaimsTransfer,
+            'Indexer shows recipient/amount but call_raw is a non-transfer Balances call',
+          );
+        }
         return (CallVerificationStatus.notATransfer, null);
       }
       
@@ -321,7 +339,8 @@ class MultisigProposal {
   /// This indicates potential indexer spoofing and should block approval/execution.
   bool get hasVerificationMismatch =>
       verificationStatus == CallVerificationStatus.recipientMismatch ||
-      verificationStatus == CallVerificationStatus.amountMismatch;
+      verificationStatus == CallVerificationStatus.amountMismatch ||
+      verificationStatus == CallVerificationStatus.notATransferButIndexerClaimsTransfer;
 
   MultisigProposal copyWith({
     MultisigProposalStatus? status,
