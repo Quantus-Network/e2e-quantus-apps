@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -136,6 +137,7 @@ class AccountReadyScreen extends ConsumerWidget {
         ),
         bottomContent: ScaffoldBaseBottomContent(
           child: QuantusButton.simple(
+            key: const Key(E2EKeys.accountReadyDoneButton),
             label: l10n.accountReadyDone,
             onTap: () => _goHome(context),
             variant: ButtonVariant.primary,

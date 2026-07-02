@@ -1,15 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/services/local_auth_service.dart';
-import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
@@ -18,24 +11,25 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_cont
 import 'package:resonance_network_wallet/v2/components/split_card.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/tx_submitted_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_terminal_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class ReviewSendScreen extends ConsumerStatefulWidget {
+  final SendStrategy strategy;
   final String recipientAddress;
   final BigInt amount;
-  final BigInt networkFee;
-  final int blockHeight;
+  final SendFee fee;
   final String recipientChecksum;
   final bool isPayMode;
 
   const ReviewSendScreen({
     super.key,
+    required this.strategy,
     required this.recipientAddress,
     required this.amount,
-    required this.networkFee,
-    required this.blockHeight,
+    required this.fee,
     required this.recipientChecksum,
     this.isPayMode = false,
   });
@@ -58,91 +52,54 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       _errorMessage = null;
     });
 
-    final l10n = ref.read(l10nProvider);
-    final settings = SettingsService();
-    final account = (await settings.getActiveRegularAccount())!;
+    final outcome = await widget.strategy.submit(
+      ref,
+      recipientAddress: widget.recipientAddress.trim(),
+      recipientChecksum: widget.recipientChecksum,
+      amount: widget.amount,
+      fee: widget.fee,
+      isPayMode: widget.isPayMode,
+    );
     if (!mounted) return;
 
-    // Keystone (hardware) accounts sign off-device: hand off to the QR flow
-    // instead of signing locally. The debug flag forces this path for testing.
-    if (account.accountType == AccountType.keystone || AppConstants.debugHardwareWallet) {
-      setState(() => _submitting = false);
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => KeystoneSignScreen(
-            account: account,
-            recipientAddress: widget.recipientAddress.trim(),
-            amount: widget.amount,
-            networkFee: widget.networkFee,
-            blockHeight: widget.blockHeight,
-            recipientChecksum: widget.recipientChecksum,
-            isPayMode: widget.isPayMode,
-          ),
-        ),
-      );
-      return;
-    }
-
-    final authed = await LocalAuthService().authenticate(localizedReason: l10n.sendReviewAuthReason);
-    if (!authed || !mounted) {
-      setState(() {
-        _submitting = false;
-        _errorMessage = l10n.sendReviewAuthRequired;
-      });
-      return;
-    }
-
-    try {
-      final submissionService = ref.read(transactionSubmissionServiceProvider);
-      await submissionService.balanceTransfer(
-        account,
-        widget.recipientAddress.trim(),
-        widget.amount,
-        widget.networkFee,
-        widget.blockHeight,
-      );
-      unawaited(
-        RecentAddressesService()
-            .addAddress(widget.recipientAddress.trim())
-            .catchError((Object e) => debugPrint('Failed to save recent address: $e')),
-      );
-      if (!mounted) return;
-      setState(() {
-        _submitting = false;
-        _errorMessage = null;
-      });
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => TxSubmittedScreen(
-            amount: widget.amount,
-            recipientAddress: widget.recipientAddress,
-            recipientChecksum: widget.recipientChecksum,
-            isPayMode: widget.isPayMode,
-          ),
-        ),
-      );
-    } catch (e) {
-      debugPrint('Transfer failed: $e');
-
-      if (mounted) {
+    switch (outcome) {
+      case SendSubmitted(:final terminal):
         setState(() {
           _submitting = false;
-          _errorMessage = ref.read(l10nProvider).sendReviewSubmitFailed;
+          _errorMessage = null;
         });
-      }
+        Navigator.push(context, MaterialPageRoute(builder: (_) => SendTerminalScreen(content: terminal)));
+      case SendNeedsHardwareSignature(:final account, :final networkFee, :final blockHeight, :final terminal):
+        setState(() => _submitting = false);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => KeystoneSignScreen(
+              account: account,
+              recipientAddress: widget.recipientAddress.trim(),
+              amount: widget.amount,
+              networkFee: networkFee,
+              blockHeight: blockHeight,
+              recipientChecksum: widget.recipientChecksum,
+              isPayMode: widget.isPayMode,
+              terminal: terminal,
+            ),
+          ),
+        );
+      case SendFailed(:final message):
+        setState(() {
+          _submitting = false;
+          _errorMessage = message;
+        });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    ref.watch(activeAccountProvider);
+    final strings = widget.strategy.strings(l10n);
     final colors = context.colors;
     final text = context.themeText;
-    final addr = widget.recipientAddress.trim();
     final approxDisplay = ref.watch(txAmountDisplayProvider)(
       widget.amount,
       isSend: true,
@@ -150,30 +107,37 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       withQuanSymbol: false,
       quanDecimals: 4,
     );
-    final totalRaw = widget.amount + widget.networkFee;
 
     return ScaffoldBase(
-      appBar: V2AppBar(title: widget.isPayMode ? l10n.sendPayTitle : l10n.sendTitle),
+      appBar: V2AppBar(title: widget.isPayMode ? l10n.sendPayTitle : strings.flowTitle),
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _heroCard(colors, text, l10n, approxDisplay),
-              const SizedBox(height: 28),
-              _summarySection(l10n, addr, totalRaw),
-              if (_errorMessage != null) ...[
-                const SizedBox(height: 16),
-                Text(_errorMessage!, style: text.detail?.copyWith(color: colors.textError)),
-              ],
-            ],
+          _heroCard(colors, text, l10n, strings, approxDisplay),
+          const SizedBox(height: 28),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: widget.strategy.reviewRows(
+                  context,
+                  ref,
+                  recipientAddress: widget.recipientAddress,
+                  amount: widget.amount,
+                  fee: widget.fee,
+                ),
+              ),
+            ),
           ),
+          if (_errorMessage != null) ...[
+            const SizedBox(height: 16),
+            Text(_errorMessage!, style: text.detail?.copyWith(color: colors.textError)),
+          ],
         ],
       ),
       bottomContent: ScaffoldBaseBottomContent(
         child: QuantusButton.simple(
-          label: l10n.sendReviewConfirm,
+          label: strings.reviewConfirmLabel,
           variant: ButtonVariant.primary,
           isLoading: _submitting,
           isDisabled: _submitting,
@@ -183,14 +147,20 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
     );
   }
 
-  Widget _heroCard(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n, CurrencyDisplayState approxDisplay) {
+  Widget _heroCard(
+    AppColorsV2 colors,
+    AppTextTheme text,
+    AppLocalizations l10n,
+    SendStrings strings,
+    CurrencyDisplayState approxDisplay,
+  ) {
     final sectionLabelStyle = text.receiveLabel?.copyWith(color: colors.textLabel);
 
     return SplitCard(
       topChild: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(l10n.sendReviewSending, style: sectionLabelStyle),
+          Text(strings.reviewHeroLabel, style: sectionLabelStyle),
           const SizedBox(height: 16),
           AmountDisplayWithConversion(
             amountDisplay: approxDisplay,
@@ -210,61 +180,6 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _summarySection(AppLocalizations l10n, String addr, BigInt totalRaw) {
-    final shownDecimals = AppConstants.decimals;
-    final formattingService = ref.watch(numberFormattingServiceProvider);
-
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const SizedBox(height: 7),
-        _summaryRow(label: l10n.sendReviewTo, value: addr),
-        const SizedBox(height: 7),
-        _summaryRow(
-          label: l10n.sendReviewAmount,
-          value: l10n.commonAmountBalance(
-            formattingService.formatBalance(widget.amount, smartDecimals: shownDecimals),
-            AppConstants.tokenSymbol,
-          ),
-        ),
-        const SizedBox(height: 7),
-        _summaryRow(
-          label: l10n.sendReviewNetworkFee,
-          value: l10n.commonAmountBalance(
-            formattingService.formatBalance(widget.networkFee, smartDecimals: shownDecimals),
-            AppConstants.tokenSymbol,
-          ),
-        ),
-        const SizedBox(height: 7),
-        _summaryRow(
-          label: l10n.sendReviewYouPay,
-          value: l10n.commonAmountBalance(
-            formattingService.formatBalance(totalRaw, smartDecimals: shownDecimals),
-            AppConstants.tokenSymbol,
-          ),
-        ),
-        const SizedBox(height: 7),
-      ],
-    );
-  }
-
-  Widget _summaryRow({required String label, required String value}) {
-    final labelStyle = context.themeText.transactionDetailRowLabel?.copyWith(color: context.colors.textTertiary);
-    final valueStyle = context.themeText.transactionDetailRowLabel;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(child: Text(label, style: labelStyle)),
-        const SizedBox(width: 8),
-        Flexible(
-          child: Text(value, style: valueStyle, textAlign: TextAlign.right),
-        ),
-      ],
     );
   }
 }

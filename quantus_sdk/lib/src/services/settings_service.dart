@@ -181,6 +181,8 @@ class SettingsService {
       }
       await saveAccounts(remaining);
       await deleteMnemonic(walletIndex);
+      await _prefs.remove(_walletOriginKey(walletIndex));
+      await _prefs.remove(_recoveryPhraseViewedKey(walletIndex));
     });
   }
 
@@ -663,6 +665,17 @@ class SettingsService {
 
   void setRecoveryPhraseViewed(int walletIndex) {
     _prefs.setBool(_recoveryPhraseViewedKey(walletIndex), true);
+  }
+
+  String _walletOriginKey(int walletIndex) => 'wallet_origin_$walletIndex';
+
+  WalletOrigin? getWalletOrigin(int walletIndex) {
+    final value = _prefs.getString(_walletOriginKey(walletIndex));
+    return value == null ? null : WalletOrigin.values.asNameMap()[value];
+  }
+
+  void setWalletOrigin(int walletIndex, WalletOrigin origin) {
+    _prefs.setString(_walletOriginKey(walletIndex), origin.name);
   }
 
   bool existingUserSeenPromoVideo() {

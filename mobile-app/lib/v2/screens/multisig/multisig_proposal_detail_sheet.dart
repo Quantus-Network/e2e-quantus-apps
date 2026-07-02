@@ -14,10 +14,10 @@ import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_expiry_value.dart';
 import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
-import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/components/detail_summary_row.dart';
+import 'package:resonance_network_wallet/v2/components/explorer_link.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_approve_confirm_sheet.dart';
@@ -232,7 +232,10 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
             isActionable: isActionable,
           ),
           Center(
-            child: _ExplorerLink(proposal: liveProposal, colors: colors, text: text),
+            child: ExplorerLink(
+              url: '${AppConstants.explorerEndpoint}/multisig-proposals/${liveProposal.explorerProposalId}',
+              color: colors.accentOrange,
+            ),
           ),
           const SizedBox(height: 8),
         ],
@@ -625,32 +628,5 @@ class _AmountSection extends ConsumerWidget {
     final amount = ref.watch(txAmountDisplayProvider)(proposal.amount, isSend: true, withQuanSymbol: false);
 
     return AmountDisplayWithConversion(amountDisplay: amount);
-  }
-}
-
-class _ExplorerLink extends ConsumerWidget {
-  final MultisigProposal proposal;
-  final AppColorsV2 colors;
-  final AppTextTheme text;
-
-  const _ExplorerLink({required this.proposal, required this.colors, required this.text});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = ref.watch(l10nProvider);
-
-    return GestureDetector(
-      onTap: () => openUrl('${AppConstants.explorerEndpoint}/multisig-proposals/${proposal.explorerProposalId}'),
-      child: Container(
-        padding: const EdgeInsets.only(bottom: 2),
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: colors.accentOrange, width: 1)),
-        ),
-        child: Text(
-          l10n.activityDetailViewExplorer,
-          style: text.smallParagraph?.copyWith(color: colors.accentOrange, fontWeight: FontWeight.w400),
-        ),
-      ),
-    );
   }
 }
