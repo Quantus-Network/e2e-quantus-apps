@@ -58,16 +58,15 @@ patrol_ios_simulator_platform_option() {
   case "$1" in
     -d|--device)
       DEVICE_ID="${2:?--device requires a UDID}"
-      echo 2
+      PLATFORM_CONSUMED=2
       return 0
       ;;
     -s|--simulator)
       SIMULATOR_NAME="${2:?--simulator requires a name}"
-      echo 2
+      PLATFORM_CONSUMED=2
       return 0
       ;;
   esac
-  echo 0
   return 1
 }
 
