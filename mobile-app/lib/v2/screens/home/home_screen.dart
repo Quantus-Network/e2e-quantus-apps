@@ -24,8 +24,9 @@ import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_
 import 'package:resonance_network_wallet/v2/screens/receive/receive_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_activity_section.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_proposal_detail_sheet.dart';
-import 'package:resonance_network_wallet/v2/screens/multisig/propose/propose_recipient_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/send/multisig_propose_strategy.dart';
+import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
@@ -97,7 +98,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.read(paymentIntentProvider.notifier).state = null;
 
     final pageRoute = MaterialPageRoute(
-      builder: (_) => InputAmountScreen(recipientAddress: payment.to, initialAmount: payment.amount, isPayMode: true),
+      builder: (_) => InputAmountScreen(
+        strategy: const RegularSendStrategy(),
+        recipientAddress: payment.to,
+        initialAmount: payment.amount,
+        isPayMode: true,
+      ),
       settings: inputAmountScreenRouteSettings,
     );
 
@@ -325,7 +331,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       key: const Key(E2EKeys.homeSendButton),
       iconAsset: 'assets/v2/action_send.svg',
       label: l10n.homeSend,
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SelectRecipientScreen())),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const SelectRecipientScreen(strategy: RegularSendStrategy())),
+      ),
     );
 
     final swapCard = _actionCard(
@@ -360,7 +369,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _actionCard(
           iconAsset: 'assets/v2/action_send.svg',
           label: l10n.multisigProposeTitle,
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProposeRecipientScreen(msig: msig))),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => SelectRecipientScreen(strategy: MultisigProposeStrategy(msig: msig)),
+            ),
+          ),
         ),
       ],
     );

@@ -17,8 +17,8 @@ patrol_init_runner_args() {
 }
 
 # Parse shared Patrol runner flags. Platform-specific options are delegated to
-# the optional callback, which must print the number of args consumed (0 if
-# unrecognized) and return 0.
+# the optional callback, which must set PLATFORM_CONSUMED to the number of args
+# consumed and return 0 when it handles a flag (return 1 when unrecognized).
 #
 # Usage:
 #   patrol_parse_runner_args <usage_fn> <supports_build_mode:true|false> \
@@ -32,12 +32,9 @@ patrol_parse_runner_args() {
   patrol_init_runner_args
 
   while [[ $# -gt 0 ]]; do
-    local consumed=0
-    if [[ "$platform_option_fn" != "-" ]]; then
-      consumed="$("$platform_option_fn" "$@")" || consumed=0
-    fi
-    if (( consumed > 0 )); then
-      shift "$consumed"
+    PLATFORM_CONSUMED=0
+    if [[ "$platform_option_fn" != "-" ]] && "$platform_option_fn" "$@"; then
+      shift "$PLATFORM_CONSUMED"
       continue
     fi
 

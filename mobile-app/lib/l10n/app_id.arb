@@ -3,6 +3,17 @@
   "walletInitErrorMessage": "Gagal mencari secret phrase. Coba pulihkan wallet anda.",
   "walletInitErrorButtonLabel": "OK",
 
+  "migrationDialogTitle": "Migrasikan akun Anda",
+  "migrationDialogBody": "Kami akan mencatat hadiah dan aktivitas testnet chain lama Anda untuk menentukan hadiah di Quantus Testnet yang baru.\n\nSaldo tidak ikut dimigrasikan.\n\nGunakan faucet testnet baru untuk mendapatkan dana.",
+  "migrationDialogAccountsToMigrate": "{count, plural, other{{count} Akun akan dimigrasikan.}}",
+  "migrationDialogAccountsCannotMigrate": "{count, plural, other{{count} akun tidak dapat dimigrasikan (data wallet hilang).}}",
+  "migrationDialogUploadError": "Kami tidak dapat mengunggah data migrasi. Silakan coba lagi atau coba nanti.",
+  "migrationDialogMigrate": "Migrasikan Akun",
+  "migrationDialogRetry": "Coba Lagi",
+  "migrationDialogTryLater": "Coba nanti",
+  "migrationDialogSkip": "Lewati",
+  "migrationPartialFailureToast": "{count, plural, other{{count} akun tidak dapat dimigrasikan. Migrasi akan diulang saat aplikasi dibuka berikutnya.}}",
+
   "authUseDeviceBiometricsToUnlock": "Gunakan biometrik untuk mengakses wallet",
   "authAuthenticating": "Mengotentikasi...",
   "authUnlockWallet": "Buka Wallet",

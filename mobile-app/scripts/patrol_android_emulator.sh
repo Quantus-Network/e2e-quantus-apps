@@ -55,16 +55,15 @@ patrol_android_emulator_platform_option() {
   case "$1" in
     -d|--device)
       DEVICE_SERIAL="${2:?--device requires a serial}"
-      echo 2
+      PLATFORM_CONSUMED=2
       return 0
       ;;
     -a|--avd)
       AVD_NAME="${2:?--avd requires a name}"
-      echo 2
+      PLATFORM_CONSUMED=2
       return 0
       ;;
   esac
-  echo 0
   return 1
 }
 

@@ -61,11 +61,10 @@ patrol_ios_device_platform_option() {
   case "$1" in
     -d|--device)
       DEVICE_UDID="${2:?--device requires a UDID}"
-      echo 2
+      PLATFORM_CONSUMED=2
       return 0
       ;;
   esac
-  echo 0
   return 1
 }
 
