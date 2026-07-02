@@ -53,7 +53,13 @@ class MigrationService {
 
     final mnemonicCache = <int, String?>{};
 
-    for (final account in oldAccounts) {
+    for (final rawAccount in oldAccounts) {
+      // Normalize the account type so every downstream check (derivation,
+      // upload filters, saved account type) agrees on what is a wormhole
+      // account.
+      final isWormhole =
+          rawAccount.accountType == AccountType.encrypted || rawAccount.index == AppConstants.encryptedAccountIndex;
+      final account = isWormhole ? rawAccount.copyWith(accountType: AccountType.encrypted) : rawAccount;
       try {
         final walletIndex = account.walletIndex;
         if (!mnemonicCache.containsKey(walletIndex)) {
@@ -71,8 +77,7 @@ class MigrationService {
         final String publicKeyHex;
         final String newAccountId;
 
-        if (account.accountType == AccountType.encrypted || account.index == AppConstants.encryptedAccountIndex) {
-          // Encrypted/wormhole accounts use the wormhole derivation path.
+        if (isWormhole) {
           final wormholeKeyPair = _hdWalletService.deriveWormholeKeyPair(mnemonic: mnemonic, index: 0);
           publicKeyHex = wormholeKeyPair.addressHex.replaceFirst('0x', '');
           newAccountId = wormholeKeyPair.address;
@@ -139,8 +144,17 @@ class MigrationService {
     }
 
     if (newAccounts.isNotEmpty) {
-      await _settingsService.saveAccounts(newAccounts);
-      await _settingsService.setActiveAccount(RegularAccount(newAccounts.first));
+      // Merge by accountId so a retried migration never wipes accounts
+      // created since the last attempt.
+      final existing = await _settingsService.getAccounts();
+      final existingIds = existing.map((a) => a.accountId).toSet();
+      await _settingsService.saveAccounts([
+        ...existing,
+        ...newAccounts.where((a) => !existingIds.contains(a.accountId)),
+      ]);
+      if (existing.isEmpty) {
+        await _settingsService.setActiveAccount(RegularAccount(newAccounts.first));
+      }
     }
 
     // Only clear old accounts if all migrations succeeded, to prevent data loss.

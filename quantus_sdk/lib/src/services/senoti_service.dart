@@ -59,15 +59,18 @@ class SenotiService {
   final SettingsService _settingsService = SettingsService();
   SenotiAuthClient get _client => SenotiAuthClient(AppConstants.senotiEndpoint);
 
+  /// Wormhole addresses are meant to be unlinkable to the user's identity, so
+  /// registering them with the notification service would deanonymize them.
+  static List<String> notifiableAddresses(List<Account> accounts, List<MultisigAccount> multisigAccounts) => [
+    ...accounts.where((a) => a.accountType != AccountType.encrypted).map((a) => a.accountId),
+    ...multisigAccounts.map((a) => a.accountId),
+  ];
+
   Future<void> registerDevice(String token, String platform) async {
-    // Wormhole addresses are meant to be unlinkable to the user's identity, so
-    // registering them with the notification service would deanonymize them.
-    final regularAddresses = (await _settingsService.getAccounts())
-        .where((a) => a.accountType != AccountType.encrypted)
-        .map((a) => a.accountId)
-        .toList();
-    final multisigAddresses = (await _settingsService.getMultisigAccounts()).map((a) => a.accountId).toList();
-    final allAddresses = [...regularAddresses, ...multisigAddresses];
+    final allAddresses = notifiableAddresses(
+      await _settingsService.getAccounts(),
+      await _settingsService.getMultisigAccounts(),
+    );
 
     if (allAddresses.isEmpty) return;
 

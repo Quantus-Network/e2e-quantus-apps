@@ -1,109 +1,80 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  group('MigrationResult sealed class', () {
-    test('MigrationSuccess holds account data correctly', () {
-      const oldAccount = Account(walletIndex: 0, index: 1, name: 'Test Account', accountId: 'old_id');
-      const success = MigrationSuccess(oldAccount: oldAccount, publicKeyHex: 'abc123', newAccountId: 'new_id');
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-      expect(success.oldAccount, equals(oldAccount));
-      expect(success.publicKeyHex, equals('abc123'));
-      expect(success.newAccountId, equals('new_id'));
-    });
+  late SettingsService settings;
+  late MigrationService service;
 
-    test('MigrationFailure holds failure reason', () {
-      const oldAccount = Account(walletIndex: 1, index: 0, name: 'Failed Account', accountId: 'old_id');
-      const failure = MigrationFailure(oldAccount: oldAccount, reason: 'No mnemonic found for wallet 1');
+  const oldA = Account(walletIndex: 0, index: 0, name: 'A', accountId: 'old_a');
+  const oldB = Account(walletIndex: 1, index: 0, name: 'B', accountId: 'old_b');
 
-      expect(failure.oldAccount, equals(oldAccount));
-      expect(failure.reason, equals('No mnemonic found for wallet 1'));
-    });
+  const successA = MigrationSuccess(oldAccount: oldA, publicKeyHex: 'hex_a', newAccountId: 'new_a');
+  const failureB = MigrationFailure(oldAccount: oldB, reason: 'No mnemonic found for wallet 1');
 
-    test('pattern matching works on MigrationResult', () {
-      const oldAccount = Account(walletIndex: 0, index: 0, name: 'Test', accountId: 'test_id');
+  Future<void> seedOldAccounts(List<Account> accounts) async {
+    await settings.setOldAccountsData(jsonEncode(accounts.map((a) => a.toJson()).toList()));
+  }
 
-      const MigrationResult success = MigrationSuccess(
-        oldAccount: oldAccount,
-        publicKeyHex: 'hex',
-        newAccountId: 'new_id',
-      );
-
-      const MigrationResult failure = MigrationFailure(oldAccount: oldAccount, reason: 'test error');
-
-      String describeResult(MigrationResult result) {
-        return switch (result) {
-          MigrationSuccess(:final newAccountId) => 'Success: $newAccountId',
-          MigrationFailure(:final reason) => 'Failure: $reason',
-        };
-      }
-
-      expect(describeResult(success), equals('Success: new_id'));
-      expect(describeResult(failure), equals('Failure: test error'));
-    });
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    settings = SettingsService();
+    await settings.initialize();
+    service = MigrationService(settings, HdWalletService());
   });
 
-  group('MigrationService wallet index handling', () {
-    test('accounts from different wallets should preserve their walletIndex', () {
-      const account0 = Account(walletIndex: 0, index: 0, name: 'Wallet 0 Account', accountId: 'w0_a0');
-      const account1 = Account(walletIndex: 1, index: 0, name: 'Wallet 1 Account', accountId: 'w1_a0');
+  group('MigrationService.performMigration', () {
+    test('full success saves accounts, sets active account and clears old accounts', () async {
+      await seedOldAccounts([oldA]);
 
-      const success0 = MigrationSuccess(oldAccount: account0, publicKeyHex: 'hex0', newAccountId: 'new_w0_a0');
-      const success1 = MigrationSuccess(oldAccount: account1, publicKeyHex: 'hex1', newAccountId: 'new_w1_a0');
+      final failures = await service.performMigration([successA]);
 
-      expect(success0.oldAccount.walletIndex, equals(0));
-      expect(success1.oldAccount.walletIndex, equals(1));
-
-      // The migrated accounts should maintain their wallet indices
-      final migratedAccount0 = Account(
-        walletIndex: success0.oldAccount.walletIndex,
-        index: success0.oldAccount.index,
-        name: success0.oldAccount.name,
-        accountId: success0.newAccountId,
-        accountType: success0.oldAccount.accountType,
-      );
-      final migratedAccount1 = Account(
-        walletIndex: success1.oldAccount.walletIndex,
-        index: success1.oldAccount.index,
-        name: success1.oldAccount.name,
-        accountId: success1.newAccountId,
-        accountType: success1.oldAccount.accountType,
-      );
-
-      expect(migratedAccount0.walletIndex, equals(0));
-      expect(migratedAccount1.walletIndex, equals(1));
-      expect(migratedAccount0.accountId, equals('new_w0_a0'));
-      expect(migratedAccount1.accountId, equals('new_w1_a0'));
+      expect(failures, isEmpty);
+      expect((await settings.getAccounts()).map((a) => a.accountId), ['new_a']);
+      expect((await settings.getActiveRegularAccount())?.accountId, 'new_a');
+      expect(settings.hasOldAccounts(), isFalse);
     });
 
-    test('encrypted accounts should preserve their accountType', () {
-      const encryptedAccount = Account(
-        walletIndex: 0,
-        index: AppConstants.encryptedAccountIndex,
-        name: 'Encrypted Account',
-        accountId: 'encrypted_old_id',
-        accountType: AccountType.encrypted,
-      );
+    test('partial failure reports failures and keeps old accounts for retry', () async {
+      await seedOldAccounts([oldA, oldB]);
 
-      const success = MigrationSuccess(
-        oldAccount: encryptedAccount,
-        publicKeyHex: 'wormhole_hex',
-        newAccountId: 'wormhole_new_id',
-      );
+      final failures = await service.performMigration([successA, failureB]);
 
-      expect(success.oldAccount.accountType, equals(AccountType.encrypted));
-      expect(success.oldAccount.index, equals(AppConstants.encryptedAccountIndex));
+      expect(failures.map((f) => f.oldAccount.accountId), ['old_b']);
+      expect((await settings.getAccounts()).map((a) => a.accountId), ['new_a']);
+      expect(settings.hasOldAccounts(), isTrue);
+    });
 
-      // The migrated account should preserve the encrypted type
-      final migratedAccount = Account(
-        walletIndex: success.oldAccount.walletIndex,
-        index: success.oldAccount.index,
-        name: success.oldAccount.name,
-        accountId: success.newAccountId,
-        accountType: success.oldAccount.accountType,
-      );
+    test('retry merges by accountId and never wipes accounts created in between', () async {
+      await seedOldAccounts([oldA, oldB]);
+      await service.performMigration([successA, failureB]);
 
-      expect(migratedAccount.accountType, equals(AccountType.encrypted));
+      // User creates an account between the failed attempt and the retry.
+      const created = Account(walletIndex: 0, index: 1, name: 'Created', accountId: 'created_id');
+      await settings.addAccount(created);
+      await settings.setActiveAccount(const RegularAccount(created));
+
+      final failures = await service.performMigration([successA, failureB]);
+
+      expect(failures, hasLength(1));
+      final ids = (await settings.getAccounts()).map((a) => a.accountId).toList();
+      expect(ids, containsAll(['new_a', 'created_id']));
+      expect(ids.where((id) => id == 'new_a'), hasLength(1));
+      expect((await settings.getActiveRegularAccount())?.accountId, 'created_id');
+    });
+
+    test('all-failure migration saves nothing and keeps old accounts', () async {
+      await seedOldAccounts([oldB]);
+
+      final failures = await service.performMigration([failureB]);
+
+      expect(failures, hasLength(1));
+      expect(await settings.getAccounts(), isEmpty);
+      expect(settings.hasOldAccounts(), isTrue);
     });
   });
 }

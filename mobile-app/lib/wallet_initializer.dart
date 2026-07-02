@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/migration_dialog.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
@@ -141,10 +142,12 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
     try {
       // Upload successful migrations to Supabase first. Encrypted (wormhole)
       // accounts are excluded: their addresses are meant to be unlinkable to
-      // the user's identity.
+      // the user's identity. Accounts already saved by a previous partial
+      // migration are excluded so a retry doesn't upload duplicate rows.
+      final migratedIds = (await _settingsService.getAccounts()).map((a) => a.accountId).toSet();
       final uploadable = _migrationResults!
           .whereType<MigrationSuccess>()
-          .where((s) => s.oldAccount.accountType != AccountType.encrypted)
+          .where((s) => s.oldAccount.accountType != AccountType.encrypted && !migratedIds.contains(s.newAccountId))
           .toList();
       if (uploadable.isNotEmpty) {
         await _uploadMigrationDataToSupabase(uploadable);
@@ -174,21 +177,8 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
         _loading = false;
       });
 
-      // Notify user if some accounts couldn't be migrated
       if (failures.isNotEmpty && mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  '${failures.length} account(s) could not be migrated. '
-                  'Migration will retry on next app launch.',
-                ),
-                duration: const Duration(seconds: 5),
-              ),
-            );
-          }
-        });
+        context.showErrorToaster(message: ref.read(l10nProvider).migrationPartialFailureToast(failures.length));
       }
     } catch (e) {
       quantusDebugPrint('migration error: $e');
