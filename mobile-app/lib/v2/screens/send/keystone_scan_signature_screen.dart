@@ -12,6 +12,7 @@ import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
+import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_terminal_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -119,6 +120,8 @@ class _KeystoneScanSignatureScreenState extends ConsumerState<KeystoneScanSignat
             .addAddress(widget.recipientAddress)
             .catchError((Object e) => debugPrint('Failed to save recent address: $e')),
       );
+
+      ref.read(keystoneSignCacheProvider.notifier).startNewSendSession();
 
       if (!mounted) return;
       Navigator.pushReplacement(
