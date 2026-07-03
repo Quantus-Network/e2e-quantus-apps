@@ -1,6 +1,27 @@
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
+/// Average block time for Quantus (~12s). Bounds mortal-era cache TTL.
+const int keystoneSignCacheAvgBlockTimeSeconds = 12;
+
+/// Blocks of safety margin before mortal era expiry when treating cache as stale.
+const int keystoneSignCacheEraSafetyMarginBlocks = 2;
+
+/// Max age for a cached Keystone payload derived from its mortal era period.
+Duration keystoneSignCacheMaxAge(QuantusSigningPayload payload) {
+  if (payload.eraPeriod == 0) {
+    return const Duration(days: 1);
+  }
+  final eraSeconds = payload.eraPeriod * keystoneSignCacheAvgBlockTimeSeconds;
+  final safetySeconds = keystoneSignCacheEraSafetyMarginBlocks * keystoneSignCacheAvgBlockTimeSeconds;
+  return Duration(seconds: eraSeconds - safetySeconds);
+}
+
+/// Returns true when [entry] is older than the mortal era validity window.
+bool isKeystoneSignCacheEntryExpired(KeystoneSignCacheEntry entry, DateTime now) {
+  return now.difference(entry.storedAt) >= keystoneSignCacheMaxAge(entry.unsignedData.payloadToSign);
+}
+
 /// Identifies a Keystone signing payload by the transfer parameters that define
 /// the extrinsic call. Block height and nonce are excluded so chain drift does
 /// not invalidate the cached QR within a send session.
@@ -35,8 +56,14 @@ class KeystoneSignCacheEntry {
   final KeystoneSignCacheKey key;
   final UnsignedTransactionData unsignedData;
   final List<String> urParts;
+  final DateTime storedAt;
 
-  const KeystoneSignCacheEntry({required this.key, required this.unsignedData, required this.urParts});
+  const KeystoneSignCacheEntry({
+    required this.key,
+    required this.unsignedData,
+    required this.urParts,
+    required this.storedAt,
+  });
 }
 
 class KeystoneSignCacheNotifier extends StateNotifier<KeystoneSignCacheEntry?> {
@@ -46,9 +73,13 @@ class KeystoneSignCacheNotifier extends StateNotifier<KeystoneSignCacheEntry?> {
     state = null;
   }
 
-  KeystoneSignCacheEntry? lookup(KeystoneSignCacheKey key) {
+  KeystoneSignCacheEntry? lookup(KeystoneSignCacheKey key, {DateTime? now}) {
     final entry = state;
     if (entry == null || entry.key != key) return null;
+    if (isKeystoneSignCacheEntryExpired(entry, now ?? DateTime.now())) {
+      state = null;
+      return null;
+    }
     return entry;
   }
 
@@ -56,8 +87,14 @@ class KeystoneSignCacheNotifier extends StateNotifier<KeystoneSignCacheEntry?> {
     required KeystoneSignCacheKey key,
     required UnsignedTransactionData unsignedData,
     required List<String> urParts,
+    DateTime? storedAt,
   }) {
-    state = KeystoneSignCacheEntry(key: key, unsignedData: unsignedData, urParts: urParts);
+    state = KeystoneSignCacheEntry(
+      key: key,
+      unsignedData: unsignedData,
+      urParts: urParts,
+      storedAt: storedAt ?? DateTime.now(),
+    );
   }
 
   void reset() {

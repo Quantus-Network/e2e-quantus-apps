@@ -134,6 +134,7 @@ class _KeystoneScanSignatureScreenState extends ConsumerState<KeystoneScanSignat
     } catch (e, st) {
       quantusDebugPrint('Keystone signature processing failed: $e');
       TelemetryService().sendError('Keystone signature processing failed', error: e, stackTrace: st);
+      ref.read(keystoneSignCacheProvider.notifier).reset();
       if (!mounted) return;
       setState(() {
         _submitting = false;
@@ -158,6 +159,7 @@ class _KeystoneScanSignatureScreenState extends ConsumerState<KeystoneScanSignat
     } catch (e, st) {
       quantusDebugPrint('Keystone signature simulation failed: $e');
       TelemetryService().sendError('Keystone signature simulation failed', error: e, stackTrace: st);
+      ref.read(keystoneSignCacheProvider.notifier).reset();
       if (!mounted) return;
       setState(() {
         _done = false;
