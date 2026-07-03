@@ -54,6 +54,9 @@ class AppConstants {
   // Reversible time settings
   static const int defaultReversibleTimeSeconds = 600; // 10 minutes
 
+  /// Average Quantus block time in seconds (~12s). Used for mortal-era TTL and block↔time estimates.
+  static const int avgBlockTimeSeconds = 12;
+
   // Digits of precision
   static const int decimals = 12;
   static const int ss58prefix = 189;

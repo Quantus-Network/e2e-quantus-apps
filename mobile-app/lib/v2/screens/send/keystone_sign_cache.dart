@@ -1,9 +1,6 @@
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-/// Average block time for Quantus (~12s). Bounds mortal-era cache TTL.
-const int keystoneSignCacheAvgBlockTimeSeconds = 12;
-
 /// Blocks of safety margin before mortal era expiry when treating cache as stale.
 const int keystoneSignCacheEraSafetyMarginBlocks = 2;
 
@@ -12,8 +9,8 @@ Duration keystoneSignCacheMaxAge(QuantusSigningPayload payload) {
   if (payload.eraPeriod == 0) {
     return const Duration(days: 1);
   }
-  final eraSeconds = payload.eraPeriod * keystoneSignCacheAvgBlockTimeSeconds;
-  final safetySeconds = keystoneSignCacheEraSafetyMarginBlocks * keystoneSignCacheAvgBlockTimeSeconds;
+  final eraSeconds = payload.eraPeriod * AppConstants.avgBlockTimeSeconds;
+  final safetySeconds = keystoneSignCacheEraSafetyMarginBlocks * AppConstants.avgBlockTimeSeconds;
   return Duration(seconds: eraSeconds - safetySeconds);
 }
 
