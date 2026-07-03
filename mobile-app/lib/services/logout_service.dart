@@ -22,6 +22,7 @@ import 'package:resonance_network_wallet/services/multisig_creation_polling_serv
 import 'package:resonance_network_wallet/services/multisig_execution_polling_service.dart';
 import 'package:resonance_network_wallet/services/multisig_proposal_polling_service.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_polling_service.dart';
+import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart';
 
 final logoutServiceProvider = Provider<LogoutService>((ref) => LogoutService(ref));
@@ -52,6 +53,7 @@ class LogoutService {
     _ref.read(multisigAccountsProvider.notifier).reset();
     _ref.invalidate(discoveredMultisigsProvider);
     _ref.read(accountAssociationsProvider.notifier).reset();
+    _ref.read(keystoneSignCacheProvider.notifier).reset();
     await _ref.read(selectedAppLocaleProvider.notifier).reset();
     await _ref.read(selectedFiatCurrencyProvider.notifier).reset();
 
