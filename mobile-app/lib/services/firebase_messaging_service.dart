@@ -35,8 +35,15 @@ class FirebaseMessagingService {
 
   /// Returns the cached FCM device token, fetching from Firebase if not yet available.
   Future<String?> getDeviceToken() async {
-    _cachedToken ??= await _messaging.getToken();
-    quantusDebugPrint('FCM token: $_cachedToken');
+    if (_cachedToken != null) return _cachedToken;
+
+    try {
+      _cachedToken = await _messaging.getToken();
+      quantusDebugPrint('FCM token: $_cachedToken');
+    } catch (e, st) {
+      quantusDebugPrint('Failed to get FCM device token: $e');
+      TelemetryService().sendError('fcm_get_device_token_failed', error: e, stackTrace: st);
+    }
 
     return _cachedToken;
   }
