@@ -1,0 +1,218 @@
+name: E2E Mobile
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_target:
+        description: "Optional Patrol target (blank = full suite)"
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  e2e-android:
+    name: E2E Android (Emulator)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      MOBILE_APP_ENV: ${{ secrets.MOBILE_APP_ENV }}
+      E2E_TEST_ENV: ${{ secrets.E2E_TEST_ENV }}
+      GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            quantus_sdk/rust/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('quantus_sdk/rust/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            mobile-app/android/.gradle
+          key: ${{ runner.os }}-gradle-${{ hashFiles('mobile-app/android/**/*.gradle*', 'mobile-app/android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+          pub-cache-key: "pub-${{ runner.os }}-${{ hashFiles('**/pubspec.lock', 'melos.yaml') }}"
+          cache-key: "flutter-${{ runner.os }}-stable"
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android,i686-linux-android
+
+      - name: Install Melos
+        run: dart pub global activate melos
+
+      - name: Install Patrol CLI
+        run: dart pub global activate patrol_cli 4.6.1
+
+      - name: Add pub-cache bin to PATH
+        run: echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
+
+      - name: Bootstrap Melos
+        run: melos bootstrap
+        env:
+          GIT_TERMINAL_PROMPT: 0
+
+      - name: Create .env file
+        run: echo "$MOBILE_APP_ENV" > mobile-app/.env
+
+      - name: Create .env.test file
+        run: echo "$E2E_TEST_ENV" > mobile-app/.env.test
+
+      - name: Create google-services.json
+        run: echo "$GOOGLE_SERVICES_JSON" > mobile-app/android/app/google-services.json
+
+      - name: Generate splash screen
+        working-directory: mobile-app
+        run: |
+          flutter pub get
+          dart run flutter_native_splash:create
+
+      - name: Run Patrol E2E on Android Emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect
+          script: |
+            cd mobile-app
+            if [ -n "${{ github.event.inputs.test_target }}" ]; then
+              bash scripts/patrol_android_emulator.sh "${{ github.event.inputs.test_target }}"
+            else
+              bash scripts/patrol_android_emulator.sh
+            fi
+
+      - name: Capture adb logcat
+        if: failure()
+        run: adb logcat -d > mobile-app/adb-logcat.txt || true
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-android-failure-${{ github.run_id }}
+          path: |
+            mobile-app/build/
+            mobile-app/adb-logcat.txt
+          if-no-files-found: ignore
+
+  e2e-ios:
+    name: E2E iOS (Simulator)
+    runs-on: macos-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      MOBILE_APP_ENV: ${{ secrets.MOBILE_APP_ENV }}
+      E2E_TEST_ENV: ${{ secrets.E2E_TEST_ENV }}
+      GOOGLE_SERVICES_PLIST: ${{ secrets.GOOGLE_SERVICES_PLIST }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            quantus_sdk/rust/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('quantus_sdk/rust/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: |
+            mobile-app/ios/Pods
+            ~/Library/Caches/CocoaPods
+          key: ${{ runner.os }}-pods-${{ hashFiles('mobile-app/ios/Podfile', 'mobile-app/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+          pub-cache-key: "pub-${{ runner.os }}-${{ hashFiles('**/pubspec.lock', 'melos.yaml') }}"
+          cache-key: "flutter-${{ runner.os }}-stable"
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Melos
+        run: dart pub global activate melos
+
+      - name: Install Patrol CLI
+        run: dart pub global activate patrol_cli 4.6.1
+
+      - name: Add pub-cache bin to PATH
+        run: echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
+
+      - name: Bootstrap Melos
+        run: melos bootstrap
+        env:
+          GIT_TERMINAL_PROMPT: 0
+
+      - name: Create .env file
+        run: echo "$MOBILE_APP_ENV" > mobile-app/.env
+
+      - name: Create .env.test file
+        run: echo "$E2E_TEST_ENV" > mobile-app/.env.test
+
+      - name: Create GoogleService-Info.plist
+        run: echo "$GOOGLE_SERVICES_PLIST" > mobile-app/ios/Runner/GoogleService-Info.plist
+
+      - name: Install CocoaPods dependencies
+        working-directory: mobile-app/ios
+        run: pod install
+
+      - name: Run Patrol E2E on iOS Simulator
+        working-directory: mobile-app
+        run: |
+          if [ -n "${{ github.event.inputs.test_target }}" ]; then
+            bash scripts/patrol_ios_simulator.sh -s "iPhone 16" "${{ github.event.inputs.test_target }}"
+          else
+            bash scripts/patrol_ios_simulator.sh -s "iPhone 16"
+          fi
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-ios-failure-${{ github.run_id }}
+          path: mobile-app/build/
+          if-no-files-found: ignore
