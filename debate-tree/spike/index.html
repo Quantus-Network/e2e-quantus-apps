@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Steelman spike</title>
+  <style>
+    :root { --border: #e4e7ec; --muted: #667085; --accent: #2563eb; --green: #16a34a; }
+    body {
+      font: 15px/1.55 system-ui, -apple-system, sans-serif; color: #1f2937;
+      max-width: 880px; margin: 40px auto; padding: 0 20px;
+    }
+    h1 { font-size: 20px; } h1 small { font-weight: 400; color: var(--muted); font-size: 13px; }
+    .card { border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-top: 16px; }
+    label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 4px; }
+    input[type=text], textarea, select {
+      width: 100%; box-sizing: border-box; border: 1px solid #d0d5dd; border-radius: 8px;
+      padding: 8px 11px; font: inherit; background: #fff;
+    }
+    textarea { resize: vertical; }
+    button {
+      background: var(--accent); color: #fff; border: 0; border-radius: 8px;
+      padding: 9px 16px; font: inherit; cursor: pointer; margin-top: 12px;
+    }
+    button.secondary { background: #fff; color: #344054; border: 1px solid #d0d5dd; }
+    button.accept { background: var(--green); }
+    button:disabled { background: #98a2b3; cursor: not-allowed; }
+    .seeds button { margin: 4px 6px 0 0; font-size: 12px; padding: 5px 10px; }
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .pane { border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+    .pane h3 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+    .pane .text { white-space: pre-wrap; }
+    .pane.draft { border-color: var(--accent); }
+    .notes { font-size: 13px; color: var(--muted); white-space: pre-wrap; margin-top: 10px; }
+    .question { margin-top: 10px; padding: 10px 12px; background: #fffaeb; border: 1px solid #fedf89; border-radius: 8px; font-size: 14px; }
+    .roundtag { display: inline-block; font-size: 12px; color: var(--muted); border: 1px solid var(--border); border-radius: 99px; padding: 2px 10px; margin-left: 8px; vertical-align: middle; }
+    .published { border-color: var(--green); background: #f6fef9; }
+    details { margin-top: 10px; } summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+    .error { color: #dc2626; font-size: 14px; margin-top: 10px; white-space: pre-wrap; }
+    .spinner { color: var(--muted); font-size: 14px; margin-top: 12px; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <h1>Steelman negotiation spike <small>— the AI moderator write-path, isolated</small></h1>
+
+  <div class="card" id="setup">
+    <div class="seeds" id="seeds">
+      <label>Try a real contentious argument:</label>
+    </div>
+
+    <label for="question">Debate question</label>
+    <input type="text" id="question"
+      value="Should TLS 1.3 standardize pure ML-KEM key agreement, or require hybrid (ECC+PQ)?">
+
+    <label for="parent">Claim being responded to (optional)</label>
+    <input type="text" id="parent" placeholder="e.g. a pro/con this argument replies to">
+
+    <label for="stance">Stance</label>
+    <select id="stance">
+      <option value="supporting (pro)">supporting (pro)</option>
+      <option value="opposing (con)">opposing (con)</option>
+    </select>
+
+    <label for="original">Your argument, in your own words</label>
+    <textarea id="original" rows="6" placeholder="Type it the way you'd actually say it — heat and all."></textarea>
+
+    <button id="start">Steelman it</button>
+    <div class="error" id="setup-error"></div>
+  </div>
+
+  <div id="loop"></div>
+
+  <script>
+    const MAX_ROUNDS = 3;
+
+    const SEEDS = [
+      {
+        label: "anti pure-PQ (heated)",
+        stance: "opposing (con)",
+        text: "Rolling out pure ML-KEM without a hybrid is absolutely insane. We have DECADES of cryptanalysis on ECC and like five minutes on lattices. SIKE got destroyed by a laptop over a weekend! Anyone pushing PQ-only either doesn't understand risk or is carrying water for the NSA. Hybrid costs basically nothing, refusing it is pure ideology.",
+      },
+      {
+        label: "pro pure-PQ (compliance)",
+        stance: "supporting (pro)",
+        text: "People act like pure ML-KEM is reckless but the reality is CNSA 2.0 timelines require pure PQ by 2033 and vendors selling to the US government need a standards-track way to do it. If IETF refuses, those deployments happen anyway, just without any RFC quality control. Publishing the option with a 'hybrids preferred' note is strictly better than pretending the demand doesn't exist.",
+      },
+      {
+        label: "emotionally loaded (moderation stress test)",
+        stance: "opposing (con)",
+        text: "The chairs just rammed this through, full stop. Two dozen people objected and they declared 'consensus' anyway because the big vendors wanted it. Why do we even pretend the process means anything?? This org is captured and everyone knows it, the mailing list is just theater.",
+      },
+    ];
+
+    const seeds = document.getElementById("seeds");
+    SEEDS.forEach((s) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "secondary"; b.textContent = s.label;
+      b.onclick = () => {
+        document.getElementById("original").value = s.text;
+        document.getElementById("stance").value = s.stance;
+      };
+      seeds.appendChild(b);
+    });
+
+    const state = { question: "", parent: "", stance: "", original: "", rounds: [], draft: null };
+    const loop = document.getElementById("loop");
+
+    document.getElementById("start").onclick = async () => {
+      state.question = document.getElementById("question").value.trim();
+      state.parent = document.getElementById("parent").value.trim();
+      state.stance = document.getElementById("stance").value;
+      state.original = document.getElementById("original").value.trim();
+      document.getElementById("setup-error").textContent = "";
+      if (!state.original) {
+        document.getElementById("setup-error").textContent = "Write an argument first.";
+        return;
+      }
+      state.rounds = [];
+      await requestSteelman();
+    };
+
+    async function requestSteelman() {
+      renderLoading();
+      try {
+        const res = await fetch("/api/steelman", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            question: state.question, parent: state.parent,
+            stance: state.stance, original: state.original,
+            rounds: state.rounds,
+          }),
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error || res.status);
+        state.draft = body;
+        renderRound();
+      } catch (err) {
+        renderError(String(err.message || err));
+      }
+    }
+
+    function renderLoading() {
+      loop.innerHTML = '<div class="card"><div class="spinner">Moderator is drafting the strongest version of your point…</div></div>';
+    }
+
+    function renderError(message) {
+      loop.innerHTML = '<div class="card"><div class="error">' + escapeHtml(message) +
+        '</div><button class="secondary" onclick="location.reload()">Start over</button></div>';
+    }
+
+    function renderRound() {
+      const roundNo = state.rounds.length + 1;
+      const isLast = roundNo >= MAX_ROUNDS;
+      const d = state.draft;
+
+      loop.innerHTML = `
+        <div class="card">
+          <div class="row">
+            <strong>Does this say what you mean?</strong>
+            <span class="roundtag">round ${roundNo} of ${MAX_ROUNDS}</span>
+          </div>
+          <div class="cols" style="margin-top:12px">
+            <div class="pane"><h3>You wrote</h3><div class="text">${escapeHtml(state.original)}</div></div>
+            <div class="pane draft"><h3>Moderator's draft</h3><div class="text">${escapeHtml(d.steelman)}</div></div>
+          </div>
+          ${d.notes ? `<div class="notes">${escapeHtml(d.notes)}</div>` : ""}
+          ${d.question ? `<div class="question">Moderator asks: ${escapeHtml(d.question)}</div>` : ""}
+
+          <label for="feedback">What did it get wrong? (feedback = another round)</label>
+          <textarea id="feedback" rows="3" placeholder="e.g. 'too polite — I really do mean the process is captured' or answer the moderator's question"></textarea>
+
+          <div class="row">
+            <button class="accept" id="accept">Accept &amp; publish this version</button>
+            <button class="secondary" id="pushback" ${isLast ? "disabled" : ""}>
+              ${isLast ? "No rounds left" : "Push back (revise)"}
+            </button>
+            <button class="secondary" id="as-is">Publish my original as-is</button>
+          </div>
+        </div>`;
+
+      document.getElementById("accept").onclick = () => renderPublished(d.steelman, false);
+      document.getElementById("as-is").onclick = () => renderPublished(state.original, true);
+      document.getElementById("pushback").onclick = async () => {
+        const feedback = document.getElementById("feedback").value.trim();
+        if (!feedback) { document.getElementById("feedback").focus(); return; }
+        state.rounds.push({ draft: d.steelman, feedback });
+        await requestSteelman();
+      };
+    }
+
+    function renderPublished(text, asIs) {
+      loop.innerHTML = `
+        <div class="card published">
+          <strong>Published to the tree ${asIs ? "(as-is, flagged unrefined)" : "(steelmanned, author-approved)"}</strong>
+          <div class="pane" style="margin-top:12px; background:#fff"><div class="text">${escapeHtml(text)}</div></div>
+          <details><summary>Original text (always attached)</summary>
+            <div class="text" style="margin-top:8px">${escapeHtml(state.original)}</div>
+          </details>
+          <div class="row">
+            <button class="secondary" id="export">Copy transcript JSON</button>
+            <button class="secondary" onclick="location.reload()">New argument</button>
+          </div>
+        </div>`;
+      document.getElementById("export").onclick = () => {
+        navigator.clipboard.writeText(JSON.stringify({
+          question: state.question, parent: state.parent, stance: state.stance,
+          original: state.original, rounds: state.rounds,
+          published: text, publishedAsIs: asIs,
+        }, null, 2));
+      };
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+  </script>
+</body>
+</html>
