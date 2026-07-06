@@ -1,0 +1,233 @@
+# Debate Tree — Project Plan
+
+AI-moderated structured debate for the Quantus ecosystem, spam-protected by
+Quantus-native primitives (mining-share proof-of-work and QUAN balance gates).
+
+This plan covers three deliverables across two repos:
+
+| # | Component | Location | What it is |
+|---|-----------|----------|------------|
+| 1 | **Share Pool** (pool middleman) | `quantus-miner/pool-service` | A pool-like service that turns captcha solves into real mining shares and pays hosts |
+| 2 | **Captcha Gadget** | `quantus-apps/captcha` | Embeddable widget + verify API — a drop-in Turnstile/reCAPTCHA replacement |
+| 3 | **Debate Tree** | `quantus-apps/debate-tree` | The debate webapp: tree UI, AI steelman moderator, chain-gated writes |
+
+Dependency direction: `debate-tree` → `captcha` → `pool-service` → `quantus-node`.
+Each layer is independently useful; the captcha is a product in its own right.
+
+---
+
+## 1. Product vision
+
+**Debate Tree** is a structured-debate platform: a question at the root,
+candidate answers below it, pros/cons under each answer, and responses to
+those, recursively. (Prior art: Kialo — the tree format is proven. Our
+differentiators are the AI moderator and the chain-native spam economics.)
+
+**The AI is a moderator on the write path, not a participant:**
+
+- **Deduplication** — before a new node is accepted, embeddings + a cheap LLM
+  pass check whether the point already exists in the tree; near-duplicates are
+  redirected to the existing node ("upvote / extend this instead?").
+- **Steelmanning loop** — a contributor drafts a point; the AI reflects back
+  the strongest version of it; the contributor revises or accepts; capped at
+  ~3 rounds, with a "publish as-is (flagged unrefined)" escape hatch. Only
+  the version the *contributor* approves is published. The original text
+  stays attached (visible on click) — nobody's voice is erased.
+- **The AI never rewrites imported/seeded content.** Seeded arguments cite
+  their sources verbatim.
+
+**Spam / cost protection** (also bounds our LLM spend):
+
+- **Reading**: free, no account, indexable. The tree is the growth asset.
+- **Creating a question**: requires a signed challenge from a wallet holding
+  ≥ N QUAN (threshold configurable per space). Capital-at-stake, nothing
+  locked or slashed.
+- **Posting answers/pros/cons + starting a steelman session**: requires a
+  proof-of-work share via the captcha gadget. Rate limiter, not identity.
+- App-layer rate limits and per-user/global LLM spend caps on top.
+
+**Governance tie-in**: Quantus currently has no community governance lane
+(the runtime's referenda are tech-collective-only) and QIPs have no
+discussion venue. Debate Tree is the deliberation layer; on-chain referenda
+remain the decision layer. Tree conclusions link to referenda; content
+itself stays off-chain (optionally hash-anchored per published node).
+
+---
+
+## 2. Component 1 — Share Pool (`quantus-miner/pool-service`)
+
+A new crate alongside `miner-service`, reusing `pow-core` hashing and the
+`quantus-miner-api` types.
+
+**Concept**: the node's external-miner protocol already broadcasts
+`NewJob { header_hash, difficulty }` and accepts `JobResult`. The pool
+service sits between a node and thousands of weak browser solvers:
+
+```
+quantus-node ──NewJob──► pool-service ──job + nonce-range + share-target──► browser solvers
+quantus-node ◄──block──  pool-service ◄──────────share (nonce)────────────  browser solvers
+```
+
+- Holds the current job from an upstream node (QUIC, existing protocol).
+- Issues **captcha sessions**: `{ header_hash, disjoint nonce range, share
+  target (≪ network difficulty), expiry }`. The nonce range is the session
+  binding — a returned nonce identifies which session earned it. Freshness
+  is free: shares are only valid against the current block template.
+- Verifies submitted shares (one hash) and issues a single-use
+  **share token** consumed by the captcha verify API.
+- If a share also meets full network difficulty → submit as a real block;
+  reward accrues to the pool operator's account.
+- Tracks per-host share counts for **pro-rata (PPLNS-style) payouts** to
+  registered captcha hosts. Self-hosters can point their share stream at a
+  community pool or run solo.
+
+**Economics honesty** (goes in the README, not just here): expected revenue
+per captcha is (client work ÷ network hashrate) × emission rate — dust once
+the chain has real hashrate. Early-chain revenue is real; long-term the
+honest pitch is *non-wasteful* PoW (work secures the network instead of
+being burned, unlike Friendly Captcha / Anubis) plus dust. **Pay the host,
+never the solver** — paying solvers pays people to spam.
+
+**Deliverables**:
+- [x] `pool-service` crate: upstream QUIC client, session issuance API,
+      share verification, share-token store, block submission
+- [x] `siteverify` endpoint (see Component 2 — same service, site-facing)
+- [ ] Host registration + payout ledger (payouts can be manual at first)
+- [ ] Metrics (reuse `metrics` crate patterns), Docker image
+- [x] Integration test against `quantus-node --dev` (manual e2e: browser
+      solved real shares against a dev node's block headers, 2026-07-04)
+
+## 3. Component 2 — Captcha Gadget (`quantus-apps/captcha`)
+
+A drop-in, privacy-first captcha. Positioning: Turnstile's UX without
+Cloudflare, Friendly Captcha / Anubis mechanics but the work is real mining.
+No puzzles, no tracking, no data labeling. Coinhive's captcha proved the UX;
+Coinhive's death defines our guardrails:
+
+- Work only on explicit user action (form submit), never ambient page-load.
+- Bounded and disclosed: "~1s of computation supports this site."
+- Open source, first-party-servable loader (no single CDN domain to blocklist).
+
+**Pieces**:
+- `solver/` — Rust → WASM build of `pow-core` hashing (lives here or under
+  `quantus-miner/web-miner`, which already has a Vite+WebGPU scaffold;
+  decide when wiring the build). WebGPU fast path, WASM fallback.
+- `widget/` — TS embed: `<div class="quan-captcha" data-sitekey=…>` +
+  ~3 kB loader. Renders checkbox → fetches session from pool-service →
+  solves → posts share → emits share token into the form.
+- Server-side verify: site backend calls `POST /siteverify {token, secret}`
+  on pool-service (mirrors reCAPTCHA/Turnstile API shape for trivial migration).
+- `demo/` — demo page + abuse-cost calculator.
+
+**Deliverables**:
+- [x] WASM solver package (`quantus-miner/crates/solver-wasm`, raw C ABI,
+      ~40 kB; measured ≈120 kH/s in-browser on an M-series laptop)
+      — WebGPU fast path still open
+- [x] Embed widget + loader, Turnstile-compatible verify API
+- [x] Docs: integration guide, threat model (rate-limiter not sybil-proof;
+      native-GPU attacker pays less per share than a phone — tune share
+      target accordingly), Coinhive-lessons disclosure
+- [x] Demo site (`demo/`, served by pool-service `--serve-dir`)
+
+## 4. Component 3 — Debate Tree webapp (`quantus-apps/debate-tree`)
+
+**Stack** (proposed): TypeScript web frontend + backend (framework TBD at
+kickoff), Postgres + pgvector (tree + embeddings), LLM API for
+steelman/dedup (cheap model for loop turns, stronger model for final
+published version). Wallet auth via ML-DSA signature verification —
+`quantus_sdk`'s Rust bridge and `rust-transaction-parser` are references;
+server-side verification can link the same Rust crates.
+
+**Data model (sketch)**:
+- `space` — a debate context (e.g. "QIPs", "PQ-migration"), holds config:
+  question threshold N QUAN, share target, model tier.
+- `node` — id, space, parent, kind (`question | answer | pro | con`),
+  published text, original text, author account, source citations (for
+  seeded nodes), content hash (for optional on-chain anchoring), status.
+- `steelman_session` — node draft, transcript, round count, state.
+- `share_token` / `balance_attestation` — consumed gate proofs.
+
+**Write path**:
+1. Client requests action → backend issues nonce challenge.
+2. Question: wallet signs `{nonce, action, timestamp}`; backend verifies
+   signature + balance ≥ N via node RPC / `quantus_subsquid`.
+   Answer/pro/con: captcha share token required to open a steelman session.
+3. Dedup check (embedding similarity → LLM confirm on borderline).
+4. Steelman loop (≤ 3 rounds) → contributor approves → publish.
+
+**Seed content — the djb hybrid-vs-pure-PQ debate**:
+- Question: *"Should TLS 1.3 standardize pure ML-KEM key agreement, or
+  require hybrid (ECC+PQ)?"*
+- Curated from the public record with per-node citations: IETF TLS WG
+  mailing list, djb's IESG appeals (Oct/Dec 2025), blog.cr.yp.to, LWN
+  coverage. **No AI paraphrasing of imported arguments** — verbatim quotes
+  + neutral summaries with links.
+- Map the *technical* debate only; keep the process/consensus-legitimacy
+  fight (appeals drama) out of the seed tree.
+- **Neutrality disclosure, prominent**: Quantus is a pure-PQ chain and
+  therefore a party to this debate. "We have a stake; here's the map;
+  correct us." Invite corrections before promoting it anywhere.
+- Second space: QIP discussions (own community, real decisions, zero
+  current venue).
+
+**Deliverables**:
+- [ ] Steelman-loop spike (see §5 — build first, throwaway UI)
+- [ ] Tree UI (read): collapsible tree, node detail w/ original text +
+      citations, shareable node links
+- [ ] Wallet auth + balance gate; captcha gate integration
+- [ ] Dedup + steelman write path with round caps and spend caps
+- [ ] Seeded djb tree + QIP space
+- [ ] Optional: per-node hash anchoring via `system.remark` (defer)
+
+---
+
+## 5. Build order
+
+**Track A (start now): pool-service + captcha as ONE vertical slice.**
+Neither is testable end-to-end without the other — a pool with no solver
+client proves nothing, a widget with no verifier is a mock. Milestone:
+demo page on a laptop solves a share against `quantus-node --dev`, verify
+endpoint accepts the token, dashboard shows accrued shares.
+
+**Track B (parallel, cheap): steelman-loop spike.**
+The single highest product risk is whether the steelman negotiation feels
+respectful rather than condescending — no chain deps, just an LLM chat
+loop + prompt iteration on real contentious arguments. A weekend spike;
+throwaway code, keep the prompts.
+
+**Then: Debate Tree webapp** consuming both tracks, launching with the
+seeded djb tree + QIP space. Rationale for not building the webapp first:
+its write path *is* the gates + the steelman loop; building it first means
+building it twice. The captcha is also independently shippable/marketable
+regardless of how Debate Tree evolves.
+
+**Sequencing summary**:
+1. Track A slice (pool + widget + demo) — Track B spike in parallel
+2. Debate Tree read UI + seeded djb/QIP content (valuable even before
+   writes open — "the map" is the marketing artifact)
+3. Debate Tree write path (gates + moderator)
+4. Payouts polish, on-chain anchoring, additional spaces
+
+## 6. Risks
+
+| Risk | Mitigation |
+|------|------------|
+| Cryptojacking stigma / AV & adblock flagging | Consent + bounded work + first-party loader + open source; never ambient mining |
+| Share revenue ≈ dust as hashrate grows | Market as non-wasteful + host-paid, not get-rich; pool aggregation for variance |
+| Native-GPU spammers vs. phone users (PoW asymmetry) | Share target tuned low (rate limiter framing); balance gate for high-value actions |
+| AI steelman feels condescending / voice laundering | Spike first; contributor approval required; original text always attached |
+| Moderator bias becomes tree bias | Publish steelman prompts; show diff original→published |
+| Quantus not neutral on the seed debate | Prominent disclosure; verbatim citations; invite corrections |
+| djb reacts badly to AI paraphrase | Never AI-rewrite imported content |
+| LLM spend abuse | Share token required per steelman session; round caps; per-user/global spend caps |
+| Balance gate = plutocratic speech | Gate only question creation; answers need only PoW; bonds-not-balances revisit later |
+
+## 7. Open questions
+
+- Pool payout cadence/mechanism (manual → automated on-chain batch?).
+- Where the WASM solver crate lives (`quantus-apps/captcha/solver` vs
+  `quantus-miner/web-miner`) — decide when wiring the build.
+- Webapp framework + hosting; whether backend verifies ML-DSA sigs via
+  linked Rust crate or a small verifier sidecar.
+- Per-space QUAN thresholds — governance-adjustable? fiat-pegged?
+- Whether/when to anchor node hashes on-chain.
