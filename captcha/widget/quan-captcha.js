@@ -81,7 +81,9 @@
     function setState(state, subText) {
       box.dataset.state = state;
       check.setAttribute("aria-checked", state === "solved" ? "true" : "false");
-      if (state === "solved") check.textContent = "\u2713";
+      // Own the mark in both directions so error/retry states never keep a
+      // stale checkmark from a previous solved transition.
+      check.textContent = state === "solved" ? "\u2713" : "";
       if (subText) sub.textContent = subText;
     }
 
@@ -122,10 +124,8 @@
               const share = await shareRes.json();
               if (!share.success) throw new Error(share.error || "share rejected");
 
-              const secs = ((performance.now() - startedAt.t) / 1000).toFixed(1);
-              setState("solved", "verified in " + secs + "s (" + msg.hashes + " hashes)" +
-                (share.block_found ? " — BLOCK FOUND!" : ""));
-
+              // Do all fallible tail work BEFORE showing the solved state, so
+              // a throw here lands in fail() without leaving solved visuals.
               const form = el.closest("form") || el;
               let input = form.querySelector('input[name="quan-captcha-token"]');
               if (!input) {
@@ -135,6 +135,11 @@
                 form.appendChild(input);
               }
               input.value = share.token;
+
+              const secs = ((performance.now() - startedAt.t) / 1000).toFixed(1);
+              setState("solved", "verified in " + secs + "s (" + msg.hashes + " hashes)" +
+                (share.block_found ? " — BLOCK FOUND!" : ""));
+
               el.dispatchEvent(new CustomEvent("quan-captcha-solved", {
                 bubbles: true,
                 detail: { token: share.token, blockFound: !!share.block_found },
