@@ -29,16 +29,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Rust+Flutter debug builds easily exhaust the ~14 GB free on ubuntu-latest
+      # (see "No space left on device" / rust-lld bus error). Reclaim unused
+      # preinstalled toolchains; keep Android SDK (android: false).
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: false
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      # Cache crates.io / git deps only — caching rust `target/` restores huge
+      # trees that then get rebuilt for Android and fill the disk.
       - name: Cache Cargo
         uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            quantus_sdk/native/target
-            quantus_sdk/rust/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
+            ${{ runner.os }}-cargo-registry-
             ${{ runner.os }}-cargo-
 
       - name: Cache Gradle
@@ -77,10 +92,11 @@ jobs:
           channel: "stable"
           cache: true
 
+      # FTL device is MediumPhone.arm (arm64). Skip armv7/x86/x64 Rust targets.
       - name: Set up Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android,i686-linux-android
+          targets: aarch64-linux-android
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -110,8 +126,16 @@ jobs:
       - name: Create google-services.json
         run: echo "$GOOGLE_SERVICES_JSON" > mobile-app/android/app/google-services.json
 
+      # Cargokit defaults to arm + arm64 (+ x86/x64 in debug). FTL only needs
+      # arm64-v8a; ONLY_ARM64 also sets ndk.abiFilters in app/build.gradle.
+      - name: Limit Android ABIs to arm64
+        run: echo "ONLY_ARM64=true" >> mobile-app/android/gradle.properties
+
       - name: Build Patrol Android APKs (safe suite)
         working-directory: ./mobile-app
+        env:
+          # Lower peak disk from parallel -Zbuild-std compiles.
+          CARGO_BUILD_JOBS: "2"
         run: |
           patrol build android --debug \
             --dart-define-from-file=.env.test \
