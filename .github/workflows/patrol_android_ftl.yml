@@ -1,0 +1,135 @@
+# Patrol Android E2E on Firebase Test Lab (manual only).
+#
+# Required GitHub secrets:
+#   MOBILE_APP_ENV          - mobile-app/.env contents (Supabase, Firebase API keys)
+#   GOOGLE_SERVICES_JSON    - android/app/google-services.json contents
+#   TEST_IMPORT_MNEMONIC    - 24-word seed for import_wallet_test
+#   GCP_SA_KEY              - GCP service account JSON with Firebase Test Lab Admin
+#                             (+ Firebase Analytics Viewer) on project quantus-wallet
+#
+# Also enable Cloud Testing API and Cloud Tool Results API on the GCP project.
+
+name: Patrol Android FTL
+
+on:
+  workflow_dispatch:
+
+jobs:
+  patrol-android-ftl:
+    name: Patrol Android (Firebase Test Lab)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      MOBILE_APP_ENV: ${{ secrets.MOBILE_APP_ENV }}
+      GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+      TEST_IMPORT_MNEMONIC: ${{ secrets.TEST_IMPORT_MNEMONIC }}
+      GCP_PROJECT: quantus-wallet
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            quantus_sdk/native/target
+            quantus_sdk/rust/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Cache Pub
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: "zulu"
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          cache: true
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android,i686-linux-android
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: quantus-wallet
+
+      - name: Install Melos
+        run: dart pub global activate melos
+
+      - name: Bootstrap Melos
+        run: melos bootstrap
+
+      - name: Install patrol_cli
+        run: dart pub global activate patrol_cli 4.4.0
+
+      - name: Create .env file
+        run: echo "$MOBILE_APP_ENV" > mobile-app/.env
+
+      - name: Create google-services.json
+        run: echo "$GOOGLE_SERVICES_JSON" > mobile-app/android/app/google-services.json
+
+      - name: Create .env.test
+        working-directory: ./mobile-app
+        run: |
+          if [[ -z "${TEST_IMPORT_MNEMONIC}" ]]; then
+            echo "ERROR: TEST_IMPORT_MNEMONIC secret is not set." >&2
+            exit 1
+          fi
+          # key=value file for --dart-define-from-file (spaces in mnemonic are fine unquoted)
+          printf 'TEST_IMPORT_MNEMONIC=%s\n' "$TEST_IMPORT_MNEMONIC" > .env.test
+
+      - name: Build Patrol Android APKs (safe suite)
+        working-directory: ./mobile-app
+        run: |
+          patrol build android --debug \
+            --dart-define-from-file=.env.test \
+            -t patrol_test/flows/create_wallet_test.dart \
+            -t patrol_test/flows/import_wallet_test.dart \
+            -t patrol_test/flows/view_recovery_phrase_test.dart
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: patrol-android-apks
+          path: |
+            mobile-app/build/app/outputs/apk/debug/app-debug.apk
+            mobile-app/build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Run on Firebase Test Lab
+        working-directory: ./mobile-app
+        run: scripts/patrol_android_ftl.sh
