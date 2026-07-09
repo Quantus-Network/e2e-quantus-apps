@@ -2,8 +2,8 @@
 #
 # Required GitHub secrets:
 #   MOBILE_APP_ENV          - mobile-app/.env contents (Supabase, Firebase API keys)
+#   MOBILE_APP_ENV_TEST     - mobile-app/.env.test contents (TEST_IMPORT_MNEMONIC, etc.)
 #   GOOGLE_SERVICES_JSON    - android/app/google-services.json contents
-#   TEST_IMPORT_MNEMONIC    - 24-word seed for import_wallet_test
 #   GCP_SA_KEY              - GCP service account JSON with Firebase Test Lab Admin
 #                             (+ Firebase Analytics Viewer) on project quantus-wallet
 #
@@ -22,8 +22,8 @@ jobs:
       contents: read
     env:
       MOBILE_APP_ENV: ${{ secrets.MOBILE_APP_ENV }}
+      MOBILE_APP_ENV_TEST: ${{ secrets.MOBILE_APP_ENV_TEST }}
       GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
-      TEST_IMPORT_MNEMONIC: ${{ secrets.TEST_IMPORT_MNEMONIC }}
       GCP_PROJECT: quantus-wallet
     steps:
       - name: Checkout repository
@@ -98,18 +98,11 @@ jobs:
       - name: Create .env file
         run: echo "$MOBILE_APP_ENV" > mobile-app/.env
 
+      - name: Create .env.test file
+        run: echo "$MOBILE_APP_ENV_TEST" > mobile-app/.env.test
+
       - name: Create google-services.json
         run: echo "$GOOGLE_SERVICES_JSON" > mobile-app/android/app/google-services.json
-
-      - name: Create .env.test
-        working-directory: ./mobile-app
-        run: |
-          if [[ -z "${TEST_IMPORT_MNEMONIC}" ]]; then
-            echo "ERROR: TEST_IMPORT_MNEMONIC secret is not set." >&2
-            exit 1
-          fi
-          # key=value file for --dart-define-from-file (spaces in mnemonic are fine unquoted)
-          printf 'TEST_IMPORT_MNEMONIC=%s\n' "$TEST_IMPORT_MNEMONIC" > .env.test
 
       - name: Build Patrol Android APKs (safe suite)
         working-directory: ./mobile-app
