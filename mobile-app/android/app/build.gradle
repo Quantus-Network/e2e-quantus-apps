@@ -82,9 +82,12 @@ tasks.register('generateVersion', Exec) {
     commandLine '/bin/sh', "${rootProject.projectDir}/../tool/generate_version.sh"
 }
 
-afterEvaluate {
-    tasks.matching { it.name.startsWith("compileFlutterBuild") }.each {
-        it.dependsOn generateVersion
+// Hook lazily: eager tasks.matching().each in afterEvaluate can force Flutter
+// task realization in the wrong order (e.g. copyJniLibsflutterBuildRelease
+// before compileFlutterBuildRelease exists), which breaks Patrol/debug builds.
+tasks.configureEach { task ->
+    if (task.name.startsWith("compileFlutterBuild")) {
+        task.dependsOn generateVersion
     }
 }
 
