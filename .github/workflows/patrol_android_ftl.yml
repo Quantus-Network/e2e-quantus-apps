@@ -65,9 +65,15 @@ jobs:
           distribution: "zulu"
           java-version: "17"
 
+      # Pin Flutter: stable 3.44.5+ includes a jniLibs regression that breaks
+      # Patrol/FTL-style Gradle builds (`copyJniLibsflutterBuildDebug` requires
+      # `compileFlutterBuildDebug` which isn't registered). Fixed on master in
+      # flutter/flutter#188805; cherry-pick to stable is pending (#189075).
+      # Local builds on 3.44.0 are fine — match that here until the CP lands.
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: "3.44.0"
           channel: "stable"
           cache: true
 
